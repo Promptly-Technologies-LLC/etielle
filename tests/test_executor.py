@@ -1,15 +1,13 @@
 from __future__ import annotations
 
-from etielle.main import (
+from etielle.executor import run_mapping
+from etielle.core import (
     Field,
     MappingSpec,
     TableEmit,
-    TraversalSpec,
-    get,
-    get_from_parent,
-    key,
-    run_mapping,
+    TraversalSpec
 )
+from etielle.transforms import get, get_from_parent, key
 
 
 def test_list_traversal_inner_path_and_auto_id():

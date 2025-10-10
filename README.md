@@ -52,15 +52,14 @@ The core concepts you’ll use:
 #### Minimal example
 
 ```python
-from etielle.main import (
+from etielle.core import (
     MappingSpec,
     TraversalSpec,
     TableEmit,
-    Field,
-    run_mapping,
-    get,
-    get_from_parent,
+    Field
 )
+from etielle.transforms import get, get_from_parent
+from etielle.executor import run_mapping
 
 data = {
     "users": [
