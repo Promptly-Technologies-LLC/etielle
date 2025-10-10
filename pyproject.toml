@@ -5,7 +5,6 @@ description = "A declarative, type-safe Python DSL for mapping complex nested JS
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = []
-classifiers = ["Private :: Do Not Upload"]
 
 [build-system]
 requires = ["hatchling>=1.25"]
