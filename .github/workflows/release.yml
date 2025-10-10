@@ -11,6 +11,7 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
+    environment: PyPi
     steps:
       - name: Generate token for version incrementer app
         id: create_token
