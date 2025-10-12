@@ -1,36 +1,22 @@
-# `etielle`: Declarative JSON-to-Relational Mapping in Python
+---
+title: "`etielle`: Declarative JSON-to-Relational Mapping in Python"
+output: gfm
+---
+`etielle` is a simple, powerful Python library for reshaping nested [JSON](https://en.wikipedia.org/wiki/JSON) data, typically from an API, into relational tables that fit your database schema. Think of `etielle` as a "JSON extractor" that you program with clear instructions: "Go here in the JSON, pull this data, and put it in that table." The library's name is a play on ETL ("Extract, Transform, Load"), which is the technical term for this set of operations. 
 
-`etielle` is a simple, powerful Python library for reshaping nested
-[JSON](https://en.wikipedia.org/wiki/JSON) data, typically from an API,
-into relational tables that fit your database schema. Think of `etielle`
-as a “JSON extractor” that you program with clear instructions: “Go here
-in the JSON, pull this data, and put it in that table.” The library’s
-name is a play on ETL (“Extract, Transform, Load”), which is the
-technical term for this set of operations.
-
-- **Repository**:
-  [Promptly-Technologies-LLC/etielle](https://github.com/Promptly-Technologies-LLC/etielle)
+- **Repository**: [Promptly-Technologies-LLC/etielle](https://github.com/Promptly-Technologies-LLC/etielle)
 - **PyPI**: [`etielle`](https://pypi.org/project/etielle/)
 - **Python**: ≥ 3.13
 
 ## Why Use `etielle`? (For Beginners)
 
-JSON data from APIs (Application Program Interfaces—web services that
-typically return JSON) is often deeply nested and requires complicated
-parsing. `etielle` helps by:
+JSON data from APIs (Application Program Interfaces—web services that typically return JSON) is often deeply nested and requires complicated parsing. `etielle` helps by:
 
-- **Declaring what you want**: Write Python code to describe your tables
-  and how to fill them.
-- **Traversing nested structures**: Walk through
-  arrays-within-dictionaries-within-arrays to any arbitrary depth.
-- **Performing arbitrary transformations**: Use the provided functions
-  to perform common operations (like getting the key or index of the
-  current item or its parent), or define your own.
-- **Building relationships**: Use “keys” to link data across different
-  parts of the JSON, like foreign keys in a database.
-- **Being beginner-friendly**: Everything is type-safe (Python checks
-  your types), composable (build complex things from simple pieces), and
-  easy to debug.
+- **Declaring what you want**: Write Python code to describe your tables and how to fill them.
+- **Traversing nested structures**: Walk through arrays-within-dictionaries-within-arrays to any arbitrary depth.
+- **Performing arbitrary transformations**: Use the provided functions to perform common operations (like getting the key or index of the current item or its parent), or define your own.
+- **Building relationships**: Use "keys" to link data across different parts of the JSON, like foreign keys in a database.
+- **Being beginner-friendly**: Everything is type-safe (Python checks your types), composable (build complex things from simple pieces), and easy to debug.
 
 ## Installation
 
@@ -39,28 +25,26 @@ We recommend using `uv` for faster installs, but `pip` works too.
 ### With uv (Recommended for Speed)
 
 For your project:
-
-``` bash
+```bash
 uv add etielle
 ```
 
 For one-off use:
-
-``` bash
+```bash
 uv pip install etielle
 ```
 
 ### With pip
 
-``` bash
+```bash
 pip install etielle
 ```
 
 ## Quick Start: Your First Mapping
 
-Let’s start with a simple example. Suppose you have this JSON:
+Let's start with a simple example. Suppose you have this JSON:
 
-``` json
+```json
 {
   "users": [
     {"id": "u1", "name": "Alice", "posts": [{"id": "p1", "title": "Hello"}, {"id": "p2", "title": "World"}]},
@@ -69,11 +53,11 @@ Let’s start with a simple example. Suppose you have this JSON:
 }
 ```
 
-We want two tables: “users” (id, name) and “posts” (id, user_id, title).
+We want two tables: "users" (id, name) and "posts" (id, user_id, title).
 
-Here’s the code:
+Here's the code:
 
-``` python
+``` {python}
 from etielle.core import MappingSpec, TraversalSpec, TableEmit, Field
 from etielle.transforms import get, get_from_parent
 from etielle.executor import run_mapping
@@ -120,39 +104,33 @@ result = run_mapping(data, spec)
 print(result)  # Outputs dict of tables with rows
 ```
 
-    {}
-
-Congrats! You’ve mapped your first JSON.
+Congrats! You've mapped your first JSON.
 
 ## Core Concepts: Breaking It Down
 
-Let’s explain the building blocks like you’re learning for the first
-time.
+Let's explain the building blocks like you're learning for the first time.
 
-### 1. Context: Your “Location” in the JSON
+### 1. Context: Your "Location" in the JSON
 
 Imagine traversing a JSON tree—Context is your GPS:
 
 - `root`: The entire JSON.
 - `node`: The current spot (e.g., a user object).
-- `path`: Directions to get here (e.g., (“users”, 0)).
-- `parent`: The previous spot (for looking “up”).
+- `path`: Directions to get here (e.g., ("users", 0)).
+- `parent`: The previous spot (for looking "up").
 - `key`/`index`: If in a dict/list, the current key or index.
 - `slots`: A notepad for temporary notes.
 
-Contexts are created automatically as you traverse and are immutable
-(unchangeable) for safety.
+Contexts are created automatically as you traverse and are immutable (unchangeable) for safety.
 
 ### 2. Transforms: Smart Data Extractors
 
-Transforms are like mini-functions that pull values from Context.
-They’re “lazy”—they don’t run until needed, and they adapt to the
-current Context.
+Transforms are like mini-functions that pull values from Context. They're "lazy"—they don't run until needed, and they adapt to the current Context.
 
 Examples:
 
-- `get("name")`: Get “name” from current node.
-- `get_from_parent("id")`: Get “id” from parent.
+- `get("name")`: Get "name" from current node.
+- `get_from_parent("id")`: Get "id" from parent.
 - `index()`: Current list position.
 - `concat(literal("user_"), get("id"))`: Combine strings.
 
@@ -160,29 +138,24 @@ Full list in the Cheatsheet below.
 
 ### 3. TraversalSpec: How to Walk the JSON
 
-This says: “Start here, then go deeper if needed, and do this for each
-item.”
+This says: "Start here, then go deeper if needed, and do this for each item."
 
-- `path`: Starting path (list of strings, e.g., \[“users”\]).
+- `path`: Starting path (list of strings, e.g., ["users"]).
 - `iterate_items`: True for dicts (key-value pairs), False for lists.
-- `inner_path`: Optional deeper path (e.g., \[“posts”\] for nesting).
+- `inner_path`: Optional deeper path (e.g., ["posts"] for nesting).
 - `emits`: What tables to create from each item.
 
-You can have multiple Traversals in one MappingSpec—they run
-independently.
+You can have multiple Traversals in one MappingSpec—they run independently.
 
 ### 4. TableEmit and Fields: Building Your Tables
 
 - `table`: Name of the table.
-- `fields`: List of Field(name, transform) – columns and how to compute
-  them.
-- `join_keys`: List of transforms for unique row IDs (like primary
-  keys). Same keys across traversals merge rows.
+- `fields`: List of Field(name, transform) – columns and how to compute them.
+- `join_keys`: List of transforms for unique row IDs (like primary keys). Same keys across traversals merge rows.
 
 ### 5. Executor: Running It All
 
-`run_mapping(json_data, spec)` executes everything and returns a dict of
-tables.
+`run_mapping(json_data, spec)` executes everything and returns a dict of tables.
 
 ## Detailed Examples
 
@@ -190,7 +163,7 @@ tables.
 
 Merge user info from two parts of JSON:
 
-``` python
+``` {python}
 spec = MappingSpec(traversals=[
     TraversalSpec(  # Basic user data
         path=["users"],
@@ -213,13 +186,13 @@ spec = MappingSpec(traversals=[
 ])
 ```
 
-Rows with matching keys merge: e.g., add “email” to existing user row.
+Rows with matching keys merge: e.g., add "email" to existing user row.
 
 ### Example 2: Deep Nesting (Arbitrary Depth)
 
 No limit to depth—use longer `inner_path`:
 
-``` python
+``` {python}
 spec = MappingSpec(traversals=[
     TraversalSpec(
         path=["servers"],
@@ -242,30 +215,24 @@ spec = MappingSpec(traversals=[
 
 ## Transform Cheatsheet
 
-- **get(path)**: From current node (dot notation or list, e.g.,
-  “user.name” or \[“user”, 0\]).
+- **get(path)**: From current node (dot notation or list, e.g., "user.name" or ["user", 0]).
 - **get_from_parent(path, depth=1)**: From ancestor.
 - **get_from_root(path)**: From top-level JSON.
 - **key()**: Current dict key.
 - **index()**: Current list index.
 - **literal(value)**: Constant value.
-- \*\*concat(\*parts)\*\*: Join strings.
-- \*\*format_id(\*parts, sep=“\_“)\*\*: Join non-empty parts with
-  separator.
-- \*\*coalesce(\*transforms)\*\*: First non-None value.
+- **concat(*parts)**: Join strings.
+- **format_id(*parts, sep="_")**: Join non-empty parts with separator.
+- **coalesce(*transforms)**: First non-None value.
 - **len_of(inner)**: Length of a list/dict/string.
 
-Pro Tip: Transforms are lazy—they run in the “context” of where they’re
-used, making them super flexible.
+Pro Tip: Transforms are lazy—they run in the "context" of where they're used, making them super flexible.
 
 ## Advanced Topics
 
-- **Lazy Evaluation**: Transforms don’t compute until executed, adapting
-  to the current spot in JSON.
-- **Custom Transforms**: Define your own functions that take Context and
-  return values.
-- **Row Merging Rules**: Last write wins for duplicate fields; missing
-  keys skip rows.
+- **Lazy Evaluation**: Transforms don't compute until executed, adapting to the current spot in JSON.
+- **Custom Transforms**: Define your own functions that take Context and return values.
+- **Row Merging Rules**: Last write wins for duplicate fields; missing keys skip rows.
 - **Performance**: Efficient for large JSON; traversals are independent.
 
 ## Roadmap Ideas
@@ -279,3 +246,4 @@ used, making them super flexible.
 MIT
 
 Need help? Open an issue on GitHub!
+

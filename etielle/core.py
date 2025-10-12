@@ -13,6 +13,9 @@ from typing import Any, Mapping, Optional, Protocol, Sequence, Tuple, TypeVar, G
 class Context:
     """
     Runtime context while traversing the JSON structure.
+    During traversal, a base context is created that is shared by all nodes.
+    Subsequent contexts created during iteration extend the parent's path and link to the parent context.
+    Each new context gets fresh slots, but you can walk up the chain with get_from_parent.
 
     - root: original full JSON payload
     - node: current node under iteration
@@ -36,6 +39,10 @@ T = TypeVar("T")
 
 
 class Transform(Protocol, Generic[T]):
+    """
+    Transforms are functions that take a Context and return a value.
+    They're composable, side-effect free, and lazily evaluated in the context of the current traversal step.
+    """
     def __call__(self, ctx: Context) -> T:  # pragma: no cover - interface only
         ...
 

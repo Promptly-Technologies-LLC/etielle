@@ -15,5 +15,7 @@ packages = ["etielle"]
 
 [dependency-groups]
 dev = [
+    "ipykernel>=6.30.1",
     "pytest>=8.4.2",
+    "quarto>=0.1.0",
 ]
