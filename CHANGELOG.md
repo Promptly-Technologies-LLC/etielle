@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.0.3 (2025-10-14)
+
+### Bug Fixes
+
+- Run build in PSR container
+  ([`6c359c6`](https://github.com/Promptly-Technologies-LLC/etielle/commit/6c359c6bc281118068fe1b41a6f5e8db4d8cad87))
+
+
 ## v1.0.2 (2025-10-14)
 
 ### Bug Fixes
