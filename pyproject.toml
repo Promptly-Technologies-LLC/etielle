@@ -19,6 +19,7 @@ dev = [
     "pytest>=8.4.2",
     "python-semantic-release>=10.4.1",
     "quarto>=0.1.0",
+    "ty>=0.0.1a22",
 ]
 
 [tool.semantic_release]
@@ -32,6 +33,7 @@ major_on_zero = true
 allow_zero_version = false
 no_git_verify = false
 tag_format = "v{version}"
+version_toml = ["pyproject.toml:project.version:nf"]
 
 [tool.semantic_release.branches.main]
 match = "(main|master)"
