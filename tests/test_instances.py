@@ -6,6 +6,8 @@ from etielle.instances import (
     FieldSpec,
     TypedDictBuilder,
     AddPolicy,
+    AppendPolicy,
+    ExtendPolicy,
     PydanticBuilder,
 )
 
@@ -90,6 +92,49 @@ def test_merge_policy_add_across_multiple_updates():
         {"user_id": "u1", "count": 2},
         {"user_id": "u2", "count": 1},
     ]
+
+
+def test_append_and_extend_policies_ordering():
+    data = {
+        "events": [
+            {"user_id": "u1", "tag": "a", "tags": ["x"]},
+            {"user_id": "u1", "tag": "b", "tags": ["y", "z"]},
+        ]
+    }
+
+    spec = MappingSpec(
+        traversals=[
+            TraversalSpec(
+                path=["events"],
+                iterate_items=False,
+                emits=[
+                    InstanceEmit[
+                        dict
+                    ](
+                        table="user_tags",
+                        join_keys=[get("user_id")],
+                        fields=[
+                            FieldSpec(selector="user_id", transform=get("user_id")),
+                            FieldSpec(selector="tag", transform=get("tag")),
+                            FieldSpec(selector="tags_accum", transform=get("tags")),
+                        ],
+                        builder=TypedDictBuilder(lambda d: d),
+                        policies={
+                            "tag": AppendPolicy(),
+                            "tags_accum": ExtendPolicy(),
+                        },
+                    )
+                ],
+            )
+        ]
+    )
+
+    from etielle.executor import run_mapping
+
+    result = run_mapping(data, spec)
+    got = list(result["user_tags"].instances.values())[0]
+    assert got["tag"] == ["a", "b"]
+    assert got["tags_accum"] == ["x", "y", "z"]
 
 
 def test_pydantic_builder_with_typed_selectors():

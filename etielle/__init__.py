@@ -17,6 +17,10 @@ from .instances import (
     MergePolicy,
     AddPolicy,
     AppendPolicy,
+    ExtendPolicy,
+    MinPolicy,
+    MaxPolicy,
+    FirstNonNullPolicy,
 )
 
 __all__ = [
@@ -37,5 +41,9 @@ __all__ = [
     "MergePolicy",
     "AddPolicy",
     "AppendPolicy",
+    "ExtendPolicy",
+    "MinPolicy",
+    "MaxPolicy",
+    "FirstNonNullPolicy",
 ]
 

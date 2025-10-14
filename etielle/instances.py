@@ -43,6 +43,47 @@ class AppendPolicy(MergePolicy):
         return base + ([] if new is None else [new])
 
 
+class ExtendPolicy(MergePolicy):
+    def merge(self, old: Any, new: Any) -> Any:
+        base = [] if old is None else list(old)
+        if new is None:
+            return base
+        if isinstance(new, (list, tuple)):
+            return base + list(new)
+        # Fallback: append single item
+        return base + [new]
+
+
+class MinPolicy(MergePolicy):
+    def merge(self, old: Any, new: Any) -> Any:
+        if old is None:
+            return new
+        if new is None:
+            return old
+        try:
+            return new if new < old else old
+        except Exception:
+            # On incomparable types, prefer old to keep determinism
+            return old
+
+
+class MaxPolicy(MergePolicy):
+    def merge(self, old: Any, new: Any) -> Any:
+        if old is None:
+            return new
+        if new is None:
+            return old
+        try:
+            return new if new > old else old
+        except Exception:
+            return old
+
+
+class FirstNonNullPolicy(MergePolicy):
+    def merge(self, old: Any, new: Any) -> Any:
+        return old if old is not None else new
+
+
 # -----------------------------
 # Builder protocol
 # -----------------------------

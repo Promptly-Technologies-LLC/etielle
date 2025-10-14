@@ -125,7 +125,7 @@ def run_mapping(root: Any, spec: MappingSpec) -> Dict[str, MappingResult[Any]]:
                                 suggest_str = f"; did you mean {', '.join(suggestions)}?" if suggestions else ""
                                 tbl["builder"].record_update_error(
                                     composite_key,
-                                    f"table={emit.table} key={composite_key} field={field_name}: unknown field{suggest_str}"
+                                    f"field {field_name}: unknown field{suggest_str}"
                                 )
                                 if getattr(emit, "strict_mode", "collect_all") == "fail_fast":
                                     raise RuntimeError(f"Unknown field '{field_name}' for table '{emit.table}' and key {composite_key}")
@@ -135,7 +135,15 @@ def run_mapping(root: Any, spec: MappingSpec) -> Dict[str, MappingResult[Any]]:
                         policy = tbl["policies"].get(field_name)
                         if policy is not None:
                             prev = shadow_bucket.get(field_name)
-                            value = policy.merge(prev, value)
+                            try:
+                                value = policy.merge(prev, value)
+                            except Exception as e:  # pragma: no cover - defensive
+                                tbl["builder"].record_update_error(
+                                    composite_key,
+                                    f"field {field_name}: merge policy error: {e}"
+                                )
+                                # Skip updating this field on error
+                                continue
                         shadow_bucket[field_name] = value
                         updates[field_name] = value
 
