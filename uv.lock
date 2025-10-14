@@ -224,7 +224,7 @@ wheels = [
 
 [[package]]
 name = "etielle"
-version = "0.2.0"
+version = "1.0.6"
 source = { editable = "." }
 
 [package.dev-dependencies]

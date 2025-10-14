@@ -22,6 +22,9 @@ dev = [
     "quarto>=0.1.0",
 ]
 
+[tool.mypy]
+check_untyped_defs = true
+
 [tool.semantic_release]
 assets = []
 build_command_env = []

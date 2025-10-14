@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from typing import Any, List, Optional, Sequence, Union, cast, TypeVar, Iterable, Tuple
 from .core import Context, Transform
 from collections.abc import Mapping

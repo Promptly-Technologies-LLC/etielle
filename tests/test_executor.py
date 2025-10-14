@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from etielle.executor import run_mapping
 from etielle.core import (
     Field,

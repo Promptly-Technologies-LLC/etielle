@@ -1,7 +1,9 @@
-from __future__ import annotations
-
 from dataclasses import dataclass, field
-from typing import Any, Callable, Mapping, Optional, Protocol, Sequence, Tuple, TypeVar, Generic, cast
+from typing import Any, Callable, Optional, Protocol, Sequence, Tuple, TypeVar, Generic, cast, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    # Avoid runtime import cycle; only for typing
+    from .instances import InstanceEmit
 
 
 # -----------------------------
@@ -170,7 +172,7 @@ class TraversalSpec:
 
     path: Sequence[str]
     iterate_items: bool
-    emits: Sequence[TableEmit]
+    emits: Sequence[TableEmit | "InstanceEmit[Any]"]
     inner_path: Optional[Sequence[str]] = None
     inner_iterate_items: Optional[bool] = None
 

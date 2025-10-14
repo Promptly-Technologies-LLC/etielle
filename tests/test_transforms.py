@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from etielle.core import (
     Context
 )
@@ -40,7 +38,7 @@ def make_ctx(
     parent: Context | None = None,
     dict_key: str | None = None,
     list_index: int | None = None,
-):
+)-> Context:
     return Context(
         root=root,
         node=node,
