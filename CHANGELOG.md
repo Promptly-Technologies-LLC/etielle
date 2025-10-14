@@ -2,6 +2,17 @@
 
 <!-- version list -->
 
+## v1.2.0 (2025-10-14)
+
+### Features
+
+- Error reporting
+  ([`10657ec`](https://github.com/Promptly-Technologies-LLC/etielle/commit/10657ec161b6f09c8b95e5f4ae952d8f2bd70f39))
+
+- Instance emission adapter
+  ([`4c02de0`](https://github.com/Promptly-Technologies-LLC/etielle/commit/4c02de0a87fae2309f8c4e3e0662452c31f338ca))
+
+
 ## v1.1.0 (2025-10-14)
 
 ### Features
