@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.0.5 (2025-10-14)
+
+### Bug Fixes
+
+- Make release dependent on test
+  ([`b377958`](https://github.com/Promptly-Technologies-LLC/etielle/commit/b37795886a41674c677bc13e2df676fe42effc6f))
+
+
 ## v1.0.4 (2025-10-14)
 
 ### Bug Fixes
