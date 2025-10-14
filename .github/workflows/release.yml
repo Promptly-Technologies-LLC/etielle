@@ -5,31 +5,32 @@ on:
     branches: [main]
 
 permissions:
-  id-token: write
-  contents: write
+  contents: read
 
 jobs:
   release:
     runs-on: ubuntu-latest
     environment: PyPi
-    steps:
-      - name: Generate token for version incrementer app
-        id: create_token
-        uses: tibdex/github-app-token@v2
-        with:
-          app_id: ${{ secrets.APP_ID }}
-          private_key: ${{ secrets.PRIVATE_KEY }}
+    concurrency:
+      group: ${{ github.workflow }}-release-${{ github.ref_name }}
+      cancel-in-progress: false
 
-      - name: Setup | Checkout Repository at workflow sha
+    outputs:
+      released: ${{ steps.release.outputs.released }}
+      tag: ${{ steps.release.outputs.tag }}
+
+    permissions:
+      contents: write
+    steps:
+      - name: Setup | Checkout Repository on Release Branch
         uses: actions/checkout@v4
         with:
+          ref: ${{ github.ref_name }}
           fetch-depth: 0
-          ref: ${{ github.sha }}
-          token: ${{ steps.create_token.outputs.token }}
 
-      - name: Setup | Force correct release branch on workflow sha
+      - name: Setup | Force release branch to be at workflow sha
         run: |
-          git checkout -B ${{ github.ref_name }} ${{ github.sha }}
+          git reset --hard ${{ github.sha }}
 
       - name: Install uv
         uses: astral-sh/setup-uv@v5
@@ -43,27 +44,13 @@ jobs:
         run: |
           uv sync
 
-      - name: Python Semantic Release
+      - name: Action | Semantic Version Release
         id: release
         uses: python-semantic-release/python-semantic-release@v10.4.1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          commit: false
-
-      - name: Build project wheel and test that it installs without errors
-        run: |
-          uv build
-          uv sync
-          uv pip install dist/etielle-*.whl
-
-      - name: Run tests
-        run: |
-          uv run pytest
-
-      - name: Release to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          packages-dir: dist/
+          git_committer_name: "github-actions"
+          git_committer_email: "actions@users.noreply.github.com"
 
       - name: Publish | Upload to GitHub Release Assets
         uses: python-semantic-release/publish-action@v10.4.1
@@ -72,9 +59,31 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           tag: ${{ steps.release.outputs.tag }}
 
-      - name: Commit version change
-        uses: stefanzweifel/git-auto-commit-action@v5
+      - name: Upload | Distribution Artifacts
+        uses: actions/upload-artifact@v4
         with:
-          commit_message: "Release ${{ steps.release.outputs.tag }} [skip ci]"
-          branch: ${{ github.ref_name }}
-          file_pattern: "pyproject.toml CHANGELOG.md uv.lock"
+          name: distribution-artifacts
+          path: dist
+          if-no-files-found: error
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: release
+    if: ${{ needs.release.outputs.released == 'true' }}
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Setup | Download Build Artifacts
+        uses: actions/download-artifact@v4
+        id: artifact-download
+        with:
+          name: distribution-artifacts
+          path: dist
+
+      - name: Publish package distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist/
