@@ -10,7 +10,6 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
-    environment: PyPi
     concurrency:
       group: ${{ github.workflow }}-release-${{ github.ref_name }}
       cancel-in-progress: false
@@ -71,6 +70,7 @@ jobs:
 
   deploy:
     runs-on: ubuntu-latest
+    environment: PyPi
     needs: release
     if: ${{ needs.release.outputs.released == 'true' }}
 
