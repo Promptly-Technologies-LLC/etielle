@@ -82,7 +82,7 @@ def test_integration_with_field_and_executor():
     from etielle.executor import run_mapping
 
     result = run_mapping(data, spec)
-    rows = sorted(result["users"], key=lambda r: r["id"])
+    rows = sorted(result["users"].instances.values(), key=lambda r: r["id"])
     assert rows == [
         {"id": "u1", "email": "ada@example.com", "name": "Ada"},
         {"id": "u2", "email": "linus@example.com", "name": "Linus"},

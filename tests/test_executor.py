@@ -48,12 +48,12 @@ def test_list_traversal_inner_path_and_auto_id():
     result = run_mapping(data, spec)
 
     # users should auto-populate 'id' from the single join key
-    assert sorted(result["users"], key=lambda r: r["id"]) == [
+    assert sorted(result["users"].instances.values(), key=lambda r: r["id"]) == [
         {"id": "u1", "name": "Ada"},
         {"id": "u2", "name": "Linus"},
     ]
 
-    assert sorted(result["posts"], key=lambda r: r["id"]) == [
+    assert sorted(result["posts"].instances.values(), key=lambda r: r["id"]) == [
         {"id": "p1", "user_id": "u1"},
         {"id": "p2", "user_id": "u1"},
     ]
@@ -83,7 +83,7 @@ def test_dict_item_iteration_and_parent_key():
     )
 
     result = run_mapping(data, spec)
-    assert sorted(result["metrics"], key=lambda r: r["id"]) == [
+    assert sorted(result["metrics"].instances.values(), key=lambda r: r["id"]) == [
         {"id": "m1", "value": 10},
         {"id": "m2", "value": 20},
     ]
@@ -135,7 +135,7 @@ def test_composite_join_keys_merging_from_multiple_traversals():
     spec = MappingSpec(traversals=[people_trav, bonus_trav])
     result = run_mapping(data, spec)
 
-    assert sorted(result["scores"], key=lambda r: (r["person_id"], r["year"])) == [
+    assert sorted(result["scores"].instances.values(), key=lambda r: (r["person_id"], r["year"])) == [
         {"person_id": "p1", "year": 2024, "score": 7, "bonus": 100},
         {"person_id": "p1", "year": 2025, "score": 9, "bonus": 200},
     ]

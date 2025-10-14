@@ -1,5 +1,6 @@
+from __future__ import annotations
 from dataclasses import dataclass, field
-from typing import Any, Callable, Optional, Protocol, Sequence, Tuple, TypeVar, Generic, cast, TYPE_CHECKING
+from typing import Any, Callable, Optional, Protocol, Sequence, Tuple, TypeVar, Generic, cast, TYPE_CHECKING, Dict, List
 
 if TYPE_CHECKING:
     # Avoid runtime import cycle; only for typing
@@ -180,3 +181,25 @@ class TraversalSpec:
 @dataclass(frozen=True)
 class MappingSpec:
     traversals: Sequence[TraversalSpec]
+
+
+# -----------------------------
+# Results
+# -----------------------------
+
+
+@dataclass(frozen=True)
+class MappingResult(Generic[T]):
+    """
+    Unified result for both classic table rows and instance builders.
+
+    - instances: mapping from composite join key tuple to instance/row payload
+    - update_errors: per-key errors recorded during incremental updates
+    - finalize_errors: per-key errors recorded while finalizing/validating instances
+    - stats: simple counters to aid diagnostics (keys: num_instances, num_update_errors, num_finalize_errors)
+    """
+
+    instances: Dict[Tuple[Any, ...], T]
+    update_errors: Dict[Tuple[Any, ...], List[str]]
+    finalize_errors: Dict[Tuple[Any, ...], List[str]]
+    stats: Dict[str, int]

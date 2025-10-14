@@ -59,7 +59,26 @@ class InstanceBuilder(Generic[T]):
         return None
 
     def errors(self) -> Dict[K, list[str]]:  # pragma: no cover - interface only
+        # Back-compat alias for update_errors
+        return self.update_errors()
+
+    # Known field names for this builder (used for strict field checks and suggestions)
+    def known_fields(self) -> set[str]:  # pragma: no cover - interface only
+        return set()
+
+    # Update-time errors (incremental validation)
+    def update_errors(self) -> Dict[K, list[str]]:  # pragma: no cover - interface only
         return {}
+
+    # Finalize-time errors (full validation)
+    def finalize_errors(self) -> Dict[K, list[str]]:  # pragma: no cover - interface only
+        return {}
+
+    # Helpers to record errors from the executor (e.g., unknown fields)
+    def record_update_error(self, key: K, reason: str) -> None:  # pragma: no cover - interface only
+        pass
+    def record_finalize_error(self, key: K, reason: str) -> None:  # pragma: no cover - interface only
+        pass
 
 
 @dataclass(frozen=True)
@@ -78,6 +97,8 @@ class InstanceEmit(Generic[T]):
     policies: Mapping[str, MergePolicy] = field(default_factory=dict)
     strict_fields: bool = True
     allow_extras: bool = False
+    # strictness mode: 'collect_all' (default) or 'fail_fast'
+    strict_mode: str = "collect_all"
 
 
 # -----------------------------
@@ -109,7 +130,14 @@ class PydanticBuilder(InstanceBuilder[T]):
         _BaseModel, _TypeAdapter, _create_model = _import_pydantic()
         if _TypeAdapter is not None and hasattr(model, "model_fields"):
             self._field_adapters = {name: _TypeAdapter(f.annotation) for name, f in getattr(model, "model_fields").items()}  # type: ignore[misc]
-        self._errors: Dict[K, list[str]] = {}
+        self._update_errors: Dict[K, list[str]] = {}
+        self._finalize_errors: Dict[K, list[str]] = {}
+
+    def known_fields(self) -> set[str]:
+        fields = getattr(self.model, "model_fields", None)
+        if fields is None:
+            return set()
+        return set(fields.keys())
 
     def update(self, key: K, updates: Mapping[str, Any]) -> None:
         bucket = self.acc.setdefault(key, {})
@@ -118,20 +146,34 @@ class PydanticBuilder(InstanceBuilder[T]):
                 try:
                     bucket[k] = self._field_adapters[k].validate_python(v)
                 except Exception as e:  # pragma: no cover - defensive
-                    self._errors.setdefault(key, []).append(f"field {k}: {e}")
+                    self._update_errors.setdefault(key, []).append(f"field {k}: {e}")
                     bucket[k] = v
             else:
                 bucket[k] = v
 
     def finalize_all(self) -> Dict[K, T]:
-        # At finalize, rely on full model validation
-        return {k: cast(Any, self.model).model_validate(v) for k, v in self.acc.items()}
+        # At finalize, rely on full model validation per-key; accumulate errors
+        out: Dict[K, T] = {}
+        for k, payload in self.acc.items():
+            try:
+                out[k] = cast(Any, self.model).model_validate(payload)
+            except Exception as e:  # pragma: no cover - defensive
+                self._finalize_errors.setdefault(k, []).append(str(e))
+        return out
 
     def get(self, key: K) -> Optional[T]:
         return None
 
-    def errors(self) -> Dict[K, list[str]]:
-        return self._errors
+    def update_errors(self) -> Dict[K, list[str]]:
+        return self._update_errors
+
+    def finalize_errors(self) -> Dict[K, list[str]]:
+        return self._finalize_errors
+
+    def record_update_error(self, key: K, reason: str) -> None:
+        self._update_errors.setdefault(key, []).append(reason)
+    def record_finalize_error(self, key: K, reason: str) -> None:
+        self._finalize_errors.setdefault(key, []).append(reason)
 
 
 class PydanticPartialBuilder(InstanceBuilder[T]):
@@ -153,7 +195,14 @@ class PydanticPartialBuilder(InstanceBuilder[T]):
             partial_fields[name] = (optional_ann, None)
         self.partial = _create_model(f"{model.__name__}Partial", **partial_fields)
         self.acc: Dict[K, Dict[str, Any]] = {}
-        self._errors: Dict[K, list[str]] = {}
+        self._update_errors: Dict[K, list[str]] = {}
+        self._finalize_errors: Dict[K, list[str]] = {}
+
+    def known_fields(self) -> set[str]:
+        fields = getattr(self.model, "model_fields", None)
+        if fields is None:
+            return set()
+        return set(fields.keys())
 
     def update(self, key: K, updates: Mapping[str, Any]) -> None:
         bucket = self.acc.setdefault(key, {})
@@ -161,17 +210,31 @@ class PydanticPartialBuilder(InstanceBuilder[T]):
         try:
             cast(Any, self.partial).model_validate(merged)
         except Exception as e:  # pragma: no cover - defensive
-            self._errors.setdefault(key, []).append(str(e))
+            self._update_errors.setdefault(key, []).append(str(e))
         bucket.update(updates)
 
     def finalize_all(self) -> Dict[K, T]:
-        return {k: cast(Any, self.model).model_validate(v) for k, v in self.acc.items()}
+        out: Dict[K, T] = {}
+        for k, payload in self.acc.items():
+            try:
+                out[k] = cast(Any, self.model).model_validate(payload)
+            except Exception as e:  # pragma: no cover - defensive
+                self._finalize_errors.setdefault(k, []).append(str(e))
+        return out
 
     def get(self, key: K) -> Optional[T]:
         return None
 
-    def errors(self) -> Dict[K, list[str]]:
-        return self._errors
+    def update_errors(self) -> Dict[K, list[str]]:
+        return self._update_errors
+
+    def finalize_errors(self) -> Dict[K, list[str]]:
+        return self._finalize_errors
+
+    def record_update_error(self, key: K, reason: str) -> None:
+        self._update_errors.setdefault(key, []).append(reason)
+    def record_finalize_error(self, key: K, reason: str) -> None:
+        self._finalize_errors.setdefault(key, []).append(reason)
 
 
 # -----------------------------
@@ -183,7 +246,8 @@ class TypedDictBuilder(InstanceBuilder[T]):
     def __init__(self, factory: Callable[[Dict[str, Any]], T], *, field_type_checkers: Optional[Mapping[str, Callable[[Any], Any]]] = None) -> None:
         self.factory = factory
         self.acc: Dict[K, Dict[str, Any]] = {}
-        self._errors: Dict[K, list[str]] = {}
+        self._update_errors: Dict[K, list[str]] = {}
+        self._finalize_errors: Dict[K, list[str]] = {}
         # Optional per-field validators (callables that may raise)
         self._checkers: Mapping[str, Callable[[Any], Any]] = field_type_checkers or {}
 
@@ -195,17 +259,35 @@ class TypedDictBuilder(InstanceBuilder[T]):
                 try:
                     v = checker(v)
                 except Exception as e:  # pragma: no cover - defensive
-                    self._errors.setdefault(key, []).append(f"field {k}: {e}")
+                    self._update_errors.setdefault(key, []).append(f"field {k}: {e}")
             bucket[k] = v
 
     def finalize_all(self) -> Dict[K, T]:
-        return {k: self.factory(v) for k, v in self.acc.items()}
+        out: Dict[K, T] = {}
+        for k, payload in self.acc.items():
+            try:
+                out[k] = self.factory(payload)
+            except Exception as e:  # pragma: no cover - defensive
+                self._finalize_errors.setdefault(k, []).append(str(e))
+        return out
 
     def get(self, key: K) -> Optional[T]:
         return None
 
-    def errors(self) -> Dict[K, list[str]]:
-        return self._errors
+    def known_fields(self) -> set[str]:
+        # We only know about fields with explicit type checkers; treat others as allowed
+        return set(self._checkers.keys())
+
+    def update_errors(self) -> Dict[K, list[str]]:
+        return self._update_errors
+
+    def finalize_errors(self) -> Dict[K, list[str]]:
+        return self._finalize_errors
+
+    def record_update_error(self, key: K, reason: str) -> None:
+        self._update_errors.setdefault(key, []).append(reason)
+    def record_finalize_error(self, key: K, reason: str) -> None:
+        self._finalize_errors.setdefault(key, []).append(reason)
 
 
 # -----------------------------
