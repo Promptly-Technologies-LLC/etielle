@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.0.1 (2025-10-14)
+
+### Bug Fixes
+
+- Gate artifact upload
+  ([`5e5bda1`](https://github.com/Promptly-Technologies-LLC/etielle/commit/5e5bda1ee36397b3913ab3a1cbc58b28e5d3f458))
+
+
 ## v1.0.0 (2025-10-14)
 
 ### Bug Fixes
