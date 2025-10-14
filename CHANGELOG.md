@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.3.0 (2025-10-14)
+
+### Features
+
+- Mutation-based emit
+  ([`21dbbe6`](https://github.com/Promptly-Technologies-LLC/etielle/commit/21dbbe60c4feae493eec00c675dc0f698069d969))
+
+
 ## v1.2.0 (2025-10-14)
 
 ### Features
