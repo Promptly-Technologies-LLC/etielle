@@ -60,6 +60,7 @@ jobs:
           tag: ${{ steps.release.outputs.tag }}
 
       - name: Upload | Distribution Artifacts
+        if: steps.release.outputs.released == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: distribution-artifacts
