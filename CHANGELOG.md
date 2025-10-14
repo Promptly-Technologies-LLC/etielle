@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.0.6 (2025-10-14)
+
+### Bug Fixes
+
+- Configure pyproject version stamping
+  ([`49c4e07`](https://github.com/Promptly-Technologies-LLC/etielle/commit/49c4e07af4cf72c446c3847399abe776e515ab85))
+
+
 ## v1.0.5 (2025-10-14)
 
 ### Bug Fixes
