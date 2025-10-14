@@ -16,10 +16,10 @@ packages = ["etielle"]
 [dependency-groups]
 dev = [
     "ipykernel>=6.30.1",
+    "mypy>=1.18.2",
     "pytest>=8.4.2",
     "python-semantic-release>=10.4.1",
     "quarto>=0.1.0",
-    "ty>=0.0.1a22",
 ]
 
 [tool.semantic_release]

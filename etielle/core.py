@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Mapping, Optional, Protocol, Sequence, Tuple, TypeVar, Generic
+from typing import Any, Callable, Mapping, Optional, Protocol, Sequence, Tuple, TypeVar, Generic, cast
 
 
 # -----------------------------
@@ -32,10 +32,11 @@ class Context:
     parent: Optional["Context"]
     key: Optional[str]
     index: Optional[int]
-    slots: Mapping[str, Any] = field(default_factory=dict)
+    slots: dict[str, Any] = field(default_factory=dict)
 
 
-T = TypeVar("T")
+T = TypeVar("T", covariant=True)
+U = TypeVar("U")
 
 
 class Transform(Protocol, Generic[T]):
@@ -45,6 +46,93 @@ class Transform(Protocol, Generic[T]):
     """
     def __call__(self, ctx: Context) -> T:  # pragma: no cover - interface only
         ...
+
+
+# -----------------------------
+# Field selector API
+# -----------------------------
+
+
+Attr = Callable[[T], U]
+
+
+class _SelectorInvalid(Exception):
+    def __init__(self, reason: str, path: Tuple[str, ...] | None = None) -> None:
+        self.reason = reason
+        self.path = path or ()
+
+
+class _FieldTrace:
+    """
+    Lightweight tracer that records attribute access chains and rejects operations
+    other than attribute access. This allows us to validate that a selector lambda
+    consists of exactly one attribute access, with no method calls, indexing, or
+    chained attributes.
+    """
+
+    __slots__ = ("_path",)
+
+    def __init__(self, path: Tuple[str, ...] = ()) -> None:
+        self._path = path
+
+    # Attribute access builds up the path
+    def __getattr__(self, name: str) -> "_FieldTrace":
+        return _FieldTrace(self._path + (name,))
+
+    # Reject any attempts to call the selected attribute
+    def __call__(self, *args: Any, **kwargs: Any) -> Any:  # pragma: no cover - defensive
+        raise _SelectorInvalid("method call on attribute selector", self._path)
+
+    # Reject indexing / item access
+    def __getitem__(self, _: Any) -> Any:  # pragma: no cover - defensive
+        raise _SelectorInvalid("indexing on attribute selector", self._path)
+
+    # Common coercions that might be attempted inside the lambda
+    def __bool__(self) -> bool:  # pragma: no cover - defensive
+        raise _SelectorInvalid("truthiness check on attribute selector", self._path)
+
+    def __str__(self) -> str:  # pragma: no cover - defensive
+        raise _SelectorInvalid("stringification of attribute selector", self._path)
+
+    def __int__(self) -> int:  # pragma: no cover - defensive
+        raise _SelectorInvalid("numeric coercion of attribute selector", self._path)
+
+    # Expose path for inspection after lambda returns
+    @property
+    def path(self) -> Tuple[str, ...]:
+        return self._path
+
+
+def field_of(model: type[T], selector: Attr[T, Any]) -> str:
+    """
+    Resolve a model field name from a type-checked selector lambda.
+
+    Example:
+        field_of(UserModel, lambda u: u.email) -> "email"
+
+    Constraints enforced at runtime:
+      - Exactly one attribute access must occur.
+      - No method calls, indexing, or chained attribute access.
+    """
+
+    trace = cast(Any, _FieldTrace())
+    try:
+        result = selector(trace)
+    except _SelectorInvalid as err:
+        path_str = ".".join(err.path) if err.path else "<root>"
+        raise ValueError(f"Invalid field selector: {err.reason} at '{path_str}'") from None
+
+    if isinstance(result, _FieldTrace):
+        if len(result.path) == 1:
+            return result.path[0]
+        if len(result.path) == 0:
+            raise ValueError("The selector must access exactly one attribute")
+        raise ValueError(
+            f"The selector must access exactly one attribute; got chained path '{'.'.join(result.path)}'"
+        )
+
+    # If the lambda returned a non-trace value, then it didn't simply return an attribute access
+    raise ValueError("The selector must directly return a single attribute access")
 
 
 @dataclass(frozen=True)

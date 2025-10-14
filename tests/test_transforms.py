@@ -15,6 +15,22 @@ from etielle.transforms import (
     len_of,
 )
 
+from typing import TypedDict
+
+
+class _Grand(TypedDict):
+    id: str
+
+
+class _Child(TypedDict):
+    id: str
+    grand: _Grand
+
+
+class _Root(TypedDict):
+    id: str
+    child: _Child
+
 
 def make_ctx(
     *,
@@ -47,7 +63,7 @@ def test_get_with_dot_paths_and_list_indices():
 
 
 def test_get_from_root_and_parent():
-    root = {"id": "root-1", "child": {"id": "child-1", "grand": {"id": "grand-1"}}}
+    root: _Root = {"id": "root-1", "child": {"id": "child-1", "grand": {"id": "grand-1"}}}
     parent_ctx = make_ctx(root=root, node=root["child"], path=("child",))
     ctx = make_ctx(root=root, node=root["child"]["grand"], path=("child", "grand"), parent=parent_ctx)
 

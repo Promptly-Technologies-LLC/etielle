@@ -1,0 +1,93 @@
+from __future__ import annotations
+
+import pytest
+
+from etielle.core import field_of, Field, MappingSpec, TableEmit, TraversalSpec
+from etielle.transforms import get
+
+
+class UserModel:
+    id: str
+    email: str
+    name: str
+
+    # Deliberately define a method to ensure method calls are rejected
+    def domain(self) -> str:  # pragma: no cover - test helper only
+        return self.email.split("@")[-1]
+
+
+def test_field_of_happy_path_single_attribute():
+    assert field_of(UserModel, lambda u: u.email) == "email"
+    assert field_of(UserModel, lambda u: u.id) == "id"
+
+
+@pytest.mark.parametrize(
+    "selector, expected_message",
+    [
+        (lambda u: u.email.split("@")[0], "Invalid field selector: method call on attribute selector"),
+        (lambda u: u.domain(), "Invalid field selector: method call on attribute selector"),
+        (lambda u: u.email.lower(), "Invalid field selector: method call on attribute selector"),
+        (lambda u: (u.email), None),  # valid – just parentheses
+    ],
+)
+def test_field_of_invalid_patterns(selector, expected_message):
+    if expected_message is None:
+        # Should succeed
+        assert field_of(UserModel, selector) == "email"
+        return
+    with pytest.raises(ValueError) as err:
+        field_of(UserModel, selector)
+    assert expected_message in str(err.value)
+
+
+def test_field_of_rejects_chained_attributes():
+    with pytest.raises(ValueError) as err:
+        field_of(UserModel, lambda u: u.name.title)  # chained attribute (attribute of attribute)
+    assert "must access exactly one attribute" in str(err.value)
+
+
+def test_field_of_rejects_indexing():
+    with pytest.raises(ValueError) as err:
+        field_of(UserModel, lambda u: u.email[0])
+    assert "indexing on attribute selector" in str(err.value)
+
+
+def test_integration_with_field_and_executor():
+    data = {
+        "users": [
+            {"id": "u1", "email": "ada@example.com", "name": "Ada"},
+            {"id": "u2", "email": "linus@example.com", "name": "Linus"},
+        ]
+    }
+
+    spec = MappingSpec(
+        traversals=[
+            TraversalSpec(
+                path=["users"],
+                iterate_items=False,
+                emits=[
+                    TableEmit(
+                        table="users",
+                        join_keys=[get("id")],
+                        fields=[
+                            Field(field_of(UserModel, lambda u: u.id), get("id")),
+                            Field(field_of(UserModel, lambda u: u.email), get("email")),
+                            Field(field_of(UserModel, lambda u: u.name), get("name")),
+                        ],
+                    )
+                ],
+            )
+        ]
+    )
+
+    # Lazy import to avoid cycle in type checkers; the runtime import is fine
+    from etielle.executor import run_mapping
+
+    result = run_mapping(data, spec)
+    result = sorted(result["users"], key=lambda r: r["id"])
+    assert result == [
+        {"id": "u1", "email": "ada@example.com", "name": "Ada"},
+        {"id": "u2", "email": "linus@example.com", "name": "Linus"},
+    ]
+
+
