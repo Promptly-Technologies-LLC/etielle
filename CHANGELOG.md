@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.0.4 (2025-10-14)
+
+### Bug Fixes
+
+- Correctly use PyPi env for publish job
+  ([`2dd6cea`](https://github.com/Promptly-Technologies-LLC/etielle/commit/2dd6cea8ff3fd99a5ac64d627721bcdac394750a))
+
+
 ## v1.0.3 (2025-10-14)
 
 ### Bug Fixes
