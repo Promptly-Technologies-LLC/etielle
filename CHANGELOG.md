@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.0.2 (2025-10-14)
+
+### Bug Fixes
+
+- Restore build step
+  ([`4250642`](https://github.com/Promptly-Technologies-LLC/etielle/commit/42506424365d86a321acc044e0363840da0dc6f3))
+
+
 ## v1.0.1 (2025-10-14)
 
 ### Bug Fixes
