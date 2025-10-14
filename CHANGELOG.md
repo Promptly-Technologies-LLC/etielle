@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.1.0 (2025-10-14)
+
+### Features
+
+- Implement field selectors API
+  ([`e099dbe`](https://github.com/Promptly-Technologies-LLC/etielle/commit/e099dbe9dda503fc745370dcfe9850918641ac35))
+
+
 ## v1.0.6 (2025-10-14)
 
 ### Bug Fixes
