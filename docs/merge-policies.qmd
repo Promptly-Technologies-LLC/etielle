@@ -18,10 +18,11 @@ Default behavior is last-write-wins. Policies let you sum counters, append/exten
 
 ### Example
 
-``` python
+``` {python}
 from etielle.instances import InstanceEmit, FieldSpec, PydanticBuilder, AddPolicy, AppendPolicy
 from etielle.transforms import get, literal
-from etielle.core import field_of
+from etielle.core import field_of, MappingSpec, TraversalSpec
+from etielle.executor import run_mapping
 from pydantic import BaseModel
 
 class User(BaseModel):
@@ -43,6 +44,25 @@ emit = InstanceEmit[User](
         "tags": AppendPolicy(),
     },
 )
+
+root = {"users": [{"id": "u1"}]}
+emit2 = InstanceEmit[User](
+    table="users",
+    join_keys=[get("id")],
+    fields=[
+        FieldSpec(selector=field_of(User, lambda u: u.login_count), transform=literal(1)),
+        FieldSpec(selector=field_of(User, lambda u: u.tags), transform=literal("beta")),
+    ],
+    builder=PydanticBuilder(User),
+)
+mapping = MappingSpec(traversals=[
+    TraversalSpec(path=["users"], iterate_items=False, emits=[emit]),
+    TraversalSpec(path=["users"], iterate_items=False, emits=[emit2]),
+])
+
+res = run_mapping(root, mapping)
+u = list(res["users"].instances.values())[0]
+print(u.login_count, u.tags)
 ```
 
 ### Behavior and caveats
@@ -50,5 +70,3 @@ emit = InstanceEmit[User](
 - Policies are applied during update time per key/field.
 - Type mismatches are recorded as update errors; the row continues.
 - Deterministic ordering follows traversal arrival order.
-
-

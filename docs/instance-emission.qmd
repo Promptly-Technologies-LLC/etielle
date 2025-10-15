@@ -12,7 +12,7 @@ Emit class instances directly, with progressive construction and validation, by 
 
 ### Builders
 
-``` python
+``` {python}
 from etielle.instances import InstanceEmit, FieldSpec, PydanticBuilder, TypedDictBuilder
 from etielle.transforms import get
 from etielle.core import MappingSpec, TraversalSpec, field_of
@@ -31,11 +31,18 @@ emit = InstanceEmit[User](
     ],
     builder=PydanticBuilder(User),
 )
+
+# Minimal runnable demo
+root = {"users": [{"id": "u1", "email": "alice@example.com"}]}
+mapping = MappingSpec(traversals=[TraversalSpec(path=["users"], iterate_items=False, emits=[emit])])
+from etielle.executor import run_mapping
+res = run_mapping(root, mapping)
+print(sorted([(k, v.email) for k, v in res["users"].instances.items()]))
 ```
 
 TypedDict without Pydantic:
 
-``` python
+``` {python}
 from typing import TypedDict
 
 class UserTD(TypedDict):
@@ -51,13 +58,20 @@ emit_td = InstanceEmit[UserTD](
     ],
     builder=TypedDictBuilder(lambda d: UserTD(**d)),
 )
+
+# Minimal runnable demo
+root = {"users": [{"id": "u1", "email": "alice@example.com"}]}
+mapping = MappingSpec(traversals=[TraversalSpec(path=["users"], iterate_items=False, emits=[emit_td])])
+from etielle.executor import run_mapping
+res = run_mapping(root, mapping)
+print(list(res["users"].instances.values()))
 ```
 
 ### Strictness and error collection
 
 Builders collect update-time and finalize-time errors; the executor returns them in `MappingResult` per table.
 
-``` python
+``` {python}
 from etielle.executor import run_mapping
 
 result = run_mapping(root, MappingSpec(traversals=[TraversalSpec(
@@ -78,5 +92,3 @@ Use merge policies to override last-write-wins per field (see Merge policies pag
 - `InstanceEmit[T]`
 - `FieldSpec[T]`
 - `PydanticBuilder`, `PydanticPartialBuilder`, `TypedDictBuilder`
-
-

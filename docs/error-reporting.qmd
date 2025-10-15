@@ -32,9 +32,34 @@ When using string field names, the executor suggests closest matches using `diff
 
 ### Example
 
-``` python
-from etielle.executor import run_mapping
+``` {python}
+#| echo: false
 from etielle.core import MappingSpec, TraversalSpec
+from etielle.instances import InstanceEmit, FieldSpec, PydanticBuilder
+from etielle.transforms import get
+from pydantic import BaseModel
+
+class User(BaseModel):
+    id: str
+    email: str
+
+root = {"users": [{"id": "u1", "email": "alice@example.com"}]}
+emit = InstanceEmit[User](
+    table="users",
+    join_keys=[get("id")],
+    fields=[
+        FieldSpec(selector="id", transform=get("id")),
+        FieldSpec(selector="email", transform=get("email")),
+    ],
+    builder=PydanticBuilder(User),
+)
+mapping = MappingSpec(traversals=[TraversalSpec(path=["users"], iterate_items=False, emits=[emit])])
+```
+
+``` {python}
+# Not shown: setup of root/emit/mapping
+
+from etielle.executor import run_mapping
 
 results = run_mapping(root, mapping)
 users = results["users"]

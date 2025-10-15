@@ -8,14 +8,14 @@ Field selectors let you refer to model fields in a way static type checkers can 
 
 Use `field_of(Model, lambda m: m.field)` to produce the string field name at runtime. Type checkers validate the lambda, catching typos early.
 
-``` python
+``` {python}
 from etielle.core import field_of
 
 class User:
     id: str
     email: str
 
-assert field_of(User, lambda u: u.email) == "email"
+print(field_of(User, lambda u: u.email))
 ```
 
 ### Constraints (enforced at runtime)
@@ -23,14 +23,14 @@ assert field_of(User, lambda u: u.email) == "email"
 - Exactly one attribute access must occur.
 - No method calls, no indexing, no chained attributes.
 
-``` python
+``` {python}
 from etielle.core import field_of
 
 class Model:
     x: int
 
 # OK
-field_of(Model, lambda m: m.x)
+print(field_of(Model, lambda m: m.x))
 
 # Raises ValueError (method call)
 try:
@@ -49,7 +49,7 @@ except ValueError:
 
 Selectors are used with `FieldSpec` inside `InstanceEmit`. They are resolved against the builder’s model.
 
-``` python
+``` {python}
 from etielle.core import MappingSpec, TraversalSpec, field_of
 from etielle.transforms import get
 from etielle.instances import InstanceEmit, FieldSpec, PydanticBuilder
@@ -97,5 +97,3 @@ emit = InstanceEmit[dict](
 - `etielle.core.field_of(model, selector)` → `str` field name
 - `FieldSpec[T](selector: Callable[[T], Any] | str, transform)`
 - Resolved through builders with a `model` (e.g., `PydanticBuilder`).
-
-

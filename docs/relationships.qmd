@@ -8,9 +8,62 @@ Build relationships in-memory using composite keys, then flush once. This avoids
 
 Use `ManyToOneSpec` and compute child→parent keys by re-walking traversals, then bind via object references.
 
-``` python
+``` {python}
+#| echo: false
 from etielle.relationships import ManyToOneSpec, compute_relationship_keys, bind_many_to_one
 from etielle.executor import run_mapping
+from etielle.transforms import get, get_from_parent
+from etielle.core import MappingSpec, TraversalSpec, field_of
+from etielle.instances import InstanceEmit, FieldSpec, PydanticBuilder
+from pydantic import BaseModel
+
+class User(BaseModel):
+    id: str
+    email: str | None = None
+
+class Post(BaseModel):
+    id: str
+    title: str
+    user: User | None = None
+
+root = {
+  "users": [
+    {"id": "u1", "email": "alice@example.com", "posts": [
+      {"id": "p1", "title": "Hello"},
+      {"id": "p2", "title": "World"}
+    ]},
+    {"id": "u2", "email": "bob@example.com", "posts": []}
+  ]
+}
+
+users_emit = InstanceEmit[User](
+    table="users",
+    join_keys=[get("id")],
+    fields=[
+        FieldSpec(selector=field_of(User, lambda u: u.id), transform=get("id")),
+        FieldSpec(selector=field_of(User, lambda u: u.email), transform=get("email")),
+    ],
+    builder=PydanticBuilder(User),
+)
+
+posts_emit = InstanceEmit[Post](
+    table="posts",
+    join_keys=[get("id")],
+    fields=[
+        FieldSpec(selector=field_of(Post, lambda p: p.id), transform=get("id")),
+        FieldSpec(selector=field_of(Post, lambda p: p.title), transform=get("title")),
+    ],
+    builder=PydanticBuilder(Post),
+)
+
+mapping = MappingSpec(traversals=[
+    TraversalSpec(path=["users"], iterate_items=False, emits=[users_emit]),
+    TraversalSpec(path=["users"], iterate_items=False, inner_path=["posts"], inner_iterate_items=False, emits=[posts_emit]),
+])
+```
+
+``` {python}
+# Not shown: setup of models/emits/mapping/root
 
 relationships = [
     ManyToOneSpec(
@@ -24,6 +77,7 @@ relationships = [
 results = run_mapping(root, mapping)
 sidecar = compute_relationship_keys(root, mapping.traversals, relationships)
 bind_many_to_one(results, relationships, sidecar)
+print(sorted([(p.id, p.user.id if p.user else None) for p in results["posts"].instances.values()]))
 ```
 
 ### Behavior
@@ -31,5 +85,3 @@ bind_many_to_one(results, relationships, sidecar)
 - Parent indices are built from finalized instances per table.
 - Missing parents aggregate clear errors (optional raise).
 - No mutation of domain objects during key computation (keys stored in sidecar map).
-
-

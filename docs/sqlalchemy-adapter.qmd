@@ -6,39 +6,129 @@ Bind relationships and flush once using the provided adapter utilities.
 
 ### One-shot bind and flush
 
-``` python
-from sqlalchemy.orm import Session
-from etielle.adapters.sqlalchemy_adapter import bind_and_flush
+``` {python}
+#| echo: false
+from typing import Any, Dict
+from sqlalchemy import String, ForeignKey, create_engine
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship, Session
+from etielle.core import MappingSpec, TraversalSpec
+from etielle.transforms import get
+from etielle.instances import InstanceEmit, FieldSpec, TypedDictBuilder
 from etielle.relationships import ManyToOneSpec
+
+class Base(DeclarativeBase):
+    pass
+
+class User(Base):
+    __tablename__ = "users"
+    id: Mapped[str] = mapped_column(String, primary_key=True)
+    name: Mapped[str] = mapped_column(String)
+    posts: Mapped[list["Post"]] = relationship(back_populates="user")
+
+class Post(Base):
+    __tablename__ = "posts"
+    id: Mapped[str] = mapped_column(String, primary_key=True)
+    title: Mapped[str] = mapped_column(String)
+    user_id: Mapped[str | None] = mapped_column(String, ForeignKey("users.id"), nullable=True)
+    user: Mapped[User | None] = relationship(back_populates="posts")
+
+def _user_factory(payload: Dict[str, Any]) -> User:
+    return User(id=str(payload["id"]), name=str(payload.get("name", "")))
+
+def _post_factory(payload: Dict[str, Any]) -> Post:
+    return Post(id=str(payload["id"]), title=str(payload.get("title", "")))
+
+engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+Base.metadata.create_all(engine)
+session = Session(engine)
+
+data = {
+    "users": [
+        {"id": "u1", "name": "Alice"},
+        {"id": "u2", "name": "Bob"},
+    ],
+    "posts": [
+        {"id": "p1", "title": "Hello", "user_id": "u1"},
+        {"id": "p2", "title": "World", "user_id": "u2"},
+    ],
+}
+
+users_emit = InstanceEmit[User](
+    table="users",
+    join_keys=[get("id")],
+    fields=[
+        FieldSpec(selector="id", transform=get("id")),
+        FieldSpec(selector="name", transform=get("name")),
+    ],
+    builder=TypedDictBuilder(_user_factory),
+)
+
+posts_emit = InstanceEmit[Post](
+    table="posts",
+    join_keys=[get("id")],
+    fields=[
+        FieldSpec(selector="id", transform=get("id")),
+        FieldSpec(selector="title", transform=get("title")),
+    ],
+    builder=TypedDictBuilder(_post_factory),
+)
+
+mapping = MappingSpec(
+    traversals=[
+        TraversalSpec(path=["users"], iterate_items=False, emits=[users_emit]),
+        TraversalSpec(path=["posts"], iterate_items=False, emits=[posts_emit]),
+    ]
+)
+
+relationships = [
+    ManyToOneSpec(
+        child_table="posts",
+        parent_table="users",
+        attr="user",
+        child_to_parent_key=[get("user_id")],
+        required=True,
+    )
+]
+```
+
+``` {python}
+# Not shown: setup of database/models/emits/mapping/relationships
+
+from etielle.adapters.sqlalchemy_adapter import bind_and_flush
 
 results = bind_and_flush(
     session,
     root=data,
     mapping=mapping,
-    relationships=[
-        ManyToOneSpec(
-            child_table="posts",
-            parent_table="users",
-            attr="user",
-            child_to_parent_key=[get_from_parent("id")],
-        )
-    ],
+    relationships=relationships,
     add_all_instances=True,
 )
+
+print(len(results["users"].instances), len(results["posts"].instances))
 ```
 
 ### Before-flush hook
 
 Install a one-shot `before_flush` binder when you want to control transaction boundaries yourself.
 
-``` python
+``` {python}
 from etielle.adapters.sqlalchemy_adapter import install_before_flush_binder
 
+# Fresh session for demo
+session = Session(engine)
 install_before_flush_binder(
     session,
     root=data,
     mapping=mapping,
-    relationships=[...],
+    relationships=relationships,
+)
+
+# Trigger flush to execute the binder
+session.flush()
+from sqlalchemy import select
+print(
+    len(session.execute(select(User)).scalars().all()),
+    len(session.execute(select(Post)).scalars().all()),
 )
 ```
 
@@ -46,5 +136,3 @@ install_before_flush_binder(
 
 - Autoflush is temporarily disabled during the one-shot flow to avoid early inserts.
 - Instances are added and flushed once; ORMs populate FKs automatically via relationships.
-
-

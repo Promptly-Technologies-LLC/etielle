@@ -4,6 +4,7 @@ from contextlib import contextmanager
 from typing import Any, Sequence
 
 from sqlalchemy.orm import Session
+from sqlalchemy import event
 
 from ..relationships import ManyToOneSpec, bind_many_to_one, compute_relationship_keys
 from ..core import MappingSpec
@@ -80,7 +81,13 @@ def install_before_flush_binder(
             for mr in results.values():
                 for obj in mr.instances.values():
                     sess.add(obj)
+        # Remove listener after one execution to avoid repeated work
+        try:
+            event.remove(Session, "before_flush", _before_flush)
+        except Exception:
+            pass
 
-    session.dispatch.before_flush.append(_before_flush)  # type: ignore[attr-defined]
+    # Register using SQLAlchemy's event system
+    event.listen(Session, "before_flush", _before_flush)
 
 
