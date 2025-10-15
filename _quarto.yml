@@ -8,20 +8,18 @@ website:
     left:
       - href: index.qmd
         text: Home
-      - text: Guides
-        menu:
-          - href: docs/field-selectors.qmd
-            text: Field selectors
-          - href: docs/instance-emission.qmd
-            text: Instance emission
-          - href: docs/merge-policies.qmd
-            text: Merge policies
-          - href: docs/error-reporting.qmd
-            text: Error reporting
-          - href: docs/relationships.qmd
-            text: Relationships
-          - href: docs/sqlalchemy-adapter.qmd
-            text: SQLAlchemy adapter
+      - href: docs/field-selectors.qmd
+        text: Field selectors
+      - href: docs/instance-emission.qmd
+        text: Instance emission
+      - href: docs/merge-policies.qmd
+        text: Merge policies
+      - href: docs/error-reporting.qmd
+        text: Error reporting
+      - href: docs/relationships.qmd
+        text: Relationships
+      - href: docs/sqlalchemy-adapter.qmd
+        text: SQLAlchemy adapter
     right:
       - icon: github
         href: https://github.com/promptly-technologies-llc/etielle

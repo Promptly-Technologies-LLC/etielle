@@ -42,5 +42,3 @@ print(users.stats)
 print(users.update_errors)
 print(users.finalize_errors)
 ```
-
-

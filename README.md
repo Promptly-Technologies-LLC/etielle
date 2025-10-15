@@ -70,8 +70,10 @@ uv add "etielle[sqlalchemy]"
 
 Let’s start with a simple example. Suppose you have this JSON:
 
-``` json
-{
+``` python
+import json
+
+data = {
   "users": [
     {"id": "u1", "name": "Alice", "posts": [{"id": "p1", "title": "Hello"}, {"id": "p2", "title": "World"}]},
     {"id": "u2", "name": "Bob", "posts": []}
@@ -87,8 +89,6 @@ Here’s the code:
 from etielle.core import MappingSpec, TraversalSpec, TableEmit, Field
 from etielle.transforms import get, get_from_parent
 from etielle.executor import run_mapping
-
-data = { ... }  # Your JSON here
 
 # Traverse users array
 users_traversal = TraversalSpec(
@@ -127,10 +127,35 @@ posts_traversal = TraversalSpec(
 
 spec = MappingSpec(traversals=[users_traversal, posts_traversal])
 result = run_mapping(data, spec)
-print(result)  # Outputs dict of tables with rows
+
+out = {table: list(mr.instances.values()) for table, mr in result.items()}
+print(json.dumps(out, indent=2))
 ```
 
-    {}
+    {
+      "users": [
+        {
+          "id": "u1",
+          "name": "Alice"
+        },
+        {
+          "id": "u2",
+          "name": "Bob"
+        }
+      ],
+      "posts": [
+        {
+          "id": "p1",
+          "user_id": "u1",
+          "title": "Hello"
+        },
+        {
+          "id": "p2",
+          "user_id": "u1",
+          "title": "World"
+        }
+      ]
+    }
 
 Congrats! You’ve mapped your first JSON.
 
