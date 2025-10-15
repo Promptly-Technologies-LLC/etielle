@@ -72,12 +72,29 @@ print(list(res["users"].instances.values()))
 Builders collect update-time and finalize-time errors; the executor returns them in `MappingResult` per table.
 
 ``` {python}
+#| echo: false
+from etielle.core import MappingSpec, TraversalSpec
+from etielle.instances import InstanceEmit, FieldSpec, PydanticBuilder
+from etielle.transforms import get
+
+# Reuse User model defined above; create an emit with an unknown field name to trigger errors
+root_err = {"users": [{"id": "u1", "email": "alice@example.com"}]}
+emit_err = InstanceEmit[User](
+    table="users",
+    join_keys=[get("id")],
+    fields=[
+        FieldSpec(selector="id", transform=get("id")),
+        FieldSpec(selector="emali", transform=get("email")),  # typo: unknown field
+    ],
+    builder=PydanticBuilder(User),
+)
+mapping_err = MappingSpec(traversals=[TraversalSpec(path=["users"], iterate_items=False, emits=[emit_err])])
+```
+
+``` {python}
 from etielle.executor import run_mapping
 
-result = run_mapping(root, MappingSpec(traversals=[TraversalSpec(
-    path=["users"], iterate_items=False, emits=[emit]
-)]))
-
+result = run_mapping(root_err, mapping_err)
 mr = result["users"]
 print(mr.update_errors)
 print(mr.finalize_errors)
