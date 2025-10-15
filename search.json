@@ -67,7 +67,7 @@
     "href": "index.html#transform-cheatsheet",
     "title": "etielle: Declarative JSON-to-Relational Mapping in Python",
     "section": "Transform Cheatsheet",
-    "text": "Transform Cheatsheet\n\nget(path): From current node (dot notation or list, e.g., “user.name” or [“user”, 0]).\nget_from_parent(path, depth=1): From ancestor.\nget_from_root(path): From top-level JSON.\nkey(): Current dict key.\nindex(): Current list index.\nliteral(value): Constant value.\n**concat(*parts)**: Join strings.\n**format_id(*parts, sep=“_“)**: Join non-empty parts with separator.\n**coalesce(*transforms)**: First non-None value.\nlen_of(inner): Length of a list/dict/string.\n\nPro Tip: Transforms are lazy—they run in the “context” of where they’re used, making them super flexible."
+    "text": "Transform Cheatsheet\n\nget(path): From current node (dot notation or list, e.g., “user.name” or [“user”, 0]).\nget_from_parent(path, depth=1): From ancestor.\nget_from_root(path): From top-level JSON.\nkey(): Current dict key.\nindex(): Current list index.\nliteral(value): Constant value.\nconcat(*parts): Join strings.\nformat_id(*parts, sep=\"_\"): Join non-empty parts with separator.\ncoalesce(*transforms): First non-None value.\nlen_of(inner): Length of a list/dict/string.\n\nPro Tip: Transforms are lazy—they run in the “context” of where they’re used, making them super flexible."
   },
   {
     "objectID": "index.html#advanced-topics",

@@ -282,7 +282,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>We want two tables: “users” (id, name) and “posts” (id, user_id, title).</p>
 <p>Here’s the code:</p>
-<div id="b37c63f5" class="cell" data-execution_count="1">
+<div id="7ef90b73" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.core <span class="im">import</span> MappingSpec, TraversalSpec, TableEmit, Field</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.transforms <span class="im">import</span> get, get_from_parent</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.executor <span class="im">import</span> run_mapping</span>
@@ -390,7 +390,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="example-1-composite-keys-for-merging-data" class="level3">
 <h3 class="anchored" data-anchor-id="example-1-composite-keys-for-merging-data">Example 1: Composite Keys for Merging Data</h3>
 <p>Merge user info from two parts of JSON:</p>
-<div id="423235f4" class="cell" data-execution_count="2">
+<div id="c1f4a228" class="cell" data-execution_count="2">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>spec <span class="op">=</span> MappingSpec(traversals<span class="op">=</span>[</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    TraversalSpec(  <span class="co"># Basic user data</span></span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>        path<span class="op">=</span>[<span class="st">"users"</span>],</span>
@@ -417,7 +417,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="example-2-deep-nesting-arbitrary-depth" class="level3">
 <h3 class="anchored" data-anchor-id="example-2-deep-nesting-arbitrary-depth">Example 2: Deep Nesting (Arbitrary Depth)</h3>
 <p>No limit to depth—use longer <code>inner_path</code>:</p>
-<div id="6b2170ae" class="cell" data-execution_count="3">
+<div id="22efe36e" class="cell" data-execution_count="3">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>spec <span class="op">=</span> MappingSpec(traversals<span class="op">=</span>[</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    TraversalSpec(</span>
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>        path<span class="op">=</span>[<span class="st">"servers"</span>],</span>
@@ -442,16 +442,16 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="transform-cheatsheet" class="level2">
 <h2 class="anchored" data-anchor-id="transform-cheatsheet">Transform Cheatsheet</h2>
 <ul>
-<li><strong>get(path)</strong>: From current node (dot notation or list, e.g., “user.name” or [“user”, 0]).</li>
-<li><strong>get_from_parent(path, depth=1)</strong>: From ancestor.</li>
-<li><strong>get_from_root(path)</strong>: From top-level JSON.</li>
-<li><strong>key()</strong>: Current dict key.</li>
-<li><strong>index()</strong>: Current list index.</li>
-<li><strong>literal(value)</strong>: Constant value.</li>
-<li>**concat(*parts)**: Join strings.</li>
-<li>**format_id(*parts, sep=“_“)**: Join non-empty parts with separator.</li>
-<li>**coalesce(*transforms)**: First non-None value.</li>
-<li><strong>len_of(inner)</strong>: Length of a list/dict/string.</li>
+<li><strong><code>get(path)</code></strong>: From current node (dot notation or list, e.g., “user.name” or [“user”, 0]).</li>
+<li><strong><code>get_from_parent(path, depth=1)</code></strong>: From ancestor.</li>
+<li><strong><code>get_from_root(path)</code></strong>: From top-level JSON.</li>
+<li><strong><code>key()</code></strong>: Current dict key.</li>
+<li><strong><code>index()</code></strong>: Current list index.</li>
+<li><strong><code>literal(value)</code></strong>: Constant value.</li>
+<li><strong><code>concat(*parts)</code></strong>: Join strings.</li>
+<li><strong><code>format_id(*parts, sep="_")</code></strong>: Join non-empty parts with separator.</li>
+<li><strong><code>coalesce(*transforms)</code></strong>: First non-None value.</li>
+<li><strong><code>len_of(inner)</code></strong>: Length of a list/dict/string.</li>
 </ul>
 <p>Pro Tip: Transforms are lazy—they run in the “context” of where they’re used, making them super flexible.</p>
 </section>
