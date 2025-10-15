@@ -56,6 +56,14 @@ uv pip install etielle
 pip install etielle
 ```
 
+### Optional: SQLAlchemy adapter
+
+If you plan to bind relationships and flush via SQLAlchemy in one go, install the optional extra:
+
+``` bash
+uv add "etielle[sqlalchemy]"
+```
+
 ## Quick Start: Your First Mapping
 
 Let’s start with a simple example. Suppose you have this JSON:

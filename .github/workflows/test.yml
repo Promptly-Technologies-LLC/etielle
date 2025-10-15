@@ -27,7 +27,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          uv sync
+          uv sync --all-extras
           uv run pytest tests
     outputs:
       matrix: ${{ toJson(matrix) }}

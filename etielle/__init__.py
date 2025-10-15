@@ -47,3 +47,13 @@ __all__ = [
     "FirstNonNullPolicy",
 ]
 
+# relationships (core)
+from .relationships import ManyToOneSpec, compute_relationship_keys, bind_many_to_one
+
+__all__ += [
+    # relationships
+    "ManyToOneSpec",
+    "compute_relationship_keys",
+    "bind_many_to_one",
+]
+
