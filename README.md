@@ -1,5 +1,6 @@
 # `etielle`: Declarative JSON-to-Relational Mapping in Python
 
+
 `etielle` is a simple, powerful Python library for reshaping nested
 [JSON](https://en.wikipedia.org/wiki/JSON) data, typically from an API,
 into relational tables that fit your database schema. Think of `etielle`
