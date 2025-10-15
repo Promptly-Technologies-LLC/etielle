@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.25">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>etielle: Declarative JSON-to-Relational Mapping in Python</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<script src="site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-7b89279ff1a6dce999919e0e67d4d9ec.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap-0b37c64f34216b628666a8dac638b53b.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="./index.html" class="navbar-brand navbar-brand-logo">
+    </a>
+    <a class="navbar-brand" href="./index.html">
+    <span class="navbar-title"><code>etielle</code>: Declarative JSON-to-Relational Mapping in Python</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link active" href="./index.html" aria-current="page"> 
+<span class="menu-text">Home</span></a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-guides" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Guides</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-guides">    
+        <li>
+    <a class="dropdown-item" href="./docs/field-selectors.html">
+ <span class="dropdown-text">Field selectors</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="./docs/instance-emission.html">
+ <span class="dropdown-text">Instance emission</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="./docs/merge-policies.html">
+ <span class="dropdown-text">Merge policies</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="./docs/error-reporting.html">
+ <span class="dropdown-text">Error reporting</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="./docs/relationships.html">
+ <span class="dropdown-text">Relationships</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="./docs/sqlalchemy-adapter.html">
+ <span class="dropdown-text">SQLAlchemy adapter</span></a>
+  </li>  
+    </ul>
+  </li>
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/promptly-technologies-llc/etielle"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#why-use-etielle-for-beginners" id="toc-why-use-etielle-for-beginners" class="nav-link active" data-scroll-target="#why-use-etielle-for-beginners">Why Use <code>etielle</code>? (For Beginners)</a></li>
+  <li><a href="#installation" id="toc-installation" class="nav-link" data-scroll-target="#installation">Installation</a>
+  <ul class="collapse">
+  <li><a href="#with-uv-recommended-for-speed" id="toc-with-uv-recommended-for-speed" class="nav-link" data-scroll-target="#with-uv-recommended-for-speed">With uv (Recommended for Speed)</a></li>
+  <li><a href="#with-pip" id="toc-with-pip" class="nav-link" data-scroll-target="#with-pip">With pip</a></li>
+  <li><a href="#optional-sqlalchemy-adapter" id="toc-optional-sqlalchemy-adapter" class="nav-link" data-scroll-target="#optional-sqlalchemy-adapter">Optional: SQLAlchemy adapter</a></li>
+  </ul></li>
+  <li><a href="#quick-start-your-first-mapping" id="toc-quick-start-your-first-mapping" class="nav-link" data-scroll-target="#quick-start-your-first-mapping">Quick Start: Your First Mapping</a></li>
+  <li><a href="#core-concepts-breaking-it-down" id="toc-core-concepts-breaking-it-down" class="nav-link" data-scroll-target="#core-concepts-breaking-it-down">Core Concepts: Breaking It Down</a>
+  <ul class="collapse">
+  <li><a href="#context-your-location-in-the-json" id="toc-context-your-location-in-the-json" class="nav-link" data-scroll-target="#context-your-location-in-the-json">1. Context: Your “Location” in the JSON</a></li>
+  <li><a href="#transforms-smart-data-extractors" id="toc-transforms-smart-data-extractors" class="nav-link" data-scroll-target="#transforms-smart-data-extractors">2. Transforms: Smart Data Extractors</a></li>
+  <li><a href="#traversalspec-how-to-walk-the-json" id="toc-traversalspec-how-to-walk-the-json" class="nav-link" data-scroll-target="#traversalspec-how-to-walk-the-json">3. TraversalSpec: How to Walk the JSON</a></li>
+  <li><a href="#tableemit-and-fields-building-your-tables" id="toc-tableemit-and-fields-building-your-tables" class="nav-link" data-scroll-target="#tableemit-and-fields-building-your-tables">4. TableEmit and Fields: Building Your Tables</a></li>
+  <li><a href="#executor-running-it-all" id="toc-executor-running-it-all" class="nav-link" data-scroll-target="#executor-running-it-all">5. Executor: Running It All</a></li>
+  </ul></li>
+  <li><a href="#detailed-examples" id="toc-detailed-examples" class="nav-link" data-scroll-target="#detailed-examples">Detailed Examples</a>
+  <ul class="collapse">
+  <li><a href="#example-1-composite-keys-for-merging-data" id="toc-example-1-composite-keys-for-merging-data" class="nav-link" data-scroll-target="#example-1-composite-keys-for-merging-data">Example 1: Composite Keys for Merging Data</a></li>
+  <li><a href="#example-2-deep-nesting-arbitrary-depth" id="toc-example-2-deep-nesting-arbitrary-depth" class="nav-link" data-scroll-target="#example-2-deep-nesting-arbitrary-depth">Example 2: Deep Nesting (Arbitrary Depth)</a></li>
+  </ul></li>
+  <li><a href="#transform-cheatsheet" id="toc-transform-cheatsheet" class="nav-link" data-scroll-target="#transform-cheatsheet">Transform Cheatsheet</a></li>
+  <li><a href="#advanced-topics" id="toc-advanced-topics" class="nav-link" data-scroll-target="#advanced-topics">Advanced Topics</a></li>
+  <li><a href="#roadmap-ideas" id="toc-roadmap-ideas" class="nav-link" data-scroll-target="#roadmap-ideas">Roadmap Ideas</a></li>
+  <li><a href="#license" id="toc-license" class="nav-link" data-scroll-target="#license">License</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title"><code>etielle</code>: Declarative JSON-to-Relational Mapping in Python</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<p><code>etielle</code> is a simple, powerful Python library for reshaping nested <a href="https://en.wikipedia.org/wiki/JSON">JSON</a> data, typically from an API, into relational tables that fit your database schema. Think of <code>etielle</code> as a “JSON extractor” that you program with clear instructions: “Go here in the JSON, pull this data, and put it in that table.” The library’s name is a play on ETL (“Extract, Transform, Load”), which is the technical term for this set of operations.</p>
+<ul>
+<li><strong>Repository</strong>: <a href="https://github.com/Promptly-Technologies-LLC/etielle">Promptly-Technologies-LLC/etielle</a></li>
+<li><strong>PyPI</strong>: <a href="https://pypi.org/project/etielle/"><code>etielle</code></a></li>
+<li><strong>Python</strong>: ≥ 3.13</li>
+</ul>
+<section id="why-use-etielle-for-beginners" class="level2">
+<h2 class="anchored" data-anchor-id="why-use-etielle-for-beginners">Why Use <code>etielle</code>? (For Beginners)</h2>
+<p>JSON data from APIs (Application Program Interfaces—web services that typically return JSON) is often deeply nested and requires complicated parsing. <code>etielle</code> helps by:</p>
+<ul>
+<li><strong>Declaring what you want</strong>: Write Python code to describe your tables and how to fill them.</li>
+<li><strong>Traversing nested structures</strong>: Walk through arrays-within-dictionaries-within-arrays to any arbitrary depth.</li>
+<li><strong>Performing arbitrary transformations</strong>: Use the provided functions to perform common operations (like getting the key or index of the current item or its parent), or define your own.</li>
+<li><strong>Building relationships</strong>: Use “keys” to link data across different parts of the JSON, like foreign keys in a database.</li>
+<li><strong>Being beginner-friendly</strong>: Everything is type-safe (Python checks your types), composable (build complex things from simple pieces), and easy to debug.</li>
+</ul>
+</section>
+<section id="installation" class="level2">
+<h2 class="anchored" data-anchor-id="installation">Installation</h2>
+<p>We recommend using <code>uv</code> for faster installs, but <code>pip</code> works too.</p>
+<section id="with-uv-recommended-for-speed" class="level3">
+<h3 class="anchored" data-anchor-id="with-uv-recommended-for-speed">With uv (Recommended for Speed)</h3>
+<p>For your project:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> add etielle</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>For one-off use:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> pip install etielle</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="with-pip" class="level3">
+<h3 class="anchored" data-anchor-id="with-pip">With pip</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">pip</span> install etielle</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="optional-sqlalchemy-adapter" class="level3">
+<h3 class="anchored" data-anchor-id="optional-sqlalchemy-adapter">Optional: SQLAlchemy adapter</h3>
+<p>If you plan to bind relationships and flush via SQLAlchemy in one go, install the optional extra:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> add <span class="st">"etielle[sqlalchemy]"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+</section>
+<section id="quick-start-your-first-mapping" class="level2">
+<h2 class="anchored" data-anchor-id="quick-start-your-first-mapping">Quick Start: Your First Mapping</h2>
+<p>Let’s start with a simple example. Suppose you have this JSON:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode json code-with-copy"><code class="sourceCode json"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">"users"</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">{</span><span class="dt">"id"</span><span class="fu">:</span> <span class="st">"u1"</span><span class="fu">,</span> <span class="dt">"name"</span><span class="fu">:</span> <span class="st">"Alice"</span><span class="fu">,</span> <span class="dt">"posts"</span><span class="fu">:</span> <span class="ot">[</span><span class="fu">{</span><span class="dt">"id"</span><span class="fu">:</span> <span class="st">"p1"</span><span class="fu">,</span> <span class="dt">"title"</span><span class="fu">:</span> <span class="st">"Hello"</span><span class="fu">}</span><span class="ot">,</span> <span class="fu">{</span><span class="dt">"id"</span><span class="fu">:</span> <span class="st">"p2"</span><span class="fu">,</span> <span class="dt">"title"</span><span class="fu">:</span> <span class="st">"World"</span><span class="fu">}</span><span class="ot">]</span><span class="fu">}</span><span class="ot">,</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">{</span><span class="dt">"id"</span><span class="fu">:</span> <span class="st">"u2"</span><span class="fu">,</span> <span class="dt">"name"</span><span class="fu">:</span> <span class="st">"Bob"</span><span class="fu">,</span> <span class="dt">"posts"</span><span class="fu">:</span> <span class="ot">[]</span><span class="fu">}</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  <span class="ot">]</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>We want two tables: “users” (id, name) and “posts” (id, user_id, title).</p>
+<p>Here’s the code:</p>
+<div id="b37c63f5" class="cell" data-execution_count="1">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.core <span class="im">import</span> MappingSpec, TraversalSpec, TableEmit, Field</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.transforms <span class="im">import</span> get, get_from_parent</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.executor <span class="im">import</span> run_mapping</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> { ... }  <span class="co"># Your JSON here</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Traverse users array</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>users_traversal <span class="op">=</span> TraversalSpec(</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>    path<span class="op">=</span>[<span class="st">"users"</span>],  <span class="co"># Path to the array</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>    iterate_items<span class="op">=</span><span class="va">False</span>,  <span class="co"># Iterate list items (not dict keys)</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>    emits<span class="op">=</span>[</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>        TableEmit(</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>            table<span class="op">=</span><span class="st">"users"</span>,</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>            join_keys<span class="op">=</span>[get(<span class="st">"id"</span>)],  <span class="co"># Unique key for the row</span></span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>            fields<span class="op">=</span>[</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>                Field(<span class="st">"id"</span>, get(<span class="st">"id"</span>)),</span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>                Field(<span class="st">"name"</span>, get(<span class="st">"name"</span>))</span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>            ]</span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>    ]</span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a><span class="co"># Traverse posts under each user</span></span>
+<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a>posts_traversal <span class="op">=</span> TraversalSpec(</span>
+<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a>    path<span class="op">=</span>[<span class="st">"users"</span>],</span>
+<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a>    iterate_items<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a>    inner_path<span class="op">=</span>[<span class="st">"posts"</span>],  <span class="co"># Nested path inside each user</span></span>
+<span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a>    inner_iterate_items<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a>    emits<span class="op">=</span>[</span>
+<span id="cb6-30"><a href="#cb6-30" aria-hidden="true" tabindex="-1"></a>        TableEmit(</span>
+<span id="cb6-31"><a href="#cb6-31" aria-hidden="true" tabindex="-1"></a>            table<span class="op">=</span><span class="st">"posts"</span>,</span>
+<span id="cb6-32"><a href="#cb6-32" aria-hidden="true" tabindex="-1"></a>            join_keys<span class="op">=</span>[get(<span class="st">"id"</span>)],</span>
+<span id="cb6-33"><a href="#cb6-33" aria-hidden="true" tabindex="-1"></a>            fields<span class="op">=</span>[</span>
+<span id="cb6-34"><a href="#cb6-34" aria-hidden="true" tabindex="-1"></a>                Field(<span class="st">"id"</span>, get(<span class="st">"id"</span>)),</span>
+<span id="cb6-35"><a href="#cb6-35" aria-hidden="true" tabindex="-1"></a>                Field(<span class="st">"user_id"</span>, get_from_parent(<span class="st">"id"</span>)),  <span class="co"># Link to parent user</span></span>
+<span id="cb6-36"><a href="#cb6-36" aria-hidden="true" tabindex="-1"></a>                Field(<span class="st">"title"</span>, get(<span class="st">"title"</span>))</span>
+<span id="cb6-37"><a href="#cb6-37" aria-hidden="true" tabindex="-1"></a>            ]</span>
+<span id="cb6-38"><a href="#cb6-38" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb6-39"><a href="#cb6-39" aria-hidden="true" tabindex="-1"></a>    ]</span>
+<span id="cb6-40"><a href="#cb6-40" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb6-41"><a href="#cb6-41" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-42"><a href="#cb6-42" aria-hidden="true" tabindex="-1"></a>spec <span class="op">=</span> MappingSpec(traversals<span class="op">=</span>[users_traversal, posts_traversal])</span>
+<span id="cb6-43"><a href="#cb6-43" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> run_mapping(data, spec)</span>
+<span id="cb6-44"><a href="#cb6-44" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(result)  <span class="co"># Outputs dict of tables with rows</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>{}</code></pre>
+</div>
+</div>
+<p>Congrats! You’ve mapped your first JSON.</p>
+</section>
+<section id="core-concepts-breaking-it-down" class="level2">
+<h2 class="anchored" data-anchor-id="core-concepts-breaking-it-down">Core Concepts: Breaking It Down</h2>
+<p>Let’s explain the building blocks like you’re learning for the first time.</p>
+<section id="context-your-location-in-the-json" class="level3">
+<h3 class="anchored" data-anchor-id="context-your-location-in-the-json">1. Context: Your “Location” in the JSON</h3>
+<p>Imagine traversing a JSON tree—Context is your GPS:</p>
+<ul>
+<li><code>root</code>: The entire JSON.</li>
+<li><code>node</code>: The current spot (e.g., a user object).</li>
+<li><code>path</code>: Directions to get here (e.g., (“users”, 0)).</li>
+<li><code>parent</code>: The previous spot (for looking “up”).</li>
+<li><code>key</code>/<code>index</code>: If in a dict/list, the current key or index.</li>
+<li><code>slots</code>: A notepad for temporary notes.</li>
+</ul>
+<p>Contexts are created automatically as you traverse and are immutable (unchangeable) for safety.</p>
+</section>
+<section id="transforms-smart-data-extractors" class="level3">
+<h3 class="anchored" data-anchor-id="transforms-smart-data-extractors">2. Transforms: Smart Data Extractors</h3>
+<p>Transforms are like mini-functions that pull values from Context. They’re “lazy”—they don’t run until needed, and they adapt to the current Context.</p>
+<p>Examples:</p>
+<ul>
+<li><code>get("name")</code>: Get “name” from current node.</li>
+<li><code>get_from_parent("id")</code>: Get “id” from parent.</li>
+<li><code>index()</code>: Current list position.</li>
+<li><code>concat(literal("user_"), get("id"))</code>: Combine strings.</li>
+</ul>
+<p>Full list in the Cheatsheet below.</p>
+</section>
+<section id="traversalspec-how-to-walk-the-json" class="level3">
+<h3 class="anchored" data-anchor-id="traversalspec-how-to-walk-the-json">3. TraversalSpec: How to Walk the JSON</h3>
+<p>This says: “Start here, then go deeper if needed, and do this for each item.”</p>
+<ul>
+<li><code>path</code>: Starting path (list of strings, e.g., [“users”]).</li>
+<li><code>iterate_items</code>: True for dicts (key-value pairs), False for lists.</li>
+<li><code>inner_path</code>: Optional deeper path (e.g., [“posts”] for nesting).</li>
+<li><code>emits</code>: What tables to create from each item.</li>
+</ul>
+<p>You can have multiple Traversals in one MappingSpec—they run independently.</p>
+</section>
+<section id="tableemit-and-fields-building-your-tables" class="level3">
+<h3 class="anchored" data-anchor-id="tableemit-and-fields-building-your-tables">4. TableEmit and Fields: Building Your Tables</h3>
+<ul>
+<li><code>table</code>: Name of the table.</li>
+<li><code>fields</code>: List of Field(name, transform) – columns and how to compute them.</li>
+<li><code>join_keys</code>: List of transforms for unique row IDs (like primary keys). Same keys across traversals merge rows.</li>
+</ul>
+</section>
+<section id="executor-running-it-all" class="level3">
+<h3 class="anchored" data-anchor-id="executor-running-it-all">5. Executor: Running It All</h3>
+<p><code>run_mapping(json_data, spec)</code> executes everything and returns a dict of tables.</p>
+</section>
+</section>
+<section id="detailed-examples" class="level2">
+<h2 class="anchored" data-anchor-id="detailed-examples">Detailed Examples</h2>
+<section id="example-1-composite-keys-for-merging-data" class="level3">
+<h3 class="anchored" data-anchor-id="example-1-composite-keys-for-merging-data">Example 1: Composite Keys for Merging Data</h3>
+<p>Merge user info from two parts of JSON:</p>
+<div id="423235f4" class="cell" data-execution_count="2">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>spec <span class="op">=</span> MappingSpec(traversals<span class="op">=</span>[</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    TraversalSpec(  <span class="co"># Basic user data</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>        path<span class="op">=</span>[<span class="st">"users"</span>],</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>        iterate_items<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>        emits<span class="op">=</span>[TableEmit(</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>            table<span class="op">=</span><span class="st">"users"</span>,</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>            join_keys<span class="op">=</span>[get(<span class="st">"id"</span>)],</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>            fields<span class="op">=</span>[Field(<span class="st">"id"</span>, get(<span class="st">"id"</span>)), Field(<span class="st">"name"</span>, get(<span class="st">"name"</span>))]</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>        )]</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>    ),</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>    TraversalSpec(  <span class="co"># Add email from another section</span></span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>        path<span class="op">=</span>[<span class="st">"profiles"</span>],</span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>        iterate_items<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>        emits<span class="op">=</span>[TableEmit(</span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>            table<span class="op">=</span><span class="st">"users"</span>,  <span class="co"># Same table!</span></span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>            join_keys<span class="op">=</span>[get(<span class="st">"user_id"</span>)],  <span class="co"># Matches previous keys</span></span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>            fields<span class="op">=</span>[Field(<span class="st">"email"</span>, get(<span class="st">"email"</span>))]</span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>        )]</span>
+<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a>])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>Rows with matching keys merge: e.g., add “email” to existing user row.</p>
+</section>
+<section id="example-2-deep-nesting-arbitrary-depth" class="level3">
+<h3 class="anchored" data-anchor-id="example-2-deep-nesting-arbitrary-depth">Example 2: Deep Nesting (Arbitrary Depth)</h3>
+<p>No limit to depth—use longer <code>inner_path</code>:</p>
+<div id="6b2170ae" class="cell" data-execution_count="3">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>spec <span class="op">=</span> MappingSpec(traversals<span class="op">=</span>[</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    TraversalSpec(</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>        path<span class="op">=</span>[<span class="st">"servers"</span>],</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>        iterate_items<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>        inner_path<span class="op">=</span>[<span class="st">"channels"</span>, <span class="st">"messages"</span>, <span class="st">"reactions"</span>],  <span class="co"># 3 levels deep!</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>        inner_iterate_items<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>        emits<span class="op">=</span>[TableEmit(</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>            table<span class="op">=</span><span class="st">"reactions"</span>,</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>            join_keys<span class="op">=</span>[get_from_parent(<span class="st">"id"</span>, depth<span class="op">=</span><span class="dv">3</span>), get_from_parent(<span class="st">"id"</span>, depth<span class="op">=</span><span class="dv">2</span>), get_from_parent(<span class="st">"id"</span>), get(<span class="st">"id"</span>)],</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>            fields<span class="op">=</span>[</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>                Field(<span class="st">"server_id"</span>, get_from_parent(<span class="st">"id"</span>, depth<span class="op">=</span><span class="dv">3</span>)),</span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>                Field(<span class="st">"channel_id"</span>, get_from_parent(<span class="st">"id"</span>, depth<span class="op">=</span><span class="dv">2</span>)),</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>                Field(<span class="st">"message_id"</span>, get_from_parent(<span class="st">"id"</span>)),</span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>                Field(<span class="st">"reaction"</span>, get(<span class="st">"emoji"</span>))</span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>            ]</span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>        )]</span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+</section>
+<section id="transform-cheatsheet" class="level2">
+<h2 class="anchored" data-anchor-id="transform-cheatsheet">Transform Cheatsheet</h2>
+<ul>
+<li><strong>get(path)</strong>: From current node (dot notation or list, e.g., “user.name” or [“user”, 0]).</li>
+<li><strong>get_from_parent(path, depth=1)</strong>: From ancestor.</li>
+<li><strong>get_from_root(path)</strong>: From top-level JSON.</li>
+<li><strong>key()</strong>: Current dict key.</li>
+<li><strong>index()</strong>: Current list index.</li>
+<li><strong>literal(value)</strong>: Constant value.</li>
+<li>**concat(*parts)**: Join strings.</li>
+<li>**format_id(*parts, sep=“_“)**: Join non-empty parts with separator.</li>
+<li>**coalesce(*transforms)**: First non-None value.</li>
+<li><strong>len_of(inner)</strong>: Length of a list/dict/string.</li>
+</ul>
+<p>Pro Tip: Transforms are lazy—they run in the “context” of where they’re used, making them super flexible.</p>
+</section>
+<section id="advanced-topics" class="level2">
+<h2 class="anchored" data-anchor-id="advanced-topics">Advanced Topics</h2>
+<ul>
+<li><strong>Lazy Evaluation</strong>: Transforms don’t compute until executed, adapting to the current spot in JSON.</li>
+<li><strong>Custom Transforms</strong>: Define your own functions that take Context and return values.</li>
+<li><strong>Row Merging Rules</strong>: Last write wins for duplicate fields; missing keys skip rows.</li>
+<li><strong>Field selectors</strong>: Statically-checked field references via lambdas. See <a href="field-selectors.qmd">Field selectors</a>.</li>
+<li><strong>Instance emission</strong>: Build Pydantic/TypedDict/ORM instances directly. See <a href="instance-emission.qmd">Instance emission</a>.</li>
+<li><strong>Merge policies</strong>: Sum/append/min/max instead of overwrite. See <a href="merge-policies.qmd">Merge policies</a>.</li>
+<li><strong>Error reporting</strong>: Per-key diagnostics in results. See <a href="error-reporting.qmd">Error reporting</a>.</li>
+<li><strong>Relationships without extra round trips</strong>: Bind in-memory, flush once. See <a href="relationships.qmd">Relationships</a> and <a href="sqlalchemy-adapter.qmd">SQLAlchemy adapter</a>.</li>
+<li><strong>Performance</strong>: Efficient for large JSON; traversals are independent.</li>
+</ul>
+</section>
+<section id="roadmap-ideas" class="level2">
+<h2 class="anchored" data-anchor-id="roadmap-ideas">Roadmap Ideas</h2>
+<ul>
+<li>Database integrations (e.g., SQLAlchemy).</li>
+<li>More examples and benchmarks.</li>
+<li>Visual mapping tools.</li>
+</ul>
+</section>
+<section id="license" class="level2">
+<h2 class="anchored" data-anchor-id="license">License</h2>
+<p>MIT</p>
+<p>Need help? Open an issue on GitHub!</p>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/Promptly-Technologies-LLC\.github\.io\/etielle\/");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+<p>Copyright 2025, Promptly Technologies, LLC. MIT License.</p>
+</div>   
+    <div class="nav-footer-center">
+      &nbsp;
+    </div>
+    <div class="nav-footer-right">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/promptly-technologies-llc/etielle">
+      <i class="bi bi-github" role="img">
+</i> 
+    </a>
+  </li>  
+</ul>
+    </div>
+  </div>
+</footer>
+
+
+
+
+</body></html>

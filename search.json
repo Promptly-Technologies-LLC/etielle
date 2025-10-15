@@ -1,0 +1,198 @@
+[
+  {
+    "objectID": "docs/sqlalchemy-adapter.html",
+    "href": "docs/sqlalchemy-adapter.html",
+    "title": "SQLAlchemy adapter",
+    "section": "",
+    "text": "Bind relationships and flush once using the provided adapter utilities.\n\nOne-shot bind and flush\nfrom sqlalchemy.orm import Session\nfrom etielle.adapters.sqlalchemy_adapter import bind_and_flush\nfrom etielle.relationships import ManyToOneSpec\n\nresults = bind_and_flush(\n    session,\n    root=data,\n    mapping=mapping,\n    relationships=[\n        ManyToOneSpec(\n            child_table=\"posts\",\n            parent_table=\"users\",\n            attr=\"user\",\n            child_to_parent_key=[get_from_parent(\"id\")],\n        )\n    ],\n    add_all_instances=True,\n)\n\n\nBefore-flush hook\nInstall a one-shot before_flush binder when you want to control transaction boundaries yourself.\nfrom etielle.adapters.sqlalchemy_adapter import install_before_flush_binder\n\ninstall_before_flush_binder(\n    session,\n    root=data,\n    mapping=mapping,\n    relationships=[...],\n)\n\n\nNotes\n\nAutoflush is temporarily disabled during the one-shot flow to avoid early inserts.\nInstances are added and flushed once; ORMs populate FKs automatically via relationships."
+  },
+  {
+    "objectID": "docs/field-selectors.html",
+    "href": "docs/field-selectors.html",
+    "title": "Field selectors",
+    "section": "",
+    "text": "Field selectors let you refer to model fields in a way static type checkers can verify, while the runtime resolves the field name without reflection.\n\nWhat is a field selector?\nUse field_of(Model, lambda m: m.field) to produce the string field name at runtime. Type checkers validate the lambda, catching typos early.\nfrom etielle.core import field_of\n\nclass User:\n    id: str\n    email: str\n\nassert field_of(User, lambda u: u.email) == \"email\"\n\n\nConstraints (enforced at runtime)\n\nExactly one attribute access must occur.\nNo method calls, no indexing, no chained attributes.\n\nfrom etielle.core import field_of\n\nclass Model:\n    x: int\n\n# OK\nfield_of(Model, lambda m: m.x)\n\n# Raises ValueError (method call)\ntry:\n    field_of(Model, lambda m: m.x.__str__())\nexcept ValueError:\n    pass\n\n# Raises ValueError (chained)\ntry:\n    field_of(Model, lambda m: m.x.real)\nexcept ValueError:\n    pass\n\n\nUsing selectors in instance emission\nSelectors are used with FieldSpec inside InstanceEmit. They are resolved against the builder’s model.\nfrom etielle.core import MappingSpec, TraversalSpec, field_of\nfrom etielle.transforms import get\nfrom etielle.instances import InstanceEmit, FieldSpec, PydanticBuilder\nfrom pydantic import BaseModel\n\nclass UserModel(BaseModel):\n    id: str\n    email: str\n\nemit = InstanceEmit[UserModel](\n    table=\"users\",\n    join_keys=[get(\"id\")],\n    fields=[\n        FieldSpec(selector=field_of(UserModel, lambda u: u.id), transform=get(\"id\")),\n        FieldSpec(selector=field_of(UserModel, lambda u: u.email), transform=get(\"email\")),\n    ],\n    builder=PydanticBuilder(UserModel),\n)\nIf you use a builder without a model attribute, pass string field names instead of selectors.\n\n\nBackwards-compat strings, with strict validation\nString field names remain supported. When strict_fields=True (default), unknown fields are recorded with helpful suggestions, and you can opt into strict_mode=\"fail_fast\" to raise immediately.\nfrom etielle.transforms import get\nfrom etielle.instances import InstanceEmit, FieldSpec, TypedDictBuilder\n\nemit = InstanceEmit[dict](\n    table=\"users\",\n    join_keys=[get(\"id\")],\n    fields=[\n        FieldSpec(selector=\"emali\", transform=get(\"email\")),  # typo on purpose\n    ],\n    builder=TypedDictBuilder(lambda d: d),\n    strict_fields=True,\n    # strict_mode=\"fail_fast\",  # enable to raise instead of collect\n)\n\n\nReference\n\netielle.core.field_of(model, selector) → str field name\nFieldSpec[T](selector: Callable[[T], Any] | str, transform)\nResolved through builders with a model (e.g., PydanticBuilder)."
+  },
+  {
+    "objectID": "docs/error-reporting.html",
+    "href": "docs/error-reporting.html",
+    "title": "Error reporting and DX",
+    "section": "",
+    "text": "The executor aggregates errors with precise table/key context and returns them alongside instances in MappingResult.\n\nResult shape\nfrom etielle.core import MappingResult\n\n# MappingResult[T]\n# - instances: Dict[tuple, T]\n# - update_errors: Dict[tuple, list[str]]\n# - finalize_errors: Dict[tuple, list[str]]\n# - stats: Dict[str, int]\n\n\nUpdate vs finalize errors\n\nUpdate errors: recorded during incremental field updates (e.g., per-field type checks, unknown fields, merge-policy failures).\nFinalize errors: recorded when builders validate/construct final instances.\n\n\n\nStrictness\n\nstrict_fields=True (default) checks unknown fields against builder.known_fields().\nstrict_mode=\"fail_fast\" will raise on unknown fields instead of collecting.\n\n\n\nUnknown field suggestions\nWhen using string field names, the executor suggests closest matches using difflib.get_close_matches.\n\n\nExample\nfrom etielle.executor import run_mapping\nfrom etielle.core import MappingSpec, TraversalSpec\n\nresults = run_mapping(root, mapping)\nusers = results[\"users\"]\nprint(users.stats)\nprint(users.update_errors)\nprint(users.finalize_errors)"
+  },
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "etielle: Declarative JSON-to-Relational Mapping in Python",
+    "section": "",
+    "text": "etielle is a simple, powerful Python library for reshaping nested JSON data, typically from an API, into relational tables that fit your database schema. Think of etielle as a “JSON extractor” that you program with clear instructions: “Go here in the JSON, pull this data, and put it in that table.” The library’s name is a play on ETL (“Extract, Transform, Load”), which is the technical term for this set of operations."
+  },
+  {
+    "objectID": "index.html#why-use-etielle-for-beginners",
+    "href": "index.html#why-use-etielle-for-beginners",
+    "title": "etielle: Declarative JSON-to-Relational Mapping in Python",
+    "section": "Why Use etielle? (For Beginners)",
+    "text": "Why Use etielle? (For Beginners)\nJSON data from APIs (Application Program Interfaces—web services that typically return JSON) is often deeply nested and requires complicated parsing. etielle helps by:\n\nDeclaring what you want: Write Python code to describe your tables and how to fill them.\nTraversing nested structures: Walk through arrays-within-dictionaries-within-arrays to any arbitrary depth.\nPerforming arbitrary transformations: Use the provided functions to perform common operations (like getting the key or index of the current item or its parent), or define your own.\nBuilding relationships: Use “keys” to link data across different parts of the JSON, like foreign keys in a database.\nBeing beginner-friendly: Everything is type-safe (Python checks your types), composable (build complex things from simple pieces), and easy to debug."
+  },
+  {
+    "objectID": "index.html#installation",
+    "href": "index.html#installation",
+    "title": "etielle: Declarative JSON-to-Relational Mapping in Python",
+    "section": "Installation",
+    "text": "Installation\nWe recommend using uv for faster installs, but pip works too.\n\nWith uv (Recommended for Speed)\nFor your project:\nuv add etielle\nFor one-off use:\nuv pip install etielle\n\n\nWith pip\npip install etielle\n\n\nOptional: SQLAlchemy adapter\nIf you plan to bind relationships and flush via SQLAlchemy in one go, install the optional extra:\nuv add \"etielle[sqlalchemy]\""
+  },
+  {
+    "objectID": "index.html#quick-start-your-first-mapping",
+    "href": "index.html#quick-start-your-first-mapping",
+    "title": "etielle: Declarative JSON-to-Relational Mapping in Python",
+    "section": "Quick Start: Your First Mapping",
+    "text": "Quick Start: Your First Mapping\nLet’s start with a simple example. Suppose you have this JSON:\n{\n  \"users\": [\n    {\"id\": \"u1\", \"name\": \"Alice\", \"posts\": [{\"id\": \"p1\", \"title\": \"Hello\"}, {\"id\": \"p2\", \"title\": \"World\"}]},\n    {\"id\": \"u2\", \"name\": \"Bob\", \"posts\": []}\n  ]\n}\nWe want two tables: “users” (id, name) and “posts” (id, user_id, title).\nHere’s the code:\n\nfrom etielle.core import MappingSpec, TraversalSpec, TableEmit, Field\nfrom etielle.transforms import get, get_from_parent\nfrom etielle.executor import run_mapping\n\ndata = { ... }  # Your JSON here\n\n# Traverse users array\nusers_traversal = TraversalSpec(\n    path=[\"users\"],  # Path to the array\n    iterate_items=False,  # Iterate list items (not dict keys)\n    emits=[\n        TableEmit(\n            table=\"users\",\n            join_keys=[get(\"id\")],  # Unique key for the row\n            fields=[\n                Field(\"id\", get(\"id\")),\n                Field(\"name\", get(\"name\"))\n            ]\n        )\n    ]\n)\n\n# Traverse posts under each user\nposts_traversal = TraversalSpec(\n    path=[\"users\"],\n    iterate_items=False,\n    inner_path=[\"posts\"],  # Nested path inside each user\n    inner_iterate_items=False,\n    emits=[\n        TableEmit(\n            table=\"posts\",\n            join_keys=[get(\"id\")],\n            fields=[\n                Field(\"id\", get(\"id\")),\n                Field(\"user_id\", get_from_parent(\"id\")),  # Link to parent user\n                Field(\"title\", get(\"title\"))\n            ]\n        )\n    ]\n)\n\nspec = MappingSpec(traversals=[users_traversal, posts_traversal])\nresult = run_mapping(data, spec)\nprint(result)  # Outputs dict of tables with rows\n\n{}\n\n\nCongrats! You’ve mapped your first JSON."
+  },
+  {
+    "objectID": "index.html#core-concepts-breaking-it-down",
+    "href": "index.html#core-concepts-breaking-it-down",
+    "title": "etielle: Declarative JSON-to-Relational Mapping in Python",
+    "section": "Core Concepts: Breaking It Down",
+    "text": "Core Concepts: Breaking It Down\nLet’s explain the building blocks like you’re learning for the first time.\n\n1. Context: Your “Location” in the JSON\nImagine traversing a JSON tree—Context is your GPS:\n\nroot: The entire JSON.\nnode: The current spot (e.g., a user object).\npath: Directions to get here (e.g., (“users”, 0)).\nparent: The previous spot (for looking “up”).\nkey/index: If in a dict/list, the current key or index.\nslots: A notepad for temporary notes.\n\nContexts are created automatically as you traverse and are immutable (unchangeable) for safety.\n\n\n2. Transforms: Smart Data Extractors\nTransforms are like mini-functions that pull values from Context. They’re “lazy”—they don’t run until needed, and they adapt to the current Context.\nExamples:\n\nget(\"name\"): Get “name” from current node.\nget_from_parent(\"id\"): Get “id” from parent.\nindex(): Current list position.\nconcat(literal(\"user_\"), get(\"id\")): Combine strings.\n\nFull list in the Cheatsheet below.\n\n\n3. TraversalSpec: How to Walk the JSON\nThis says: “Start here, then go deeper if needed, and do this for each item.”\n\npath: Starting path (list of strings, e.g., [“users”]).\niterate_items: True for dicts (key-value pairs), False for lists.\ninner_path: Optional deeper path (e.g., [“posts”] for nesting).\nemits: What tables to create from each item.\n\nYou can have multiple Traversals in one MappingSpec—they run independently.\n\n\n4. TableEmit and Fields: Building Your Tables\n\ntable: Name of the table.\nfields: List of Field(name, transform) – columns and how to compute them.\njoin_keys: List of transforms for unique row IDs (like primary keys). Same keys across traversals merge rows.\n\n\n\n5. Executor: Running It All\nrun_mapping(json_data, spec) executes everything and returns a dict of tables."
+  },
+  {
+    "objectID": "index.html#detailed-examples",
+    "href": "index.html#detailed-examples",
+    "title": "etielle: Declarative JSON-to-Relational Mapping in Python",
+    "section": "Detailed Examples",
+    "text": "Detailed Examples\n\nExample 1: Composite Keys for Merging Data\nMerge user info from two parts of JSON:\n\nspec = MappingSpec(traversals=[\n    TraversalSpec(  # Basic user data\n        path=[\"users\"],\n        iterate_items=False,\n        emits=[TableEmit(\n            table=\"users\",\n            join_keys=[get(\"id\")],\n            fields=[Field(\"id\", get(\"id\")), Field(\"name\", get(\"name\"))]\n        )]\n    ),\n    TraversalSpec(  # Add email from another section\n        path=[\"profiles\"],\n        iterate_items=False,\n        emits=[TableEmit(\n            table=\"users\",  # Same table!\n            join_keys=[get(\"user_id\")],  # Matches previous keys\n            fields=[Field(\"email\", get(\"email\"))]\n        )]\n    )\n])\n\nRows with matching keys merge: e.g., add “email” to existing user row.\n\n\nExample 2: Deep Nesting (Arbitrary Depth)\nNo limit to depth—use longer inner_path:\n\nspec = MappingSpec(traversals=[\n    TraversalSpec(\n        path=[\"servers\"],\n        iterate_items=False,\n        inner_path=[\"channels\", \"messages\", \"reactions\"],  # 3 levels deep!\n        inner_iterate_items=False,\n        emits=[TableEmit(\n            table=\"reactions\",\n            join_keys=[get_from_parent(\"id\", depth=3), get_from_parent(\"id\", depth=2), get_from_parent(\"id\"), get(\"id\")],\n            fields=[\n                Field(\"server_id\", get_from_parent(\"id\", depth=3)),\n                Field(\"channel_id\", get_from_parent(\"id\", depth=2)),\n                Field(\"message_id\", get_from_parent(\"id\")),\n                Field(\"reaction\", get(\"emoji\"))\n            ]\n        )]\n    )\n])"
+  },
+  {
+    "objectID": "index.html#transform-cheatsheet",
+    "href": "index.html#transform-cheatsheet",
+    "title": "etielle: Declarative JSON-to-Relational Mapping in Python",
+    "section": "Transform Cheatsheet",
+    "text": "Transform Cheatsheet\n\nget(path): From current node (dot notation or list, e.g., “user.name” or [“user”, 0]).\nget_from_parent(path, depth=1): From ancestor.\nget_from_root(path): From top-level JSON.\nkey(): Current dict key.\nindex(): Current list index.\nliteral(value): Constant value.\n**concat(*parts)**: Join strings.\n**format_id(*parts, sep=“_“)**: Join non-empty parts with separator.\n**coalesce(*transforms)**: First non-None value.\nlen_of(inner): Length of a list/dict/string.\n\nPro Tip: Transforms are lazy—they run in the “context” of where they’re used, making them super flexible."
+  },
+  {
+    "objectID": "index.html#advanced-topics",
+    "href": "index.html#advanced-topics",
+    "title": "etielle: Declarative JSON-to-Relational Mapping in Python",
+    "section": "Advanced Topics",
+    "text": "Advanced Topics\n\nLazy Evaluation: Transforms don’t compute until executed, adapting to the current spot in JSON.\nCustom Transforms: Define your own functions that take Context and return values.\nRow Merging Rules: Last write wins for duplicate fields; missing keys skip rows.\nField selectors: Statically-checked field references via lambdas. See Field selectors.\nInstance emission: Build Pydantic/TypedDict/ORM instances directly. See Instance emission.\nMerge policies: Sum/append/min/max instead of overwrite. See Merge policies.\nError reporting: Per-key diagnostics in results. See Error reporting.\nRelationships without extra round trips: Bind in-memory, flush once. See Relationships and SQLAlchemy adapter.\nPerformance: Efficient for large JSON; traversals are independent."
+  },
+  {
+    "objectID": "index.html#roadmap-ideas",
+    "href": "index.html#roadmap-ideas",
+    "title": "etielle: Declarative JSON-to-Relational Mapping in Python",
+    "section": "Roadmap Ideas",
+    "text": "Roadmap Ideas\n\nDatabase integrations (e.g., SQLAlchemy).\nMore examples and benchmarks.\nVisual mapping tools."
+  },
+  {
+    "objectID": "index.html#license",
+    "href": "index.html#license",
+    "title": "etielle: Declarative JSON-to-Relational Mapping in Python",
+    "section": "License",
+    "text": "License\nMIT\nNeed help? Open an issue on GitHub!"
+  },
+  {
+    "objectID": "CHANGELOG.html",
+    "href": "CHANGELOG.html",
+    "title": "Changelog",
+    "section": "",
+    "text": "Sqlalchemy adapter (3ac07a1)\n\n\n\n\n\n\n\n\nMutation-based emit (21dbbe6)\n\n\n\n\n\n\n\n\nError reporting (10657ec)\nInstance emission adapter (4c02de0)\n\n\n\n\n\n\n\n\nImplement field selectors API (e099dbe)\n\n\n\n\n\n\n\n\nConfigure pyproject version stamping (49c4e07)\n\n\n\n\n\n\n\n\nMake release dependent on test (b377958)\n\n\n\n\n\n\n\n\nCorrectly use PyPi env for publish job (2dd6cea)\n\n\n\n\n\n\n\n\nRun build in PSR container (6c359c6)\n\n\n\n\n\n\n\n\nRestore build step (4250642)\n\n\n\n\n\n\n\n\nGate artifact upload (5e5bda1)\n\n\n\n\n\n\n\n\nActions-compliant root path (251d553)\nAdd missing semantic release config (f6235d4)\nSemantic release version mismatch (3dbf9a0)\nUse semantic release’s built-in committer (6681c31)"
+  },
+  {
+    "objectID": "CHANGELOG.html#v1.4.0-2025-10-15",
+    "href": "CHANGELOG.html#v1.4.0-2025-10-15",
+    "title": "Changelog",
+    "section": "",
+    "text": "Sqlalchemy adapter (3ac07a1)"
+  },
+  {
+    "objectID": "CHANGELOG.html#v1.3.0-2025-10-14",
+    "href": "CHANGELOG.html#v1.3.0-2025-10-14",
+    "title": "Changelog",
+    "section": "",
+    "text": "Mutation-based emit (21dbbe6)"
+  },
+  {
+    "objectID": "CHANGELOG.html#v1.2.0-2025-10-14",
+    "href": "CHANGELOG.html#v1.2.0-2025-10-14",
+    "title": "Changelog",
+    "section": "",
+    "text": "Error reporting (10657ec)\nInstance emission adapter (4c02de0)"
+  },
+  {
+    "objectID": "CHANGELOG.html#v1.1.0-2025-10-14",
+    "href": "CHANGELOG.html#v1.1.0-2025-10-14",
+    "title": "Changelog",
+    "section": "",
+    "text": "Implement field selectors API (e099dbe)"
+  },
+  {
+    "objectID": "CHANGELOG.html#v1.0.6-2025-10-14",
+    "href": "CHANGELOG.html#v1.0.6-2025-10-14",
+    "title": "Changelog",
+    "section": "",
+    "text": "Configure pyproject version stamping (49c4e07)"
+  },
+  {
+    "objectID": "CHANGELOG.html#v1.0.5-2025-10-14",
+    "href": "CHANGELOG.html#v1.0.5-2025-10-14",
+    "title": "Changelog",
+    "section": "",
+    "text": "Make release dependent on test (b377958)"
+  },
+  {
+    "objectID": "CHANGELOG.html#v1.0.4-2025-10-14",
+    "href": "CHANGELOG.html#v1.0.4-2025-10-14",
+    "title": "Changelog",
+    "section": "",
+    "text": "Correctly use PyPi env for publish job (2dd6cea)"
+  },
+  {
+    "objectID": "CHANGELOG.html#v1.0.3-2025-10-14",
+    "href": "CHANGELOG.html#v1.0.3-2025-10-14",
+    "title": "Changelog",
+    "section": "",
+    "text": "Run build in PSR container (6c359c6)"
+  },
+  {
+    "objectID": "CHANGELOG.html#v1.0.2-2025-10-14",
+    "href": "CHANGELOG.html#v1.0.2-2025-10-14",
+    "title": "Changelog",
+    "section": "",
+    "text": "Restore build step (4250642)"
+  },
+  {
+    "objectID": "CHANGELOG.html#v1.0.1-2025-10-14",
+    "href": "CHANGELOG.html#v1.0.1-2025-10-14",
+    "title": "Changelog",
+    "section": "",
+    "text": "Gate artifact upload (5e5bda1)"
+  },
+  {
+    "objectID": "CHANGELOG.html#v1.0.0-2025-10-14",
+    "href": "CHANGELOG.html#v1.0.0-2025-10-14",
+    "title": "Changelog",
+    "section": "",
+    "text": "Actions-compliant root path (251d553)\nAdd missing semantic release config (f6235d4)\nSemantic release version mismatch (3dbf9a0)\nUse semantic release’s built-in committer (6681c31)"
+  },
+  {
+    "objectID": "docs/relationships.html",
+    "href": "docs/relationships.html",
+    "title": "Relationship building (no extra DB round trips)",
+    "section": "",
+    "text": "Build relationships in-memory using composite keys, then flush once. This avoids per-row database round trips.\n\nMany-to-one via sidecar keys\nUse ManyToOneSpec and compute child→parent keys by re-walking traversals, then bind via object references.\nfrom etielle.relationships import ManyToOneSpec, compute_relationship_keys, bind_many_to_one\nfrom etielle.executor import run_mapping\n\nrelationships = [\n    ManyToOneSpec(\n        child_table=\"posts\",\n        parent_table=\"users\",\n        attr=\"user\",\n        child_to_parent_key=[get_from_parent(\"id\")],\n    )\n]\n\nresults = run_mapping(root, mapping)\nsidecar = compute_relationship_keys(root, mapping.traversals, relationships)\nbind_many_to_one(results, relationships, sidecar)\n\n\nBehavior\n\nParent indices are built from finalized instances per table.\nMissing parents aggregate clear errors (optional raise).\nNo mutation of domain objects during key computation (keys stored in sidecar map)."
+  },
+  {
+    "objectID": "docs/instance-emission.html",
+    "href": "docs/instance-emission.html",
+    "title": "Instance emission (Pydantic, TypedDict, ORM)",
+    "section": "",
+    "text": "Emit class instances directly, with progressive construction and validation, by plugging a builder into InstanceEmit.\n\nOverview\n\nInstanceEmit[T]: like TableEmit, but targets model instances via a builder.\nBuilders accumulate updates per composite key and finalize to instances at the end.\nMerge policies let you control how repeated updates to the same field combine.\n\n\n\nBuilders\nfrom etielle.instances import InstanceEmit, FieldSpec, PydanticBuilder, TypedDictBuilder\nfrom etielle.transforms import get\nfrom etielle.core import MappingSpec, TraversalSpec, field_of\nfrom pydantic import BaseModel\n\nclass User(BaseModel):\n    id: str\n    email: str\n\nemit = InstanceEmit[User](\n    table=\"users\",\n    join_keys=[get(\"id\")],\n    fields=[\n        FieldSpec(selector=field_of(User, lambda u: u.id), transform=get(\"id\")),\n        FieldSpec(selector=field_of(User, lambda u: u.email), transform=get(\"email\")),\n    ],\n    builder=PydanticBuilder(User),\n)\nTypedDict without Pydantic:\nfrom typing import TypedDict\n\nclass UserTD(TypedDict):\n    id: str\n    email: str\n\nemit_td = InstanceEmit[UserTD](\n    table=\"users\",\n    join_keys=[get(\"id\")],\n    fields=[\n        FieldSpec(selector=\"id\", transform=get(\"id\")),\n        FieldSpec(selector=\"email\", transform=get(\"email\")),\n    ],\n    builder=TypedDictBuilder(lambda d: UserTD(**d)),\n)\n\n\nStrictness and error collection\nBuilders collect update-time and finalize-time errors; the executor returns them in MappingResult per table.\nfrom etielle.executor import run_mapping\n\nresult = run_mapping(root, MappingSpec(traversals=[TraversalSpec(\n    path=[\"users\"], iterate_items=False, emits=[emit]\n)]))\n\nmr = result[\"users\"]\nprint(mr.update_errors)\nprint(mr.finalize_errors)\n\n\nMerge policies\nUse merge policies to override last-write-wins per field (see Merge policies page).\n\n\nReference\n\nInstanceEmit[T]\nFieldSpec[T]\nPydanticBuilder, PydanticPartialBuilder, TypedDictBuilder"
+  },
+  {
+    "objectID": "docs/merge-policies.html",
+    "href": "docs/merge-policies.html",
+    "title": "Merge policies (mutation-based emit)",
+    "section": "",
+    "text": "Control how repeated updates to the same field are combined when multiple traversals contribute to one instance.\n\nWhy merge policies?\nDefault behavior is last-write-wins. Policies let you sum counters, append/extend lists, or take min/max, etc.\n\n\nBuilt-ins\n\nAddPolicy()\nAppendPolicy()\nExtendPolicy()\nMinPolicy() / MaxPolicy()\nFirstNonNullPolicy()\n\n\n\nExample\nfrom etielle.instances import InstanceEmit, FieldSpec, PydanticBuilder, AddPolicy, AppendPolicy\nfrom etielle.transforms import get, literal\nfrom etielle.core import field_of\nfrom pydantic import BaseModel\n\nclass User(BaseModel):\n    id: str\n    login_count: int\n    tags: list[str]\n\nemit = InstanceEmit[User](\n    table=\"users\",\n    join_keys=[get(\"id\")],\n    fields=[\n        FieldSpec(selector=field_of(User, lambda u: u.id), transform=get(\"id\")),\n        FieldSpec(selector=field_of(User, lambda u: u.login_count), transform=literal(1)),\n        FieldSpec(selector=field_of(User, lambda u: u.tags), transform=literal(\"alpha\")),\n    ],\n    builder=PydanticBuilder(User),\n    policies={\n        \"login_count\": AddPolicy(),\n        \"tags\": AppendPolicy(),\n    },\n)\n\n\nBehavior and caveats\n\nPolicies are applied during update time per key/field.\nType mismatches are recorded as update errors; the row continues.\nDeterministic ordering follows traversal arrival order."
+  }
+]
