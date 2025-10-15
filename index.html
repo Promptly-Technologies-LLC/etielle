@@ -267,7 +267,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="quick-start-your-first-mapping" class="level2">
 <h2 class="anchored" data-anchor-id="quick-start-your-first-mapping">Quick Start: Your First Mapping</h2>
 <p>Let’s start with a simple example. Suppose you have this JSON:</p>
-<div id="28b07463" class="cell" data-execution_count="1">
+<div id="2e92ac77" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> {</span>
@@ -279,7 +279,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <p>We want two tables: “users” (id, name) and “posts” (id, user_id, title).</p>
 <p>Here’s the code:</p>
-<div id="8cba7f59" class="cell" data-execution_count="2">
+<div id="43f54e32" class="cell" data-execution_count="2">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.core <span class="im">import</span> MappingSpec, TraversalSpec, TableEmit, Field</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.transforms <span class="im">import</span> get, get_from_parent</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.executor <span class="im">import</span> run_mapping</span>
@@ -410,7 +410,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="example-1-composite-keys-for-merging-data" class="level3">
 <h3 class="anchored" data-anchor-id="example-1-composite-keys-for-merging-data">Example 1: Composite Keys for Merging Data</h3>
 <p>Merge user info from two parts of JSON:</p>
-<div id="90205f40" class="cell" data-execution_count="3">
+<div id="a001e6a1" class="cell" data-execution_count="3">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>spec <span class="op">=</span> MappingSpec(traversals<span class="op">=</span>[</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    TraversalSpec(  <span class="co"># Basic user data</span></span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>        path<span class="op">=</span>[<span class="st">"users"</span>],</span>
@@ -437,7 +437,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="example-2-deep-nesting-arbitrary-depth" class="level3">
 <h3 class="anchored" data-anchor-id="example-2-deep-nesting-arbitrary-depth">Example 2: Deep Nesting (Arbitrary Depth)</h3>
 <p>No limit to depth—use longer <code>inner_path</code>:</p>
-<div id="731c7359" class="cell" data-execution_count="4">
+<div id="8105a077" class="cell" data-execution_count="4">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>spec <span class="op">=</span> MappingSpec(traversals<span class="op">=</span>[</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    TraversalSpec(</span>
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>        path<span class="op">=</span>[<span class="st">"servers"</span>],</span>
@@ -481,11 +481,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li><strong>Lazy Evaluation</strong>: Transforms don’t compute until executed, adapting to the current spot in JSON.</li>
 <li><strong>Custom Transforms</strong>: Define your own functions that take Context and return values.</li>
 <li><strong>Row Merging Rules</strong>: Last write wins for duplicate fields; missing keys skip rows.</li>
-<li><strong>Field selectors</strong>: Statically-checked field references via lambdas. See <a href="field-selectors.qmd">Field selectors</a>.</li>
-<li><strong>Instance emission</strong>: Build Pydantic/TypedDict/ORM instances directly. See <a href="instance-emission.qmd">Instance emission</a>.</li>
-<li><strong>Merge policies</strong>: Sum/append/min/max instead of overwrite. See <a href="merge-policies.qmd">Merge policies</a>.</li>
-<li><strong>Error reporting</strong>: Per-key diagnostics in results. See <a href="error-reporting.qmd">Error reporting</a>.</li>
-<li><strong>Relationships without extra round trips</strong>: Bind in-memory, flush once. See <a href="relationships.qmd">Relationships</a> and <a href="sqlalchemy-adapter.qmd">SQLAlchemy adapter</a>.</li>
+<li><strong>Field selectors</strong>: Statically-checked field references via lambdas. See <a href="./docs/field-selectors.html">Field selectors</a>.</li>
+<li><strong>Instance emission</strong>: Build Pydantic/TypedDict/ORM instances directly. See <a href="./docs/instance-emission.html">Instance emission</a>.</li>
+<li><strong>Merge policies</strong>: Sum/append/min/max instead of overwrite. See <a href="./docs/merge-policies.html">Merge policies</a>.</li>
+<li><strong>Error reporting</strong>: Per-key diagnostics in results. See <a href="./docs/error-reporting.html">Error reporting</a>.</li>
+<li><strong>Relationships without extra round trips</strong>: Bind in-memory, flush once. See <a href="./docs/relationships.html">Relationships</a> and <a href="./docs/sqlalchemy-adapter.html">SQLAlchemy adapter</a>.</li>
 <li><strong>Performance</strong>: Efficient for large JSON; traversals are independent.</li>
 </ul>
 </section>
