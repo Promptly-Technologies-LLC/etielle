@@ -58,7 +58,8 @@ pip install etielle
 
 ### Optional: SQLAlchemy adapter
 
-If you plan to bind relationships and flush via SQLAlchemy in one go, install the optional extra:
+If you plan to bind relationships and flush via SQLAlchemy in one go,
+install the optional extra:
 
 ``` bash
 uv add "etielle[sqlalchemy]"
@@ -274,6 +275,17 @@ used, making them super flexible.
   return values.
 - **Row Merging Rules**: Last write wins for duplicate fields; missing
   keys skip rows.
+- **Field selectors**: Statically-checked field references via lambdas.
+  See [Field selectors](field-selectors.qmd).
+- **Instance emission**: Build Pydantic/TypedDict/ORM instances
+  directly. See [Instance emission](instance-emission.qmd).
+- **Merge policies**: Sum/append/min/max instead of overwrite. See
+  [Merge policies](merge-policies.qmd).
+- **Error reporting**: Per-key diagnostics in results. See [Error
+  reporting](error-reporting.qmd).
+- **Relationships without extra round trips**: Bind in-memory, flush
+  once. See [Relationships](relationships.qmd) and [SQLAlchemy
+  adapter](sqlalchemy-adapter.qmd).
 - **Performance**: Efficient for large JSON; traversals are independent.
 
 ## Roadmap Ideas

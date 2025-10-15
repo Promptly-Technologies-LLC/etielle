@@ -1,0 +1,35 @@
+---
+title: Relationship building (no extra DB round trips)
+---
+
+Build relationships in-memory using composite keys, then flush once. This avoids per-row database round trips.
+
+### Many-to-one via sidecar keys
+
+Use `ManyToOneSpec` and compute child→parent keys by re-walking traversals, then bind via object references.
+
+``` python
+from etielle.relationships import ManyToOneSpec, compute_relationship_keys, bind_many_to_one
+from etielle.executor import run_mapping
+
+relationships = [
+    ManyToOneSpec(
+        child_table="posts",
+        parent_table="users",
+        attr="user",
+        child_to_parent_key=[get_from_parent("id")],
+    )
+]
+
+results = run_mapping(root, mapping)
+sidecar = compute_relationship_keys(root, mapping.traversals, relationships)
+bind_many_to_one(results, relationships, sidecar)
+```
+
+### Behavior
+
+- Parent indices are built from finalized instances per table.
+- Missing parents aggregate clear errors (optional raise).
+- No mutation of domain objects during key computation (keys stored in sidecar map).
+
+

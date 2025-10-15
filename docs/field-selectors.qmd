@@ -1,0 +1,101 @@
+---
+title: Field selectors
+---
+
+Field selectors let you refer to model fields in a way static type checkers can verify, while the runtime resolves the field name without reflection.
+
+### What is a field selector?
+
+Use `field_of(Model, lambda m: m.field)` to produce the string field name at runtime. Type checkers validate the lambda, catching typos early.
+
+``` python
+from etielle.core import field_of
+
+class User:
+    id: str
+    email: str
+
+assert field_of(User, lambda u: u.email) == "email"
+```
+
+### Constraints (enforced at runtime)
+
+- Exactly one attribute access must occur.
+- No method calls, no indexing, no chained attributes.
+
+``` python
+from etielle.core import field_of
+
+class Model:
+    x: int
+
+# OK
+field_of(Model, lambda m: m.x)
+
+# Raises ValueError (method call)
+try:
+    field_of(Model, lambda m: m.x.__str__())
+except ValueError:
+    pass
+
+# Raises ValueError (chained)
+try:
+    field_of(Model, lambda m: m.x.real)
+except ValueError:
+    pass
+```
+
+### Using selectors in instance emission
+
+Selectors are used with `FieldSpec` inside `InstanceEmit`. They are resolved against the builder’s model.
+
+``` python
+from etielle.core import MappingSpec, TraversalSpec, field_of
+from etielle.transforms import get
+from etielle.instances import InstanceEmit, FieldSpec, PydanticBuilder
+from pydantic import BaseModel
+
+class UserModel(BaseModel):
+    id: str
+    email: str
+
+emit = InstanceEmit[UserModel](
+    table="users",
+    join_keys=[get("id")],
+    fields=[
+        FieldSpec(selector=field_of(UserModel, lambda u: u.id), transform=get("id")),
+        FieldSpec(selector=field_of(UserModel, lambda u: u.email), transform=get("email")),
+    ],
+    builder=PydanticBuilder(UserModel),
+)
+```
+
+If you use a builder without a `model` attribute, pass string field names instead of selectors.
+
+### Backwards-compat strings, with strict validation
+
+String field names remain supported. When `strict_fields=True` (default), unknown fields are recorded with helpful suggestions, and you can opt into `strict_mode="fail_fast"` to raise immediately.
+
+``` python
+from etielle.transforms import get
+from etielle.instances import InstanceEmit, FieldSpec, TypedDictBuilder
+
+emit = InstanceEmit[dict](
+    table="users",
+    join_keys=[get("id")],
+    fields=[
+        FieldSpec(selector="emali", transform=get("email")),  # typo on purpose
+    ],
+    builder=TypedDictBuilder(lambda d: d),
+    strict_fields=True,
+    # strict_mode="fail_fast",  # enable to raise instead of collect
+)
+```
+
+### Reference
+
+- `etielle.core.field_of(model, selector)` → `str` field name
+- `FieldSpec[T](selector: Callable[[T], Any] | str, transform)`
+- Resolved through builders with a `model` (e.g., `PydanticBuilder`).
+
+

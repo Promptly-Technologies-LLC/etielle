@@ -1,0 +1,54 @@
+---
+title: Merge policies (mutation-based emit)
+---
+
+Control how repeated updates to the same field are combined when multiple traversals contribute to one instance.
+
+### Why merge policies?
+
+Default behavior is last-write-wins. Policies let you sum counters, append/extend lists, or take min/max, etc.
+
+### Built-ins
+
+- `AddPolicy()`
+- `AppendPolicy()`
+- `ExtendPolicy()`
+- `MinPolicy()` / `MaxPolicy()`
+- `FirstNonNullPolicy()`
+
+### Example
+
+``` python
+from etielle.instances import InstanceEmit, FieldSpec, PydanticBuilder, AddPolicy, AppendPolicy
+from etielle.transforms import get, literal
+from etielle.core import field_of
+from pydantic import BaseModel
+
+class User(BaseModel):
+    id: str
+    login_count: int
+    tags: list[str]
+
+emit = InstanceEmit[User](
+    table="users",
+    join_keys=[get("id")],
+    fields=[
+        FieldSpec(selector=field_of(User, lambda u: u.id), transform=get("id")),
+        FieldSpec(selector=field_of(User, lambda u: u.login_count), transform=literal(1)),
+        FieldSpec(selector=field_of(User, lambda u: u.tags), transform=literal("alpha")),
+    ],
+    builder=PydanticBuilder(User),
+    policies={
+        "login_count": AddPolicy(),
+        "tags": AppendPolicy(),
+    },
+)
+```
+
+### Behavior and caveats
+
+- Policies are applied during update time per key/field.
+- Type mismatches are recorded as update errors; the row continues.
+- Deterministic ordering follows traversal arrival order.
+
+

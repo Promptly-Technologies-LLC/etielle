@@ -1,0 +1,46 @@
+---
+title: Error reporting and DX
+---
+
+The executor aggregates errors with precise table/key context and returns them alongside instances in `MappingResult`.
+
+### Result shape
+
+``` python
+from etielle.core import MappingResult
+
+# MappingResult[T]
+# - instances: Dict[tuple, T]
+# - update_errors: Dict[tuple, list[str]]
+# - finalize_errors: Dict[tuple, list[str]]
+# - stats: Dict[str, int]
+```
+
+### Update vs finalize errors
+
+- Update errors: recorded during incremental field updates (e.g., per-field type checks, unknown fields, merge-policy failures).
+- Finalize errors: recorded when builders validate/construct final instances.
+
+### Strictness
+
+- `strict_fields=True` (default) checks unknown fields against builder.known_fields().
+- `strict_mode="fail_fast"` will raise on unknown fields instead of collecting.
+
+### Unknown field suggestions
+
+When using string field names, the executor suggests closest matches using `difflib.get_close_matches`.
+
+### Example
+
+``` python
+from etielle.executor import run_mapping
+from etielle.core import MappingSpec, TraversalSpec
+
+results = run_mapping(root, mapping)
+users = results["users"]
+print(users.stats)
+print(users.update_errors)
+print(users.finalize_errors)
+```
+
+

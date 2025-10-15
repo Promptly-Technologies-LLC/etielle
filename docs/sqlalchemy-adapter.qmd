@@ -1,0 +1,50 @@
+---
+title: SQLAlchemy adapter
+---
+
+Bind relationships and flush once using the provided adapter utilities.
+
+### One-shot bind and flush
+
+``` python
+from sqlalchemy.orm import Session
+from etielle.adapters.sqlalchemy_adapter import bind_and_flush
+from etielle.relationships import ManyToOneSpec
+
+results = bind_and_flush(
+    session,
+    root=data,
+    mapping=mapping,
+    relationships=[
+        ManyToOneSpec(
+            child_table="posts",
+            parent_table="users",
+            attr="user",
+            child_to_parent_key=[get_from_parent("id")],
+        )
+    ],
+    add_all_instances=True,
+)
+```
+
+### Before-flush hook
+
+Install a one-shot `before_flush` binder when you want to control transaction boundaries yourself.
+
+``` python
+from etielle.adapters.sqlalchemy_adapter import install_before_flush_binder
+
+install_before_flush_binder(
+    session,
+    root=data,
+    mapping=mapping,
+    relationships=[...],
+)
+```
+
+### Notes
+
+- Autoflush is temporarily disabled during the one-shot flow to avoid early inserts.
+- Instances are added and flushed once; ORMs populate FKs automatically via relationships.
+
+

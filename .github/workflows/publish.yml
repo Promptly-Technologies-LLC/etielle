@@ -1,0 +1,53 @@
+name: Publish Documentation
+
+on:
+  push:
+    branches: main
+
+jobs:
+  publish-documentation:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: write
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.ref_name }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: "Set up Python"
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: "pyproject.toml"
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Set up Quarto
+        uses: quarto-dev/quarto-actions/setup@v2
+
+      - name: Configure Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Render Documentation
+        run: |
+          # Publish Quarto documentation
+          uv run quarto publish gh-pages --no-prompt --no-browser
+          
+          # Render README in GitHub Flavored Markdown
+          uv run quarto render index.qmd --output-dir . --output README.md --to gfm
+
+      - name: Commit README
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Render README.md"
+          branch: ${{ github.ref_name }}
+          file_pattern: "README.md"

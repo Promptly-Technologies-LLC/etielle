@@ -1,0 +1,82 @@
+---
+title: Instance emission (Pydantic, TypedDict, ORM)
+---
+
+Emit class instances directly, with progressive construction and validation, by plugging a builder into `InstanceEmit`.
+
+### Overview
+
+- `InstanceEmit[T]`: like `TableEmit`, but targets model instances via a builder.
+- Builders accumulate updates per composite key and finalize to instances at the end.
+- Merge policies let you control how repeated updates to the same field combine.
+
+### Builders
+
+``` python
+from etielle.instances import InstanceEmit, FieldSpec, PydanticBuilder, TypedDictBuilder
+from etielle.transforms import get
+from etielle.core import MappingSpec, TraversalSpec, field_of
+from pydantic import BaseModel
+
+class User(BaseModel):
+    id: str
+    email: str
+
+emit = InstanceEmit[User](
+    table="users",
+    join_keys=[get("id")],
+    fields=[
+        FieldSpec(selector=field_of(User, lambda u: u.id), transform=get("id")),
+        FieldSpec(selector=field_of(User, lambda u: u.email), transform=get("email")),
+    ],
+    builder=PydanticBuilder(User),
+)
+```
+
+TypedDict without Pydantic:
+
+``` python
+from typing import TypedDict
+
+class UserTD(TypedDict):
+    id: str
+    email: str
+
+emit_td = InstanceEmit[UserTD](
+    table="users",
+    join_keys=[get("id")],
+    fields=[
+        FieldSpec(selector="id", transform=get("id")),
+        FieldSpec(selector="email", transform=get("email")),
+    ],
+    builder=TypedDictBuilder(lambda d: UserTD(**d)),
+)
+```
+
+### Strictness and error collection
+
+Builders collect update-time and finalize-time errors; the executor returns them in `MappingResult` per table.
+
+``` python
+from etielle.executor import run_mapping
+
+result = run_mapping(root, MappingSpec(traversals=[TraversalSpec(
+    path=["users"], iterate_items=False, emits=[emit]
+)]))
+
+mr = result["users"]
+print(mr.update_errors)
+print(mr.finalize_errors)
+```
+
+### Merge policies
+
+Use merge policies to override last-write-wins per field (see Merge policies page).
+
+### Reference
+
+- `InstanceEmit[T]`
+- `FieldSpec[T]`
+- `PydanticBuilder`, `PydanticPartialBuilder`, `TypedDictBuilder`
+
+
