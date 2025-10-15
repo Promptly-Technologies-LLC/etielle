@@ -252,18 +252,17 @@ spec = MappingSpec(traversals=[
 
 ## Transform Cheatsheet
 
-- **get(path)**: From current node (dot notation or list, e.g.,
+- **`get(path)`**: From current node (dot notation or list, e.g.,
   “user.name” or \[“user”, 0\]).
-- **get_from_parent(path, depth=1)**: From ancestor.
-- **get_from_root(path)**: From top-level JSON.
-- **key()**: Current dict key.
-- **index()**: Current list index.
-- **literal(value)**: Constant value.
-- \*\*concat(\*parts)\*\*: Join strings.
-- \*\*format_id(\*parts, sep=“\_“)\*\*: Join non-empty parts with
-  separator.
-- \*\*coalesce(\*transforms)\*\*: First non-None value.
-- **len_of(inner)**: Length of a list/dict/string.
+- **`get_from_parent(path, depth=1)`**: From ancestor.
+- **`get_from_root(path)`**: From top-level JSON.
+- **`key()`**: Current dict key.
+- **`index()`**: Current list index.
+- **`literal(value)`**: Constant value.
+- **`concat(*parts)`**: Join strings.
+- **`format_id(*parts, sep="_")`**: Join non-empty parts with separator.
+- **`coalesce(*transforms)`**: First non-None value.
+- **`len_of(inner)`**: Length of a list/dict/string.
 
 Pro Tip: Transforms are lazy—they run in the “context” of where they’re
 used, making them super flexible.
