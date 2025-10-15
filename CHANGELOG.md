@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.4.0 (2025-10-15)
+
+### Features
+
+- Sqlalchemy adapter
+  ([`3ac07a1`](https://github.com/Promptly-Technologies-LLC/etielle/commit/3ac07a135d487d842552788d032dcbf0cf86757e))
+
+
 ## v1.3.0 (2025-10-14)
 
 ### Features
