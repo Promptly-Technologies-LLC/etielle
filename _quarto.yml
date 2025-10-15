@@ -3,7 +3,7 @@ project:
   output-dir: _docs
 
 website:
-  title: "`etielle`: Declarative JSON-to-Relational Mapping in Python"
+  title: "etielle: Declarative JSON-to-Relational Mapping in Python"
   navbar:
     left:
       - href: index.qmd
