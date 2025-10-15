@@ -208,7 +208,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>Bind relationships and flush once using the provided adapter utilities.</p>
 <section id="one-shot-bind-and-flush" class="level3">
 <h3 class="anchored" data-anchor-id="one-shot-bind-and-flush">One-shot bind and flush</h3>
-<div id="05a0d902" class="cell" data-execution_count="2">
+<div id="9c2e051a" class="cell" data-execution_count="2">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Not shown: setup of database/models/emits/mapping/relationships</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.adapters.sqlalchemy_adapter <span class="im">import</span> bind_and_flush</span>
@@ -230,7 +230,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="before-flush-hook" class="level3">
 <h3 class="anchored" data-anchor-id="before-flush-hook">Before-flush hook</h3>
 <p>Install a one-shot <code>before_flush</code> binder when you want to control transaction boundaries yourself.</p>
-<div id="5efb63af" class="cell" data-execution_count="3">
+<div id="7a5ff4f7" class="cell" data-execution_count="3">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.adapters.sqlalchemy_adapter <span class="im">import</span> install_before_flush_binder</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Fresh session for demo</span></span>
