@@ -130,37 +130,30 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <a class="nav-link active" href="./index.html" aria-current="page"> 
 <span class="menu-text">Home</span></a>
   </li>  
-  <li class="nav-item dropdown ">
-    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-guides" role="link" data-bs-toggle="dropdown" aria-expanded="false">
- <span class="menu-text">Guides</span>
-    </a>
-    <ul class="dropdown-menu" aria-labelledby="nav-menu-guides">    
-        <li>
-    <a class="dropdown-item" href="./docs/field-selectors.html">
- <span class="dropdown-text">Field selectors</span></a>
+  <li class="nav-item">
+    <a class="nav-link" href="./docs/field-selectors.html"> 
+<span class="menu-text">Field selectors</span></a>
   </li>  
-        <li>
-    <a class="dropdown-item" href="./docs/instance-emission.html">
- <span class="dropdown-text">Instance emission</span></a>
+  <li class="nav-item">
+    <a class="nav-link" href="./docs/instance-emission.html"> 
+<span class="menu-text">Instance emission</span></a>
   </li>  
-        <li>
-    <a class="dropdown-item" href="./docs/merge-policies.html">
- <span class="dropdown-text">Merge policies</span></a>
+  <li class="nav-item">
+    <a class="nav-link" href="./docs/merge-policies.html"> 
+<span class="menu-text">Merge policies</span></a>
   </li>  
-        <li>
-    <a class="dropdown-item" href="./docs/error-reporting.html">
- <span class="dropdown-text">Error reporting</span></a>
+  <li class="nav-item">
+    <a class="nav-link" href="./docs/error-reporting.html"> 
+<span class="menu-text">Error reporting</span></a>
   </li>  
-        <li>
-    <a class="dropdown-item" href="./docs/relationships.html">
- <span class="dropdown-text">Relationships</span></a>
+  <li class="nav-item">
+    <a class="nav-link" href="./docs/relationships.html"> 
+<span class="menu-text">Relationships</span></a>
   </li>  
-        <li>
-    <a class="dropdown-item" href="./docs/sqlalchemy-adapter.html">
- <span class="dropdown-text">SQLAlchemy adapter</span></a>
+  <li class="nav-item">
+    <a class="nav-link" href="./docs/sqlalchemy-adapter.html"> 
+<span class="menu-text">SQLAlchemy adapter</span></a>
   </li>  
-    </ul>
-  </li>
 </ul>
             <ul class="navbar-nav navbar-nav-scroll ms-auto">
   <li class="nav-item compact">
@@ -274,61 +267,88 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="quick-start-your-first-mapping" class="level2">
 <h2 class="anchored" data-anchor-id="quick-start-your-first-mapping">Quick Start: Your First Mapping</h2>
 <p>Let’s start with a simple example. Suppose you have this JSON:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode json code-with-copy"><code class="sourceCode json"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">"users"</span><span class="fu">:</span> <span class="ot">[</span></span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">{</span><span class="dt">"id"</span><span class="fu">:</span> <span class="st">"u1"</span><span class="fu">,</span> <span class="dt">"name"</span><span class="fu">:</span> <span class="st">"Alice"</span><span class="fu">,</span> <span class="dt">"posts"</span><span class="fu">:</span> <span class="ot">[</span><span class="fu">{</span><span class="dt">"id"</span><span class="fu">:</span> <span class="st">"p1"</span><span class="fu">,</span> <span class="dt">"title"</span><span class="fu">:</span> <span class="st">"Hello"</span><span class="fu">}</span><span class="ot">,</span> <span class="fu">{</span><span class="dt">"id"</span><span class="fu">:</span> <span class="st">"p2"</span><span class="fu">,</span> <span class="dt">"title"</span><span class="fu">:</span> <span class="st">"World"</span><span class="fu">}</span><span class="ot">]</span><span class="fu">}</span><span class="ot">,</span></span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">{</span><span class="dt">"id"</span><span class="fu">:</span> <span class="st">"u2"</span><span class="fu">,</span> <span class="dt">"name"</span><span class="fu">:</span> <span class="st">"Bob"</span><span class="fu">,</span> <span class="dt">"posts"</span><span class="fu">:</span> <span class="ot">[]</span><span class="fu">}</span></span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  <span class="ot">]</span></span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="28b07463" class="cell" data-execution_count="1">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> {</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  <span class="st">"users"</span>: [</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    {<span class="st">"id"</span>: <span class="st">"u1"</span>, <span class="st">"name"</span>: <span class="st">"Alice"</span>, <span class="st">"posts"</span>: [{<span class="st">"id"</span>: <span class="st">"p1"</span>, <span class="st">"title"</span>: <span class="st">"Hello"</span>}, {<span class="st">"id"</span>: <span class="st">"p2"</span>, <span class="st">"title"</span>: <span class="st">"World"</span>}]},</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    {<span class="st">"id"</span>: <span class="st">"u2"</span>, <span class="st">"name"</span>: <span class="st">"Bob"</span>, <span class="st">"posts"</span>: []}</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>  ]</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
 <p>We want two tables: “users” (id, name) and “posts” (id, user_id, title).</p>
 <p>Here’s the code:</p>
-<div id="7ef90b73" class="cell" data-execution_count="1">
+<div id="8cba7f59" class="cell" data-execution_count="2">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.core <span class="im">import</span> MappingSpec, TraversalSpec, TableEmit, Field</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.transforms <span class="im">import</span> get, get_from_parent</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.executor <span class="im">import</span> run_mapping</span>
 <span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> { ... }  <span class="co"># Your JSON here</span></span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Traverse users array</span></span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>users_traversal <span class="op">=</span> TraversalSpec(</span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>    path<span class="op">=</span>[<span class="st">"users"</span>],  <span class="co"># Path to the array</span></span>
-<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>    iterate_items<span class="op">=</span><span class="va">False</span>,  <span class="co"># Iterate list items (not dict keys)</span></span>
-<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>    emits<span class="op">=</span>[</span>
-<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>        TableEmit(</span>
-<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>            table<span class="op">=</span><span class="st">"users"</span>,</span>
-<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>            join_keys<span class="op">=</span>[get(<span class="st">"id"</span>)],  <span class="co"># Unique key for the row</span></span>
-<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>            fields<span class="op">=</span>[</span>
-<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>                Field(<span class="st">"id"</span>, get(<span class="st">"id"</span>)),</span>
-<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>                Field(<span class="st">"name"</span>, get(<span class="st">"name"</span>))</span>
-<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>            ]</span>
-<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>        )</span>
-<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>    ]</span>
-<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a><span class="co"># Traverse posts under each user</span></span>
-<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a>posts_traversal <span class="op">=</span> TraversalSpec(</span>
-<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a>    path<span class="op">=</span>[<span class="st">"users"</span>],</span>
-<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a>    iterate_items<span class="op">=</span><span class="va">False</span>,</span>
-<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a>    inner_path<span class="op">=</span>[<span class="st">"posts"</span>],  <span class="co"># Nested path inside each user</span></span>
-<span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a>    inner_iterate_items<span class="op">=</span><span class="va">False</span>,</span>
-<span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a>    emits<span class="op">=</span>[</span>
-<span id="cb6-30"><a href="#cb6-30" aria-hidden="true" tabindex="-1"></a>        TableEmit(</span>
-<span id="cb6-31"><a href="#cb6-31" aria-hidden="true" tabindex="-1"></a>            table<span class="op">=</span><span class="st">"posts"</span>,</span>
-<span id="cb6-32"><a href="#cb6-32" aria-hidden="true" tabindex="-1"></a>            join_keys<span class="op">=</span>[get(<span class="st">"id"</span>)],</span>
-<span id="cb6-33"><a href="#cb6-33" aria-hidden="true" tabindex="-1"></a>            fields<span class="op">=</span>[</span>
-<span id="cb6-34"><a href="#cb6-34" aria-hidden="true" tabindex="-1"></a>                Field(<span class="st">"id"</span>, get(<span class="st">"id"</span>)),</span>
-<span id="cb6-35"><a href="#cb6-35" aria-hidden="true" tabindex="-1"></a>                Field(<span class="st">"user_id"</span>, get_from_parent(<span class="st">"id"</span>)),  <span class="co"># Link to parent user</span></span>
-<span id="cb6-36"><a href="#cb6-36" aria-hidden="true" tabindex="-1"></a>                Field(<span class="st">"title"</span>, get(<span class="st">"title"</span>))</span>
-<span id="cb6-37"><a href="#cb6-37" aria-hidden="true" tabindex="-1"></a>            ]</span>
-<span id="cb6-38"><a href="#cb6-38" aria-hidden="true" tabindex="-1"></a>        )</span>
-<span id="cb6-39"><a href="#cb6-39" aria-hidden="true" tabindex="-1"></a>    ]</span>
-<span id="cb6-40"><a href="#cb6-40" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb6-41"><a href="#cb6-41" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-42"><a href="#cb6-42" aria-hidden="true" tabindex="-1"></a>spec <span class="op">=</span> MappingSpec(traversals<span class="op">=</span>[users_traversal, posts_traversal])</span>
-<span id="cb6-43"><a href="#cb6-43" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> run_mapping(data, spec)</span>
-<span id="cb6-44"><a href="#cb6-44" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(result)  <span class="co"># Outputs dict of tables with rows</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Traverse users array</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>users_traversal <span class="op">=</span> TraversalSpec(</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    path<span class="op">=</span>[<span class="st">"users"</span>],  <span class="co"># Path to the array</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>    iterate_items<span class="op">=</span><span class="va">False</span>,  <span class="co"># Iterate list items (not dict keys)</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>    emits<span class="op">=</span>[</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>        TableEmit(</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>            table<span class="op">=</span><span class="st">"users"</span>,</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>            join_keys<span class="op">=</span>[get(<span class="st">"id"</span>)],  <span class="co"># Unique key for the row</span></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>            fields<span class="op">=</span>[</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>                Field(<span class="st">"id"</span>, get(<span class="st">"id"</span>)),</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>                Field(<span class="st">"name"</span>, get(<span class="st">"name"</span>))</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>            ]</span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>    ]</span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a><span class="co"># Traverse posts under each user</span></span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>posts_traversal <span class="op">=</span> TraversalSpec(</span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a>    path<span class="op">=</span>[<span class="st">"users"</span>],</span>
+<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a>    iterate_items<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a>    inner_path<span class="op">=</span>[<span class="st">"posts"</span>],  <span class="co"># Nested path inside each user</span></span>
+<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a>    inner_iterate_items<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a>    emits<span class="op">=</span>[</span>
+<span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a>        TableEmit(</span>
+<span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a>            table<span class="op">=</span><span class="st">"posts"</span>,</span>
+<span id="cb6-30"><a href="#cb6-30" aria-hidden="true" tabindex="-1"></a>            join_keys<span class="op">=</span>[get(<span class="st">"id"</span>)],</span>
+<span id="cb6-31"><a href="#cb6-31" aria-hidden="true" tabindex="-1"></a>            fields<span class="op">=</span>[</span>
+<span id="cb6-32"><a href="#cb6-32" aria-hidden="true" tabindex="-1"></a>                Field(<span class="st">"id"</span>, get(<span class="st">"id"</span>)),</span>
+<span id="cb6-33"><a href="#cb6-33" aria-hidden="true" tabindex="-1"></a>                Field(<span class="st">"user_id"</span>, get_from_parent(<span class="st">"id"</span>)),  <span class="co"># Link to parent user</span></span>
+<span id="cb6-34"><a href="#cb6-34" aria-hidden="true" tabindex="-1"></a>                Field(<span class="st">"title"</span>, get(<span class="st">"title"</span>))</span>
+<span id="cb6-35"><a href="#cb6-35" aria-hidden="true" tabindex="-1"></a>            ]</span>
+<span id="cb6-36"><a href="#cb6-36" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb6-37"><a href="#cb6-37" aria-hidden="true" tabindex="-1"></a>    ]</span>
+<span id="cb6-38"><a href="#cb6-38" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb6-39"><a href="#cb6-39" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-40"><a href="#cb6-40" aria-hidden="true" tabindex="-1"></a>spec <span class="op">=</span> MappingSpec(traversals<span class="op">=</span>[users_traversal, posts_traversal])</span>
+<span id="cb6-41"><a href="#cb6-41" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> run_mapping(data, spec)</span>
+<span id="cb6-42"><a href="#cb6-42" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-43"><a href="#cb6-43" aria-hidden="true" tabindex="-1"></a>out <span class="op">=</span> {table: <span class="bu">list</span>(mr.instances.values()) <span class="cf">for</span> table, mr <span class="kw">in</span> result.items()}</span>
+<span id="cb6-44"><a href="#cb6-44" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(json.dumps(out, indent<span class="op">=</span><span class="dv">2</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>{}</code></pre>
+<pre><code>{
+  "users": [
+    {
+      "id": "u1",
+      "name": "Alice"
+    },
+    {
+      "id": "u2",
+      "name": "Bob"
+    }
+  ],
+  "posts": [
+    {
+      "id": "p1",
+      "user_id": "u1",
+      "title": "Hello"
+    },
+    {
+      "id": "p2",
+      "user_id": "u1",
+      "title": "World"
+    }
+  ]
+}</code></pre>
 </div>
 </div>
 <p>Congrats! You’ve mapped your first JSON.</p>
@@ -390,7 +410,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="example-1-composite-keys-for-merging-data" class="level3">
 <h3 class="anchored" data-anchor-id="example-1-composite-keys-for-merging-data">Example 1: Composite Keys for Merging Data</h3>
 <p>Merge user info from two parts of JSON:</p>
-<div id="c1f4a228" class="cell" data-execution_count="2">
+<div id="90205f40" class="cell" data-execution_count="3">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>spec <span class="op">=</span> MappingSpec(traversals<span class="op">=</span>[</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    TraversalSpec(  <span class="co"># Basic user data</span></span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>        path<span class="op">=</span>[<span class="st">"users"</span>],</span>
@@ -417,7 +437,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="example-2-deep-nesting-arbitrary-depth" class="level3">
 <h3 class="anchored" data-anchor-id="example-2-deep-nesting-arbitrary-depth">Example 2: Deep Nesting (Arbitrary Depth)</h3>
 <p>No limit to depth—use longer <code>inner_path</code>:</p>
-<div id="22efe36e" class="cell" data-execution_count="3">
+<div id="731c7359" class="cell" data-execution_count="4">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>spec <span class="op">=</span> MappingSpec(traversals<span class="op">=</span>[</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    TraversalSpec(</span>
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>        path<span class="op">=</span>[<span class="st">"servers"</span>],</span>
