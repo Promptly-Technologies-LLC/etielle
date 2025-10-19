@@ -73,8 +73,8 @@ def test_bind_many_to_one_success():
 
     mapping = MappingSpec(
         traversals=[
-            TraversalSpec(path=["users"], iterate_items=False, emits=[users_emit]),
-            TraversalSpec(path=["posts"], iterate_items=False, emits=[posts_emit]),
+            TraversalSpec(path=["users"], mode="auto", emits=[users_emit]),
+            TraversalSpec(path=["posts"], mode="auto", emits=[posts_emit]),
         ]
     )
 
@@ -136,8 +136,8 @@ def test_bind_many_to_one_missing_parent_raises():
 
     mapping = MappingSpec(
         traversals=[
-            TraversalSpec(path=["users"], iterate_items=False, emits=[users_emit]),
-            TraversalSpec(path=["posts"], iterate_items=False, emits=[posts_emit]),
+            TraversalSpec(path=["users"], mode="auto", emits=[users_emit]),
+            TraversalSpec(path=["posts"], mode="auto", emits=[posts_emit]),
         ]
     )
 

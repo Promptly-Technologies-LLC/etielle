@@ -57,8 +57,8 @@ posts_emit = InstanceEmit[Post](
 )
 
 mapping = MappingSpec(traversals=[
-    TraversalSpec(path=["users"], iterate_items=False, emits=[users_emit]),
-    TraversalSpec(path=["users"], iterate_items=False, inner_path=["posts"], inner_iterate_items=False, emits=[posts_emit]),
+    TraversalSpec(path=["users"], mode="auto", emits=[users_emit]),
+    TraversalSpec(path=["users"], mode="auto", inner_path=["posts"], inner_mode="auto", emits=[posts_emit]),
 ])
 ```
 

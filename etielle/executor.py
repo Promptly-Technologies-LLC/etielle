@@ -12,8 +12,9 @@ from .instances import InstanceEmit, resolve_field_name_for_builder
 
 def _iter_traversal_nodes(root: Any, spec: TraversalSpec) -> Iterable[Context]:
     for base_ctx, outer in _iter_nodes(root, spec.path):
-        def yield_from_container(parent_ctx: Context, container: Any, iterate_items: bool) -> Iterable[Context]:
-            if iterate_items:
+        def yield_from_container(parent_ctx: Context, container: Any, mode: str) -> Iterable[Context]:
+            # Determine iteration behavior from mode
+            if mode == "items":
                 if isinstance(container, Mapping):
                     for k, v in container.items():
                         yield Context(
@@ -25,40 +26,64 @@ def _iter_traversal_nodes(root: Any, spec: TraversalSpec) -> Iterable[Context]:
                             index=None,
                             slots={},
                         )
-            else:
-                if isinstance(container, Sequence) and not isinstance(container, (str, bytes)):
-                    for i, v in enumerate(container):
-                        yield Context(
-                            root=root,
-                            node=v,
-                            path=parent_ctx.path + (i,),
-                            parent=parent_ctx,
-                            key=None,
-                            index=i,
-                            slots={},
-                        )
-                else:
-                    # Emit a single context for non-iterable container (e.g., root object)
+                return
+            if mode == "single":
+                yield Context(
+                    root=root,
+                    node=container,
+                    path=parent_ctx.path,
+                    parent=parent_ctx,
+                    key=None,
+                    index=None,
+                    slots={},
+                )
+                return
+            # auto mode
+            if isinstance(container, Mapping):
+                for k, v in container.items():
                     yield Context(
                         root=root,
-                        node=container,
-                        path=parent_ctx.path,
+                        node=v,
+                        path=parent_ctx.path + (str(k),),
                         parent=parent_ctx,
-                        key=None,
+                        key=str(k),
                         index=None,
                         slots={},
                     )
+                return
+            if isinstance(container, Sequence) and not isinstance(container, (str, bytes)):
+                for i, v in enumerate(container):
+                    yield Context(
+                        root=root,
+                        node=v,
+                        path=parent_ctx.path + (i,),
+                        parent=parent_ctx,
+                        key=None,
+                        index=i,
+                        slots={},
+                    )
+                return
+            # Non-iterable in auto mode: treat as single
+            yield Context(
+                root=root,
+                node=container,
+                path=parent_ctx.path,
+                parent=parent_ctx,
+                key=None,
+                index=None,
+                slots={},
+            )
 
         # If no inner path, iterate outer container directly
         if not spec.inner_path:
-            yield from yield_from_container(base_ctx, outer, spec.iterate_items)
+            yield from yield_from_container(base_ctx, outer, spec.mode)
             continue
 
         # Iterate outer container first, then inner container under each outer node
-        for outer_ctx in yield_from_container(base_ctx, outer, spec.iterate_items):
+        for outer_ctx in yield_from_container(base_ctx, outer, spec.mode):
             inner_container = _resolve_path(outer_ctx.node, spec.inner_path)
-            inner_iter_items = bool(spec.inner_iterate_items)
-            for inner_ctx in yield_from_container(outer_ctx, inner_container, inner_iter_items):
+            inner_mode = spec.inner_mode
+            for inner_ctx in yield_from_container(outer_ctx, inner_container, inner_mode):
                 yield inner_ctx
 
 

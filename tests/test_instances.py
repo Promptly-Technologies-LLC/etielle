@@ -24,7 +24,7 @@ def test_typed_dict_builder_basic():
         traversals=[
             TraversalSpec(
                 path=["users"],
-                iterate_items=False,
+                mode="auto",
                 emits=[
                     InstanceEmit[
                         dict
@@ -65,7 +65,7 @@ def test_merge_policy_add_across_multiple_updates():
         traversals=[
             TraversalSpec(
                 path=["events"],
-                iterate_items=False,
+                mode="auto",
                 emits=[
                     InstanceEmit[
                         dict
@@ -106,7 +106,7 @@ def test_append_and_extend_policies_ordering():
         traversals=[
             TraversalSpec(
                 path=["events"],
-                iterate_items=False,
+                mode="auto",
                 emits=[
                     InstanceEmit[
                         dict
@@ -153,7 +153,7 @@ def test_pydantic_builder_with_typed_selectors():
         traversals=[
             TraversalSpec(
                 path=["users"],
-                iterate_items=False,
+                mode="auto",
                 emits=[
                     InstanceEmit[User](
                         table="users_pydantic",
@@ -197,7 +197,7 @@ def test_unknown_field_suggestion_and_error_collection():
         traversals=[
             TraversalSpec(
                 path=["users"],
-                iterate_items=False,
+                mode="auto",
                 emits=[
                     InstanceEmit[User](
                         table="users_pydantic_bad_field",
@@ -243,7 +243,7 @@ def test_fail_fast_on_unknown_field():
         traversals=[
             TraversalSpec(
                 path=["users"],
-                iterate_items=False,
+                mode="auto",
                 emits=[
                     InstanceEmit[User](
                         table="users_pydantic_fail_fast",

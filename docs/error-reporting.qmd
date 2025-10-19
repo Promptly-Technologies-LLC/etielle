@@ -54,7 +54,7 @@ emit = InstanceEmit[User](
     ],
     builder=PydanticBuilder(User),
 )
-mapping = MappingSpec(traversals=[TraversalSpec(path=["users"], iterate_items=False, emits=[emit])])
+mapping = MappingSpec(traversals=[TraversalSpec(path=["users"], mode="auto", emits=[emit])])
 ```
 
 ``` {python}

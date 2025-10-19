@@ -56,8 +56,8 @@ emit2 = InstanceEmit[User](
     builder=PydanticBuilder(User),
 )
 mapping = MappingSpec(traversals=[
-    TraversalSpec(path=["users"], iterate_items=False, emits=[emit]),
-    TraversalSpec(path=["users"], iterate_items=False, emits=[emit2]),
+    TraversalSpec(path=["users"], mode="auto", emits=[emit]),
+    TraversalSpec(path=["users"], mode="auto", emits=[emit2]),
 ])
 
 res = run_mapping(root, mapping)

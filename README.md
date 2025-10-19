@@ -93,7 +93,7 @@ from etielle.executor import run_mapping
 # Traverse users array
 users_traversal = TraversalSpec(
     path=["users"],  # Path to the array
-    iterate_items=False,  # Iterate list items (not dict keys)
+    mode="auto",  # auto: list -> indices, dict -> items, other -> single
     emits=[
         TableEmit(
             table="users",
@@ -109,9 +109,9 @@ users_traversal = TraversalSpec(
 # Traverse posts under each user
 posts_traversal = TraversalSpec(
     path=["users"],
-    iterate_items=False,
+    mode="auto",
     inner_path=["posts"],  # Nested path inside each user
-    inner_iterate_items=False,
+    inner_mode="auto",
     emits=[
         TableEmit(
             table="posts",
@@ -199,8 +199,9 @@ This says: “Start here, then go deeper if needed, and do this for each
 item.”
 
 - `path`: Starting path (list of strings, e.g., \[“users”\]).
-- `iterate_items`: True for dicts (key-value pairs), False for lists.
+- `mode`: Iteration mode for the outer container: `"auto"` (default), `"items"`, or `"single"`.
 - `inner_path`: Optional deeper path (e.g., \[“posts”\] for nesting).
+- `inner_mode`: Iteration mode for the inner container: `"auto"` (default), `"items"`, or `"single"`.
 - `emits`: What tables to create from each item.
 
 You can have multiple Traversals in one MappingSpec—they run
@@ -229,7 +230,7 @@ Merge user info from two parts of JSON:
 spec = MappingSpec(traversals=[
     TraversalSpec(  # Basic user data
         path=["users"],
-        iterate_items=False,
+        mode="auto",
         emits=[TableEmit(
             table="users",
             join_keys=[get("id")],
@@ -238,7 +239,7 @@ spec = MappingSpec(traversals=[
     ),
     TraversalSpec(  # Add email from another section
         path=["profiles"],
-        iterate_items=False,
+        mode="auto",
         emits=[TableEmit(
             table="users",  # Same table!
             join_keys=[get("user_id")],  # Matches previous keys
@@ -258,9 +259,9 @@ No limit to depth—use longer `inner_path`:
 spec = MappingSpec(traversals=[
     TraversalSpec(
         path=["servers"],
-        iterate_items=False,
+        mode="auto",
         inner_path=["channels", "messages", "reactions"],  # 3 levels deep!
-        inner_iterate_items=False,
+        inner_mode="auto",
         emits=[TableEmit(
             table="reactions",
             join_keys=[get_from_parent("id", depth=3), get_from_parent("id", depth=2), get_from_parent("id"), get("id")],

@@ -62,7 +62,7 @@ def test_integration_with_field_and_executor():
         traversals=[
             TraversalSpec(
                 path=["users"],
-                iterate_items=False,
+                mode="auto",
                 emits=[
                     TableEmit(
                         table="users",

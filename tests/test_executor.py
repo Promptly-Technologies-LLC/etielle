@@ -18,7 +18,7 @@ def test_list_traversal_inner_path_and_auto_id():
 
     users_trav = TraversalSpec(
         path=["users"],
-        iterate_items=False,
+        mode="auto",
         emits=[
             TableEmit(
                 table="users",
@@ -30,9 +30,9 @@ def test_list_traversal_inner_path_and_auto_id():
 
     posts_trav = TraversalSpec(
         path=["users"],
-        iterate_items=False,
+        mode="auto",
         inner_path=["posts"],
-        inner_iterate_items=False,
+        inner_mode="auto",
         emits=[
             TableEmit(
                 table="posts",
@@ -67,7 +67,7 @@ def test_dict_item_iteration_and_parent_key():
         traversals=[
             TraversalSpec(
                 path=["metrics"],
-                iterate_items=True,  # iterate dict items: key/value
+                mode="items",  # iterate dict items: key/value
                 emits=[
                     TableEmit(
                         table="metrics",
@@ -104,7 +104,7 @@ def test_composite_join_keys_merging_from_multiple_traversals():
 
     people_trav = TraversalSpec(
         path=["people"],
-        iterate_items=False,
+        mode="auto",
         emits=[
             TableEmit(
                 table="scores",
@@ -120,7 +120,7 @@ def test_composite_join_keys_merging_from_multiple_traversals():
 
     bonus_trav = TraversalSpec(
         path=["bonuses"],
-        iterate_items=False,
+        mode="auto",
         emits=[
             TableEmit(
                 table="scores",

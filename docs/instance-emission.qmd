@@ -34,7 +34,7 @@ emit = InstanceEmit[User](
 
 # Minimal runnable demo
 root = {"users": [{"id": "u1", "email": "alice@example.com"}]}
-mapping = MappingSpec(traversals=[TraversalSpec(path=["users"], iterate_items=False, emits=[emit])])
+mapping = MappingSpec(traversals=[TraversalSpec(path=["users"], mode="auto", emits=[emit])])
 from etielle.executor import run_mapping
 res = run_mapping(root, mapping)
 print(sorted([(k, v.email) for k, v in res["users"].instances.items()]))
@@ -61,7 +61,7 @@ emit_td = InstanceEmit[UserTD](
 
 # Minimal runnable demo
 root = {"users": [{"id": "u1", "email": "alice@example.com"}]}
-mapping = MappingSpec(traversals=[TraversalSpec(path=["users"], iterate_items=False, emits=[emit_td])])
+mapping = MappingSpec(traversals=[TraversalSpec(path=["users"], mode="auto", emits=[emit_td])])
 from etielle.executor import run_mapping
 res = run_mapping(root, mapping)
 print(list(res["users"].instances.values()))
@@ -88,7 +88,7 @@ emit_err = InstanceEmit[User](
     ],
     builder=PydanticBuilder(User),
 )
-mapping_err = MappingSpec(traversals=[TraversalSpec(path=["users"], iterate_items=False, emits=[emit_err])])
+mapping_err = MappingSpec(traversals=[TraversalSpec(path=["users"], mode="auto", emits=[emit_err])])
 ```
 
 ``` {python}

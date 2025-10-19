@@ -1,6 +1,6 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
-from typing import Any, Callable, Optional, Protocol, Sequence, Tuple, TypeVar, Generic, cast, TYPE_CHECKING, Dict, List
+from typing import Any, Callable, Optional, Protocol, Sequence, Tuple, TypeVar, Generic, cast, TYPE_CHECKING, Dict, List, Literal
 
 if TYPE_CHECKING:
     # Avoid runtime import cycle; only for typing
@@ -165,17 +165,17 @@ class TraversalSpec:
     How to reach and iterate a collection of nodes under root.
 
     - path: list of keys from root to the outer container (e.g., ["blocks"])
-    - iterate_items: if True, iterate dict items (key, value); else iterate list values on the outer container
+    - mode: how to iterate the outer container: "auto" (default), "items" (dict key/value), or "single" (treat as one node)
     - inner_path: optional path inside each outer node to reach an inner container (e.g., ["elements"]). If provided, iterate that container instead of the outer node
-    - inner_iterate_items: if True, iterate dict items for inner_path; else list values
+    - inner_mode: how to iterate the inner container when inner_path is provided: "auto" (default), "items", or "single"
     - emits: table emitters to run for each yielded node
     """
 
     path: Sequence[str]
-    iterate_items: bool
     emits: Sequence[TableEmit | "InstanceEmit[Any]"]
+    mode: Literal["auto", "items", "single"] = "auto"
     inner_path: Optional[Sequence[str]] = None
-    inner_iterate_items: Optional[bool] = None
+    inner_mode: Literal["auto", "items", "single"] = "auto"
 
 
 @dataclass(frozen=True)

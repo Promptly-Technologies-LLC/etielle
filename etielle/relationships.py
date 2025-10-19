@@ -52,9 +52,7 @@ def compute_relationship_keys(
         specs_by_child.setdefault(s.child_table, []).append(s)
 
     # We need to traverse similarly to executor._iter_traversal_nodes and
-    # compute composite keys for InstanceEmit. We accept `traversals` as the
-    # raw dataclass dicts of TraversalSpec to avoid import cycles.
-    # Each traversal dict must contain keys: path, iterate_items, emits, and optional inner_path/inner_iterate_items
+    # compute composite keys for InstanceEmit.
 
     out: Dict[str, Dict[KeyTuple, KeyTuple]] = {tbl: {} for tbl in specs_by_child.keys()}
 

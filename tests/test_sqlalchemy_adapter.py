@@ -81,8 +81,8 @@ def test_bind_and_flush_sqlalchemy():
 
     mapping = MappingSpec(
         traversals=[
-            TraversalSpec(path=["users"], iterate_items=False, emits=[users_emit]),
-            TraversalSpec(path=["posts"], iterate_items=False, emits=[posts_emit]),
+            TraversalSpec(path=["users"], mode="auto", emits=[users_emit]),
+            TraversalSpec(path=["posts"], mode="auto", emits=[posts_emit]),
         ]
     )
 
