@@ -2,6 +2,39 @@
 
 <!-- version list -->
 
+## v2.0.0 (2025-10-19)
+
+### Bug Fixes
+
+- Make release workflow ff after publish
+  ([`506d3c8`](https://github.com/Promptly-Technologies-LLC/etielle/commit/506d3c86390bbac20cb36ef7fcbbd0b6d97a3b30))
+
+### Documentation
+
+- Add backticks around code
+  ([`e251f3f`](https://github.com/Promptly-Technologies-LLC/etielle/commit/e251f3f5c24b6f9965b20a3fc006224e60b0fab0))
+
+- All documentation code runs
+  ([`61dbb24`](https://github.com/Promptly-Technologies-LLC/etielle/commit/61dbb245bdff603dd37b9240e7e0ec74a2241229))
+
+- Documentation website
+  ([`8019c14`](https://github.com/Promptly-Technologies-LLC/etielle/commit/8019c1489f710f70fcafdf08c723a1a9929d840d))
+
+- Example code triggers errors
+  ([`b12093e`](https://github.com/Promptly-Technologies-LLC/etielle/commit/b12093ef19389e5663785a460f082aa8c2e861fd))
+
+- Fix header text color
+  ([`69ab9d4`](https://github.com/Promptly-Technologies-LLC/etielle/commit/69ab9d44e73725c5482e9132259aba836a86b88a))
+
+- Print mapping result
+  ([`1ef1164`](https://github.com/Promptly-Technologies-LLC/etielle/commit/1ef1164a844a2045163be515175da3a3b61de645))
+
+### Features
+
+- Simplify iteration API
+  ([`25e1c17`](https://github.com/Promptly-Technologies-LLC/etielle/commit/25e1c177ef497880f912b5c9770e01718298138d))
+
+
 ## v1.4.0 (2025-10-15)
 
 ### Features
