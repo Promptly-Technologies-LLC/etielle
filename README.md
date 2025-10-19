@@ -93,7 +93,7 @@ from etielle.executor import run_mapping
 # Traverse users array
 users_traversal = TraversalSpec(
     path=["users"],  # Path to the array
-    mode="auto",  # auto: list -> indices, dict -> items, other -> single
+    mode="auto",  # Iterate automatically based on container
     emits=[
         TableEmit(
             table="users",
@@ -199,9 +199,11 @@ This says: “Start here, then go deeper if needed, and do this for each
 item.”
 
 - `path`: Starting path (list of strings, e.g., \[“users”\]).
-- `mode`: Iteration mode for the outer container: `"auto"` (default), `"items"`, or `"single"`.
+- `mode`: Iteration mode for the outer container: “auto” (default),
+  “items”, or “single”.
 - `inner_path`: Optional deeper path (e.g., \[“posts”\] for nesting).
-- `inner_mode`: Iteration mode for the inner container: `"auto"` (default), `"items"`, or `"single"`.
+- `inner_mode`: Iteration mode for the inner container: “auto”
+  (default), “items”, or “single”.
 - `emits`: What tables to create from each item.
 
 You can have multiple Traversals in one MappingSpec—they run
