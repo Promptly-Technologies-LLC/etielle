@@ -177,8 +177,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#many-to-one-via-sidecar-keys" id="toc-many-to-one-via-sidecar-keys" class="nav-link active" data-scroll-target="#many-to-one-via-sidecar-keys">Many-to-one via sidecar keys</a></li>
+  <li><a href="#many-to-one-via-relationship-keys" id="toc-many-to-one-via-relationship-keys" class="nav-link active" data-scroll-target="#many-to-one-via-relationship-keys">Many-to-one via relationship keys</a></li>
+  <li><a href="#example-structure" id="toc-example-structure" class="nav-link" data-scroll-target="#example-structure">Example structure</a></li>
+  <li><a href="#complete-example" id="toc-complete-example" class="nav-link" data-scroll-target="#complete-example">Complete example</a></li>
   <li><a href="#behavior" id="toc-behavior" class="nav-link" data-scroll-target="#behavior">Behavior</a></li>
+  <li><a href="#see-also" id="toc-see-also" class="nav-link" data-scroll-target="#see-also">See also</a></li>
   </ul>
 </nav>
     </div>
@@ -204,26 +207,60 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
+<p><strong>What you’ll learn</strong>: How to build parent-child relationships in memory and flush once, avoiding N+1 database queries.</p>
+<p><strong>Prerequisites</strong>: Understanding of <code>InstanceEmit</code> and composite keys.</p>
 <p>Build relationships in-memory using composite keys, then flush once. This avoids per-row database round trips.</p>
-<section id="many-to-one-via-sidecar-keys" class="level3">
-<h3 class="anchored" data-anchor-id="many-to-one-via-sidecar-keys">Many-to-one via sidecar keys</h3>
-<p>Use <code>ManyToOneSpec</code> and compute child→parent keys by re-walking traversals, then bind via object references.</p>
-<div id="c3dec814" class="cell" data-execution_count="2">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Not shown: setup of models/emits/mapping/root</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>relationships <span class="op">=</span> [</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    ManyToOneSpec(</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>        child_table<span class="op">=</span><span class="st">"posts"</span>,</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>        parent_table<span class="op">=</span><span class="st">"users"</span>,</span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>        attr<span class="op">=</span><span class="st">"user"</span>,</span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>        child_to_parent_key<span class="op">=</span>[get_from_parent(<span class="st">"id"</span>)],</span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    )</span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>]</span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>results <span class="op">=</span> run_mapping(root, mapping)</span>
-<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>sidecar <span class="op">=</span> compute_relationship_keys(root, mapping.traversals, relationships)</span>
-<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>bind_many_to_one(results, relationships, sidecar)</span>
-<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="bu">sorted</span>([(p.<span class="bu">id</span>, p.user.<span class="bu">id</span> <span class="cf">if</span> p.user <span class="cf">else</span> <span class="va">None</span>) <span class="cf">for</span> p <span class="kw">in</span> results[<span class="st">"posts"</span>].instances.values()]))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<section id="many-to-one-via-relationship-keys" class="level3">
+<h3 class="anchored" data-anchor-id="many-to-one-via-relationship-keys">Many-to-one via relationship keys</h3>
+<p>Here’s how etielle builds relationships without database round trips:</p>
+<ol type="1">
+<li><strong>Compute keys</strong>: Walk through your JSON again to compute which child belongs to which parent</li>
+<li><strong>Store in sidecar</strong>: Keep these relationships separate from your instances (in a “sidecar” dict)</li>
+<li><strong>Bind in memory</strong>: Link child objects to parent objects using Python references</li>
+<li><strong>Flush once</strong>: Save everything to the database in one operation</li>
+</ol>
+<p>This avoids the typical ORM pattern of “insert parent, get ID, insert child with foreign key” which requires multiple queries.</p>
+</section>
+<section id="example-structure" class="level3">
+<h3 class="anchored" data-anchor-id="example-structure">Example structure</h3>
+<pre><code>JSON:
+{
+  "users": [
+    {"id": "u1", "posts": [
+      {"id": "p1", "title": "Hello"},
+      {"id": "p2", "title": "World"}
+    ]}
+  ]
+}
+
+In memory after mapping:
+User(id="u1")
+Post(id="p1", user=None)  ← We need to link this
+Post(id="p2", user=None)  ← And this
+
+After bind_many_to_one:
+User(id="u1")
+Post(id="p1", user=&lt;User u1&gt;)  ← Now linked!
+Post(id="p2", user=&lt;User u1&gt;)  ← Now linked!</code></pre>
+</section>
+<section id="complete-example" class="level3">
+<h3 class="anchored" data-anchor-id="complete-example">Complete example</h3>
+<div id="59c23dbd" class="cell" data-execution_count="2">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Using the models, emits, mapping, and root from above</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>relationships <span class="op">=</span> [</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    ManyToOneSpec(</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>        child_table<span class="op">=</span><span class="st">"posts"</span>,</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>        parent_table<span class="op">=</span><span class="st">"users"</span>,</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>        attr<span class="op">=</span><span class="st">"user"</span>,</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>        child_to_parent_key<span class="op">=</span>[get_from_parent(<span class="st">"id"</span>)],</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>]</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>results <span class="op">=</span> run_mapping(root, mapping)</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>sidecar <span class="op">=</span> compute_relationship_keys(root, mapping.traversals, relationships)</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>bind_many_to_one(results, relationships, sidecar)</span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="bu">sorted</span>([(p.<span class="bu">id</span>, p.user.<span class="bu">id</span> <span class="cf">if</span> p.user <span class="cf">else</span> <span class="va">None</span>) <span class="cf">for</span> p <span class="kw">in</span> results[<span class="st">"posts"</span>].instances.values()]))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[('p1', 'u1'), ('p2', 'u1')]</code></pre>
 </div>
@@ -235,6 +272,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li>Parent indices are built from finalized instances per table.</li>
 <li>Missing parents aggregate clear errors (optional raise).</li>
 <li>No mutation of domain objects during key computation (keys stored in sidecar map).</li>
+</ul>
+<p>For a complete SQLAlchemy integration example with automatic flushing, see <a href="../docs/sqlalchemy-adapter.html">SQLAlchemy adapter</a>.</p>
+</section>
+<section id="see-also" class="level3">
+<h3 class="anchored" data-anchor-id="see-also">See also</h3>
+<ul>
+<li><a href="../docs/sqlalchemy-adapter.html">SQLAlchemy adapter</a> - Full integration with SQLAlchemy ORM</li>
+<li><a href="../docs/instance-emission.html">Instance emission</a> - Creating the instances that relationships link</li>
 </ul>
 
 

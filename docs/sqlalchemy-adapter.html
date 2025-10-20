@@ -177,9 +177,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#one-shot-bind-and-flush" id="toc-one-shot-bind-and-flush" class="nav-link active" data-scroll-target="#one-shot-bind-and-flush">One-shot bind and flush</a></li>
+  <li><a href="#when-to-use-the-sqlalchemy-adapter" id="toc-when-to-use-the-sqlalchemy-adapter" class="nav-link active" data-scroll-target="#when-to-use-the-sqlalchemy-adapter">When to use the SQLAlchemy adapter</a></li>
+  <li><a href="#what-is-one-shot-bind-and-flush" id="toc-what-is-one-shot-bind-and-flush" class="nav-link" data-scroll-target="#what-is-one-shot-bind-and-flush">What is one-shot bind and flush?</a></li>
+  <li><a href="#one-shot-bind-and-flush" id="toc-one-shot-bind-and-flush" class="nav-link" data-scroll-target="#one-shot-bind-and-flush">One-shot bind and flush</a></li>
+  <li><a href="#performance-notes" id="toc-performance-notes" class="nav-link" data-scroll-target="#performance-notes">Performance notes</a></li>
   <li><a href="#before-flush-hook" id="toc-before-flush-hook" class="nav-link" data-scroll-target="#before-flush-hook">Before-flush hook</a></li>
   <li><a href="#notes" id="toc-notes" class="nav-link" data-scroll-target="#notes">Notes</a></li>
+  <li><a href="#see-also" id="toc-see-also" class="nav-link" data-scroll-target="#see-also">See also</a></li>
   </ul>
 </nav>
     </div>
@@ -205,10 +209,48 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
+<p><strong>What you’ll learn</strong>: How to efficiently load mapped data into SQLAlchemy with one-shot flushing.</p>
+<p><strong>Prerequisites</strong>: Understanding of relationships (see <a href="../docs/relationships.html">Relationships</a>).</p>
+<p>This adapter builds on the relationship system described in <a href="../docs/relationships.html">Relationships</a>. Read that first if you’re not familiar with <code>ManyToOneSpec</code>.</p>
 <p>Bind relationships and flush once using the provided adapter utilities.</p>
+<section id="when-to-use-the-sqlalchemy-adapter" class="level3">
+<h3 class="anchored" data-anchor-id="when-to-use-the-sqlalchemy-adapter">When to use the SQLAlchemy adapter</h3>
+<p>Use <code>bind_and_flush</code> when:</p>
+<ul>
+<li>Loading data from APIs into a SQLAlchemy database</li>
+<li>You have parent-child relationships (users → posts, orders → items, etc.)</li>
+<li>You want to minimize database round trips</li>
+<li>You’re doing bulk ETL operations</li>
+</ul>
+<p>Use <code>install_before_flush_binder</code> when:</p>
+<ul>
+<li>You need fine-grained control over transactions</li>
+<li>You want to add additional logic before/after the flush</li>
+<li>You’re integrating with existing SQLAlchemy code that manages sessions</li>
+</ul>
+</section>
+<section id="what-is-one-shot-bind-and-flush" class="level3">
+<h3 class="anchored" data-anchor-id="what-is-one-shot-bind-and-flush">What is one-shot bind and flush?</h3>
+<p><strong>Traditional ORM approach</strong> (multiple database round trips):</p>
+<ol type="1">
+<li>Insert parent record → database assigns ID</li>
+<li>Query to get the ID back</li>
+<li>Insert child record with foreign key → repeat for each child</li>
+<li>Result: N+1 queries (or worse)</li>
+</ol>
+<p><strong>etielle one-shot approach</strong> (single flush):</p>
+<ol type="1">
+<li>Create all parent instances in memory</li>
+<li>Create all child instances in memory</li>
+<li>Link children to parents using Python object references</li>
+<li>Call <code>session.flush()</code> once → SQLAlchemy inserts everything and handles foreign keys</li>
+<li>Result: 1 database operation</li>
+</ol>
+<p>This is much faster for bulk ETL operations.</p>
+</section>
 <section id="one-shot-bind-and-flush" class="level3">
 <h3 class="anchored" data-anchor-id="one-shot-bind-and-flush">One-shot bind and flush</h3>
-<div id="086287f7" class="cell" data-execution_count="2">
+<div id="fac0db9d" class="cell" data-execution_count="2">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Not shown: setup of database/models/emits/mapping/relationships</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.adapters.sqlalchemy_adapter <span class="im">import</span> bind_and_flush</span>
@@ -227,10 +269,27 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </section>
+<section id="performance-notes" class="level3">
+<h3 class="anchored" data-anchor-id="performance-notes">Performance notes</h3>
+<p>For 1000 users with 10 posts each:</p>
+<p><strong>Traditional approach</strong>:</p>
+<ul>
+<li>1000 INSERT for users</li>
+<li>10,000 INSERT for posts (each needing parent’s ID)</li>
+<li>Total: 11,000+ database operations</li>
+</ul>
+<p><strong>One-shot approach</strong>:</p>
+<ul>
+<li>1 bulk INSERT for users (1000 rows)</li>
+<li>1 bulk INSERT for posts (10,000 rows)</li>
+<li>Total: 2 database operations</li>
+</ul>
+<p>The one-shot approach is typically 10-100x faster depending on your database and network latency.</p>
+</section>
 <section id="before-flush-hook" class="level3">
 <h3 class="anchored" data-anchor-id="before-flush-hook">Before-flush hook</h3>
 <p>Install a one-shot <code>before_flush</code> binder when you want to control transaction boundaries yourself.</p>
-<div id="496630bb" class="cell" data-execution_count="3">
+<div id="db11ec76" class="cell" data-execution_count="3">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.adapters.sqlalchemy_adapter <span class="im">import</span> install_before_flush_binder</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Fresh session for demo</span></span>
@@ -259,6 +318,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <ul>
 <li>Autoflush is temporarily disabled during the one-shot flow to avoid early inserts.</li>
 <li>Instances are added and flushed once; ORMs populate FKs automatically via relationships.</li>
+</ul>
+</section>
+<section id="see-also" class="level3">
+<h3 class="anchored" data-anchor-id="see-also">See also</h3>
+<ul>
+<li><a href="../docs/relationships.html">Relationships</a> - Understanding relationship specs and binding</li>
+<li><a href="../docs/instance-emission.html">Instance emission</a> - Creating ORM instances</li>
 </ul>
 
 

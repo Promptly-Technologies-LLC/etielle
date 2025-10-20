@@ -178,6 +178,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
    
   <ul>
   <li><a href="#why-use-etielle-for-beginners" id="toc-why-use-etielle-for-beginners" class="nav-link active" data-scroll-target="#why-use-etielle-for-beginners">Why Use <code>etielle</code>? (For Beginners)</a></li>
+  <li><a href="#learning-path" id="toc-learning-path" class="nav-link" data-scroll-target="#learning-path">Learning Path</a></li>
   <li><a href="#installation" id="toc-installation" class="nav-link" data-scroll-target="#installation">Installation</a>
   <ul class="collapse">
   <li><a href="#with-uv-recommended-for-speed" id="toc-with-uv-recommended-for-speed" class="nav-link" data-scroll-target="#with-uv-recommended-for-speed">With uv (Recommended for Speed)</a></li>
@@ -199,8 +200,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#example-2-deep-nesting-arbitrary-depth" id="toc-example-2-deep-nesting-arbitrary-depth" class="nav-link" data-scroll-target="#example-2-deep-nesting-arbitrary-depth">Example 2: Deep Nesting (Arbitrary Depth)</a></li>
   </ul></li>
   <li><a href="#transform-cheatsheet" id="toc-transform-cheatsheet" class="nav-link" data-scroll-target="#transform-cheatsheet">Transform Cheatsheet</a></li>
+  <li><a href="#common-mistakes" id="toc-common-mistakes" class="nav-link" data-scroll-target="#common-mistakes">Common Mistakes</a></li>
   <li><a href="#advanced-topics" id="toc-advanced-topics" class="nav-link" data-scroll-target="#advanced-topics">Advanced Topics</a></li>
   <li><a href="#roadmap-ideas" id="toc-roadmap-ideas" class="nav-link" data-scroll-target="#roadmap-ideas">Roadmap Ideas</a></li>
+  <li><a href="#glossary" id="toc-glossary" class="nav-link" data-scroll-target="#glossary">Glossary</a></li>
   <li><a href="#license" id="toc-license" class="nav-link" data-scroll-target="#license">License</a></li>
   </ul>
 </nav>
@@ -240,9 +243,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li><strong>Declaring what you want</strong>: Write Python code to describe your tables and how to fill them.</li>
 <li><strong>Traversing nested structures</strong>: Walk through arrays-within-dictionaries-within-arrays to any arbitrary depth.</li>
 <li><strong>Performing arbitrary transformations</strong>: Use the provided functions to perform common operations (like getting the key or index of the current item or its parent), or define your own.</li>
-<li><strong>Building relationships</strong>: Use “keys” to link data across different parts of the JSON, like foreign keys in a database.</li>
+<li><strong>Building relationships</strong>: Link records across your different output tables and emit ORM relationships or foreign keys.</li>
 <li><strong>Being beginner-friendly</strong>: Everything is type-safe (Python checks your types), composable (build complex things from simple pieces), and easy to debug.</li>
 </ul>
+</section>
+<section id="learning-path" class="level2">
+<h2 class="anchored" data-anchor-id="learning-path">Learning Path</h2>
+<ol type="1">
+<li><strong>Start here</strong>: Follow the Quick Start example below to see basic mapping</li>
+<li><strong>Understand the pieces</strong>: Read Core Concepts to learn about Context, Transforms, and TraversalSpec</li>
+<li><strong>Go deeper</strong>: Explore the detailed examples for nesting and merging</li>
+<li><strong>Advanced features</strong>: Check out the docs/ folder for instance emission, relationships, and more</li>
+</ol>
 </section>
 <section id="installation" class="level2">
 <h2 class="anchored" data-anchor-id="installation">Installation</h2>
@@ -267,7 +279,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="quick-start-your-first-mapping" class="level2">
 <h2 class="anchored" data-anchor-id="quick-start-your-first-mapping">Quick Start: Your First Mapping</h2>
 <p>Let’s start with a simple example. Suppose you have this JSON:</p>
-<div id="76dd9260" class="cell" data-execution_count="1">
+<div id="eb668a04" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> {</span>
@@ -279,51 +291,60 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <p>We want two tables: “users” (id, name) and “posts” (id, user_id, title).</p>
 <p>Here’s the code:</p>
-<div id="0cb95daf" class="cell" data-execution_count="2">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.core <span class="im">import</span> MappingSpec, TraversalSpec, TableEmit, Field</span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.transforms <span class="im">import</span> get, get_from_parent</span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.executor <span class="im">import</span> run_mapping</span>
+<div id="a0a3af55" class="cell" data-execution_count="2">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.core <span class="im">import</span> MappingSpec, TraversalSpec, TableEmit, Field  <span class="co"># Core building blocks</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.transforms <span class="im">import</span> get, get_from_parent  <span class="co"># Functions to pull data from JSON</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.executor <span class="im">import</span> run_mapping  <span class="co"># The engine that runs everything</span></span>
 <span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Traverse users array</span></span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>users_traversal <span class="op">=</span> TraversalSpec(</span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    path<span class="op">=</span>[<span class="st">"users"</span>],  <span class="co"># Path to the array</span></span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>    mode<span class="op">=</span><span class="st">"auto"</span>,  <span class="co"># Iterate automatically based on container</span></span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>    emits<span class="op">=</span>[</span>
-<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>        TableEmit(</span>
-<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>            table<span class="op">=</span><span class="st">"users"</span>,</span>
-<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>            join_keys<span class="op">=</span>[get(<span class="st">"id"</span>)],  <span class="co"># Unique key for the row</span></span>
-<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>            fields<span class="op">=</span>[</span>
-<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>                Field(<span class="st">"id"</span>, get(<span class="st">"id"</span>)),</span>
-<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>                Field(<span class="st">"name"</span>, get(<span class="st">"name"</span>))</span>
-<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>            ]</span>
-<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>        )</span>
-<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>    ]</span>
-<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a><span class="co"># Traverse posts under each user</span></span>
-<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>posts_traversal <span class="op">=</span> TraversalSpec(</span>
-<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a>    path<span class="op">=</span>[<span class="st">"users"</span>],</span>
-<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a>    mode<span class="op">=</span><span class="st">"auto"</span>,</span>
-<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a>    inner_path<span class="op">=</span>[<span class="st">"posts"</span>],  <span class="co"># Nested path inside each user</span></span>
-<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a>    inner_mode<span class="op">=</span><span class="st">"auto"</span>,</span>
-<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a>    emits<span class="op">=</span>[</span>
-<span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a>        TableEmit(</span>
-<span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a>            table<span class="op">=</span><span class="st">"posts"</span>,</span>
-<span id="cb6-30"><a href="#cb6-30" aria-hidden="true" tabindex="-1"></a>            join_keys<span class="op">=</span>[get(<span class="st">"id"</span>)],</span>
-<span id="cb6-31"><a href="#cb6-31" aria-hidden="true" tabindex="-1"></a>            fields<span class="op">=</span>[</span>
-<span id="cb6-32"><a href="#cb6-32" aria-hidden="true" tabindex="-1"></a>                Field(<span class="st">"id"</span>, get(<span class="st">"id"</span>)),</span>
-<span id="cb6-33"><a href="#cb6-33" aria-hidden="true" tabindex="-1"></a>                Field(<span class="st">"user_id"</span>, get_from_parent(<span class="st">"id"</span>)),  <span class="co"># Link to parent user</span></span>
-<span id="cb6-34"><a href="#cb6-34" aria-hidden="true" tabindex="-1"></a>                Field(<span class="st">"title"</span>, get(<span class="st">"title"</span>))</span>
-<span id="cb6-35"><a href="#cb6-35" aria-hidden="true" tabindex="-1"></a>            ]</span>
-<span id="cb6-36"><a href="#cb6-36" aria-hidden="true" tabindex="-1"></a>        )</span>
-<span id="cb6-37"><a href="#cb6-37" aria-hidden="true" tabindex="-1"></a>    ]</span>
-<span id="cb6-38"><a href="#cb6-38" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb6-39"><a href="#cb6-39" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-40"><a href="#cb6-40" aria-hidden="true" tabindex="-1"></a>spec <span class="op">=</span> MappingSpec(traversals<span class="op">=</span>[users_traversal, posts_traversal])</span>
-<span id="cb6-41"><a href="#cb6-41" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> run_mapping(data, spec)</span>
-<span id="cb6-42"><a href="#cb6-42" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-43"><a href="#cb6-43" aria-hidden="true" tabindex="-1"></a>out <span class="op">=</span> {table: <span class="bu">list</span>(mr.instances.values()) <span class="cf">for</span> table, mr <span class="kw">in</span> result.items()}</span>
-<span id="cb6-44"><a href="#cb6-44" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(json.dumps(out, indent<span class="op">=</span><span class="dv">2</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="co"># A TraversalSpec tells etielle how to walk through your JSON. Think of it as</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="co"># giving directions: "Start at the 'users' key, then loop through each item in that array."</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Traverse users array</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>users_traversal <span class="op">=</span> TraversalSpec(</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>    path<span class="op">=</span>[<span class="st">"users"</span>],  <span class="co"># Path to the array</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>    mode<span class="op">=</span><span class="st">"auto"</span>,  <span class="co"># Iterate automatically based on container</span></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>    emits<span class="op">=</span>[</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>        <span class="co"># The join_keys identify each unique row—like a primary key in a database.</span></span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Rows with matching keys will be merged together.</span></span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>        TableEmit(</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>            table<span class="op">=</span><span class="st">"users"</span>,</span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>            join_keys<span class="op">=</span>[get(<span class="st">"id"</span>)],  <span class="co"># Unique key for the row</span></span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>            fields<span class="op">=</span>[</span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>                Field(<span class="st">"id"</span>, get(<span class="st">"id"</span>)),</span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>                Field(<span class="st">"name"</span>, get(<span class="st">"name"</span>))</span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>            ]</span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a>    ]</span>
+<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a><span class="co"># This second traversal is nested: first we navigate to each user,</span></span>
+<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a><span class="co"># then for each user we go into their posts array using inner_path.</span></span>
+<span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a>posts_traversal <span class="op">=</span> TraversalSpec(</span>
+<span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a>    path<span class="op">=</span>[<span class="st">"users"</span>],</span>
+<span id="cb6-30"><a href="#cb6-30" aria-hidden="true" tabindex="-1"></a>    mode<span class="op">=</span><span class="st">"auto"</span>,</span>
+<span id="cb6-31"><a href="#cb6-31" aria-hidden="true" tabindex="-1"></a>    inner_path<span class="op">=</span>[<span class="st">"posts"</span>],  <span class="co"># Nested path inside each user</span></span>
+<span id="cb6-32"><a href="#cb6-32" aria-hidden="true" tabindex="-1"></a>    inner_mode<span class="op">=</span><span class="st">"auto"</span>,</span>
+<span id="cb6-33"><a href="#cb6-33" aria-hidden="true" tabindex="-1"></a>    emits<span class="op">=</span>[</span>
+<span id="cb6-34"><a href="#cb6-34" aria-hidden="true" tabindex="-1"></a>        TableEmit(</span>
+<span id="cb6-35"><a href="#cb6-35" aria-hidden="true" tabindex="-1"></a>            table<span class="op">=</span><span class="st">"posts"</span>,</span>
+<span id="cb6-36"><a href="#cb6-36" aria-hidden="true" tabindex="-1"></a>            join_keys<span class="op">=</span>[get(<span class="st">"id"</span>)],</span>
+<span id="cb6-37"><a href="#cb6-37" aria-hidden="true" tabindex="-1"></a>            fields<span class="op">=</span>[</span>
+<span id="cb6-38"><a href="#cb6-38" aria-hidden="true" tabindex="-1"></a>                Field(<span class="st">"id"</span>, get(<span class="st">"id"</span>)),</span>
+<span id="cb6-39"><a href="#cb6-39" aria-hidden="true" tabindex="-1"></a>                Field(<span class="st">"user_id"</span>, get_from_parent(<span class="st">"id"</span>)),  <span class="co"># Link to parent user</span></span>
+<span id="cb6-40"><a href="#cb6-40" aria-hidden="true" tabindex="-1"></a>                Field(<span class="st">"title"</span>, get(<span class="st">"title"</span>))</span>
+<span id="cb6-41"><a href="#cb6-41" aria-hidden="true" tabindex="-1"></a>            ]</span>
+<span id="cb6-42"><a href="#cb6-42" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb6-43"><a href="#cb6-43" aria-hidden="true" tabindex="-1"></a>    ]</span>
+<span id="cb6-44"><a href="#cb6-44" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb6-45"><a href="#cb6-45" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-46"><a href="#cb6-46" aria-hidden="true" tabindex="-1"></a>spec <span class="op">=</span> MappingSpec(traversals<span class="op">=</span>[users_traversal, posts_traversal])</span>
+<span id="cb6-47"><a href="#cb6-47" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> run_mapping(data, spec)</span>
+<span id="cb6-48"><a href="#cb6-48" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-49"><a href="#cb6-49" aria-hidden="true" tabindex="-1"></a><span class="co"># result is a dict: {"users": MappingResult, "posts": MappingResult}</span></span>
+<span id="cb6-50"><a href="#cb6-50" aria-hidden="true" tabindex="-1"></a><span class="co"># Each MappingResult has .instances (a dict keyed by join_keys)</span></span>
+<span id="cb6-51"><a href="#cb6-51" aria-hidden="true" tabindex="-1"></a><span class="co"># Let's convert to simple lists for display:</span></span>
+<span id="cb6-52"><a href="#cb6-52" aria-hidden="true" tabindex="-1"></a>out <span class="op">=</span> {table: <span class="bu">list</span>(mr.instances.values()) <span class="cf">for</span> table, mr <span class="kw">in</span> result.items()}</span>
+<span id="cb6-53"><a href="#cb6-53" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(json.dumps(out, indent<span class="op">=</span><span class="dv">2</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>{
   "users": [
@@ -374,10 +395,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>Transforms are like mini-functions that pull values from Context. They’re “lazy”—they don’t run until needed, and they adapt to the current Context.</p>
 <p>Examples:</p>
 <ul>
-<li><code>get("name")</code>: Get “name” from current node.</li>
-<li><code>get_from_parent("id")</code>: Get “id” from parent.</li>
-<li><code>index()</code>: Current list position.</li>
-<li><code>concat(literal("user_"), get("id"))</code>: Combine strings.</li>
+<li><code>get("name")</code>: Get “name” from current node → <code>"Alice"</code> when node is <code>{"name": "Alice"}</code></li>
+<li><code>get_from_parent("id")</code>: Get “id” from parent context → <code>"u1"</code> when processing a post under user u1</li>
+<li><code>index()</code>: Current list position → <code>0</code> for first item, <code>1</code> for second, etc.</li>
+<li><code>concat(literal("user_"), get("id"))</code>: Combine strings → <code>"user_u1"</code></li>
 </ul>
 <p>Full list in the Cheatsheet below.</p>
 </section>
@@ -392,6 +413,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li><code>emits</code>: What tables to create from each item.</li>
 </ul>
 <p>You can have multiple Traversals in one MappingSpec—they run independently.</p>
+<p>Here’s a visual representation of how traversals work:</p>
+<pre><code>JSON structure:
+root
+└── users []                    ← path=["users"]
+    ├── [0] {"id": "u1", ...}
+    │   └── posts []            ← inner_path=["posts"]
+    │       ├── [0] {"id": "p1", "title": "Hello"}
+    │       └── [1] {"id": "p2", "title": "World"}
+    └── [1] {"id": "u2", ...}</code></pre>
 </section>
 <section id="tableemit-and-fields-building-your-tables" class="level3">
 <h3 class="anchored" data-anchor-id="tableemit-and-fields-building-your-tables">4. TableEmit and Fields: Building Your Tables</h3>
@@ -411,52 +441,57 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="example-1-composite-keys-for-merging-data" class="level3">
 <h3 class="anchored" data-anchor-id="example-1-composite-keys-for-merging-data">Example 1: Composite Keys for Merging Data</h3>
 <p>Merge user info from two parts of JSON:</p>
-<div id="6be4a73d" class="cell" data-execution_count="3">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>spec <span class="op">=</span> MappingSpec(traversals<span class="op">=</span>[</span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    TraversalSpec(  <span class="co"># Basic user data</span></span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>        path<span class="op">=</span>[<span class="st">"users"</span>],</span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>        mode<span class="op">=</span><span class="st">"auto"</span>,</span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>        emits<span class="op">=</span>[TableEmit(</span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>            table<span class="op">=</span><span class="st">"users"</span>,</span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>            join_keys<span class="op">=</span>[get(<span class="st">"id"</span>)],</span>
-<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>            fields<span class="op">=</span>[Field(<span class="st">"id"</span>, get(<span class="st">"id"</span>)), Field(<span class="st">"name"</span>, get(<span class="st">"name"</span>))]</span>
-<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>        )]</span>
-<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>    ),</span>
-<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>    TraversalSpec(  <span class="co"># Add email from another section</span></span>
-<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>        path<span class="op">=</span>[<span class="st">"profiles"</span>],</span>
-<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>        mode<span class="op">=</span><span class="st">"auto"</span>,</span>
-<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>        emits<span class="op">=</span>[TableEmit(</span>
-<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>            table<span class="op">=</span><span class="st">"users"</span>,  <span class="co"># Same table!</span></span>
-<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>            join_keys<span class="op">=</span>[get(<span class="st">"user_id"</span>)],  <span class="co"># Matches previous keys</span></span>
-<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>            fields<span class="op">=</span>[Field(<span class="st">"email"</span>, get(<span class="st">"email"</span>))]</span>
-<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>        )]</span>
-<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>    )</span>
-<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a>])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="e8112a15" class="cell" data-execution_count="3">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>spec <span class="op">=</span> MappingSpec(traversals<span class="op">=</span>[</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    TraversalSpec(  <span class="co"># Basic user data</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>        path<span class="op">=</span>[<span class="st">"users"</span>],</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>        mode<span class="op">=</span><span class="st">"auto"</span>,</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>        emits<span class="op">=</span>[TableEmit(</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>            table<span class="op">=</span><span class="st">"users"</span>,</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>            join_keys<span class="op">=</span>[get(<span class="st">"id"</span>)],</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>            fields<span class="op">=</span>[Field(<span class="st">"id"</span>, get(<span class="st">"id"</span>)), Field(<span class="st">"name"</span>, get(<span class="st">"name"</span>))]</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>        )]</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>    ),</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>    TraversalSpec(  <span class="co"># Add email from another section</span></span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>        path<span class="op">=</span>[<span class="st">"profiles"</span>],</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>        mode<span class="op">=</span><span class="st">"auto"</span>,</span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>        emits<span class="op">=</span>[TableEmit(</span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>            table<span class="op">=</span><span class="st">"users"</span>,  <span class="co"># Same table!</span></span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>            join_keys<span class="op">=</span>[get(<span class="st">"user_id"</span>)],  <span class="co"># Matches previous keys</span></span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>            fields<span class="op">=</span>[Field(<span class="st">"email"</span>, get(<span class="st">"email"</span>))]</span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>        )]</span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a>])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Rows with matching keys merge: e.g., add “email” to existing user row.</p>
 </section>
 <section id="example-2-deep-nesting-arbitrary-depth" class="level3">
 <h3 class="anchored" data-anchor-id="example-2-deep-nesting-arbitrary-depth">Example 2: Deep Nesting (Arbitrary Depth)</h3>
-<p>No limit to depth—use longer <code>inner_path</code>:</p>
-<div id="908915db" class="cell" data-execution_count="4">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>spec <span class="op">=</span> MappingSpec(traversals<span class="op">=</span>[</span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    TraversalSpec(</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>        path<span class="op">=</span>[<span class="st">"servers"</span>],</span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>        mode<span class="op">=</span><span class="st">"auto"</span>,</span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>        inner_path<span class="op">=</span>[<span class="st">"channels"</span>, <span class="st">"messages"</span>, <span class="st">"reactions"</span>],  <span class="co"># 3 levels deep!</span></span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>        inner_mode<span class="op">=</span><span class="st">"auto"</span>,</span>
-<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>        emits<span class="op">=</span>[TableEmit(</span>
-<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>            table<span class="op">=</span><span class="st">"reactions"</span>,</span>
-<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>            join_keys<span class="op">=</span>[get_from_parent(<span class="st">"id"</span>, depth<span class="op">=</span><span class="dv">3</span>), get_from_parent(<span class="st">"id"</span>, depth<span class="op">=</span><span class="dv">2</span>), get_from_parent(<span class="st">"id"</span>), get(<span class="st">"id"</span>)],</span>
-<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>            fields<span class="op">=</span>[</span>
-<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>                Field(<span class="st">"server_id"</span>, get_from_parent(<span class="st">"id"</span>, depth<span class="op">=</span><span class="dv">3</span>)),</span>
-<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>                Field(<span class="st">"channel_id"</span>, get_from_parent(<span class="st">"id"</span>, depth<span class="op">=</span><span class="dv">2</span>)),</span>
-<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>                Field(<span class="st">"message_id"</span>, get_from_parent(<span class="st">"id"</span>)),</span>
-<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>                Field(<span class="st">"reaction"</span>, get(<span class="st">"emoji"</span>))</span>
-<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>            ]</span>
-<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>        )]</span>
-<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>    )</span>
-<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>No limit to depth—use longer <code>inner_path</code>. The <code>depth</code> parameter controls how many levels up to look:</p>
+<ul>
+<li><code>get_from_parent("id")</code> or <code>depth=1</code> → immediate parent</li>
+<li><code>get_from_parent("id", depth=2)</code> → grandparent</li>
+<li><code>get_from_parent("id", depth=3)</code> → great-grandparent</li>
+</ul>
+<div id="dd137f2a" class="cell" data-execution_count="4">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>spec <span class="op">=</span> MappingSpec(traversals<span class="op">=</span>[</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>    TraversalSpec(</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>        path<span class="op">=</span>[<span class="st">"servers"</span>],</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>        mode<span class="op">=</span><span class="st">"auto"</span>,</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>        inner_path<span class="op">=</span>[<span class="st">"channels"</span>, <span class="st">"messages"</span>, <span class="st">"reactions"</span>],  <span class="co"># 3 levels deep!</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>        inner_mode<span class="op">=</span><span class="st">"auto"</span>,</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>        emits<span class="op">=</span>[TableEmit(</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>            table<span class="op">=</span><span class="st">"reactions"</span>,</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>            join_keys<span class="op">=</span>[get_from_parent(<span class="st">"id"</span>, depth<span class="op">=</span><span class="dv">3</span>), get_from_parent(<span class="st">"id"</span>, depth<span class="op">=</span><span class="dv">2</span>), get_from_parent(<span class="st">"id"</span>), get(<span class="st">"id"</span>)],</span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>            fields<span class="op">=</span>[</span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>                Field(<span class="st">"server_id"</span>, get_from_parent(<span class="st">"id"</span>, depth<span class="op">=</span><span class="dv">3</span>)),</span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>                Field(<span class="st">"channel_id"</span>, get_from_parent(<span class="st">"id"</span>, depth<span class="op">=</span><span class="dv">2</span>)),</span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>                Field(<span class="st">"message_id"</span>, get_from_parent(<span class="st">"id"</span>)),</span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>                Field(<span class="st">"reaction"</span>, get(<span class="st">"emoji"</span>))</span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>            ]</span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>        )]</span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a>])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </section>
 </section>
@@ -475,6 +510,31 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li><strong><code>len_of(inner)</code></strong>: Length of a list/dict/string.</li>
 </ul>
 <p>Pro Tip: Transforms are lazy—they run in the “context” of where they’re used, making them super flexible.</p>
+<p>Transforms compose naturally:</p>
+<div id="a634624c" class="cell" data-execution_count="5">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>user_key <span class="op">=</span> concat(literal(<span class="st">"user_"</span>), get(<span class="st">"id"</span>))           <span class="co"># "user_123"</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>full_name <span class="op">=</span> concat(get(<span class="st">"first"</span>), literal(<span class="st">" "</span>), get(<span class="st">"last"</span>))  <span class="co"># "Alice Smith"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="common-mistakes" class="level2">
+<h2 class="anchored" data-anchor-id="common-mistakes">Common Mistakes</h2>
+<ul>
+<li><strong>Empty results?</strong>
+<ul>
+<li>Check your <code>path</code> matches the JSON structure exactly</li>
+<li>Verify the data type at that path matches expectations</li>
+</ul></li>
+<li><strong>Missing parent data?</strong>
+<ul>
+<li>Check the <code>depth</code> parameter in <code>get_from_parent()</code></li>
+<li>Ensure the parent context exists in your traversal</li>
+</ul></li>
+<li><strong>Duplicate or missing rows?</strong>
+<ul>
+<li>Verify <code>join_keys</code> are unique for each row</li>
+<li>Check that join_keys don’t contain <code>None</code> values (these rows are skipped)</li>
+</ul></li>
+</ul>
 </section>
 <section id="advanced-topics" class="level2">
 <h2 class="anchored" data-anchor-id="advanced-topics">Advanced Topics</h2>
@@ -482,9 +542,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li><strong>Lazy Evaluation</strong>: Transforms don’t compute until executed, adapting to the current spot in JSON.</li>
 <li><strong>Custom Transforms</strong>: Define your own functions that take Context and return values.</li>
 <li><strong>Row Merging Rules</strong>: Last write wins for duplicate fields; missing keys skip rows.</li>
-<li><strong>Field selectors</strong>: Statically-checked field references via lambdas. See <a href="./docs/field-selectors.html">Field selectors</a>.</li>
-<li><strong>Instance emission</strong>: Build Pydantic/TypedDict/ORM instances directly. See <a href="./docs/instance-emission.html">Instance emission</a>.</li>
-<li><strong>Merge policies</strong>: Sum/append/min/max instead of overwrite. See <a href="./docs/merge-policies.html">Merge policies</a>.</li>
+<li><strong>Field selectors</strong>: Type-safe field references. See <a href="./docs/field-selectors.html">Field selectors</a>.</li>
+<li><strong>Instance emission</strong>: Build Pydantic/TypedDict/ORM instances directly instead of dicts. See <a href="./docs/instance-emission.html">Instance emission</a>.</li>
+<li><strong>Merge policies</strong>: Sum/append/min/max instead of overwrite when multiple traversals update the same field. See <a href="./docs/merge-policies.html">Merge policies</a>.</li>
 <li><strong>Error reporting</strong>: Per-key diagnostics in results. See <a href="./docs/error-reporting.html">Error reporting</a>.</li>
 <li><strong>Relationships without extra round trips</strong>: Bind in-memory, flush once. See <a href="./docs/relationships.html">Relationships</a> and <a href="./docs/sqlalchemy-adapter.html">SQLAlchemy adapter</a>.</li>
 <li><strong>Performance</strong>: Efficient for large JSON; traversals are independent.</li>
@@ -496,6 +556,17 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li>Database integrations (e.g., SQLAlchemy).</li>
 <li>More examples and benchmarks.</li>
 <li>Visual mapping tools.</li>
+</ul>
+</section>
+<section id="glossary" class="level2">
+<h2 class="anchored" data-anchor-id="glossary">Glossary</h2>
+<ul>
+<li><strong>Context</strong>: Your current position while traversing the JSON tree</li>
+<li><strong>Transform</strong>: A function that extracts values from a Context</li>
+<li><strong>Traversal</strong>: Instructions for walking through part of the JSON</li>
+<li><strong>Emit</strong>: Creating a table row from the current context</li>
+<li><strong>Join keys</strong>: Values that uniquely identify a row (like primary keys)</li>
+<li><strong>Depth</strong>: How many parent levels to traverse upward</li>
 </ul>
 </section>
 <section id="license" class="level2">

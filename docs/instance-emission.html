@@ -177,11 +177,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#overview" id="toc-overview" class="nav-link active" data-scroll-target="#overview">Overview</a></li>
+  <li><a href="#what-is-instance-emission" id="toc-what-is-instance-emission" class="nav-link active" data-scroll-target="#what-is-instance-emission">What is instance emission?</a></li>
+  <li><a href="#tableemit-vs.-instanceemit" id="toc-tableemit-vs.-instanceemit" class="nav-link" data-scroll-target="#tableemit-vs.-instanceemit">TableEmit vs.&nbsp;InstanceEmit</a></li>
   <li><a href="#builders" id="toc-builders" class="nav-link" data-scroll-target="#builders">Builders</a></li>
+  <li><a href="#choosing-a-builder" id="toc-choosing-a-builder" class="nav-link" data-scroll-target="#choosing-a-builder">Choosing a builder</a></li>
   <li><a href="#strictness-and-error-collection" id="toc-strictness-and-error-collection" class="nav-link" data-scroll-target="#strictness-and-error-collection">Strictness and error collection</a></li>
   <li><a href="#merge-policies" id="toc-merge-policies" class="nav-link" data-scroll-target="#merge-policies">Merge policies</a></li>
   <li><a href="#reference" id="toc-reference" class="nav-link" data-scroll-target="#reference">Reference</a></li>
+  <li><a href="#see-also" id="toc-see-also" class="nav-link" data-scroll-target="#see-also">See also</a></li>
   </ul>
 </nav>
     </div>
@@ -207,86 +210,159 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<p>Emit class instances directly, with progressive construction and validation, by plugging a builder into <code>InstanceEmit</code>.</p>
-<section id="overview" class="level3">
-<h3 class="anchored" data-anchor-id="overview">Overview</h3>
+<p><strong>What you’ll learn</strong>: How to emit Pydantic models or ORM objects directly instead of plain dicts, enabling validation and type safety.</p>
+<p><strong>Prerequisites</strong>: Basic understanding of <code>TableEmit</code> and <code>Field</code> from the README Quick Start.</p>
+<section id="what-is-instance-emission" class="level3">
+<h3 class="anchored" data-anchor-id="what-is-instance-emission">What is instance emission?</h3>
+<p>Instead of getting back plain dicts from your mapping, you can tell etielle to create your Pydantic models, TypedDicts, or ORM objects directly.</p>
+<p>This means you get:</p>
 <ul>
-<li><code>InstanceEmit[T]</code>: like <code>TableEmit</code>, but targets model instances via a builder.</li>
-<li>Builders accumulate updates per composite key and finalize to instances at the end.</li>
-<li>Merge policies let you control how repeated updates to the same field combine.</li>
+<li><strong>Validated data</strong>: Pydantic validates as it builds</li>
+<li><strong>Type safety</strong>: Your IDE knows the exact type of each instance</li>
+<li><strong>ORM integration</strong>: Create database objects without manual conversion</li>
 </ul>
+<p><strong>Progressive construction</strong> means you can have multiple traversals updating the same instance. For example:</p>
+<ul>
+<li>Traversal 1 sets <code>id</code> and <code>name</code> from <code>users</code> array</li>
+<li>Traversal 2 adds <code>email</code> from <code>profiles</code> array</li>
+<li>Both updates merge into one <code>User</code> instance with matching <code>join_keys</code></li>
+</ul>
+</section>
+<section id="tableemit-vs.-instanceemit" class="level3">
+<h3 class="anchored" data-anchor-id="tableemit-vs.-instanceemit">TableEmit vs.&nbsp;InstanceEmit</h3>
+<p><strong>With TableEmit</strong> (basic approach):</p>
+<div id="19a2fd37" class="cell" data-execution_count="1">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.core <span class="im">import</span> MappingSpec, TraversalSpec, TableEmit, Field</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.transforms <span class="im">import</span> get</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.executor <span class="im">import</span> run_mapping</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> {<span class="st">"users"</span>: [{<span class="st">"id"</span>: <span class="st">"u1"</span>, <span class="st">"email"</span>: <span class="st">"alice@example.com"</span>}]}</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>spec <span class="op">=</span> MappingSpec(traversals<span class="op">=</span>[TraversalSpec(</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    path<span class="op">=</span>[<span class="st">"users"</span>],</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    mode<span class="op">=</span><span class="st">"auto"</span>,</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    emits<span class="op">=</span>[TableEmit(</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>        table<span class="op">=</span><span class="st">"users"</span>,</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>        join_keys<span class="op">=</span>[get(<span class="st">"id"</span>)],</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>        fields<span class="op">=</span>[Field(<span class="st">"id"</span>, get(<span class="st">"id"</span>)), Field(<span class="st">"email"</span>, get(<span class="st">"email"</span>))]</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>    )]</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>)])</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> run_mapping(data, spec)</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="co"># result["users"].instances = {("u1",): {"id": "u1", "email": "alice@example.com"}}</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a><span class="co">#                                        ↑ plain dict</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p><strong>With InstanceEmit</strong> (typed approach):</p>
+<div id="f828826f" class="cell" data-execution_count="2">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.core <span class="im">import</span> MappingSpec, TraversalSpec, field_of</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.transforms <span class="im">import</span> get</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.instances <span class="im">import</span> InstanceEmit, FieldSpec, PydanticBuilder</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.executor <span class="im">import</span> run_mapping</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pydantic <span class="im">import</span> BaseModel</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> User(BaseModel):</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>    <span class="bu">id</span>: <span class="bu">str</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>    email: <span class="bu">str</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> {<span class="st">"users"</span>: [{<span class="st">"id"</span>: <span class="st">"u1"</span>, <span class="st">"email"</span>: <span class="st">"alice@example.com"</span>}]}</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>spec <span class="op">=</span> MappingSpec(traversals<span class="op">=</span>[TraversalSpec(</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>    path<span class="op">=</span>[<span class="st">"users"</span>],</span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>    mode<span class="op">=</span><span class="st">"auto"</span>,</span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>    emits<span class="op">=</span>[InstanceEmit[User](</span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>        table<span class="op">=</span><span class="st">"users"</span>,</span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>        join_keys<span class="op">=</span>[get(<span class="st">"id"</span>)],</span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>        builder<span class="op">=</span>PydanticBuilder(User),</span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a>        fields<span class="op">=</span>[</span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>            FieldSpec(selector<span class="op">=</span>field_of(User, <span class="kw">lambda</span> u: u.<span class="bu">id</span>), transform<span class="op">=</span>get(<span class="st">"id"</span>)),</span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>            FieldSpec(selector<span class="op">=</span>field_of(User, <span class="kw">lambda</span> u: u.email), transform<span class="op">=</span>get(<span class="st">"email"</span>)),</span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a>        ]</span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a>    )]</span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a>)])</span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> run_mapping(data, spec)</span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a><span class="co"># result["users"].instances = {("u1",): User(id="u1", email="alice@example.com")}</span></span>
+<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a><span class="co">#                                        ↑ Pydantic model instance</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
 </section>
 <section id="builders" class="level3">
 <h3 class="anchored" data-anchor-id="builders">Builders</h3>
-<div id="186f3a5e" class="cell" data-execution_count="1">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.instances <span class="im">import</span> InstanceEmit, FieldSpec, PydanticBuilder, TypedDictBuilder</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.transforms <span class="im">import</span> get</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.core <span class="im">import</span> MappingSpec, TraversalSpec, field_of</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pydantic <span class="im">import</span> BaseModel</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> User(BaseModel):</span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    <span class="bu">id</span>: <span class="bu">str</span></span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    email: <span class="bu">str</span></span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>emit <span class="op">=</span> InstanceEmit[User](</span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    table<span class="op">=</span><span class="st">"users"</span>,</span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    join_keys<span class="op">=</span>[get(<span class="st">"id"</span>)],</span>
-<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>    fields<span class="op">=</span>[</span>
-<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>        FieldSpec(selector<span class="op">=</span>field_of(User, <span class="kw">lambda</span> u: u.<span class="bu">id</span>), transform<span class="op">=</span>get(<span class="st">"id"</span>)),</span>
-<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>        FieldSpec(selector<span class="op">=</span>field_of(User, <span class="kw">lambda</span> u: u.email), transform<span class="op">=</span>get(<span class="st">"email"</span>)),</span>
-<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>    ],</span>
-<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>    builder<span class="op">=</span>PydanticBuilder(User),</span>
-<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a><span class="co"># Minimal runnable demo</span></span>
-<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>root <span class="op">=</span> {<span class="st">"users"</span>: [{<span class="st">"id"</span>: <span class="st">"u1"</span>, <span class="st">"email"</span>: <span class="st">"alice@example.com"</span>}]}</span>
-<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>mapping <span class="op">=</span> MappingSpec(traversals<span class="op">=</span>[TraversalSpec(path<span class="op">=</span>[<span class="st">"users"</span>], mode<span class="op">=</span><span class="st">"auto"</span>, emits<span class="op">=</span>[emit])])</span>
-<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.executor <span class="im">import</span> run_mapping</span>
-<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>res <span class="op">=</span> run_mapping(root, mapping)</span>
-<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="bu">sorted</span>([(k, v.email) <span class="cf">for</span> k, v <span class="kw">in</span> res[<span class="st">"users"</span>].instances.items()]))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="456e7e14" class="cell" data-execution_count="3">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.instances <span class="im">import</span> InstanceEmit, FieldSpec, PydanticBuilder, TypedDictBuilder</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.transforms <span class="im">import</span> get</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.core <span class="im">import</span> MappingSpec, TraversalSpec, field_of</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pydantic <span class="im">import</span> BaseModel</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> User(BaseModel):</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    <span class="bu">id</span>: <span class="bu">str</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    email: <span class="bu">str</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>emit <span class="op">=</span> InstanceEmit[User](</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>    table<span class="op">=</span><span class="st">"users"</span>,</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>    join_keys<span class="op">=</span>[get(<span class="st">"id"</span>)],</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>    fields<span class="op">=</span>[</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>        FieldSpec(selector<span class="op">=</span>field_of(User, <span class="kw">lambda</span> u: u.<span class="bu">id</span>), transform<span class="op">=</span>get(<span class="st">"id"</span>)),</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>        FieldSpec(selector<span class="op">=</span>field_of(User, <span class="kw">lambda</span> u: u.email), transform<span class="op">=</span>get(<span class="st">"email"</span>)),</span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>    ],</span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>    builder<span class="op">=</span>PydanticBuilder(User),</span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a><span class="co"># Minimal runnable demo</span></span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>root <span class="op">=</span> {<span class="st">"users"</span>: [{<span class="st">"id"</span>: <span class="st">"u1"</span>, <span class="st">"email"</span>: <span class="st">"alice@example.com"</span>}]}</span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>mapping <span class="op">=</span> MappingSpec(traversals<span class="op">=</span>[TraversalSpec(path<span class="op">=</span>[<span class="st">"users"</span>], mode<span class="op">=</span><span class="st">"auto"</span>, emits<span class="op">=</span>[emit])])</span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.executor <span class="im">import</span> run_mapping</span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>res <span class="op">=</span> run_mapping(root, mapping)</span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="bu">sorted</span>([(k, v.email) <span class="cf">for</span> k, v <span class="kw">in</span> res[<span class="st">"users"</span>].instances.items()]))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[(('u1',), 'alice@example.com')]</code></pre>
 </div>
 </div>
 <p>TypedDict without Pydantic:</p>
-<div id="94c5cd77" class="cell" data-execution_count="2">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> typing <span class="im">import</span> TypedDict</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> UserTD(TypedDict):</span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    <span class="bu">id</span>: <span class="bu">str</span></span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    email: <span class="bu">str</span></span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>emit_td <span class="op">=</span> InstanceEmit[UserTD](</span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    table<span class="op">=</span><span class="st">"users"</span>,</span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>    join_keys<span class="op">=</span>[get(<span class="st">"id"</span>)],</span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>    fields<span class="op">=</span>[</span>
-<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>        FieldSpec(selector<span class="op">=</span><span class="st">"id"</span>, transform<span class="op">=</span>get(<span class="st">"id"</span>)),</span>
-<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>        FieldSpec(selector<span class="op">=</span><span class="st">"email"</span>, transform<span class="op">=</span>get(<span class="st">"email"</span>)),</span>
-<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>    ],</span>
-<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>    builder<span class="op">=</span>TypedDictBuilder(<span class="kw">lambda</span> d: UserTD(<span class="op">**</span>d)),</span>
-<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a><span class="co"># Minimal runnable demo</span></span>
-<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>root <span class="op">=</span> {<span class="st">"users"</span>: [{<span class="st">"id"</span>: <span class="st">"u1"</span>, <span class="st">"email"</span>: <span class="st">"alice@example.com"</span>}]}</span>
-<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>mapping <span class="op">=</span> MappingSpec(traversals<span class="op">=</span>[TraversalSpec(path<span class="op">=</span>[<span class="st">"users"</span>], mode<span class="op">=</span><span class="st">"auto"</span>, emits<span class="op">=</span>[emit_td])])</span>
-<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.executor <span class="im">import</span> run_mapping</span>
-<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>res <span class="op">=</span> run_mapping(root, mapping)</span>
-<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="bu">list</span>(res[<span class="st">"users"</span>].instances.values()))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="2920267a" class="cell" data-execution_count="4">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> typing <span class="im">import</span> TypedDict</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> UserTD(TypedDict):</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    <span class="bu">id</span>: <span class="bu">str</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    email: <span class="bu">str</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>emit_td <span class="op">=</span> InstanceEmit[UserTD](</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>    table<span class="op">=</span><span class="st">"users"</span>,</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>    join_keys<span class="op">=</span>[get(<span class="st">"id"</span>)],</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>    fields<span class="op">=</span>[</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>        FieldSpec(selector<span class="op">=</span><span class="st">"id"</span>, transform<span class="op">=</span>get(<span class="st">"id"</span>)),</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>        FieldSpec(selector<span class="op">=</span><span class="st">"email"</span>, transform<span class="op">=</span>get(<span class="st">"email"</span>)),</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>    ],</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>    builder<span class="op">=</span>TypedDictBuilder(<span class="kw">lambda</span> d: UserTD(<span class="op">**</span>d)),</span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a><span class="co"># Minimal runnable demo</span></span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>root <span class="op">=</span> {<span class="st">"users"</span>: [{<span class="st">"id"</span>: <span class="st">"u1"</span>, <span class="st">"email"</span>: <span class="st">"alice@example.com"</span>}]}</span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>mapping <span class="op">=</span> MappingSpec(traversals<span class="op">=</span>[TraversalSpec(path<span class="op">=</span>[<span class="st">"users"</span>], mode<span class="op">=</span><span class="st">"auto"</span>, emits<span class="op">=</span>[emit_td])])</span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.executor <span class="im">import</span> run_mapping</span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>res <span class="op">=</span> run_mapping(root, mapping)</span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="bu">list</span>(res[<span class="st">"users"</span>].instances.values()))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[{'id': 'u1', 'email': 'alice@example.com'}]</code></pre>
 </div>
 </div>
 </section>
+<section id="choosing-a-builder" class="level3">
+<h3 class="anchored" data-anchor-id="choosing-a-builder">Choosing a builder</h3>
+<ul>
+<li><strong><code>PydanticBuilder(Model)</code></strong>: Use for Pydantic models with validation</li>
+<li><strong><code>PydanticPartialBuilder(Model)</code></strong>: Use when some fields might be missing (creates partial models)</li>
+<li><strong><code>TypedDictBuilder(factory)</code></strong>: Use for plain dicts or when you don’t want Pydantic</li>
+<li><strong>Custom builder</strong>: Implement the builder protocol for ORM objects or custom types</li>
+</ul>
+</section>
 <section id="strictness-and-error-collection" class="level3">
 <h3 class="anchored" data-anchor-id="strictness-and-error-collection">Strictness and error collection</h3>
 <p>Builders collect update-time and finalize-time errors; the executor returns them in <code>MappingResult</code> per table.</p>
-<div id="d14c07a0" class="cell" data-execution_count="4">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.executor <span class="im">import</span> run_mapping</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> run_mapping(root_err, mapping_err)</span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>mr <span class="op">=</span> result[<span class="st">"users"</span>]</span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(mr.update_errors)</span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(mr.finalize_errors)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="e5ae2c76" class="cell" data-execution_count="6">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.executor <span class="im">import</span> run_mapping</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> run_mapping(root_err, mapping_err)</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>mr <span class="op">=</span> result[<span class="st">"users"</span>]</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(mr.update_errors)</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(mr.finalize_errors)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>{('u1',): ["table=users key=('u1',) field emali: unknown field; did you mean email?"]}
 {('u1',): ["table=users key=('u1',) 1 validation error for User\nemail\n  Field required [type=missing, input_value={'id': 'u1'}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/missing"]}</code></pre>
@@ -295,7 +371,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="merge-policies" class="level3">
 <h3 class="anchored" data-anchor-id="merge-policies">Merge policies</h3>
-<p>Use merge policies to override last-write-wins per field (see Merge policies page).</p>
+<p>By default, if two traversals update the same field, the last write wins. You can change this behavior—see <a href="../docs/merge-policies.html">Merge policies</a> for details.</p>
 </section>
 <section id="reference" class="level3">
 <h3 class="anchored" data-anchor-id="reference">Reference</h3>
@@ -303,6 +379,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li><code>InstanceEmit[T]</code></li>
 <li><code>FieldSpec[T]</code></li>
 <li><code>PydanticBuilder</code>, <code>PydanticPartialBuilder</code>, <code>TypedDictBuilder</code></li>
+</ul>
+</section>
+<section id="see-also" class="level3">
+<h3 class="anchored" data-anchor-id="see-also">See also</h3>
+<ul>
+<li><a href="../docs/field-selectors.html">Field selectors</a> - Type-safe field references for InstanceEmit</li>
+<li><a href="../docs/merge-policies.html">Merge policies</a> - Controlling how repeated updates combine</li>
+<li><a href="../docs/error-reporting.html">Error reporting</a> - Debugging instance construction failures</li>
 </ul>
 
 

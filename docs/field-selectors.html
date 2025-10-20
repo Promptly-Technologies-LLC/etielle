@@ -177,11 +177,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#what-is-a-field-selector" id="toc-what-is-a-field-selector" class="nav-link active" data-scroll-target="#what-is-a-field-selector">What is a field selector?</a></li>
+  <li><a href="#why-use-field-selectors" id="toc-why-use-field-selectors" class="nav-link active" data-scroll-target="#why-use-field-selectors">Why use field selectors?</a></li>
+  <li><a href="#what-is-a-field-selector" id="toc-what-is-a-field-selector" class="nav-link" data-scroll-target="#what-is-a-field-selector">What is a field selector?</a></li>
   <li><a href="#constraints-enforced-at-runtime" id="toc-constraints-enforced-at-runtime" class="nav-link" data-scroll-target="#constraints-enforced-at-runtime">Constraints (enforced at runtime)</a></li>
+  <li><a href="#when-to-use-field-selectors-vs.-strings" id="toc-when-to-use-field-selectors-vs.-strings" class="nav-link" data-scroll-target="#when-to-use-field-selectors-vs.-strings">When to use field selectors vs.&nbsp;strings</a></li>
   <li><a href="#using-selectors-in-instance-emission" id="toc-using-selectors-in-instance-emission" class="nav-link" data-scroll-target="#using-selectors-in-instance-emission">Using selectors in instance emission</a></li>
+  <li><a href="#comparison-selectors-vs.-strings" id="toc-comparison-selectors-vs.-strings" class="nav-link" data-scroll-target="#comparison-selectors-vs.-strings">Comparison: Selectors vs.&nbsp;Strings</a></li>
   <li><a href="#backwards-compat-strings-with-strict-validation" id="toc-backwards-compat-strings-with-strict-validation" class="nav-link" data-scroll-target="#backwards-compat-strings-with-strict-validation">Backwards-compat strings, with strict validation</a></li>
   <li><a href="#reference" id="toc-reference" class="nav-link" data-scroll-target="#reference">Reference</a></li>
+  <li><a href="#see-also" id="toc-see-also" class="nav-link" data-scroll-target="#see-also">See also</a></li>
   </ul>
 </nav>
     </div>
@@ -207,11 +211,22 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
+<p><strong>What you’ll learn</strong>: How to use type-safe field references instead of strings, when to choose each approach, and how to catch typos at type-check time.</p>
 <p>Field selectors let you refer to model fields in a way static type checkers can verify, while the runtime resolves the field name without reflection.</p>
+<section id="why-use-field-selectors" class="level3">
+<h3 class="anchored" data-anchor-id="why-use-field-selectors">Why use field selectors?</h3>
+<p>Field selectors provide three key benefits over plain strings:</p>
+<ol type="1">
+<li><strong>IDE autocomplete</strong>: Your editor will suggest available fields as you type</li>
+<li><strong>Type-check time errors</strong>: Typos are caught before running your code</li>
+<li><strong>Refactoring safety</strong>: Renaming a field updates all selector references automatically</li>
+</ol>
+<p>If you’re working with plain dicts or don’t use type checkers, plain strings work fine.</p>
+</section>
 <section id="what-is-a-field-selector" class="level3">
 <h3 class="anchored" data-anchor-id="what-is-a-field-selector">What is a field selector?</h3>
 <p>Use <code>field_of(Model, lambda m: m.field)</code> to produce the string field name at runtime. Type checkers validate the lambda, catching typos early.</p>
-<div id="7415f89e" class="cell" data-execution_count="1">
+<div id="86ce5da9" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.core <span class="im">import</span> field_of</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> User:</span>
@@ -230,7 +245,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li>Exactly one attribute access must occur.</li>
 <li>No method calls, no indexing, no chained attributes.</li>
 </ul>
-<div id="f2a85b70" class="cell" data-execution_count="2">
+<div id="9aba589d" class="cell" data-execution_count="2">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.core <span class="im">import</span> field_of</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Model:</span>
@@ -255,10 +270,25 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </section>
+<section id="when-to-use-field-selectors-vs.-strings" class="level3">
+<h3 class="anchored" data-anchor-id="when-to-use-field-selectors-vs.-strings">When to use field selectors vs.&nbsp;strings</h3>
+<p>Use <code>field_of()</code> selectors when:</p>
+<ul>
+<li>Working with Pydantic models, dataclasses, or typed classes</li>
+<li>Using a type checker (mypy, pyright)</li>
+<li>Want IDE autocomplete and refactoring support</li>
+</ul>
+<p>Use plain string field names when:</p>
+<ul>
+<li>Working with plain dicts or dynamic data</li>
+<li>Prototyping quickly without types</li>
+<li>Field names are computed dynamically at runtime</li>
+</ul>
+</section>
 <section id="using-selectors-in-instance-emission" class="level3">
 <h3 class="anchored" data-anchor-id="using-selectors-in-instance-emission">Using selectors in instance emission</h3>
 <p>Selectors are used with <code>FieldSpec</code> inside <code>InstanceEmit</code>. They are resolved against the builder’s model.</p>
-<div id="bbe1bcae" class="cell" data-execution_count="3">
+<div id="09bb10f6" class="cell" data-execution_count="3">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.core <span class="im">import</span> MappingSpec, TraversalSpec, field_of</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.transforms <span class="im">import</span> get</span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.instances <span class="im">import</span> InstanceEmit, FieldSpec, PydanticBuilder</span>
@@ -280,22 +310,60 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <p>If you use a builder without a <code>model</code> attribute, pass string field names instead of selectors.</p>
 </section>
+<section id="comparison-selectors-vs.-strings" class="level3">
+<h3 class="anchored" data-anchor-id="comparison-selectors-vs.-strings">Comparison: Selectors vs.&nbsp;Strings</h3>
+<p>Here’s a side-by-side comparison showing the tradeoffs:</p>
+<div id="365de29b" class="cell" data-execution_count="4">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.instances <span class="im">import</span> InstanceEmit, FieldSpec, PydanticBuilder</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.core <span class="im">import</span> field_of</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.transforms <span class="im">import</span> get</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pydantic <span class="im">import</span> BaseModel</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> User(BaseModel):</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    <span class="bu">id</span>: <span class="bu">str</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>    email: <span class="bu">str</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a><span class="co"># With field selectors (type-safe):</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>emit_safe <span class="op">=</span> InstanceEmit[User](</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>    table<span class="op">=</span><span class="st">"users"</span>,</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>    join_keys<span class="op">=</span>[get(<span class="st">"id"</span>)],</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>    fields<span class="op">=</span>[</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>        FieldSpec(selector<span class="op">=</span>field_of(User, <span class="kw">lambda</span> u: u.<span class="bu">id</span>), transform<span class="op">=</span>get(<span class="st">"id"</span>)),</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>        FieldSpec(selector<span class="op">=</span>field_of(User, <span class="kw">lambda</span> u: u.emial), transform<span class="op">=</span>get(<span class="st">"email"</span>)),  <span class="co"># ❌ Type checker catches typo!</span></span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>    ],</span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>    builder<span class="op">=</span>PydanticBuilder(User),</span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a><span class="co"># With plain strings (more flexible, less safe):</span></span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>emit_strings <span class="op">=</span> InstanceEmit[User](</span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a>    table<span class="op">=</span><span class="st">"users"</span>,</span>
+<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a>    join_keys<span class="op">=</span>[get(<span class="st">"id"</span>)],</span>
+<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a>    fields<span class="op">=</span>[</span>
+<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a>        FieldSpec(selector<span class="op">=</span><span class="st">"id"</span>, transform<span class="op">=</span>get(<span class="st">"id"</span>)),</span>
+<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a>        FieldSpec(selector<span class="op">=</span><span class="st">"emial"</span>, transform<span class="op">=</span>get(<span class="st">"email"</span>)),  <span class="co"># ⚠️ Caught at runtime only (with strict_fields=True)</span></span>
+<span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a>    ],</span>
+<span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a>    builder<span class="op">=</span>PydanticBuilder(User),</span>
+<span id="cb6-30"><a href="#cb6-30" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
 <section id="backwards-compat-strings-with-strict-validation" class="level3">
 <h3 class="anchored" data-anchor-id="backwards-compat-strings-with-strict-validation">Backwards-compat strings, with strict validation</h3>
 <p>String field names remain supported. When <code>strict_fields=True</code> (default), unknown fields are recorded with helpful suggestions, and you can opt into <code>strict_mode="fail_fast"</code> to raise immediately.</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.transforms <span class="im">import</span> get</span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.instances <span class="im">import</span> InstanceEmit, FieldSpec, TypedDictBuilder</span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>emit <span class="op">=</span> InstanceEmit[<span class="bu">dict</span>](</span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    table<span class="op">=</span><span class="st">"users"</span>,</span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>    join_keys<span class="op">=</span>[get(<span class="st">"id"</span>)],</span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    fields<span class="op">=</span>[</span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>        FieldSpec(selector<span class="op">=</span><span class="st">"emali"</span>, transform<span class="op">=</span>get(<span class="st">"email"</span>)),  <span class="co"># typo on purpose</span></span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>    ],</span>
-<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>    builder<span class="op">=</span>TypedDictBuilder(<span class="kw">lambda</span> d: d),</span>
-<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>    strict_fields<span class="op">=</span><span class="va">True</span>,</span>
-<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>    <span class="co"># strict_mode="fail_fast",  # enable to raise instead of collect</span></span>
-<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="180268f1" class="cell" data-execution_count="5">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.transforms <span class="im">import</span> get</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.instances <span class="im">import</span> InstanceEmit, FieldSpec, TypedDictBuilder</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>emit <span class="op">=</span> InstanceEmit[<span class="bu">dict</span>](</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    table<span class="op">=</span><span class="st">"users"</span>,</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>    join_keys<span class="op">=</span>[get(<span class="st">"id"</span>)],</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>    fields<span class="op">=</span>[</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>        FieldSpec(selector<span class="op">=</span><span class="st">"emali"</span>, transform<span class="op">=</span>get(<span class="st">"email"</span>)),  <span class="co"># typo on purpose</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>    ],</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>    builder<span class="op">=</span>TypedDictBuilder(<span class="kw">lambda</span> d: d),</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>    strict_fields<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>    <span class="co"># strict_mode="fail_fast",  # enable to raise instead of collect</span></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
 </section>
 <section id="reference" class="level3">
 <h3 class="anchored" data-anchor-id="reference">Reference</h3>
@@ -303,6 +371,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li><code>etielle.core.field_of(model, selector)</code> → <code>str</code> field name</li>
 <li><code>FieldSpec[T](selector: Callable[[T], Any] | str, transform)</code></li>
 <li>Resolved through builders with a <code>model</code> (e.g., <code>PydanticBuilder</code>).</li>
+</ul>
+</section>
+<section id="see-also" class="level3">
+<h3 class="anchored" data-anchor-id="see-also">See also</h3>
+<ul>
+<li><a href="../docs/instance-emission.html">Instance emission</a> - Where field selectors are most commonly used</li>
+<li><a href="../docs/error-reporting.html">Error reporting</a> - How unknown field errors are reported</li>
 </ul>
 
 

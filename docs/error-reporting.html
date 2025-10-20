@@ -178,10 +178,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
    
   <ul>
   <li><a href="#result-shape" id="toc-result-shape" class="nav-link active" data-scroll-target="#result-shape">Result shape</a></li>
+  <li><a href="#what-to-do-with-errors" id="toc-what-to-do-with-errors" class="nav-link" data-scroll-target="#what-to-do-with-errors">What to do with errors</a></li>
   <li><a href="#update-vs-finalize-errors" id="toc-update-vs-finalize-errors" class="nav-link" data-scroll-target="#update-vs-finalize-errors">Update vs finalize errors</a></li>
   <li><a href="#strictness" id="toc-strictness" class="nav-link" data-scroll-target="#strictness">Strictness</a></li>
   <li><a href="#unknown-field-suggestions" id="toc-unknown-field-suggestions" class="nav-link" data-scroll-target="#unknown-field-suggestions">Unknown field suggestions</a></li>
+  <li><a href="#debugging-workflow" id="toc-debugging-workflow" class="nav-link" data-scroll-target="#debugging-workflow">Debugging workflow</a></li>
   <li><a href="#example" id="toc-example" class="nav-link" data-scroll-target="#example">Example</a></li>
+  <li><a href="#see-also" id="toc-see-also" class="nav-link" data-scroll-target="#see-also">See also</a></li>
   </ul>
 </nav>
     </div>
@@ -207,6 +210,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
+<p><strong>What you’ll learn</strong>: How to interpret error dictionaries and debug mapping failures.</p>
+<p><strong>When to read this</strong>: When your mapping produces empty results or unexpected errors.</p>
 <p>The executor aggregates errors with precise table/key context and returns them alongside instances in <code>MappingResult</code>.</p>
 <section id="result-shape" class="level3">
 <h3 class="anchored" data-anchor-id="result-shape">Result shape</h3>
@@ -217,6 +222,37 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co"># - update_errors: Dict[tuple, list[str]]</span></span>
 <span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co"># - finalize_errors: Dict[tuple, list[str]]</span></span>
 <span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="co"># - stats: Dict[str, int]</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="what-to-do-with-errors" class="level3">
+<h3 class="anchored" data-anchor-id="what-to-do-with-errors">What to do with errors</h3>
+<p>When your mapping produces unexpected results, check the error dictionaries:</p>
+<p><strong>Update errors</strong> indicate problems during field updates:</p>
+<ul>
+<li><strong>Unknown field names</strong>: You referenced a field that doesn’t exist on your model
+<ul>
+<li>Fix: Check spelling, or add the field to your model</li>
+<li>The error message includes suggestions for similar field names</li>
+</ul></li>
+<li><strong>Type mismatches</strong>: A merge policy expected a number but got a string
+<ul>
+<li>Fix: Ensure your transforms return the correct type</li>
+</ul></li>
+<li><strong>Merge policy failures</strong>: The policy couldn’t combine values
+<ul>
+<li>Fix: Check that the field is initialized correctly in your model</li>
+</ul></li>
+</ul>
+<p><strong>Finalize errors</strong> indicate validation failures:</p>
+<ul>
+<li><strong>Missing required fields</strong>: Your model requires a field but it wasn’t set
+<ul>
+<li>Fix: Add a <code>FieldSpec</code> for that field, or make it optional in your model</li>
+</ul></li>
+<li><strong>Validation errors</strong>: Pydantic validation failed (wrong type, out of range, etc.)
+<ul>
+<li>Fix: Check your transform outputs match your model’s field types</li>
+</ul></li>
+</ul>
 </section>
 <section id="update-vs-finalize-errors" class="level3">
 <h3 class="anchored" data-anchor-id="update-vs-finalize-errors">Update vs finalize errors</h3>
@@ -236,24 +272,62 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h3 class="anchored" data-anchor-id="unknown-field-suggestions">Unknown field suggestions</h3>
 <p>When using string field names, the executor suggests closest matches using <code>difflib.get_close_matches</code>.</p>
 </section>
+<section id="debugging-workflow" class="level3">
+<h3 class="anchored" data-anchor-id="debugging-workflow">Debugging workflow</h3>
+<ol type="1">
+<li><p><strong>Check stats first</strong>: Look at <code>result["table"].stats</code> to see counts</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(result[<span class="st">"users"</span>].stats)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="co"># {"num_instances": 10, "num_update_errors": 2, "num_finalize_errors": 0}</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div></li>
+<li><p><strong>Inspect update errors</strong>: If <code>num_update_errors &gt; 0</code>, check which keys had problems</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> key, errors <span class="kw">in</span> result[<span class="st">"users"</span>].update_errors.items():</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Row </span><span class="sc">{</span>key<span class="sc">}</span><span class="ss"> had update errors: </span><span class="sc">{</span>errors<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div></li>
+<li><p><strong>Inspect finalize errors</strong>: If <code>num_finalize_errors &gt; 0</code>, check validation issues</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> key, errors <span class="kw">in</span> result[<span class="st">"users"</span>].finalize_errors.items():</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Row </span><span class="sc">{</span>key<span class="sc">}</span><span class="ss"> failed validation: </span><span class="sc">{</span>errors<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div></li>
+<li><p><strong>Look at successful instances</strong>: Compare working rows with error rows</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Successfully created </span><span class="sc">{</span><span class="bu">len</span>(result[<span class="st">'users'</span>].instances)<span class="sc">}</span><span class="ss"> instances"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div></li>
+</ol>
+</section>
 <section id="example" class="level3">
 <h3 class="anchored" data-anchor-id="example">Example</h3>
-<div id="f0fa6237" class="cell" data-execution_count="2">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Not shown: setup of root/emit/mapping</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.executor <span class="im">import</span> run_mapping</span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>results <span class="op">=</span> run_mapping(root, mapping)</span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>users <span class="op">=</span> results[<span class="st">"users"</span>]</span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(users.stats)</span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(users.update_errors)</span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(users.finalize_errors)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="cd21f59d" class="cell" data-execution_count="2">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Not shown: setup of root/emit/mapping</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.executor <span class="im">import</span> run_mapping</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>results <span class="op">=</span> run_mapping(root, mapping)</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>users <span class="op">=</span> results[<span class="st">"users"</span>]</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(users.stats)</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(users.update_errors)</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(users.finalize_errors)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>{'num_instances': 0, 'num_update_errors': 1, 'num_finalize_errors': 1}
 {('u1',): ["table=users key=('u1',) field emali: unknown field; did you mean email?"]}
 {('u1',): ["table=users key=('u1',) 1 validation error for User\nemail\n  Field required [type=missing, input_value={'id': 'u1'}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/missing"]}</code></pre>
 </div>
 </div>
+<p>The output shows what actual error messages look like:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Example output:</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>result[<span class="st">"users"</span>].update_errors</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="co"># {</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="co">#   ('u1',): [</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="co">#     "Unknown field 'emali' for table 'users'. Did you mean: 'email'?"</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a><span class="co">#   ]</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="co"># }</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>result[<span class="st">"users"</span>].finalize_errors</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a><span class="co"># {</span></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a><span class="co">#   ('u1',): [</span></span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a><span class="co">#     "Field 'email' is required but was not set"</span></span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a><span class="co">#   ]</span></span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a><span class="co"># }</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="see-also" class="level3">
+<h3 class="anchored" data-anchor-id="see-also">See also</h3>
+<ul>
+<li><a href="../docs/field-selectors.html">Field selectors</a> - How to avoid typos with type-safe selectors</li>
+<li><a href="../docs/instance-emission.html">Instance emission</a> - Understanding update vs finalize errors</li>
+</ul>
 
 
 </section>
