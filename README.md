@@ -303,12 +303,9 @@ used, making them super flexible.
   return values.
 - **Row Merging Rules**: Last write wins for duplicate fields; missing
   keys skip rows.
-- **Field selectors**: Statically-checked field references via lambdas.
-  See [Field selectors](docs/field-selectors.qmd).
-- **Instance emission**: Build Pydantic/TypedDict/ORM instances
-  directly. See [Instance emission](docs/instance-emission.qmd).
-- **Merge policies**: Sum/append/min/max instead of overwrite. See
-  [Merge policies](docs/merge-policies.qmd).
+- **Field selectors**: Type-safe field references. See [Field selectors](docs/field-selectors.qmd).
+- **Instance emission**: Build Pydantic/TypedDict/ORM instances directly instead of dicts. See [Instance emission](docs/instance-emission.qmd).
+- **Merge policies**: Sum/append/min/max instead of overwrite when multiple traversals update the same field. See [Merge policies](docs/merge-policies.qmd).
 - **Error reporting**: Per-key diagnostics in results. See [Error
   reporting](docs/error-reporting.qmd).
 - **Relationships without extra round trips**: Bind in-memory, flush

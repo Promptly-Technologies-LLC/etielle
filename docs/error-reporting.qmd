@@ -2,6 +2,10 @@
 title: Error reporting and DX
 ---
 
+**What you'll learn**: How to interpret error dictionaries and debug mapping failures.
+
+**When to read this**: When your mapping produces empty results or unexpected errors.
+
 The executor aggregates errors with precise table/key context and returns them alongside instances in `MappingResult`.
 
 ### Result shape
@@ -16,6 +20,27 @@ from etielle.core import MappingResult
 # - stats: Dict[str, int]
 ```
 
+### What to do with errors
+
+When your mapping produces unexpected results, check the error dictionaries:
+
+**Update errors** indicate problems during field updates:
+
+- **Unknown field names**: You referenced a field that doesn't exist on your model
+  - Fix: Check spelling, or add the field to your model
+  - The error message includes suggestions for similar field names
+- **Type mismatches**: A merge policy expected a number but got a string
+  - Fix: Ensure your transforms return the correct type
+- **Merge policy failures**: The policy couldn't combine values
+  - Fix: Check that the field is initialized correctly in your model
+
+**Finalize errors** indicate validation failures:
+
+- **Missing required fields**: Your model requires a field but it wasn't set
+  - Fix: Add a `FieldSpec` for that field, or make it optional in your model
+- **Validation errors**: Pydantic validation failed (wrong type, out of range, etc.)
+  - Fix: Check your transform outputs match your model's field types
+
 ### Update vs finalize errors
 
 - Update errors: recorded during incremental field updates (e.g., per-field type checks, unknown fields, merge-policy failures).
@@ -29,6 +54,31 @@ from etielle.core import MappingResult
 ### Unknown field suggestions
 
 When using string field names, the executor suggests closest matches using `difflib.get_close_matches`.
+
+### Debugging workflow
+
+1. **Check stats first**: Look at `result["table"].stats` to see counts
+   ```python
+   print(result["users"].stats)
+   # {"num_instances": 10, "num_update_errors": 2, "num_finalize_errors": 0}
+   ```
+
+2. **Inspect update errors**: If `num_update_errors > 0`, check which keys had problems
+   ```python
+   for key, errors in result["users"].update_errors.items():
+       print(f"Row {key} had update errors: {errors}")
+   ```
+
+3. **Inspect finalize errors**: If `num_finalize_errors > 0`, check validation issues
+   ```python
+   for key, errors in result["users"].finalize_errors.items():
+       print(f"Row {key} failed validation: {errors}")
+   ```
+
+4. **Look at successful instances**: Compare working rows with error rows
+   ```python
+   print(f"Successfully created {len(result['users'].instances)} instances")
+   ```
 
 ### Example
 
@@ -68,3 +118,27 @@ print(users.stats)
 print(users.update_errors)
 print(users.finalize_errors)
 ```
+
+The output shows what actual error messages look like:
+
+```python
+# Example output:
+result["users"].update_errors
+# {
+#   ('u1',): [
+#     "Unknown field 'emali' for table 'users'. Did you mean: 'email'?"
+#   ]
+# }
+
+result["users"].finalize_errors
+# {
+#   ('u1',): [
+#     "Field 'email' is required but was not set"
+#   ]
+# }
+```
+
+### See also
+
+- [Field selectors](field-selectors.qmd) - How to avoid typos with type-safe selectors
+- [Instance emission](instance-emission.qmd) - Understanding update vs finalize errors

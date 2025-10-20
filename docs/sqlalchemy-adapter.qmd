@@ -2,7 +2,47 @@
 title: SQLAlchemy adapter
 ---
 
+**What you'll learn**: How to efficiently load mapped data into SQLAlchemy with one-shot flushing.
+
+**Prerequisites**: Understanding of relationships (see [Relationships](relationships.qmd)).
+
+This adapter builds on the relationship system described in [Relationships](relationships.qmd). Read that first if you're not familiar with `ManyToOneSpec`.
+
 Bind relationships and flush once using the provided adapter utilities.
+
+### When to use the SQLAlchemy adapter
+
+Use `bind_and_flush` when:
+
+- Loading data from APIs into a SQLAlchemy database
+- You have parent-child relationships (users → posts, orders → items, etc.)
+- You want to minimize database round trips
+- You're doing bulk ETL operations
+
+Use `install_before_flush_binder` when:
+
+- You need fine-grained control over transactions
+- You want to add additional logic before/after the flush
+- You're integrating with existing SQLAlchemy code that manages sessions
+
+### What is one-shot bind and flush?
+
+**Traditional ORM approach** (multiple database round trips):
+
+1. Insert parent record → database assigns ID
+2. Query to get the ID back
+3. Insert child record with foreign key → repeat for each child
+4. Result: N+1 queries (or worse)
+
+**etielle one-shot approach** (single flush):
+
+1. Create all parent instances in memory
+2. Create all child instances in memory
+3. Link children to parents using Python object references
+4. Call `session.flush()` once → SQLAlchemy inserts everything and handles foreign keys
+5. Result: 1 database operation
+
+This is much faster for bulk ETL operations.
 
 ### One-shot bind and flush
 
@@ -107,6 +147,24 @@ results = bind_and_flush(
 print(len(results["users"].instances), len(results["posts"].instances))
 ```
 
+### Performance notes
+
+For 1000 users with 10 posts each:
+
+**Traditional approach**:
+
+- 1000 INSERT for users
+- 10,000 INSERT for posts (each needing parent's ID)
+- Total: 11,000+ database operations
+
+**One-shot approach**:
+
+- 1 bulk INSERT for users (1000 rows)
+- 1 bulk INSERT for posts (10,000 rows)
+- Total: 2 database operations
+
+The one-shot approach is typically 10-100x faster depending on your database and network latency.
+
 ### Before-flush hook
 
 Install a one-shot `before_flush` binder when you want to control transaction boundaries yourself.
@@ -136,3 +194,8 @@ print(
 
 - Autoflush is temporarily disabled during the one-shot flow to avoid early inserts.
 - Instances are added and flushed once; ORMs populate FKs automatically via relationships.
+
+### See also
+
+- [Relationships](relationships.qmd) - Understanding relationship specs and binding
+- [Instance emission](instance-emission.qmd) - Creating ORM instances

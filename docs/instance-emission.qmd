@@ -2,6 +2,10 @@
 title: Instance emission (Pydantic, TypedDict, ORM)
 ---
 
+**What you'll learn**: How to emit Pydantic models or ORM objects directly instead of plain dicts, enabling validation and type safety.
+
+**Prerequisites**: Basic understanding of `TableEmit` and `Field` from the README Quick Start.
+
 ### What is instance emission?
 
 Instead of getting back plain dicts from your mapping, you can tell etielle to create your Pydantic models, TypedDicts, or ORM objects directly.
@@ -177,10 +181,16 @@ print(mr.finalize_errors)
 
 ### Merge policies
 
-Use merge policies to override last-write-wins per field (see Merge policies page).
+By default, if two traversals update the same field, the last write wins. You can change this behavior—see [Merge policies](merge-policies.qmd) for details.
 
 ### Reference
 
 - `InstanceEmit[T]`
 - `FieldSpec[T]`
 - `PydanticBuilder`, `PydanticPartialBuilder`, `TypedDictBuilder`
+
+### See also
+
+- [Field selectors](field-selectors.qmd) - Type-safe field references for InstanceEmit
+- [Merge policies](merge-policies.qmd) - Controlling how repeated updates combine
+- [Error reporting](error-reporting.qmd) - Debugging instance construction failures

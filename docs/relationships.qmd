@@ -2,6 +2,10 @@
 title: Relationship building (no extra DB round trips)
 ---
 
+**What you'll learn**: How to build parent-child relationships in memory and flush once, avoiding N+1 database queries.
+
+**Prerequisites**: Understanding of `InstanceEmit` and composite keys.
+
 Build relationships in-memory using composite keys, then flush once. This avoids per-row database round trips.
 
 ### Many-to-one via relationship keys
@@ -118,3 +122,10 @@ print(sorted([(p.id, p.user.id if p.user else None) for p in results["posts"].in
 - Parent indices are built from finalized instances per table.
 - Missing parents aggregate clear errors (optional raise).
 - No mutation of domain objects during key computation (keys stored in sidecar map).
+
+For a complete SQLAlchemy integration example with automatic flushing, see [SQLAlchemy adapter](sqlalchemy-adapter.qmd).
+
+### See also
+
+- [SQLAlchemy adapter](sqlalchemy-adapter.qmd) - Full integration with SQLAlchemy ORM
+- [Instance emission](instance-emission.qmd) - Creating the instances that relationships link

@@ -2,6 +2,8 @@
 title: Field selectors
 ---
 
+**What you'll learn**: How to use type-safe field references instead of strings, when to choose each approach, and how to catch typos at type-check time.
+
 Field selectors let you refer to model fields in a way static type checkers can verify, while the runtime resolves the field name without reflection.
 
 ### Why use field selectors?
@@ -160,3 +162,8 @@ emit = InstanceEmit[dict](
 - `etielle.core.field_of(model, selector)` → `str` field name
 - `FieldSpec[T](selector: Callable[[T], Any] | str, transform)`
 - Resolved through builders with a `model` (e.g., `PydanticBuilder`).
+
+### See also
+
+- [Instance emission](instance-emission.qmd) - Where field selectors are most commonly used
+- [Error reporting](error-reporting.qmd) - How unknown field errors are reported
