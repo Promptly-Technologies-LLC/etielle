@@ -76,6 +76,15 @@ install the optional extra:
 uv add "etielle[sqlalchemy]"
 ```
 
+### Optional: SQLModel adapter
+
+If you plan to bind relationships and flush via SQLModel in one go,
+install the optional extra:
+
+``` bash
+uv add "etielle[sqlmodel]"
+```
+
 ## Quick Start: Your First Mapping
 
 Let’s start with a simple example. Suppose you have this JSON:
