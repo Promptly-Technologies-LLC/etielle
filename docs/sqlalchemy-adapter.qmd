@@ -1,16 +1,16 @@
 ---
-title: SQLAlchemy adapter
+title: SQLAlchemy & SQLModel adapters
 ---
 
-**What you'll learn**: How to efficiently load mapped data into SQLAlchemy with one-shot flushing.
+**What you'll learn**: How to efficiently load mapped data into SQLAlchemy or SQLModel with one-shot flushing.
 
 **Prerequisites**: Understanding of relationships (see [Relationships](relationships.qmd)).
 
-This adapter builds on the relationship system described in [Relationships](relationships.qmd). Read that first if you're not familiar with `ManyToOneSpec`.
+These adapters build on the relationship system described in [Relationships](relationships.qmd). Read that first if you're not familiar with `ManyToOneSpec`.
 
-Bind relationships and flush once using the provided adapter utilities.
+Bind relationships and flush once using the provided adapter utilities. Both adapters work identically—use whichever ORM you prefer.
 
-### When to use the SQLAlchemy adapter
+### When to use these adapters
 
 Use `bind_and_flush` when:
 
@@ -24,6 +24,26 @@ Use `install_before_flush_binder` when:
 - You need fine-grained control over transactions
 - You want to add additional logic before/after the flush
 - You're integrating with existing SQLAlchemy code that manages sessions
+
+### Installation
+
+Install the optional extra for your preferred ORM:
+
+::: {.panel-tabset}
+
+## SQLAlchemy
+
+```bash
+uv add "etielle[sqlalchemy]"
+```
+
+## SQLModel
+
+```bash
+uv add "etielle[sqlmodel]"
+```
+
+:::
 
 ### What is one-shot bind and flush?
 
@@ -45,6 +65,10 @@ Use `install_before_flush_binder` when:
 This is much faster for bulk ETL operations.
 
 ### One-shot bind and flush
+
+::: {.panel-tabset}
+
+## SQLAlchemy
 
 ``` {python}
 #| echo: false
@@ -147,6 +171,110 @@ results = bind_and_flush(
 print(len(results["users"].instances), len(results["posts"].instances))
 ```
 
+## SQLModel
+
+``` {python}
+from typing import Any, Dict
+from sqlmodel import SQLModel, Field, Relationship, Session, create_engine, select
+from etielle.core import MappingSpec, TraversalSpec
+from etielle.transforms import get
+from etielle.instances import InstanceEmit, FieldSpec, TypedDictBuilder
+from etielle.relationships import ManyToOneSpec
+
+
+class User(SQLModel, table=True):
+    __tablename__ = "users"
+    id: str = Field(primary_key=True)
+    name: str
+    posts: list["Post"] = Relationship(back_populates="user")
+
+
+class Post(SQLModel, table=True):
+    __tablename__ = "posts"
+    id: str = Field(primary_key=True)
+    title: str
+    user_id: str | None = Field(default=None, foreign_key="users.id")
+    user: User | None = Relationship(back_populates="posts")
+
+
+def _user_factory(payload: Dict[str, Any]) -> User:
+    return User(id=str(payload["id"]), name=str(payload.get("name", "")))
+
+
+def _post_factory(payload: Dict[str, Any]) -> Post:
+    return Post(id=str(payload["id"]), title=str(payload.get("title", "")))
+
+
+engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+SQLModel.metadata.create_all(engine)
+session = Session(engine)
+
+# Same data, emits, mapping, and relationships as SQLAlchemy example
+data = {
+    "users": [
+        {"id": "u1", "name": "Alice"},
+        {"id": "u2", "name": "Bob"},
+    ],
+    "posts": [
+        {"id": "p1", "title": "Hello", "user_id": "u1"},
+        {"id": "p2", "title": "World", "user_id": "u2"},
+    ],
+}
+
+users_emit = InstanceEmit[User](
+    table="users",
+    join_keys=[get("id")],
+    fields=[
+        FieldSpec(selector="id", transform=get("id")),
+        FieldSpec(selector="name", transform=get("name")),
+    ],
+    builder=TypedDictBuilder(_user_factory),
+)
+
+posts_emit = InstanceEmit[Post](
+    table="posts",
+    join_keys=[get("id")],
+    fields=[
+        FieldSpec(selector="id", transform=get("id")),
+        FieldSpec(selector="title", transform=get("title")),
+    ],
+    builder=TypedDictBuilder(_post_factory),
+)
+
+mapping = MappingSpec(
+    traversals=[
+        TraversalSpec(path=["users"], mode="auto", emits=[users_emit]),
+        TraversalSpec(path=["posts"], mode="auto", emits=[posts_emit]),
+    ]
+)
+
+relationships = [
+    ManyToOneSpec(
+        child_table="posts",
+        parent_table="users",
+        attr="user",
+        child_to_parent_key=[get("user_id")],
+        required=True,
+    )
+]
+```
+
+``` {python}
+from etielle.adapters.sqlmodel_adapter import bind_and_flush
+
+results = bind_and_flush(
+    session,
+    root=data,
+    mapping=mapping,
+    relationships=relationships,
+    add_all_instances=True,
+)
+
+print(len(results["users"].instances), len(results["posts"].instances))
+```
+
+:::
+
 ### Performance notes
 
 For 1000 users with 10 posts each:
@@ -169,6 +297,10 @@ The one-shot approach is typically 10-100x faster depending on your database and
 
 Install a one-shot `before_flush` binder when you want to control transaction boundaries yourself.
 
+::: {.panel-tabset}
+
+## SQLAlchemy
+
 ``` {python}
 from etielle.adapters.sqlalchemy_adapter import install_before_flush_binder
 
@@ -189,6 +321,29 @@ print(
     len(session.execute(select(Post)).scalars().all()),
 )
 ```
+
+## SQLModel
+
+``` {python}
+from etielle.adapters.sqlmodel_adapter import install_before_flush_binder
+
+session = Session(engine)
+install_before_flush_binder(
+    session,
+    root=data,
+    mapping=mapping,
+    relationships=relationships,
+)
+
+# Trigger flush to execute the binder
+session.flush()
+print(
+    len(session.exec(select(User)).all()),
+    len(session.exec(select(Post)).all()),
+)
+```
+
+:::
 
 ### Notes
 

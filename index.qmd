@@ -54,6 +54,13 @@ If you plan to bind relationships and flush via SQLAlchemy in one go, install th
 ```bash
 uv add "etielle[sqlalchemy]"
 ```
+### Optional: SQLModel adapter
+
+If you plan to bind relationships and flush via SQLModel in one go, install the optional extra:
+
+```bash
+uv add "etielle[sqlmodel]"
+```
 
 ## Quick Start: Your First Mapping
 

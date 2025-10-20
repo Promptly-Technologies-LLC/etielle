@@ -19,7 +19,7 @@ website:
       - href: docs/relationships.qmd
         text: Relationships
       - href: docs/sqlalchemy-adapter.qmd
-        text: SQLAlchemy adapter
+        text: SQLAlchemy & SQLModel adapters
     right:
       - icon: github
         href: https://github.com/promptly-technologies-llc/etielle
