@@ -9,5 +9,9 @@ wheels/
 # Virtual environments
 .venv
 
+# Quarto build and dist files
 /.quarto/
 _docs/
+
+# Since this is a library, we omit the lockfile
+uv.lock
