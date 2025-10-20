@@ -27,11 +27,21 @@ parsing. `etielle` helps by:
 - **Performing arbitrary transformations**: Use the provided functions
   to perform common operations (like getting the key or index of the
   current item or its parent), or define your own.
-- **Building relationships**: Use “keys” to link data across different
-  parts of the JSON, like foreign keys in a database.
+- **Building relationships**: Link records across your different output
+  tables and emit ORM relationships or foreign keys.
 - **Being beginner-friendly**: Everything is type-safe (Python checks
   your types), composable (build complex things from simple pieces), and
   easy to debug.
+
+## Learning Path
+
+1.  **Start here**: Follow the Quick Start example below to see basic
+    mapping
+2.  **Understand the pieces**: Read Core Concepts to learn about
+    Context, Transforms, and TraversalSpec
+3.  **Go deeper**: Explore the detailed examples for nesting and merging
+4.  **Advanced features**: Check out the docs/ folder for instance
+    emission, relationships, and more
 
 ## Installation
 
@@ -86,15 +96,20 @@ We want two tables: “users” (id, name) and “posts” (id, user_id, title).
 Here’s the code:
 
 ``` python
-from etielle.core import MappingSpec, TraversalSpec, TableEmit, Field
-from etielle.transforms import get, get_from_parent
-from etielle.executor import run_mapping
+from etielle.core import MappingSpec, TraversalSpec, TableEmit, Field  # Core building blocks
+from etielle.transforms import get, get_from_parent  # Functions to pull data from JSON
+from etielle.executor import run_mapping  # The engine that runs everything
+
+# A TraversalSpec tells etielle how to walk through your JSON. Think of it as
+# giving directions: "Start at the 'users' key, then loop through each item in that array."
 
 # Traverse users array
 users_traversal = TraversalSpec(
     path=["users"],  # Path to the array
     mode="auto",  # Iterate automatically based on container
     emits=[
+        # The join_keys identify each unique row—like a primary key in a database.
+        # Rows with matching keys will be merged together.
         TableEmit(
             table="users",
             join_keys=[get("id")],  # Unique key for the row
@@ -106,7 +121,8 @@ users_traversal = TraversalSpec(
     ]
 )
 
-# Traverse posts under each user
+# This second traversal is nested: first we navigate to each user,
+# then for each user we go into their posts array using inner_path.
 posts_traversal = TraversalSpec(
     path=["users"],
     mode="auto",
@@ -128,6 +144,9 @@ posts_traversal = TraversalSpec(
 spec = MappingSpec(traversals=[users_traversal, posts_traversal])
 result = run_mapping(data, spec)
 
+# result is a dict: {"users": MappingResult, "posts": MappingResult}
+# Each MappingResult has .instances (a dict keyed by join_keys)
+# Let's convert to simple lists for display:
 out = {table: list(mr.instances.values()) for table, mr in result.items()}
 print(json.dumps(out, indent=2))
 ```
@@ -186,10 +205,13 @@ current Context.
 
 Examples:
 
-- `get("name")`: Get “name” from current node.
-- `get_from_parent("id")`: Get “id” from parent.
-- `index()`: Current list position.
-- `concat(literal("user_"), get("id"))`: Combine strings.
+- `get("name")`: Get “name” from current node → `"Alice"` when node is
+  `{"name": "Alice"}`
+- `get_from_parent("id")`: Get “id” from parent context → `"u1"` when
+  processing a post under user u1
+- `index()`: Current list position → `0` for first item, `1` for second,
+  etc.
+- `concat(literal("user_"), get("id"))`: Combine strings → `"user_u1"`
 
 Full list in the Cheatsheet below.
 
@@ -208,6 +230,17 @@ item.”
 
 You can have multiple Traversals in one MappingSpec—they run
 independently.
+
+Here’s a visual representation of how traversals work:
+
+    JSON structure:
+    root
+    └── users []                    ← path=["users"]
+        ├── [0] {"id": "u1", ...}
+        │   └── posts []            ← inner_path=["posts"]
+        │       ├── [0] {"id": "p1", "title": "Hello"}
+        │       └── [1] {"id": "p2", "title": "World"}
+        └── [1] {"id": "u2", ...}
 
 ### 4. TableEmit and Fields: Building Your Tables
 
@@ -255,7 +288,12 @@ Rows with matching keys merge: e.g., add “email” to existing user row.
 
 ### Example 2: Deep Nesting (Arbitrary Depth)
 
-No limit to depth—use longer `inner_path`:
+No limit to depth—use longer `inner_path`. The `depth` parameter
+controls how many levels up to look:
+
+- `get_from_parent("id")` or `depth=1` → immediate parent
+- `get_from_parent("id", depth=2)` → grandparent
+- `get_from_parent("id", depth=3)` → great-grandparent
 
 ``` python
 spec = MappingSpec(traversals=[
@@ -295,6 +333,26 @@ spec = MappingSpec(traversals=[
 Pro Tip: Transforms are lazy—they run in the “context” of where they’re
 used, making them super flexible.
 
+Transforms compose naturally:
+
+``` python
+user_key = concat(literal("user_"), get("id"))           # "user_123"
+full_name = concat(get("first"), literal(" "), get("last"))  # "Alice Smith"
+```
+
+## Common Mistakes
+
+- **Empty results?**
+  - Check your `path` matches the JSON structure exactly
+  - Verify the data type at that path matches expectations
+- **Missing parent data?**
+  - Check the `depth` parameter in `get_from_parent()`
+  - Ensure the parent context exists in your traversal
+- **Duplicate or missing rows?**
+  - Verify `join_keys` are unique for each row
+  - Check that join_keys don’t contain `None` values (these rows are
+    skipped)
+
 ## Advanced Topics
 
 - **Lazy Evaluation**: Transforms don’t compute until executed, adapting
@@ -303,9 +361,13 @@ used, making them super flexible.
   return values.
 - **Row Merging Rules**: Last write wins for duplicate fields; missing
   keys skip rows.
-- **Field selectors**: Type-safe field references. See [Field selectors](docs/field-selectors.qmd).
-- **Instance emission**: Build Pydantic/TypedDict/ORM instances directly instead of dicts. See [Instance emission](docs/instance-emission.qmd).
-- **Merge policies**: Sum/append/min/max instead of overwrite when multiple traversals update the same field. See [Merge policies](docs/merge-policies.qmd).
+- **Field selectors**: Type-safe field references. See [Field
+  selectors](docs/field-selectors.qmd).
+- **Instance emission**: Build Pydantic/TypedDict/ORM instances directly
+  instead of dicts. See [Instance emission](docs/instance-emission.qmd).
+- **Merge policies**: Sum/append/min/max instead of overwrite when
+  multiple traversals update the same field. See [Merge
+  policies](docs/merge-policies.qmd).
 - **Error reporting**: Per-key diagnostics in results. See [Error
   reporting](docs/error-reporting.qmd).
 - **Relationships without extra round trips**: Bind in-memory, flush
@@ -318,6 +380,15 @@ used, making them super flexible.
 - Database integrations (e.g., SQLAlchemy).
 - More examples and benchmarks.
 - Visual mapping tools.
+
+## Glossary
+
+- **Context**: Your current position while traversing the JSON tree
+- **Transform**: A function that extracts values from a Context
+- **Traversal**: Instructions for walking through part of the JSON
+- **Emit**: Creating a table row from the current context
+- **Join keys**: Values that uniquely identify a row (like primary keys)
+- **Depth**: How many parent levels to traverse upward
 
 ## License
 
