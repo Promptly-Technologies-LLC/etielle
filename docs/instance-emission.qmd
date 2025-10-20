@@ -2,13 +2,81 @@
 title: Instance emission (Pydantic, TypedDict, ORM)
 ---
 
-Emit class instances directly, with progressive construction and validation, by plugging a builder into `InstanceEmit`.
+### What is instance emission?
 
-### Overview
+Instead of getting back plain dicts from your mapping, you can tell etielle to create your Pydantic models, TypedDicts, or ORM objects directly.
 
-- `InstanceEmit[T]`: like `TableEmit`, but targets model instances via a builder.
-- Builders accumulate updates per composite key and finalize to instances at the end.
-- Merge policies let you control how repeated updates to the same field combine.
+This means you get:
+
+- **Validated data**: Pydantic validates as it builds
+- **Type safety**: Your IDE knows the exact type of each instance
+- **ORM integration**: Create database objects without manual conversion
+
+**Progressive construction** means you can have multiple traversals updating the same instance. For example:
+
+- Traversal 1 sets `id` and `name` from `users` array
+- Traversal 2 adds `email` from `profiles` array
+- Both updates merge into one `User` instance with matching `join_keys`
+
+### TableEmit vs. InstanceEmit
+
+**With TableEmit** (basic approach):
+
+``` {python}
+#| eval: false
+from etielle.core import MappingSpec, TraversalSpec, TableEmit, Field
+from etielle.transforms import get
+from etielle.executor import run_mapping
+
+data = {"users": [{"id": "u1", "email": "alice@example.com"}]}
+
+spec = MappingSpec(traversals=[TraversalSpec(
+    path=["users"],
+    mode="auto",
+    emits=[TableEmit(
+        table="users",
+        join_keys=[get("id")],
+        fields=[Field("id", get("id")), Field("email", get("email"))]
+    )]
+)])
+result = run_mapping(data, spec)
+# result["users"].instances = {("u1",): {"id": "u1", "email": "alice@example.com"}}
+#                                        ↑ plain dict
+```
+
+**With InstanceEmit** (typed approach):
+
+``` {python}
+#| eval: false
+from etielle.core import MappingSpec, TraversalSpec, field_of
+from etielle.transforms import get
+from etielle.instances import InstanceEmit, FieldSpec, PydanticBuilder
+from etielle.executor import run_mapping
+from pydantic import BaseModel
+
+class User(BaseModel):
+    id: str
+    email: str
+
+data = {"users": [{"id": "u1", "email": "alice@example.com"}]}
+
+spec = MappingSpec(traversals=[TraversalSpec(
+    path=["users"],
+    mode="auto",
+    emits=[InstanceEmit[User](
+        table="users",
+        join_keys=[get("id")],
+        builder=PydanticBuilder(User),
+        fields=[
+            FieldSpec(selector=field_of(User, lambda u: u.id), transform=get("id")),
+            FieldSpec(selector=field_of(User, lambda u: u.email), transform=get("email")),
+        ]
+    )]
+)])
+result = run_mapping(data, spec)
+# result["users"].instances = {("u1",): User(id="u1", email="alice@example.com")}
+#                                        ↑ Pydantic model instance
+```
 
 ### Builders
 
@@ -66,6 +134,13 @@ from etielle.executor import run_mapping
 res = run_mapping(root, mapping)
 print(list(res["users"].instances.values()))
 ```
+
+### Choosing a builder
+
+- **`PydanticBuilder(Model)`**: Use for Pydantic models with validation
+- **`PydanticPartialBuilder(Model)`**: Use when some fields might be missing (creates partial models)
+- **`TypedDictBuilder(factory)`**: Use for plain dicts or when you don't want Pydantic
+- **Custom builder**: Implement the builder protocol for ORM objects or custom types
 
 ### Strictness and error collection
 

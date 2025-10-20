@@ -4,9 +4,42 @@ title: Relationship building (no extra DB round trips)
 
 Build relationships in-memory using composite keys, then flush once. This avoids per-row database round trips.
 
-### Many-to-one via sidecar keys
+### Many-to-one via relationship keys
 
-Use `ManyToOneSpec` and compute child→parent keys by re-walking traversals, then bind via object references.
+Here's how etielle builds relationships without database round trips:
+
+1. **Compute keys**: Walk through your JSON again to compute which child belongs to which parent
+2. **Store in sidecar**: Keep these relationships separate from your instances (in a "sidecar" dict)
+3. **Bind in memory**: Link child objects to parent objects using Python references
+4. **Flush once**: Save everything to the database in one operation
+
+This avoids the typical ORM pattern of "insert parent, get ID, insert child with foreign key" which requires multiple queries.
+
+### Example structure
+
+```
+JSON:
+{
+  "users": [
+    {"id": "u1", "posts": [
+      {"id": "p1", "title": "Hello"},
+      {"id": "p2", "title": "World"}
+    ]}
+  ]
+}
+
+In memory after mapping:
+User(id="u1")
+Post(id="p1", user=None)  ← We need to link this
+Post(id="p2", user=None)  ← And this
+
+After bind_many_to_one:
+User(id="u1")
+Post(id="p1", user=<User u1>)  ← Now linked!
+Post(id="p2", user=<User u1>)  ← Now linked!
+```
+
+### Complete example
 
 ``` {python}
 #| echo: false
@@ -63,7 +96,7 @@ mapping = MappingSpec(traversals=[
 ```
 
 ``` {python}
-# Not shown: setup of models/emits/mapping/root
+# Using the models, emits, mapping, and root from above
 
 relationships = [
     ManyToOneSpec(
