@@ -2,6 +2,28 @@
 
 <!-- version list -->
 
+## v2.1.0 (2025-10-20)
+
+### Documentation
+
+- Clarify field selector docs
+  ([`cb90959`](https://github.com/Promptly-Technologies-LLC/etielle/commit/cb90959941ab9ede524e33f4293570c7b72f7cfa))
+
+- Cross-linking, user-friendliness
+  ([`acb8b87`](https://github.com/Promptly-Technologies-LLC/etielle/commit/acb8b871912523926cdf0816069d62e55125b8fb))
+
+- Improve clarity of README
+  ([`dbc75c2`](https://github.com/Promptly-Technologies-LLC/etielle/commit/dbc75c2e24a1fb111a04b18b3b3b203ba5feb477))
+
+- More detailed emission guide
+  ([`782ab62`](https://github.com/Promptly-Technologies-LLC/etielle/commit/782ab6246c3518f8e543a408f335aa7722467d2b))
+
+### Features
+
+- Consolidate/enhance adapter documentation
+  ([`e6df5ed`](https://github.com/Promptly-Technologies-LLC/etielle/commit/e6df5edc5fa283c7411d9f909841b07ed60cf431))
+
+
 ## v2.0.0 (2025-10-19)
 
 ### Bug Fixes
