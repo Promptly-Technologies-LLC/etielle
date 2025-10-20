@@ -4,6 +4,16 @@ title: Field selectors
 
 Field selectors let you refer to model fields in a way static type checkers can verify, while the runtime resolves the field name without reflection.
 
+### Why use field selectors?
+
+Field selectors provide three key benefits over plain strings:
+
+1. **IDE autocomplete**: Your editor will suggest available fields as you type
+2. **Type-check time errors**: Typos are caught before running your code
+3. **Refactoring safety**: Renaming a field updates all selector references automatically
+
+If you're working with plain dicts or don't use type checkers, plain strings work fine.
+
 ### What is a field selector?
 
 Use `field_of(Model, lambda m: m.field)` to produce the string field name at runtime. Type checkers validate the lambda, catching typos early.
@@ -45,6 +55,20 @@ except ValueError:
     pass
 ```
 
+### When to use field selectors vs. strings
+
+Use `field_of()` selectors when:
+
+- Working with Pydantic models, dataclasses, or typed classes
+- Using a type checker (mypy, pyright)
+- Want IDE autocomplete and refactoring support
+
+Use plain string field names when:
+
+- Working with plain dicts or dynamic data
+- Prototyping quickly without types
+- Field names are computed dynamically at runtime
+
 ### Using selectors in instance emission
 
 Selectors are used with `FieldSpec` inside `InstanceEmit`. They are resolved against the builder’s model.
@@ -72,11 +96,50 @@ emit = InstanceEmit[UserModel](
 
 If you use a builder without a `model` attribute, pass string field names instead of selectors.
 
+### Comparison: Selectors vs. Strings
+
+Here's a side-by-side comparison showing the tradeoffs:
+
+``` {python}
+#| eval: false
+from etielle.instances import InstanceEmit, FieldSpec, PydanticBuilder
+from etielle.core import field_of
+from etielle.transforms import get
+from pydantic import BaseModel
+
+class User(BaseModel):
+    id: str
+    email: str
+
+# With field selectors (type-safe):
+emit_safe = InstanceEmit[User](
+    table="users",
+    join_keys=[get("id")],
+    fields=[
+        FieldSpec(selector=field_of(User, lambda u: u.id), transform=get("id")),
+        FieldSpec(selector=field_of(User, lambda u: u.emial), transform=get("email")),  # ❌ Type checker catches typo!
+    ],
+    builder=PydanticBuilder(User),
+)
+
+# With plain strings (more flexible, less safe):
+emit_strings = InstanceEmit[User](
+    table="users",
+    join_keys=[get("id")],
+    fields=[
+        FieldSpec(selector="id", transform=get("id")),
+        FieldSpec(selector="emial", transform=get("email")),  # ⚠️ Caught at runtime only (with strict_fields=True)
+    ],
+    builder=PydanticBuilder(User),
+)
+```
+
 ### Backwards-compat strings, with strict validation
 
 String field names remain supported. When `strict_fields=True` (default), unknown fields are recorded with helpful suggestions, and you can opt into `strict_mode="fail_fast"` to raise immediately.
 
-``` python
+``` {python}
+#| eval: false
 from etielle.transforms import get
 from etielle.instances import InstanceEmit, FieldSpec, TypedDictBuilder
 
