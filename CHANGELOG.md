@@ -2,6 +2,19 @@
 
 <!-- version list -->
 
+## v2.2.0 (2025-10-23)
+
+### Chores
+
+- Remove lockfile from version control
+  ([`0229547`](https://github.com/Promptly-Technologies-LLC/etielle/commit/022954758ee7e72cb42909bb8bdab8ebff030a6e))
+
+### Features
+
+- New ConstructorBuilder for ORMs
+  ([`977b0a0`](https://github.com/Promptly-Technologies-LLC/etielle/commit/977b0a0e866cadaae5a7cb2ef343dcfc117c2f84))
+
+
 ## v2.1.0 (2025-10-20)
 
 ### Documentation
