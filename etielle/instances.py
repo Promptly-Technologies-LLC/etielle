@@ -331,6 +331,55 @@ class TypedDictBuilder(InstanceBuilder[T]):
         self._finalize_errors.setdefault(key, []).append(reason)
 
 
+class ConstructorBuilder(InstanceBuilder[T]):
+    """
+    Simplified builder for classes that accept keyword arguments in their constructor.
+    Perfect for SQLAlchemy/SQLModel ORM models.
+
+    Usage:
+        builder = ConstructorBuilder(User)  # Just pass the class
+
+    Equivalent to:
+        builder = TypedDictBuilder(lambda d: User(**d))
+    """
+    def __init__(self, constructor: Callable[..., T]) -> None:
+        self.constructor = constructor
+        self.acc: Dict[K, Dict[str, Any]] = {}
+        self._update_errors: Dict[K, list[str]] = {}
+        self._finalize_errors: Dict[K, list[str]] = {}
+
+    def update(self, key: K, updates: Mapping[str, Any]) -> None:
+        bucket = self.acc.setdefault(key, {})
+        bucket.update(updates)
+
+    def finalize_all(self) -> Dict[K, T]:
+        out: Dict[K, T] = {}
+        for k, payload in self.acc.items():
+            try:
+                out[k] = self.constructor(**payload)
+            except Exception as e:  # pragma: no cover - defensive
+                self._finalize_errors.setdefault(k, []).append(str(e))
+        return out
+
+    def get(self, key: K) -> Optional[T]:
+        return None
+
+    def known_fields(self) -> set[str]:
+        # No introspection, treat all fields as allowed
+        return set()
+
+    def update_errors(self) -> Dict[K, list[str]]:
+        return self._update_errors
+
+    def finalize_errors(self) -> Dict[K, list[str]]:
+        return self._finalize_errors
+
+    def record_update_error(self, key: K, reason: str) -> None:
+        self._update_errors.setdefault(key, []).append(reason)
+    def record_finalize_error(self, key: K, reason: str) -> None:
+        self._finalize_errors.setdefault(key, []).append(reason)
+
+
 # -----------------------------
 # Helpers
 # -----------------------------
