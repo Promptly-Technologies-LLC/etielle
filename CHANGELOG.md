@@ -2,6 +2,30 @@
 
 <!-- version list -->
 
+## v2.2.1 (2025-11-25)
+
+### Bug Fixes
+
+- Support >1 spec per child table
+  ([`57ee01e`](https://github.com/Promptly-Technologies-LLC/etielle/commit/57ee01ea40d50350278b91337af3136831f56662))
+
+### Chores
+
+- Lint code
+  ([`9f4d3c8`](https://github.com/Promptly-Technologies-LLC/etielle/commit/9f4d3c89bfc2f39c1fc2d8e6bfe748aa6438f79c))
+
+### Documentation
+
+- Add comprehensive introduction to ETL documentation
+  ([`69e8029`](https://github.com/Promptly-Technologies-LLC/etielle/commit/69e8029cdc441ce330e4f36607bc624c1ca313d3))
+
+- Introduction to ETL
+  ([`90e0fd1`](https://github.com/Promptly-Technologies-LLC/etielle/commit/90e0fd1a5d9412562c10b444d7274b56ea3f887b))
+
+- Refine ETL concept mapping in introduction
+  ([`bbdb9a7`](https://github.com/Promptly-Technologies-LLC/etielle/commit/bbdb9a7b36c25b883c4e440782559f24d6042592))
+
+
 ## v2.2.0 (2025-10-23)
 
 ### Chores
