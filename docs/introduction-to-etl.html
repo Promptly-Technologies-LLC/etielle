@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>introduction-to-etl – etielle: Declarative JSON-to-Relational Mapping in Python</title>
+<title>Introduction to ETL – etielle: Declarative JSON-to-Relational Mapping in Python</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -19,6 +19,41 @@ ul.task-list li input[type="checkbox"] {
   width: 0.8em;
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
 }
 </style>
 
@@ -94,6 +129,10 @@ ul.task-list li input[type="checkbox"] {
 <span class="menu-text">Home</span></a>
   </li>  
   <li class="nav-item">
+    <a class="nav-link active" href="../docs/introduction-to-etl.html" aria-current="page"> 
+<span class="menu-text">Introduction to ETL</span></a>
+  </li>  
+  <li class="nav-item">
     <a class="nav-link" href="../docs/field-selectors.html"> 
 <span class="menu-text">Field selectors</span></a>
   </li>  
@@ -135,17 +174,212 @@ ul.task-list li input[type="checkbox"] {
 <div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
 <!-- sidebar -->
 <!-- margin-sidebar -->
-    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
-        
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#what-is-etl" id="toc-what-is-etl" class="nav-link active" data-scroll-target="#what-is-etl">What is ETL?</a></li>
+  <li><a href="#etl-in-action-a-simple-example" id="toc-etl-in-action-a-simple-example" class="nav-link" data-scroll-target="#etl-in-action-a-simple-example">ETL in Action: A Simple Example</a>
+  <ul class="collapse">
+  <li><a href="#extract-navigate-the-json-structure" id="toc-extract-navigate-the-json-structure" class="nav-link" data-scroll-target="#extract-navigate-the-json-structure">1. Extract: Navigate the JSON structure</a></li>
+  <li><a href="#transform-reshape-data-in-memory" id="toc-transform-reshape-data-in-memory" class="nav-link" data-scroll-target="#transform-reshape-data-in-memory">2. Transform: Reshape data in memory</a></li>
+  <li><a href="#load-persist-to-database" id="toc-load-persist-to-database" class="nav-link" data-scroll-target="#load-persist-to-database">3. Load: Persist to database</a></li>
+  </ul></li>
+  <li><a href="#the-three-pillars-of-etielle-etl" id="toc-the-three-pillars-of-etielle-etl" class="nav-link" data-scroll-target="#the-three-pillars-of-etielle-etl">The Three Pillars of <code>etielle</code> ETL</a>
+  <ul class="collapse">
+  <li><a href="#extract-traversals-and-mappings" id="toc-extract-traversals-and-mappings" class="nav-link" data-scroll-target="#extract-traversals-and-mappings">1. Extract: Traversals and Mappings</a></li>
+  <li><a href="#transform-transforms-emissions-and-relationships" id="toc-transform-transforms-emissions-and-relationships" class="nav-link" data-scroll-target="#transform-transforms-emissions-and-relationships">2. Transform: Transforms, Emissions, and Relationships</a></li>
+  <li><a href="#load-database-adapters" id="toc-load-database-adapters" class="nav-link" data-scroll-target="#load-database-adapters">3. Load: Database Adapters</a></li>
+  </ul></li>
+  <li><a href="#next-steps" id="toc-next-steps" class="nav-link" data-scroll-target="#next-steps">Next Steps</a></li>
+  </ul>
+</nav>
     </div>
 <!-- main -->
-<main class="content" id="quarto-document-content"><header id="title-block-header" class="quarto-title-block"></header>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Introduction to ETL</h1>
+</div>
 
 
 
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
 
 
+</header>
 
+
+<p><strong>What you’ll learn</strong>: What ETL (Extract, Transform, Load) means, why it’s important, how it relates to working with JSON data from APIs, and how <code>etielle</code>’s features support each ETL step.</p>
+<section id="what-is-etl" class="level2">
+<h2 class="anchored" data-anchor-id="what-is-etl">What is ETL?</h2>
+<p><strong>ETL</strong> stands for <strong>Extract, Transform, Load</strong>—the three fundamental steps for moving data from one system to another. Understanding these steps is key to understanding how <code>etielle</code> works:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 21%">
+<col style="width: 31%">
+<col style="width: 46%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>ETL Step</th>
+<th>What it means</th>
+<th>How <code>etielle</code> does it</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Extract</strong></td>
+<td>Navigate and pull data from a source</td>
+<td><strong>Traversals</strong> and <strong>Mappings</strong> walk through nested JSON</td>
+</tr>
+<tr class="even">
+<td><strong>Transform</strong></td>
+<td>Reshape and format the data</td>
+<td><strong>Transforms</strong>, <strong>Emissions</strong>, and <strong>Relationships</strong> reshape data in memory</td>
+</tr>
+<tr class="odd">
+<td><strong>Load</strong></td>
+<td>Insert data into the target system</td>
+<td><strong>Database adapters</strong> (<code>flush_to_db()</code>) persist to database</td>
+</tr>
+</tbody>
+</table>
+<p>ETL is a core concept in data engineering and has been used for decades to move data between systems, especially in business intelligence and data warehousing. <code>etielle</code> brings declarative ETL to Python for JSON-to-relational transformations.</p>
+</section>
+<section id="etl-in-action-a-simple-example" class="level2">
+<h2 class="anchored" data-anchor-id="etl-in-action-a-simple-example">ETL in Action: A Simple Example</h2>
+<p>Imagine you’re building an app that tracks GitHub repositories. Here’s how each ETL step works, with <code>etielle</code>’s corresponding concepts:</p>
+<section id="extract-navigate-the-json-structure" class="level3">
+<h3 class="anchored" data-anchor-id="extract-navigate-the-json-structure">1. Extract: Navigate the JSON structure</h3>
+<p><strong>Goal</strong>: Pull a subset of data from GitHub’s API (returns nested JSON with repositories, contributors, commits)</p>
+<p><strong>How <code>etielle</code> does it</strong>: <strong>Traversals</strong> define how to walk through the JSON:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.core <span class="im">import</span> TraversalSpec</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Extract repositories</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>repos_traversal <span class="op">=</span> TraversalSpec(</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    path<span class="op">=</span>[<span class="st">"repositories"</span>],  <span class="co"># Start at "repositories" key</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    mode<span class="op">=</span><span class="st">"auto"</span>,  <span class="co"># Iterate through the array</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    emits<span class="op">=</span>[...]  <span class="co"># What to do with each repository</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Extract commits nested inside each repository</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>commits_traversal <span class="op">=</span> TraversalSpec(</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    path<span class="op">=</span>[<span class="st">"repositories"</span>],</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>    mode<span class="op">=</span><span class="st">"auto"</span>,</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>    inner_path<span class="op">=</span>[<span class="st">"commits"</span>],  <span class="co"># Nested path inside each repo</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>    inner_mode<span class="op">=</span><span class="st">"auto"</span>,</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>    emits<span class="op">=</span>[...]  <span class="co"># What to do with each commit</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><strong>Key concept</strong>: Traversals tell <code>etielle</code> <em>where</em> to go in the JSON and <em>how</em> to iterate through it. They handle the <strong>Extract</strong> step.</p>
+<p>Learn more: <a href="traversals.qmd">Traversals</a></p>
+</section>
+<section id="transform-reshape-data-in-memory" class="level3">
+<h3 class="anchored" data-anchor-id="transform-reshape-data-in-memory">2. Transform: Reshape data in memory</h3>
+<p><strong>Goal</strong>: Extract specific fields, link parent-child records, format values, build table structures</p>
+<p><strong>How <code>etielle</code> does it</strong>: Multiple features work together to transform data:</p>
+<ol type="1">
+<li><p><strong>Field-level transforms</strong> extract and modify individual values: ```python from etielle.transforms import get, get_from_parent, concat, literal</p>
+<p># Transform: Extract a field from the current item repo_name = get(“name”)</p>
+<p># Transform: Get a field from the parent (e.g., for relationship linking) parent_repo_id = get_from_parent(“id”)</p>
+<p># Transform: Remix values into a new output value (e.g.&nbsp;“123” -&gt; “repo_123”) full_id = concat(literal(“repo_”), get(“id”)) ```</p></li>
+<li><p><strong>Table-level transforms</strong> (Emissions) define output structure: ```python from etielle.core import TableEmit, Field</p>
+<p># Transform: Define the output table structure (still in memory) TableEmit( table=“repositories”, # Target table name join_keys=[get(“id”)], # Unique identifier (like a primary key) fields=[ Field(“id”, get(“id”)), Field(“name”, get(“name”)), Field(“url”, get(“url”)) ] ) ```</p></li>
+<li><p><strong>Relationship transforms</strong> link records together in memory (foreign keys, ORM relationships). ```python from etielle.relationships import ManyToOneSpec</p>
+<p># Transform: Define a many-to-one relationship relationship = ManyToOneSpec( child_table=“commits”, parent_table=“repositories”, # attribute name on the child instance that references the parent instance attr=“repository”, child_to_parent_key=[ # transform to get the parent’s join_key from the child item’s context get(“repository_id”) ], required=True ) ```</p></li>
+</ol>
+<p><strong>Key concept</strong>: Transforms, emissions, and relationships are all done in-memory, before database persistence. Although shown separately above, transforms, emissions, and relationship linking are typically combined into a mapping that runs all at once.</p>
+<p>Learn more: <a href="transforms.qmd">Transforms</a>, <a href="emissions.qmd">Emissions</a>, <a href="../docs/relationships.html">Relationships</a></p>
+</section>
+<section id="load-persist-to-database" class="level3">
+<h3 class="anchored" data-anchor-id="load-persist-to-database">3. Load: Persist to database</h3>
+<p><strong>Goal</strong>: Insert the transformed data into PostgreSQL</p>
+<p><strong>How <code>etielle</code> does it</strong>: <strong>Database adapters</strong> persist the in-memory data:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.sqlalchemy_adapter <span class="im">import</span> flush_to_db</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Load: Write data to the database</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>flush_to_db(session, mapping_results)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><strong>Key concept</strong>: The <strong>Load</strong> step is optional and happens via database adapters. Without this step, <code>etielle</code> just transforms JSON to in-memory Python objects.</p>
+<p>Learn more: <a href="loading-data-into-a-database.qmd">Database upserts</a>, <a href="../docs/sqlalchemy-adapter.html">SQLAlchemy adapter</a></p>
+<hr>
+<p><strong>The full ETL flow with <code>etielle</code></strong>:</p>
+<ol type="1">
+<li><strong>Extract</strong> (Traversals): “Go to <code>repositories</code>, iterate through each one”</li>
+<li><strong>Transform</strong> (Transforms + Emissions + Relationships): “Get the <code>name</code> field, format the <code>id</code>, build table rows in memory, associate child records with parent records by parent id”</li>
+<li><strong>Load</strong> (Database adapters): “Persist the in-memory objects to PostgreSQL” (optional)</li>
+</ol>
+<p>Without <code>etielle</code>, you’d write nested loops, manual field extraction, and explicit inserts. With <code>etielle</code>, you declare the mapping once, and the library handles the rest.</p>
+</section>
+</section>
+<section id="the-three-pillars-of-etielle-etl" class="level2">
+<h2 class="anchored" data-anchor-id="the-three-pillars-of-etielle-etl">The Three Pillars of <code>etielle</code> ETL</h2>
+<p>To summarize, <code>etielle</code> implements ETL through three core feature groups:</p>
+<section id="extract-traversals-and-mappings" class="level3">
+<h3 class="anchored" data-anchor-id="extract-traversals-and-mappings">1. Extract: Traversals and Mappings</h3>
+<p><strong>What they do</strong>: Navigate nested JSON structures and decide what to iterate over</p>
+<p><strong>Key classes</strong>: - <code>TraversalSpec</code>: Defines a path through the JSON - <code>MappingSpec</code>: Container for multiple traversals</p>
+<p><strong>Example</strong>:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>TraversalSpec(</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    path<span class="op">=</span>[<span class="st">"users"</span>],           <span class="co"># Extract: Start here</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    inner_path<span class="op">=</span>[<span class="st">"posts"</span>],     <span class="co"># Extract: Then go here</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    mode<span class="op">=</span><span class="st">"auto"</span>,              <span class="co"># Extract: How to iterate</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Learn more: <a href="traversals.qmd">Traversals</a></p>
+</section>
+<section id="transform-transforms-emissions-and-relationships" class="level3">
+<h3 class="anchored" data-anchor-id="transform-transforms-emissions-and-relationships">2. Transform: Transforms, Emissions, and Relationships</h3>
+<p><strong>What they do</strong>: Reshape data in memory from nested JSON to structured tables/objects</p>
+<p><strong>Key features</strong>:</p>
+<p><strong>Field-level transforms</strong>: - <code>get()</code>: Get field from current node - <code>get_from_parent()</code>: Get field from ancestor (for relationships) - <code>concat()</code>, <code>format_id()</code>: Format and combine values - <code>coalesce()</code>: Provide fallback values</p>
+<p><strong>Table-level transforms (Emissions)</strong>: - <code>TableEmit</code>: Build dict tables in memory - <code>InstanceEmit</code>: Build Pydantic/TypedDict/ORM instances in memory - <code>join_keys</code>: Define unique row identifiers for merging</p>
+<p><strong>Relationship transforms</strong>: - <code>RelationshipEmit</code>: Link records together (foreign keys, ORM relationships)</p>
+<p><strong>Example</strong>:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Field transform</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>Field(<span class="st">"user_id"</span>, get_from_parent(<span class="st">"id"</span>))  <span class="co"># Link to parent</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Table transform</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>TableEmit(</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>    table<span class="op">=</span><span class="st">"users"</span>,</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    join_keys<span class="op">=</span>[get(<span class="st">"id"</span>)],</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>    fields<span class="op">=</span>[Field(<span class="st">"id"</span>, get(<span class="st">"id"</span>)), Field(<span class="st">"name"</span>, get(<span class="st">"name"</span>))]</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Learn more: <a href="transforms.qmd">Transforms</a>, <a href="emissions.qmd">Emissions</a>, <a href="../docs/relationships.html">Relationships</a></p>
+</section>
+<section id="load-database-adapters" class="level3">
+<h3 class="anchored" data-anchor-id="load-database-adapters">3. Load: Database Adapters</h3>
+<p><strong>What they do</strong>: Persist the in-memory transformed data to a database (optional)</p>
+<p><strong>Key features</strong>: - <code>flush_to_db()</code>: Persist instances to database via SQLAlchemy/SQLModel - One-shot flushing for performance - Relationship binding before persistence</p>
+<p><strong>Example</strong>:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.sqlalchemy_adapter <span class="im">import</span> flush_to_db</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Load: Persist to database</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>flush_to_db(session, mapping_results)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><strong>Note</strong>: This step is optional! You can use <code>etielle</code> just for in-memory JSON transformation without database persistence.</p>
+<p>Learn more: <a href="loading-data-into-a-database.qmd">Database upserts</a>, <a href="../docs/sqlalchemy-adapter.html">SQLAlchemy adapter</a></p>
+</section>
+</section>
+<section id="next-steps" class="level2">
+<h2 class="anchored" data-anchor-id="next-steps">Next Steps</h2>
+<p>Now that you understand ETL and how <code>etielle</code> implements each step, you’re ready to dive deeper:</p>
+<ol type="1">
+<li><strong><a href="index.qmd">Quickstart</a></strong> - Jump straight into using <code>etielle</code> with a complete example</li>
+<li><strong><a href="traversals.qmd">Traversals</a></strong> - Master the <strong>Extract</strong> step: navigate nested JSON</li>
+<li><strong><a href="transforms.qmd">Transforms</a></strong> - Master the <strong>Transform</strong> step: field-level data extraction and reshaping</li>
+<li><strong><a href="emissions.qmd">Emissions</a></strong> - Master the <strong>Transform</strong> step: table-level structure definition</li>
+<li><strong><a href="../docs/relationships.html">Relationships</a></strong> - Master the <strong>Transform</strong> step: link records together</li>
+<li><strong><a href="loading-data-into-a-database.qmd">Database upserts</a></strong> - Master the <strong>Load</strong> step: persist to database</li>
+</ol>
+
+
+</section>
 
 </main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
