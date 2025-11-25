@@ -1,6 +1,4 @@
-from etielle.core import (
-    Context
-)
+from etielle.core import Context
 from etielle.transforms import (
     concat,
     coalesce,
@@ -38,7 +36,7 @@ def make_ctx(
     parent: Context | None = None,
     dict_key: str | None = None,
     list_index: int | None = None,
-)-> Context:
+) -> Context:
     return Context(
         root=root,
         node=node,
@@ -61,9 +59,17 @@ def test_get_with_dot_paths_and_list_indices():
 
 
 def test_get_from_root_and_parent():
-    root: _Root = {"id": "root-1", "child": {"id": "child-1", "grand": {"id": "grand-1"}}}
+    root: _Root = {
+        "id": "root-1",
+        "child": {"id": "child-1", "grand": {"id": "grand-1"}},
+    }
     parent_ctx = make_ctx(root=root, node=root["child"], path=("child",))
-    ctx = make_ctx(root=root, node=root["child"]["grand"], path=("child", "grand"), parent=parent_ctx)
+    ctx = make_ctx(
+        root=root,
+        node=root["child"]["grand"],
+        path=("child", "grand"),
+        parent=parent_ctx,
+    )
 
     assert get_from_root("id")(ctx) == "root-1"
     assert get_from_parent("id")(ctx) == "child-1"
@@ -79,7 +85,7 @@ def test_key_and_index_helpers():
 
 def test_concat_format_coalesce_len_of():
     data = {"user": {"first": "Ada", "last": "Lovelace", "tags": ["a", "b"]}}
-    ctx = make_ctx(root=data, node=data["user"]) 
+    ctx = make_ctx(root=data, node=data["user"])
 
     assert concat("Hello, ", get("first"))(ctx) == "Hello, Ada"
     assert format_id(get("first"), get("last"), sep="-")(ctx) == "Ada-Lovelace"
@@ -92,5 +98,3 @@ def test_concat_format_coalesce_len_of():
     # bytes should not report length
     ctx_bytes = make_ctx(root={}, node={"b": b"abc"})
     assert len_of(get("b"))(ctx_bytes) is None
-
-

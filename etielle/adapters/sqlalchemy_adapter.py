@@ -89,5 +89,3 @@ def install_before_flush_binder(
 
     # Register using SQLAlchemy's event system
     event.listen(Session, "before_flush", _before_flush)
-
-

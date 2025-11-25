@@ -47,9 +47,7 @@ def test_bind_and_flush_sqlmodel():
         ],
     }
 
-    users_emit = InstanceEmit[
-        User
-    ](
+    users_emit = InstanceEmit[User](
         table="users",
         join_keys=[get("id")],
         fields=[
@@ -59,9 +57,7 @@ def test_bind_and_flush_sqlmodel():
         builder=TypedDictBuilder(_user_factory),
     )
 
-    posts_emit = InstanceEmit[
-        Post
-    ](
+    posts_emit = InstanceEmit[Post](
         table="posts",
         join_keys=[get("id")],
         fields=[
@@ -98,5 +94,3 @@ def test_bind_and_flush_sqlmodel():
         p2 = session.get(Post, "p2")
         assert p1 is not None and p1.user is not None and p1.user.id == "u1"
         assert p2 is not None and p2.user is not None and p2.user.id == "u2"
-
-

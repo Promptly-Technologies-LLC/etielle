@@ -1,10 +1,5 @@
 from etielle.executor import run_mapping
-from etielle.core import (
-    Field,
-    MappingSpec,
-    TableEmit,
-    TraversalSpec
-)
+from etielle.core import Field, MappingSpec, TableEmit, TraversalSpec
 from etielle.transforms import get, get_from_parent, key
 
 
@@ -135,9 +130,9 @@ def test_composite_join_keys_merging_from_multiple_traversals():
     spec = MappingSpec(traversals=[people_trav, bonus_trav])
     result = run_mapping(data, spec)
 
-    assert sorted(result["scores"].instances.values(), key=lambda r: (r["person_id"], r["year"])) == [
+    assert sorted(
+        result["scores"].instances.values(), key=lambda r: (r["person_id"], r["year"])
+    ) == [
         {"person_id": "p1", "year": 2024, "score": 7, "bonus": 100},
         {"person_id": "p1", "year": 2025, "score": 9, "bonus": 200},
     ]
-
-

@@ -68,5 +68,3 @@ def install_before_flush_binder(
             pass
 
     event.listen(session, "before_flush", _before_flush)
-
-

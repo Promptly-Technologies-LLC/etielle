@@ -1,6 +1,20 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
-from typing import Any, Callable, Optional, Protocol, Sequence, Tuple, TypeVar, Generic, cast, TYPE_CHECKING, Dict, List, Literal
+from typing import (
+    Any,
+    Callable,
+    Optional,
+    Protocol,
+    Sequence,
+    Tuple,
+    TypeVar,
+    Generic,
+    cast,
+    TYPE_CHECKING,
+    Dict,
+    List,
+    Literal,
+)
 
 if TYPE_CHECKING:
     # Avoid runtime import cycle; only for typing
@@ -47,6 +61,7 @@ class Transform(Protocol, Generic[T]):
     Transforms are functions that take a Context and return a value.
     They're composable, side-effect free, and lazily evaluated in the context of the current traversal step.
     """
+
     def __call__(self, ctx: Context) -> T:  # pragma: no cover - interface only
         ...
 
@@ -83,7 +98,9 @@ class _FieldTrace:
         return _FieldTrace(self._path + (name,))
 
     # Reject any attempts to call the selected attribute
-    def __call__(self, *args: Any, **kwargs: Any) -> Any:  # pragma: no cover - defensive
+    def __call__(
+        self, *args: Any, **kwargs: Any
+    ) -> Any:  # pragma: no cover - defensive
         raise _SelectorInvalid("method call on attribute selector", self._path)
 
     # Reject indexing / item access
@@ -123,7 +140,9 @@ def field_of(model: type[T], selector: Attr[T, Any]) -> str:
         result = selector(trace)
     except _SelectorInvalid as err:
         path_str = ".".join(err.path) if err.path else "<root>"
-        raise ValueError(f"Invalid field selector: {err.reason} at '{path_str}'") from None
+        raise ValueError(
+            f"Invalid field selector: {err.reason} at '{path_str}'"
+        ) from None
 
     if isinstance(result, _FieldTrace):
         if len(result.path) == 1:

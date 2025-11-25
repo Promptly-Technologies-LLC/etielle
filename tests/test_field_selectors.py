@@ -22,9 +22,18 @@ def test_field_of_happy_path_single_attribute():
 @pytest.mark.parametrize(
     "selector, expected_message",
     [
-        (lambda u: u.email.split("@")[0], "Invalid field selector: method call on attribute selector"),
-        (lambda u: u.domain(), "Invalid field selector: method call on attribute selector"),
-        (lambda u: u.email.lower(), "Invalid field selector: method call on attribute selector"),
+        (
+            lambda u: u.email.split("@")[0],
+            "Invalid field selector: method call on attribute selector",
+        ),
+        (
+            lambda u: u.domain(),
+            "Invalid field selector: method call on attribute selector",
+        ),
+        (
+            lambda u: u.email.lower(),
+            "Invalid field selector: method call on attribute selector",
+        ),
         (lambda u: (u.email), None),  # valid – just parentheses
     ],
 )
@@ -40,7 +49,9 @@ def test_field_of_invalid_patterns(selector, expected_message):
 
 def test_field_of_rejects_chained_attributes():
     with pytest.raises(ValueError) as err:
-        field_of(UserModel, lambda u: u.name.title)  # chained attribute (attribute of attribute)
+        field_of(
+            UserModel, lambda u: u.name.title
+        )  # chained attribute (attribute of attribute)
     assert "must access exactly one attribute" in str(err.value)
 
 
@@ -87,5 +98,3 @@ def test_integration_with_field_and_executor():
         {"id": "u1", "email": "ada@example.com", "name": "Ada"},
         {"id": "u2", "email": "linus@example.com", "name": "Linus"},
     ]
-
-

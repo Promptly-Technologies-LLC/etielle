@@ -12,7 +12,10 @@ from .instances import InstanceEmit, resolve_field_name_for_builder
 
 def _iter_traversal_nodes(root: Any, spec: TraversalSpec) -> Iterable[Context]:
     for base_ctx, outer in _iter_nodes(root, spec.path):
-        def yield_from_container(parent_ctx: Context, container: Any, mode: str) -> Iterable[Context]:
+
+        def yield_from_container(
+            parent_ctx: Context, container: Any, mode: str
+        ) -> Iterable[Context]:
             # Determine iteration behavior from mode
             if mode == "items":
                 if isinstance(container, Mapping):
@@ -51,7 +54,9 @@ def _iter_traversal_nodes(root: Any, spec: TraversalSpec) -> Iterable[Context]:
                         slots={},
                     )
                 return
-            if isinstance(container, Sequence) and not isinstance(container, (str, bytes)):
+            if isinstance(container, Sequence) and not isinstance(
+                container, (str, bytes)
+            ):
                 for i, v in enumerate(container):
                     yield Context(
                         root=root,
@@ -83,7 +88,9 @@ def _iter_traversal_nodes(root: Any, spec: TraversalSpec) -> Iterable[Context]:
         for outer_ctx in yield_from_container(base_ctx, outer, spec.mode):
             inner_container = _resolve_path(outer_ctx.node, spec.inner_path)
             inner_mode = spec.inner_mode
-            for inner_ctx in yield_from_container(outer_ctx, inner_container, inner_mode):
+            for inner_ctx in yield_from_container(
+                outer_ctx, inner_container, inner_mode
+            ):
                 yield inner_ctx
 
 
@@ -109,7 +116,7 @@ def run_mapping(root: Any, spec: MappingSpec) -> Dict[str, MappingResult[Any]]:
                 if any(part is None or part == "" for part in key_parts):
                     continue
                 composite_key = tuple(key_parts)
-                
+
                 # Branch by emit type
                 if isinstance(emit, TableEmit):
                     index = table_to_index.setdefault(emit.table, {})
@@ -141,19 +148,32 @@ def run_mapping(root: Any, spec: MappingSpec) -> Dict[str, MappingResult[Any]]:
                     # Build updates with optional merge policies
                     updates: Dict[str, Any] = {}
                     for spec_field in emit.fields:
-                        field_name = resolve_field_name_for_builder(tbl["builder"], spec_field)
+                        field_name = resolve_field_name_for_builder(
+                            tbl["builder"], spec_field
+                        )
                         # Strict field checks with suggestions for string selectors
                         if emit.strict_fields:
                             known = tbl["builder"].known_fields()
                             if known and field_name not in known:
-                                suggestions = get_close_matches(field_name, list(known), n=3, cutoff=0.6)
-                                suggest_str = f"; did you mean {', '.join(suggestions)}?" if suggestions else ""
+                                suggestions = get_close_matches(
+                                    field_name, list(known), n=3, cutoff=0.6
+                                )
+                                suggest_str = (
+                                    f"; did you mean {', '.join(suggestions)}?"
+                                    if suggestions
+                                    else ""
+                                )
                                 tbl["builder"].record_update_error(
                                     composite_key,
-                                    f"field {field_name}: unknown field{suggest_str}"
+                                    f"field {field_name}: unknown field{suggest_str}",
                                 )
-                                if getattr(emit, "strict_mode", "collect_all") == "fail_fast":
-                                    raise RuntimeError(f"Unknown field '{field_name}' for table '{emit.table}' and key {composite_key}")
+                                if (
+                                    getattr(emit, "strict_mode", "collect_all")
+                                    == "fail_fast"
+                                ):
+                                    raise RuntimeError(
+                                        f"Unknown field '{field_name}' for table '{emit.table}' and key {composite_key}"
+                                    )
                                 # Skip applying this unknown field
                                 continue
                         value = spec_field.transform(ctx)
@@ -165,7 +185,7 @@ def run_mapping(root: Any, spec: MappingSpec) -> Dict[str, MappingResult[Any]]:
                             except Exception as e:  # pragma: no cover - defensive
                                 tbl["builder"].record_update_error(
                                     composite_key,
-                                    f"field {field_name}: merge policy error: {e}"
+                                    f"field {field_name}: merge policy error: {e}",
                                 )
                                 # Skip updating this field on error
                                 continue

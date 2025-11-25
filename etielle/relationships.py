@@ -54,30 +54,32 @@ def compute_relationship_keys(
     # We need to traverse similarly to executor._iter_traversal_nodes and
     # compute composite keys for InstanceEmit.
 
-    out: Dict[str, Dict[KeyTuple, KeyTuple]] = {tbl: {} for tbl in specs_by_child.keys()}
+    out: Dict[str, Dict[KeyTuple, KeyTuple]] = {
+        tbl: {} for tbl in specs_by_child.keys()
+    }
 
     for trav in traversals:
         for ctx in _iter_traversal_nodes(root, trav):
             for emit in trav.emits:
-                    # Only care about InstanceEmit with a spec registered on this child table
-                    if not isinstance(emit, InstanceEmit):
+                # Only care about InstanceEmit with a spec registered on this child table
+                if not isinstance(emit, InstanceEmit):
+                    continue
+                child_specs = specs_by_child.get(emit.table)
+                if not child_specs:
+                    continue
+                # Compute child's composite key for this emit
+                child_key_parts = [tr(ctx) for tr in emit.join_keys]
+                if any(part is None or part == "" for part in child_key_parts):
+                    continue
+                child_ck: KeyTuple = tuple(child_key_parts)
+                # For each spec on this child table, compute parent key and store
+                for spec in child_specs:
+                    parent_key_parts = [tr(ctx) for tr in spec.child_to_parent_key]
+                    if any(part is None or part == "" for part in parent_key_parts):
+                        # Skip if parent key incomplete; binding phase will treat as missing
                         continue
-                    child_specs = specs_by_child.get(emit.table)
-                    if not child_specs:
-                        continue
-                    # Compute child's composite key for this emit
-                    child_key_parts = [tr(ctx) for tr in emit.join_keys]
-                    if any(part is None or part == "" for part in child_key_parts):
-                        continue
-                    child_ck: KeyTuple = tuple(child_key_parts)
-                    # For each spec on this child table, compute parent key and store
-                    for spec in child_specs:
-                        parent_key_parts = [tr(ctx) for tr in spec.child_to_parent_key]
-                        if any(part is None or part == "" for part in parent_key_parts):
-                            # Skip if parent key incomplete; binding phase will treat as missing
-                            continue
-                        parent_ck: KeyTuple = tuple(parent_key_parts)
-                        out[spec.child_table][child_ck] = parent_ck
+                    parent_ck: KeyTuple = tuple(parent_key_parts)
+                    out[spec.child_table][child_ck] = parent_ck
 
     return out
 
@@ -134,5 +136,3 @@ def bind_many_to_one(
         raise RuntimeError(
             "relationship binding failed (many-to-one):\n" + "\n".join(errors)
         )
-
-

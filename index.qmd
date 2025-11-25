@@ -1,8 +1,8 @@
 ---
-title: "`etielle`: Declarative JSON-to-Relational Mapping in Python"
+title: "Quickstart: Declarative JSON-to-Relational Mapping in Python with `etielle`"
 output: gfm
 ---
-`etielle` is a simple, powerful Python library for reshaping nested [JSON](https://en.wikipedia.org/wiki/JSON) data, typically from an API, into relational tables that fit your database schema. Think of `etielle` as a "JSON extractor" that you program with clear instructions: "Go here in the JSON, pull this data, and put it in that table." The library's name is a play on ETL ("Extract, Transform, Load"), which is the technical term for this set of operations. 
+`etielle` is a simple, powerful Python library for reshaping nested [JSON](https://en.wikipedia.org/wiki/JSON) data, typically from an API, into relational tables that fit your database schema. Think of `etielle` as a "JSON extractor" that you program with clear instructions: "Go here in the JSON, pull this data, and put it in that table." The library's name is a play on [ETL ("Extract, Transform, Load")](introduction-to-etl.qmd), which is the technical term for this set of operations. 
 
 - **Repository**: [Promptly-Technologies-LLC/etielle](https://github.com/Promptly-Technologies-LLC/etielle)
 - **PyPI**: [`etielle`](https://pypi.org/project/etielle/)
@@ -10,55 +10,40 @@ output: gfm
 
 ## Why Use `etielle`? (For Beginners)
 
-JSON data from APIs (Application Program Interfaces—web services that typically return JSON) is often deeply nested and requires complicated parsing. `etielle` helps by:
+JSON data from APIs (Application Program Interfaces — web services that typically return JSON) is often deeply nested and requires complicated parsing. `etielle` helps by:
 
-- **Declaring what you want**: Write Python code to describe your tables and how to fill them.
 - **Traversing nested structures**: Walk through arrays-within-dictionaries-within-arrays to any arbitrary depth.
-- **Performing arbitrary transformations**: Use the provided functions to perform common operations (like getting the key or index of the current item or its parent), or define your own.
+- **Performing arbitrary transformations**: Use the provided functions to perform common operations (like getting the key or index of the current item or its parent), or define your own custom ones.
 - **Building relationships**: Link records across your different output tables and emit ORM relationships or foreign keys.
-- **Being beginner-friendly**: Everything is type-safe (Python checks your types), composable (build complex things from simple pieces), and easy to debug.
+- **Emitting to arbitrary formats**: Emit data to Pydantic models, TypedDicts, or ORM objects directly instead of plain dicts, with validation and type safety.
+- **Optionally loading data into a database**: Load data into a database using SQLAlchemy or SQLModel with performant one-shot flushing.
 
 ## Learning Path
 
-1. **Start here**: Follow the Quick Start example below to see basic mapping
-2. **Understand the pieces**: Read Core Concepts to learn about Context, Transforms, and TraversalSpec
-3. **Go deeper**: Explore the detailed examples for nesting and merging
-4. **Advanced features**: Check out the docs/ folder for instance emission, relationships, and more
+1. [**Quickstart**](index.qmd): Quick and dirty introduction to `etielle` and how to use it.
+2. [**Introduction to ETL**](introduction-to-etl.qmd): The problem `etielle` is solving: JSON data ETL (Extract, Transform, and Load).
+3. [**Traversals**](traversals.qmd): How to tell `etielle` how to traverse your JSON data.
+4. [**Transforms**](transforms.qmd): Getting and altering values from the JSON data and mapping them in a type-safe way to your output tables.
+5. [**Emissions**](emissions.qmd): Outputting data to dictionaries, TypedDicts, Pydantic models, or ORM objects, with merge logic to construct single rows from different parts of the input JSON data.
+6. [**Database upserts**](loading-data-into-a-database.qmd): Optionally, creating relationships in memory and flushing data into a database with performant one-shot flushing.
 
 ## Installation
 
 We recommend using `uv` for faster installs, but `pip` works too.
 
-### With uv (Recommended for Speed)
-
-For your project:
 ```bash
 uv add etielle
-```
-
-For one-off use:
-```bash
-uv pip install etielle
-```
-
-### With pip
-
-```bash
+# or
 pip install etielle
 ```
 
-### Optional: SQLAlchemy adapter
+### Optional: Install with ORM adapters
 
-If you plan to bind relationships and flush via SQLAlchemy in one go, install the optional extra:
+If you plan to bind relationships and flush to your database via SQLAlchemy or SQLModel, install with the optional extra for your ORM:
 
 ```bash
 uv add "etielle[sqlalchemy]"
-```
-### Optional: SQLModel adapter
-
-If you plan to bind relationships and flush via SQLModel in one go, install the optional extra:
-
-```bash
+# or
 uv add "etielle[sqlmodel]"
 ```
 

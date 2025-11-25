@@ -1,4 +1,3 @@
-
 from typing import Any, Dict
 
 from sqlalchemy import String, ForeignKey
@@ -26,7 +25,9 @@ class Post(Base):
     __tablename__ = "posts"
     id: Mapped[str] = mapped_column(String, primary_key=True)
     title: Mapped[str] = mapped_column(String)
-    user_id: Mapped[str | None] = mapped_column(String, ForeignKey("users.id"), nullable=True)
+    user_id: Mapped[str | None] = mapped_column(
+        String, ForeignKey("users.id"), nullable=True
+    )
     user: Mapped[User | None] = relationship(back_populates="posts")
 
 
@@ -55,9 +56,7 @@ def test_bind_and_flush_sqlalchemy():
         ],
     }
 
-    users_emit = InstanceEmit[
-        User
-    ](
+    users_emit = InstanceEmit[User](
         table="users",
         join_keys=[get("id")],
         fields=[
@@ -67,9 +66,7 @@ def test_bind_and_flush_sqlalchemy():
         builder=TypedDictBuilder(_user_factory),
     )
 
-    posts_emit = InstanceEmit[
-        Post
-    ](
+    posts_emit = InstanceEmit[Post](
         table="posts",
         join_keys=[get("id")],
         fields=[

@@ -26,9 +26,7 @@ def test_typed_dict_builder_basic():
                 path=["users"],
                 mode="auto",
                 emits=[
-                    InstanceEmit[
-                        dict
-                    ](
+                    InstanceEmit[dict](
                         table="user_models",
                         join_keys=[get("id")],
                         fields=[
@@ -45,7 +43,7 @@ def test_typed_dict_builder_basic():
     from etielle.executor import run_mapping
 
     result = run_mapping(data, spec)
-    got = sorted(list(result["user_models"].instances.values()), key=lambda r: r["id"])  
+    got = sorted(list(result["user_models"].instances.values()), key=lambda r: r["id"])
     assert got == [
         {"id": "u1", "email": "ada@example.com"},
         {"id": "u2", "email": "linus@example.com"},
@@ -67,9 +65,7 @@ def test_merge_policy_add_across_multiple_updates():
                 path=["events"],
                 mode="auto",
                 emits=[
-                    InstanceEmit[
-                        dict
-                    ](
+                    InstanceEmit[dict](
                         table="user_counts",
                         join_keys=[get("user_id")],
                         fields=[
@@ -87,7 +83,9 @@ def test_merge_policy_add_across_multiple_updates():
     from etielle.executor import run_mapping
 
     result = run_mapping(data, spec)
-    got = sorted(list(result["user_counts"].instances.values()), key=lambda r: r["user_id"])  
+    got = sorted(
+        list(result["user_counts"].instances.values()), key=lambda r: r["user_id"]
+    )
     assert got == [
         {"user_id": "u1", "count": 2},
         {"user_id": "u2", "count": 1},
@@ -108,9 +106,7 @@ def test_append_and_extend_policies_ordering():
                 path=["events"],
                 mode="auto",
                 emits=[
-                    InstanceEmit[
-                        dict
-                    ](
+                    InstanceEmit[dict](
                         table="user_tags",
                         join_keys=[get("user_id")],
                         fields=[
@@ -160,7 +156,9 @@ def test_pydantic_builder_with_typed_selectors():
                         join_keys=[get("id")],
                         fields=[
                             FieldSpec(selector=(lambda u: u.id), transform=get("id")),
-                            FieldSpec(selector=(lambda u: u.email), transform=get("email")),
+                            FieldSpec(
+                                selector=(lambda u: u.email), transform=get("email")
+                            ),
                         ],
                         builder=PydanticBuilder(User),
                     )
@@ -172,7 +170,9 @@ def test_pydantic_builder_with_typed_selectors():
     from etielle.executor import run_mapping
 
     result = run_mapping(data, spec)
-    users = sorted(list(result["users_pydantic"].instances.values()), key=lambda u: u.id)  
+    users = sorted(
+        list(result["users_pydantic"].instances.values()), key=lambda u: u.id
+    )
     assert users[0].id == "u1" and users[0].email == "ada@example.com"
     assert users[1].id == "u2" and users[1].email == "linus@example.com"
 
@@ -223,7 +223,10 @@ def test_unknown_field_suggestion_and_error_collection():
     all_finalize_msgs = [m for msgs in res.finalize_errors.values() for m in msgs]
     # Accept common pydantic error shapes
     assert any(
-        ("field required" in m) or ("Missing" in m) or ("Input should" in m) or ("validation error" in m)
+        ("field required" in m)
+        or ("Missing" in m)
+        or ("Input should" in m)
+        or ("validation error" in m)
         for m in all_finalize_msgs
     )
 

@@ -31,7 +31,15 @@ def _iter_nodes(root: Any, path: Sequence[str]) -> Iterable[Tuple[Context, Any]]
     returning it. The caller decides how to iterate the container.
     """
     container = _resolve_path(root, path)
-    base_ctx = Context(root=root, node=container, path=tuple(path), parent=None, key=None, index=None, slots={})
+    base_ctx = Context(
+        root=root,
+        node=container,
+        path=tuple(path),
+        parent=None,
+        key=None,
+        index=None,
+        slots={},
+    )
     yield base_ctx, container
 
 
@@ -79,7 +87,9 @@ def get(path: Union[str, Sequence[Union[str, int]]]) -> Transform[Any]:
     """
 
     if isinstance(path, str):
-        segments: List[Union[str, int]] = [int(seg) if seg.isdigit() else seg for seg in path.split(".") if seg != ""]
+        segments: List[Union[str, int]] = [
+            int(seg) if seg.isdigit() else seg for seg in path.split(".") if seg != ""
+        ]
     else:
         segments = list(path)
 
@@ -105,7 +115,9 @@ def get(path: Union[str, Sequence[Union[str, int]]]) -> Transform[Any]:
 
 def get_from_root(path: Union[str, Sequence[Union[str, int]]]) -> Transform[Any]:
     if isinstance(path, str):
-        segments: List[Union[str, int]] = [int(seg) if seg.isdigit() else seg for seg in path.split(".") if seg != ""]
+        segments: List[Union[str, int]] = [
+            int(seg) if seg.isdigit() else seg for seg in path.split(".") if seg != ""
+        ]
     else:
         segments = list(path)
 
@@ -115,9 +127,13 @@ def get_from_root(path: Union[str, Sequence[Union[str, int]]]) -> Transform[Any]
     return _t
 
 
-def get_from_parent(path: Union[str, Sequence[Union[str, int]]], depth: int = 1) -> Transform[Any]:
+def get_from_parent(
+    path: Union[str, Sequence[Union[str, int]]], depth: int = 1
+) -> Transform[Any]:
     if isinstance(path, str):
-        segments: List[Union[str, int]] = [int(seg) if seg.isdigit() else seg for seg in path.split(".") if seg != ""]
+        segments: List[Union[str, int]] = [
+            int(seg) if seg.isdigit() else seg for seg in path.split(".") if seg != ""
+        ]
     else:
         segments = list(path)
 
@@ -144,7 +160,9 @@ def parent_key(depth: int = 1) -> Transform[Optional[str]]:
 def len_of(inner: Transform[Any]) -> Transform[Optional[int]]:
     def _t(ctx: Context) -> Optional[int]:
         value = inner(ctx)
-        if isinstance(value, (Mapping, Sequence, str)) and not isinstance(value, (bytes, bytearray)):
+        if isinstance(value, (Mapping, Sequence, str)) and not isinstance(
+            value, (bytes, bytearray)
+        ):
             return len(value)  # type: ignore[arg-type]
         return None
 
@@ -165,7 +183,9 @@ def format_id(*parts: Union[str, Transform[Any]], sep: str = "_") -> Transform[s
     transforms: List[Transform[Any]] = [_ensure_transform(p) for p in parts]
 
     def _t(ctx: Context) -> str:
-        values = [str(v) for v in (tr(ctx) for tr in transforms) if v is not None and v != ""]
+        values = [
+            str(v) for v in (tr(ctx) for tr in transforms) if v is not None and v != ""
+        ]
         return sep.join(values)
 
     return _t

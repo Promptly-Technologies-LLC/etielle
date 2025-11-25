@@ -90,7 +90,9 @@ class FirstNonNullPolicy(MergePolicy):
 
 
 class InstanceBuilder(Generic[T]):
-    def update(self, key: K, updates: Mapping[str, Any]) -> None:  # pragma: no cover - interface only
+    def update(
+        self, key: K, updates: Mapping[str, Any]
+    ) -> None:  # pragma: no cover - interface only
         raise NotImplementedError
 
     def finalize_all(self) -> Dict[K, T]:  # pragma: no cover - interface only
@@ -112,13 +114,20 @@ class InstanceBuilder(Generic[T]):
         return {}
 
     # Finalize-time errors (full validation)
-    def finalize_errors(self) -> Dict[K, list[str]]:  # pragma: no cover - interface only
+    def finalize_errors(
+        self,
+    ) -> Dict[K, list[str]]:  # pragma: no cover - interface only
         return {}
 
     # Helpers to record errors from the executor (e.g., unknown fields)
-    def record_update_error(self, key: K, reason: str) -> None:  # pragma: no cover - interface only
+    def record_update_error(
+        self, key: K, reason: str
+    ) -> None:  # pragma: no cover - interface only
         pass
-    def record_finalize_error(self, key: K, reason: str) -> None:  # pragma: no cover - interface only
+
+    def record_finalize_error(
+        self, key: K, reason: str
+    ) -> None:  # pragma: no cover - interface only
         pass
 
 
@@ -149,14 +158,19 @@ class InstanceEmit(Generic[T]):
 
 if TYPE_CHECKING:
     try:
-        from pydantic import BaseModel as _PydBaseModel, TypeAdapter as _PydTypeAdapter, create_model as _pyd_create_model  # noqa: F401
+        pass  # noqa: F401
     except Exception:  # pragma: no cover - optional for type checking
         pass
 
 
 def _import_pydantic():
     try:
-        from pydantic import BaseModel as PydBaseModel, TypeAdapter as PydTypeAdapter, create_model as pyd_create_model  # type: ignore
+        from pydantic import (
+            BaseModel as PydBaseModel,
+            TypeAdapter as PydTypeAdapter,
+            create_model as pyd_create_model,
+        )  # type: ignore
+
         return PydBaseModel, PydTypeAdapter, pyd_create_model
     except Exception:  # pragma: no cover - optional
         return None, None, None
@@ -170,7 +184,10 @@ class PydanticBuilder(InstanceBuilder[T]):
         self._field_adapters: Dict[str, Any] = {}
         _BaseModel, _TypeAdapter, _create_model = _import_pydantic()
         if _TypeAdapter is not None and hasattr(model, "model_fields"):
-            self._field_adapters = {name: _TypeAdapter(f.annotation) for name, f in getattr(model, "model_fields").items()}  # type: ignore[misc]
+            self._field_adapters = {
+                name: _TypeAdapter(f.annotation)
+                for name, f in getattr(model, "model_fields").items()
+            }  # type: ignore[misc]
         self._update_errors: Dict[K, list[str]] = {}
         self._finalize_errors: Dict[K, list[str]] = {}
 
@@ -213,6 +230,7 @@ class PydanticBuilder(InstanceBuilder[T]):
 
     def record_update_error(self, key: K, reason: str) -> None:
         self._update_errors.setdefault(key, []).append(reason)
+
     def record_finalize_error(self, key: K, reason: str) -> None:
         self._finalize_errors.setdefault(key, []).append(reason)
 
@@ -274,6 +292,7 @@ class PydanticPartialBuilder(InstanceBuilder[T]):
 
     def record_update_error(self, key: K, reason: str) -> None:
         self._update_errors.setdefault(key, []).append(reason)
+
     def record_finalize_error(self, key: K, reason: str) -> None:
         self._finalize_errors.setdefault(key, []).append(reason)
 
@@ -284,7 +303,12 @@ class PydanticPartialBuilder(InstanceBuilder[T]):
 
 
 class TypedDictBuilder(InstanceBuilder[T]):
-    def __init__(self, factory: Callable[[Dict[str, Any]], T], *, field_type_checkers: Optional[Mapping[str, Callable[[Any], Any]]] = None) -> None:
+    def __init__(
+        self,
+        factory: Callable[[Dict[str, Any]], T],
+        *,
+        field_type_checkers: Optional[Mapping[str, Callable[[Any], Any]]] = None,
+    ) -> None:
         self.factory = factory
         self.acc: Dict[K, Dict[str, Any]] = {}
         self._update_errors: Dict[K, list[str]] = {}
@@ -327,6 +351,7 @@ class TypedDictBuilder(InstanceBuilder[T]):
 
     def record_update_error(self, key: K, reason: str) -> None:
         self._update_errors.setdefault(key, []).append(reason)
+
     def record_finalize_error(self, key: K, reason: str) -> None:
         self._finalize_errors.setdefault(key, []).append(reason)
 
@@ -342,6 +367,7 @@ class ConstructorBuilder(InstanceBuilder[T]):
     Equivalent to:
         builder = TypedDictBuilder(lambda d: User(**d))
     """
+
     def __init__(self, constructor: Callable[..., T]) -> None:
         self.constructor = constructor
         self.acc: Dict[K, Dict[str, Any]] = {}
@@ -376,6 +402,7 @@ class ConstructorBuilder(InstanceBuilder[T]):
 
     def record_update_error(self, key: K, reason: str) -> None:
         self._update_errors.setdefault(key, []).append(reason)
+
     def record_finalize_error(self, key: K, reason: str) -> None:
         self._finalize_errors.setdefault(key, []).append(reason)
 
@@ -385,13 +412,15 @@ class ConstructorBuilder(InstanceBuilder[T]):
 # -----------------------------
 
 
-def resolve_field_name_for_builder(builder: InstanceBuilder[T], spec: FieldSpec[T]) -> str:
+def resolve_field_name_for_builder(
+    builder: InstanceBuilder[T], spec: FieldSpec[T]
+) -> str:
     if isinstance(spec.selector, str):
         return spec.selector
     # Try to resolve from typed selector via builder.model if available
     model = getattr(builder, "model", None)
     if model is None:
-        raise ValueError("Typed selector requires a builder with a 'model' attribute; pass a string field name instead")
+        raise ValueError(
+            "Typed selector requires a builder with a 'model' attribute; pass a string field name instead"
+        )
     return field_of(cast(Any, model), cast(Callable[[Any], Any], spec.selector))
-
-

@@ -47,9 +47,7 @@ def test_bind_many_to_one_success():
         ],
     }
 
-    users_emit = InstanceEmit[
-        User
-    ](
+    users_emit = InstanceEmit[User](
         table="users",
         join_keys=[get("id")],
         fields=[
@@ -59,9 +57,7 @@ def test_bind_many_to_one_success():
         builder=TypedDictBuilder(_user_factory),
     )
 
-    posts_emit = InstanceEmit[
-        Post
-    ](
+    posts_emit = InstanceEmit[Post](
         table="posts",
         join_keys=[get("id")],
         fields=[
@@ -110,9 +106,7 @@ def test_bind_many_to_one_missing_parent_raises():
         ],
     }
 
-    users_emit = InstanceEmit[
-        User
-    ](
+    users_emit = InstanceEmit[User](
         table="users",
         join_keys=[get("id")],
         fields=[
@@ -122,9 +116,7 @@ def test_bind_many_to_one_missing_parent_raises():
         builder=TypedDictBuilder(_user_factory),
     )
 
-    posts_emit = InstanceEmit[
-        Post
-    ](
+    posts_emit = InstanceEmit[Post](
         table="posts",
         join_keys=[get("id")],
         fields=[
@@ -155,5 +147,3 @@ def test_bind_many_to_one_missing_parent_raises():
     sidecar = compute_relationship_keys(root, mapping.traversals, rels)
     with pytest.raises(RuntimeError):
         bind_many_to_one(results, rels, sidecar, fail_on_missing=True)
-
-
