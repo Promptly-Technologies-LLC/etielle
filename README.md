@@ -8,8 +8,8 @@ into relational tables that fit your database schema. Think of `etielle`
 as a “JSON extractor” that you program with clear instructions: “Go here
 in the JSON, pull this data, and put it in that table.” The library’s
 name is a play on [ETL (“Extract, Transform,
-Load”)](introduction-to-etl.qmd), which is the technical term for this
-set of operations.
+Load”)](docs/introduction-to-etl.qmd), which is the technical term for
+this set of operations.
 
 - **Repository**:
   [Promptly-Technologies-LLC/etielle](https://github.com/Promptly-Technologies-LLC/etielle)
@@ -39,17 +39,18 @@ parsing. `etielle` helps by:
 
 1.  [**Quickstart**](index.qmd): Quick and dirty introduction to
     `etielle` and how to use it.
-2.  [**Introduction to ETL**](introduction-to-etl.qmd): The problem
+2.  [**Introduction to ETL**](docs/introduction-to-etl.qmd): The problem
     `etielle` is solving: JSON data ETL (Extract, Transform, and Load).
-3.  [**Traversals**](traversals.qmd): How to tell `etielle` how to
+3.  [**Traversals**](docs/traversals.qmd): How to tell `etielle` how to
     traverse your JSON data.
-4.  [**Transforms**](transforms.qmd): Getting and altering values from
-    the JSON data and mapping them in a type-safe way to your output
-    tables.
-5.  [**Emissions**](emissions.qmd): Outputting data to dictionaries,
-    TypedDicts, Pydantic models, or ORM objects, with merge logic to
-    construct single rows from different parts of the input JSON data.
-6.  [**Database upserts**](loading-data-into-a-database.qmd):
+4.  [**Transforms**](docs/transforms.qmd): Getting and altering values
+    from the JSON data and mapping them in a type-safe way to your
+    output tables.
+5.  [**Emissions**](docs/emissions.qmd): Outputting data to
+    dictionaries, TypedDicts, Pydantic models, or ORM objects, with
+    merge logic to construct single rows from different parts of the
+    input JSON data.
+6.  [**Database upserts**](docs/loading-data-into-a-database.qmd):
     Optionally, creating relationships in memory and flushing data into
     a database with performant one-shot flushing.
 
