@@ -36,27 +36,27 @@ def compute_relationship_keys(
     root: Any,
     traversals: Sequence[TraversalSpec],
     specs: Sequence[ManyToOneSpec],
-) -> Dict[str, Dict[KeyTuple, KeyTuple]]:
+) -> Dict[int, Dict[KeyTuple, KeyTuple]]:
     """
     Compute child->parent composite keys for each ManyToOneSpec by re-walking the
     MappingSpec traversals. This avoids mutating domain objects and keeps the
     computed keys in a sidecar map keyed by the child's composite key.
 
-    Returns a dict keyed by child_table containing a mapping of
-    child_composite_key -> parent_composite_key.
+    Returns a dict keyed by the index of each ManyToOneSpec in `specs`, containing
+    a mapping of child_composite_key -> parent_composite_key for that spec.
     """
 
-    # Organize specs by child table for quick checks during traversal
-    specs_by_child: Dict[str, list[ManyToOneSpec]] = {}
-    for s in specs:
-        specs_by_child.setdefault(s.child_table, []).append(s)
+    # Organize specs by child table for quick checks during traversal,
+    # but keep track of each spec's index so keys can be stored per-spec.
+    specs_by_child: Dict[str, list[tuple[int, ManyToOneSpec]]] = {}
+    for idx, s in enumerate(specs):
+        specs_by_child.setdefault(s.child_table, []).append((idx, s))
 
     # We need to traverse similarly to executor._iter_traversal_nodes and
-    # compute composite keys for InstanceEmit.
+    # compute composite keys for InstanceEmit. Keys are stored per relationship
+    # spec index so multiple specs can share the same child table.
 
-    out: Dict[str, Dict[KeyTuple, KeyTuple]] = {
-        tbl: {} for tbl in specs_by_child.keys()
-    }
+    out: Dict[int, Dict[KeyTuple, KeyTuple]] = {}
 
     for trav in traversals:
         for ctx in _iter_traversal_nodes(root, trav):
@@ -73,13 +73,15 @@ def compute_relationship_keys(
                     continue
                 child_ck: KeyTuple = tuple(child_key_parts)
                 # For each spec on this child table, compute parent key and store
-                for spec in child_specs:
+                for spec_idx, spec in child_specs:
                     parent_key_parts = [tr(ctx) for tr in spec.child_to_parent_key]
                     if any(part is None or part == "" for part in parent_key_parts):
                         # Skip if parent key incomplete; binding phase will treat as missing
                         continue
                     parent_ck: KeyTuple = tuple(parent_key_parts)
-                    out[spec.child_table][child_ck] = parent_ck
+                    if spec_idx not in out:
+                        out[spec_idx] = {}
+                    out[spec_idx][child_ck] = parent_ck
 
     return out
 
@@ -87,7 +89,7 @@ def compute_relationship_keys(
 def bind_many_to_one(
     results: Mapping[str, MappingResult[Any]],
     specs: Sequence[ManyToOneSpec],
-    child_to_parent: Mapping[str, Mapping[KeyTuple, KeyTuple]],
+    child_to_parent: Mapping[int, Mapping[KeyTuple, KeyTuple]],
     *,
     fail_on_missing: bool = True,
 ) -> None:
@@ -106,10 +108,10 @@ def bind_many_to_one(
     }
 
     errors: list[str] = []
-    for rel in specs:
+    for idx, rel in enumerate(specs):
         parents = table_to_instances.get(rel.parent_table, {})
         children = table_to_instances.get(rel.child_table, {})
-        key_map = child_to_parent.get(rel.child_table, {})
+        key_map = child_to_parent.get(idx, {})
         for child_ck, child_obj in children.items():
             parent_ck = key_map.get(child_ck)
             if parent_ck is None:
