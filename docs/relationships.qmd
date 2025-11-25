@@ -46,7 +46,6 @@ Post(id="p2", user=<User u1>)  ← Now linked!
 ### Complete example
 
 ``` {python}
-#| echo: false
 from etielle.relationships import ManyToOneSpec, compute_relationship_keys, bind_many_to_one
 from etielle.executor import run_mapping
 from etielle.transforms import get, get_from_parent
@@ -97,11 +96,8 @@ mapping = MappingSpec(traversals=[
     TraversalSpec(path=["users"], mode="auto", emits=[users_emit]),
     TraversalSpec(path=["users"], mode="auto", inner_path=["posts"], inner_mode="auto", emits=[posts_emit]),
 ])
-```
 
-``` {python}
 # Using the models, emits, mapping, and root from above
-
 relationships = [
     ManyToOneSpec(
         child_table="posts",

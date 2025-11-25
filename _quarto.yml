@@ -8,6 +8,8 @@ website:
     left:
       - href: index.qmd
         text: Home
+      - href: docs/introduction-to-etl.qmd
+        text: Introduction to ETL
       - href: docs/field-selectors.qmd
         text: Field selectors
       - href: docs/instance-emission.qmd
