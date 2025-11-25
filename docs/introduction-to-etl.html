@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Merge policies (mutation-based emit) – etielle: Declarative JSON-to-Relational Mapping in Python</title>
+<title>introduction-to-etl – etielle: Declarative JSON-to-Relational Mapping in Python</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -19,41 +19,6 @@ ul.task-list li input[type="checkbox"] {
   width: 0.8em;
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
-}
-/* CSS for syntax highlighting */
-html { -webkit-text-size-adjust: 100%; }
-pre > code.sourceCode { white-space: pre; position: relative; }
-pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
-pre > code.sourceCode > span:empty { height: 1.2em; }
-.sourceCode { overflow: visible; }
-code.sourceCode > span { color: inherit; text-decoration: inherit; }
-div.sourceCode { margin: 1em 0; }
-pre.sourceCode { margin: 0; }
-@media screen {
-div.sourceCode { overflow: auto; }
-}
-@media print {
-pre > code.sourceCode { white-space: pre-wrap; }
-pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
-}
-pre.numberSource code
-  { counter-reset: source-line 0; }
-pre.numberSource code > span
-  { position: relative; left: -4em; counter-increment: source-line; }
-pre.numberSource code > span > a:first-child::before
-  { content: counter(source-line);
-    position: relative; left: -1em; text-align: right; vertical-align: baseline;
-    border: none; display: inline-block;
-    -webkit-touch-callout: none; -webkit-user-select: none;
-    -khtml-user-select: none; -moz-user-select: none;
-    -ms-user-select: none; user-select: none;
-    padding: 0 4px; width: 4em;
-  }
-pre.numberSource { margin-left: 3em;  padding-left: 4px; }
-div.sourceCode
-  {   }
-@media screen {
-pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
 }
 </style>
 
@@ -137,7 +102,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span class="menu-text">Instance emission</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link active" href="../docs/merge-policies.html" aria-current="page"> 
+    <a class="nav-link" href="../docs/merge-policies.html"> 
 <span class="menu-text">Merge policies</span></a>
   </li>  
   <li class="nav-item">
@@ -170,219 +135,17 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
 <!-- sidebar -->
 <!-- margin-sidebar -->
-    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
-        <nav id="TOC" role="doc-toc" class="toc-active">
-    <h2 id="toc-title">On this page</h2>
-   
-  <ul>
-  <li><a href="#why-merge-policies" id="toc-why-merge-policies" class="nav-link active" data-scroll-target="#why-merge-policies">Why merge policies?</a></li>
-  <li><a href="#available-policies" id="toc-available-policies" class="nav-link" data-scroll-target="#available-policies">Available policies</a></li>
-  <li><a href="#simple-example-counting-with-addpolicy" id="toc-simple-example-counting-with-addpolicy" class="nav-link" data-scroll-target="#simple-example-counting-with-addpolicy">Simple example: Counting with AddPolicy</a></li>
-  <li><a href="#example-multiple-policies" id="toc-example-multiple-policies" class="nav-link" data-scroll-target="#example-multiple-policies">Example: Multiple policies</a></li>
-  <li><a href="#behavior-and-caveats" id="toc-behavior-and-caveats" class="nav-link" data-scroll-target="#behavior-and-caveats">Behavior and caveats</a></li>
-  <li><a href="#see-also" id="toc-see-also" class="nav-link" data-scroll-target="#see-also">See also</a></li>
-  </ul>
-</nav>
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
+        
     </div>
 <!-- main -->
-<main class="content" id="quarto-document-content">
-
-<header id="title-block-header" class="quarto-title-block default">
-<div class="quarto-title">
-<h1 class="title">Merge policies (mutation-based emit)</h1>
-</div>
+<main class="content" id="quarto-document-content"><header id="title-block-header" class="quarto-title-block"></header>
 
 
 
-<div class="quarto-title-meta">
-
-    
-  
-    
-  </div>
-  
 
 
-</header>
 
-
-<p><strong>What you’ll learn</strong>: How to control how repeated updates combine (sum, append, min/max) instead of overwriting.</p>
-<p><strong>Prerequisites</strong>: Understanding of <code>InstanceEmit</code> (see <a href="../docs/instance-emission.html">Instance emission</a>).</p>
-<p>Control how repeated updates to the same field are combined when multiple traversals contribute to one instance.</p>
-<section id="why-merge-policies" class="level3">
-<h3 class="anchored" data-anchor-id="why-merge-policies">Why merge policies?</h3>
-<p><strong>Default behavior (last-write-wins)</strong>: When multiple traversals write to the same field on the same instance, the second write overwrites the first.</p>
-<p>Example:</p>
-<ul>
-<li>Traversal 1 sets <code>user.status = "active"</code></li>
-<li>Traversal 2 sets <code>user.status = "premium"</code></li>
-<li>Result: <code>user.status = "premium"</code> (last write wins)</li>
-</ul>
-<p><strong>With merge policies</strong>: You can change this behavior to sum numbers, append to lists, take minimum/maximum values, etc.</p>
-</section>
-<section id="available-policies" class="level3">
-<h3 class="anchored" data-anchor-id="available-policies">Available policies</h3>
-<table class="caption-top table">
-<colgroup>
-<col style="width: 28%">
-<col style="width: 35%">
-<col style="width: 35%">
-</colgroup>
-<thead>
-<tr class="header">
-<th>Policy</th>
-<th>Behavior</th>
-<th>Use case</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td><code>AddPolicy()</code></td>
-<td>Adds numbers together</td>
-<td>Counters, sums, totals</td>
-</tr>
-<tr class="even">
-<td><code>AppendPolicy()</code></td>
-<td>Appends single items to list</td>
-<td>Collecting individual tags/flags</td>
-</tr>
-<tr class="odd">
-<td><code>ExtendPolicy()</code></td>
-<td>Extends list with another list</td>
-<td>Merging lists from different sources</td>
-</tr>
-<tr class="even">
-<td><code>MinPolicy()</code></td>
-<td>Keeps minimum value</td>
-<td>Finding earliest date, lowest score</td>
-</tr>
-<tr class="odd">
-<td><code>MaxPolicy()</code></td>
-<td>Keeps maximum value</td>
-<td>Finding latest date, highest score</td>
-</tr>
-<tr class="even">
-<td><code>FirstNonNullPolicy()</code></td>
-<td>Keeps first non-null value</td>
-<td>Fallback defaults</td>
-</tr>
-</tbody>
-</table>
-</section>
-<section id="simple-example-counting-with-addpolicy" class="level3">
-<h3 class="anchored" data-anchor-id="simple-example-counting-with-addpolicy">Simple example: Counting with AddPolicy</h3>
-<div id="2edaccac" class="cell" data-execution_count="1">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.instances <span class="im">import</span> InstanceEmit, FieldSpec, PydanticBuilder, AddPolicy</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.transforms <span class="im">import</span> get, literal</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.core <span class="im">import</span> MappingSpec, TraversalSpec</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.executor <span class="im">import</span> run_mapping</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pydantic <span class="im">import</span> BaseModel</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> User(BaseModel):</span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    <span class="bu">id</span>: <span class="bu">str</span></span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    login_count: <span class="bu">int</span> <span class="op">=</span> <span class="dv">0</span></span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="co"># This emit increments login_count each time it's called</span></span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>emit <span class="op">=</span> InstanceEmit[User](</span>
-<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>    table<span class="op">=</span><span class="st">"users"</span>,</span>
-<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>    join_keys<span class="op">=</span>[get(<span class="st">"id"</span>)],</span>
-<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>    fields<span class="op">=</span>[</span>
-<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>        FieldSpec(selector<span class="op">=</span><span class="st">"id"</span>, transform<span class="op">=</span>get(<span class="st">"id"</span>)),</span>
-<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>        FieldSpec(selector<span class="op">=</span><span class="st">"login_count"</span>, transform<span class="op">=</span>literal(<span class="dv">1</span>)),  <span class="co"># Add 1 each time</span></span>
-<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>    ],</span>
-<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>    builder<span class="op">=</span>PydanticBuilder(User),</span>
-<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>    policies<span class="op">=</span>{<span class="st">"login_count"</span>: AddPolicy()},  <span class="co"># Sum instead of overwrite</span></span>
-<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a><span class="co"># If two traversals emit for the same user:</span></span>
-<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a><span class="co"># Traversal 1: login_count += 1  → 1</span></span>
-<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a><span class="co"># Traversal 2: login_count += 1  → 2</span></span>
-<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a><span class="co"># Result: user.login_count = 2</span></span>
-<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>root <span class="op">=</span> {<span class="st">"users"</span>: [{<span class="st">"id"</span>: <span class="st">"u1"</span>}]}</span>
-<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a>mapping <span class="op">=</span> MappingSpec(traversals<span class="op">=</span>[</span>
-<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a>    TraversalSpec(path<span class="op">=</span>[<span class="st">"users"</span>], mode<span class="op">=</span><span class="st">"auto"</span>, emits<span class="op">=</span>[emit]),</span>
-<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>    TraversalSpec(path<span class="op">=</span>[<span class="st">"users"</span>], mode<span class="op">=</span><span class="st">"auto"</span>, emits<span class="op">=</span>[emit]),  <span class="co"># Same emit twice</span></span>
-<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a>])</span>
-<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a>res <span class="op">=</span> run_mapping(root, mapping)</span>
-<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a>u <span class="op">=</span> <span class="bu">list</span>(res[<span class="st">"users"</span>].instances.values())[<span class="dv">0</span>]</span>
-<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"login_count: </span><span class="sc">{</span>u<span class="sc">.</span>login_count<span class="sc">}</span><span class="ss">"</span>)  <span class="co"># Prints: login_count: 2</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>login_count: 2</code></pre>
-</div>
-</div>
-</section>
-<section id="example-multiple-policies" class="level3">
-<h3 class="anchored" data-anchor-id="example-multiple-policies">Example: Multiple policies</h3>
-<div id="6e67a969" class="cell" data-execution_count="2">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.instances <span class="im">import</span> InstanceEmit, FieldSpec, PydanticBuilder, AddPolicy, AppendPolicy</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.transforms <span class="im">import</span> get, literal</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.core <span class="im">import</span> field_of, MappingSpec, TraversalSpec</span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.executor <span class="im">import</span> run_mapping</span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pydantic <span class="im">import</span> BaseModel</span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> User(BaseModel):</span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    <span class="bu">id</span>: <span class="bu">str</span></span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>    login_count: <span class="bu">int</span></span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>    tags: <span class="bu">list</span>[<span class="bu">str</span>]</span>
-<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>emit <span class="op">=</span> InstanceEmit[User](</span>
-<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>    table<span class="op">=</span><span class="st">"users"</span>,</span>
-<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>    join_keys<span class="op">=</span>[get(<span class="st">"id"</span>)],</span>
-<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>    fields<span class="op">=</span>[</span>
-<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>        FieldSpec(selector<span class="op">=</span>field_of(User, <span class="kw">lambda</span> u: u.<span class="bu">id</span>), transform<span class="op">=</span>get(<span class="st">"id"</span>)),</span>
-<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>        FieldSpec(selector<span class="op">=</span>field_of(User, <span class="kw">lambda</span> u: u.login_count), transform<span class="op">=</span>literal(<span class="dv">1</span>)),</span>
-<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>        FieldSpec(selector<span class="op">=</span>field_of(User, <span class="kw">lambda</span> u: u.tags), transform<span class="op">=</span>literal(<span class="st">"alpha"</span>)),</span>
-<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>    ],</span>
-<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>    builder<span class="op">=</span>PydanticBuilder(User),</span>
-<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>    policies<span class="op">=</span>{</span>
-<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>        <span class="st">"login_count"</span>: AddPolicy(),</span>
-<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>        <span class="st">"tags"</span>: AppendPolicy(),</span>
-<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>    },</span>
-<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a>root <span class="op">=</span> {<span class="st">"users"</span>: [{<span class="st">"id"</span>: <span class="st">"u1"</span>}]}</span>
-<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a>emit2 <span class="op">=</span> InstanceEmit[User](</span>
-<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a>    table<span class="op">=</span><span class="st">"users"</span>,</span>
-<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a>    join_keys<span class="op">=</span>[get(<span class="st">"id"</span>)],</span>
-<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a>    fields<span class="op">=</span>[</span>
-<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a>        FieldSpec(selector<span class="op">=</span>field_of(User, <span class="kw">lambda</span> u: u.login_count), transform<span class="op">=</span>literal(<span class="dv">1</span>)),</span>
-<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a>        FieldSpec(selector<span class="op">=</span>field_of(User, <span class="kw">lambda</span> u: u.tags), transform<span class="op">=</span>literal(<span class="st">"beta"</span>)),</span>
-<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a>    ],</span>
-<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a>    builder<span class="op">=</span>PydanticBuilder(User),</span>
-<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a>mapping <span class="op">=</span> MappingSpec(traversals<span class="op">=</span>[</span>
-<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a>    TraversalSpec(path<span class="op">=</span>[<span class="st">"users"</span>], mode<span class="op">=</span><span class="st">"auto"</span>, emits<span class="op">=</span>[emit]),</span>
-<span id="cb3-39"><a href="#cb3-39" aria-hidden="true" tabindex="-1"></a>    TraversalSpec(path<span class="op">=</span>[<span class="st">"users"</span>], mode<span class="op">=</span><span class="st">"auto"</span>, emits<span class="op">=</span>[emit2]),</span>
-<span id="cb3-40"><a href="#cb3-40" aria-hidden="true" tabindex="-1"></a>])</span>
-<span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-42"><a href="#cb3-42" aria-hidden="true" tabindex="-1"></a>res <span class="op">=</span> run_mapping(root, mapping)</span>
-<span id="cb3-43"><a href="#cb3-43" aria-hidden="true" tabindex="-1"></a>u <span class="op">=</span> <span class="bu">list</span>(res[<span class="st">"users"</span>].instances.values())[<span class="dv">0</span>]</span>
-<span id="cb3-44"><a href="#cb3-44" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(u.login_count, u.tags)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>2 ['alpha', 'beta']</code></pre>
-</div>
-</div>
-</section>
-<section id="behavior-and-caveats" class="level3">
-<h3 class="anchored" data-anchor-id="behavior-and-caveats">Behavior and caveats</h3>
-<ul>
-<li>Policies are applied during update time per key/field.</li>
-<li>Type mismatches are recorded as update errors; the row continues.</li>
-<li>Deterministic ordering follows traversal arrival order.</li>
-</ul>
-<p>For more on how errors are reported, see <a href="../docs/error-reporting.html">Error reporting</a>.</p>
-</section>
-<section id="see-also" class="level3">
-<h3 class="anchored" data-anchor-id="see-also">See also</h3>
-<ul>
-<li><a href="../docs/instance-emission.html">Instance emission</a> - Where merge policies are used</li>
-<li><a href="../docs/error-reporting.html">Error reporting</a> - How merge policy errors are reported</li>
-</ul>
-
-
-</section>
 
 </main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
