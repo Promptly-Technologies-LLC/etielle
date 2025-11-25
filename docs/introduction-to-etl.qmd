@@ -1,0 +1,471 @@
+---
+title: Introduction to ETL
+---
+
+**What you'll learn**: What ETL (Extract, Transform, Load) means, why it's important, how it relates to working with JSON data from APIs, and how `etielle`'s features map to each ETL step.
+
+## What is ETL?
+
+**ETL** stands for **Extract, Transform, Load**—the three fundamental steps for moving data from one system to another. Understanding these steps is key to understanding how `etielle` works:
+
+| ETL Step | What it means | How `etielle` does it |
+|----------|---------------|----------------------|
+| **Extract** | Navigate and pull data from a source | **Traversals** and **Mappings** walk through nested JSON |
+| **Transform** | Reshape and format the data | **Transforms** extract and modify values |
+| **Load** | Insert data into the target system | **Emissions** output to tables, optionally flush to database |
+
+ETL is a core concept in data engineering and has been used for decades to move data between systems, especially in business intelligence and data warehousing. `etielle` brings declarative ETL to Python for JSON-to-relational transformations.
+
+## ETL in Action: A Simple Example
+
+Imagine you're building an app that tracks GitHub repositories. Here's how each ETL step works, with `etielle`'s corresponding concepts:
+
+### 1. Extract: Navigate the JSON structure
+
+**Goal**: Pull data from GitHub's API (returns nested JSON with repositories, contributors, commits)
+
+**How `etielle` does it**: **Traversals** define how to walk through the JSON:
+
+```python
+from etielle.core import TraversalSpec
+
+# Extract repositories
+repos_traversal = TraversalSpec(
+    path=["repositories"],  # Start at "repositories" key
+    mode="auto",  # Iterate through the array
+    emits=[...]  # What to do with each repository
+)
+
+# Extract commits nested inside each repository
+commits_traversal = TraversalSpec(
+    path=["repositories"],
+    mode="auto",
+    inner_path=["commits"],  # Nested path inside each repo
+    inner_mode="auto",
+    emits=[...]  # What to do with each commit
+)
+```
+
+**Key concept**: Traversals tell `etielle` *where* to go in the JSON and *how* to iterate through it. They handle the **Extract** step.
+
+Learn more: [Traversals](traversals.qmd)
+
+### 2. Transform: Reshape values
+
+**Goal**: Extract specific fields, link parent-child records, format values
+
+**How `etielle` does it**: **Transforms** extract and modify values:
+
+```python
+from etielle.transforms import get, get_from_parent, concat, literal
+
+# Transform: Extract a field from the current item
+repo_name = get("name")
+
+# Transform: Get a field from the parent (for linking)
+parent_repo_id = get_from_parent("id")
+
+# Transform: Combine values
+full_id = concat(literal("repo_"), get("id"))
+```
+
+**Key concept**: Transforms define *what* data to pull and *how* to modify it. They handle the **Transform** step.
+
+Learn more: [Transforms](transforms.qmd)
+
+### 3. Load: Output to tables
+
+**Goal**: Create flat tables (repositories, commits) and insert into PostgreSQL
+
+**How `etielle` does it**: **Emissions** define the output structure:
+
+```python
+from etielle.core import TableEmit, Field
+
+# Load: Define the output table structure
+TableEmit(
+    table="repositories",  # Target table name
+    join_keys=[get("id")],  # Unique identifier (like a primary key)
+    fields=[
+        Field("id", get("id")),
+        Field("name", get("name")),
+        Field("url", get("url"))
+    ]
+)
+```
+
+**Optionally**, flush to the database using SQLAlchemy or SQLModel:
+
+```python
+from etielle.sqlalchemy_adapter import flush_to_db
+
+# Load data into the database
+flush_to_db(session, mapping_results)
+```
+
+**Key concept**: Emissions define *where* the data goes and *how* to structure it. They handle the **Load** step.
+
+Learn more: [Emissions](emissions.qmd), [Database upserts](loading-data-into-a-database.qmd)
+
+---
+
+**The full ETL flow with `etielle`**:
+
+1. **Extract** (Traversals): "Go to `repositories`, iterate through each one"
+2. **Transform** (Transforms): "Get the `name` field, format the `id`"
+3. **Load** (Emissions): "Output to the `repositories` table with these fields"
+
+Without `etielle`, you'd write nested loops, manual field extraction, and explicit inserts. With `etielle`, you declare the mapping once, and the library handles the rest.
+
+## Why ETL Matters for JSON APIs
+
+Modern web APIs typically return **JSON** (JavaScript Object Notation)—a flexible, nested data format that's easy for APIs to generate but challenging to work with in relational databases.
+
+### The Problem: Nested JSON vs. Flat Tables
+
+JSON from APIs is often **deeply nested** with arrays inside objects inside arrays. For example, a user API might return:
+
+```json
+{
+  "users": [
+    {
+      "id": "u1",
+      "name": "Alice",
+      "posts": [
+        {"id": "p1", "title": "Hello", "comments": [...]},
+        {"id": "p2", "title": "World", "comments": [...]}
+      ]
+    }
+  ]
+}
+```
+
+But your database needs **flat, relational tables**:
+
+- `users` table: `id`, `name`
+- `posts` table: `id`, `user_id`, `title`
+- `comments` table: `id`, `post_id`, `text`
+
+### The Challenge
+
+Converting nested JSON to relational tables requires all three ETL steps:
+
+1. **Extract**: Navigate through arrays and objects at arbitrary depths
+2. **Transform**: Pull specific fields, link child to parent records, handle missing data
+3. **Load**: Build relationships (foreign keys), ensure data matches your schema
+
+Doing this manually means writing brittle, repetitive code that's hard to maintain and test. `etielle` makes this declarative.
+
+## ETL Approaches: How `etielle` Compares
+
+There are several ways to approach ETL:
+
+### 1. Manual Imperative Code (No Library)
+
+Write explicit loops and conditionals:
+
+```python
+users = []
+posts = []
+
+# Manual Extract and Transform
+for user_data in json_data["users"]:
+    users.append({"id": user_data["id"], "name": user_data["name"]})
+
+    for post_data in user_data.get("posts", []):
+        posts.append({
+            "id": post_data["id"],
+            "user_id": user_data["id"],  # Link to parent
+            "title": post_data["title"]
+        })
+
+# Manual Load
+for user in users:
+    session.add(User(**user))
+session.commit()
+```
+
+**Pros**: Full control, no dependencies
+**Cons**: Repetitive, error-prone, doesn't scale to complex nested data
+
+**How `etielle` improves this**: Declarative traversals and transforms eliminate nested loops; emissions handle field mapping.
+
+### 2. Batch ETL Tools (e.g., Airflow, dbt, Talend)
+
+Heavy-duty tools for scheduled data pipelines:
+
+- Run on a schedule (hourly, daily, etc.)
+- Handle large volumes of data
+- Orchestrate complex multi-step workflows
+
+**Pros**: Production-grade, scalable, enterprise features
+**Cons**: Overkill for simple API integrations, steep learning curve, requires infrastructure
+
+**How `etielle` differs**: Lightweight, on-demand, designed specifically for JSON-to-relational transformations.
+
+### 3. Declarative JSON-to-Relational Libraries (like `etielle`)
+
+Lightweight libraries where you declare the mapping once:
+
+```python
+# Extract: Traverse users
+users_traversal = TraversalSpec(
+    path=["users"],
+    emits=[
+        # Load: Emit to users table
+        TableEmit(
+            table="users",
+            join_keys=[get("id")],
+            fields=[
+                # Transform: Get fields
+                Field("id", get("id")),
+                Field("name", get("name"))
+            ]
+        )
+    ]
+)
+```
+
+**Pros**: Clean, maintainable, type-safe, handles arbitrary nesting
+**Cons**: Limited to JSON-to-relational transformations (but that's what it's designed for)
+
+## Mapping ETL Concepts to `etielle` Features
+
+Here's a comprehensive mapping of traditional ETL concepts to `etielle`'s implementation:
+
+| ETL Concept | Traditional Tool | `etielle` Feature | Example |
+|-------------|------------------|-------------------|---------|
+| **Extract**: Navigate to data | SQL `FROM`, XPath | `TraversalSpec` with `path` | `path=["users"]` |
+| **Extract**: Iterate items | SQL joins, loops | `TraversalSpec` with `mode="auto"` | Iterate array automatically |
+| **Extract**: Nested traversal | Recursive queries | `TraversalSpec` with `inner_path` | `inner_path=["posts"]` |
+| **Transform**: Get field | SQL `SELECT field` | `get("field")` | `get("name")` |
+| **Transform**: Get parent field | SQL joins | `get_from_parent("field")` | `get_from_parent("id")` |
+| **Transform**: Format value | SQL functions | `concat()`, `format_id()` | `concat(literal("user_"), get("id"))` |
+| **Transform**: Conditional logic | SQL `CASE`, `COALESCE` | `coalesce()`, custom transforms | `coalesce(get("email"), literal("unknown"))` |
+| **Load**: Define schema | CREATE TABLE | `TableEmit` with `fields` | `Field("id", get("id"))` |
+| **Load**: Primary key | PRIMARY KEY constraint | `join_keys` | `join_keys=[get("id")]` |
+| **Load**: Insert data | INSERT INTO | `run_mapping()` returns instances | Auto-generates dict/model instances |
+| **Load**: Database flush | COMMIT | `flush_to_db()` | SQLAlchemy/SQLModel integration |
+| **Load**: Build relationships | Foreign keys, joins | `InstanceEmit` with ORM builders | Bind ORM relationships in memory |
+
+## Common ETL Use Cases
+
+Here are some real-world scenarios where `etielle` helps:
+
+### 1. Syncing Third-Party API Data
+
+**Scenario**: Your app integrates with Stripe, GitHub, or Slack. You want to sync their data into your database.
+
+**ETL breakdown**:
+- **Extract** (Traversals): Navigate Stripe's nested payment objects
+- **Transform** (Transforms): Extract customer IDs, format timestamps, link charges to customers
+- **Load** (Emissions): Output to `customers`, `charges`, `subscriptions` tables
+
+**Without `etielle`**: Write custom parsing code for each API, handle nested structures manually.
+
+**With `etielle`**: Declare a mapping spec once, reuse it every time you fetch data.
+
+### 2. Building Data Dashboards
+
+**Scenario**: You're building a dashboard that shows metrics from multiple APIs (analytics, sales, support tickets).
+
+**ETL breakdown**:
+- **Extract** (Traversals): Pull data from each API's JSON response
+- **Transform** (Transforms): Normalize field names, calculate aggregates
+- **Load** (Emissions): Output to a unified schema for visualization
+
+**Without `etielle`**: Write custom ETL scripts for each data source, hard to maintain.
+
+**With `etielle`**: Define mappings for each API, run them on-demand or on a schedule.
+
+### 3. Data Migration
+
+**Scenario**: Migrating from one system to another (e.g., old API to new database schema).
+
+**ETL breakdown**:
+- **Extract** (Traversals): Pull all records from the old API
+- **Transform** (Transforms): Map old field names to new schema
+- **Load** (Emissions): Insert into new database with correct relationships
+
+**Without `etielle`**: Write one-off migration scripts that are thrown away after use.
+
+**With `etielle`**: Define reusable mappings that serve as documentation for future migrations.
+
+### 4. Testing with Fixtures
+
+**Scenario**: You need to generate test database records from JSON fixtures.
+
+**ETL breakdown**:
+- **Extract** (Traversals): Load JSON fixture files
+- **Transform** (Transforms): Apply test data transformations
+- **Load** (Emissions): Create test instances with proper relationships
+
+**Without `etielle`**: Manually construct test data with verbose setup code.
+
+**With `etielle`**: Define mappings once, generate test data from JSON files automatically.
+
+## ETL Best Practices (with `etielle`)
+
+When building ETL pipelines with `etielle`:
+
+1. **Start simple**: Map the core data first, add complexity incrementally
+   - Begin with a single `TraversalSpec` for your main table
+   - Add nested traversals and relationships later
+
+2. **Validate early**: Use type-safe emissions (Pydantic, TypedDicts) to catch errors before loading
+   - `InstanceEmit` with `PydanticBuilder` validates data structure
+   - See [Instance emission](instance-emission.qmd)
+
+3. **Handle errors gracefully**: Use `etielle`'s error reporting to catch bad data
+   - Per-key diagnostics show which rows failed and why
+   - See [Error reporting](error-reporting.qmd)
+
+4. **Make it idempotent**: Use consistent `join_keys` so running ETL twice produces the same result
+   - Rows with matching `join_keys` merge instead of duplicate
+
+5. **Test with real data**: Use actual API responses to catch edge cases
+   - Run `run_mapping()` on sample JSON to verify your traversals work
+
+6. **Document your mappings**: `etielle` specs serve as executable documentation
+   - The `TraversalSpec` and `TableEmit` definitions document the data flow
+
+## ETL vs. ELT
+
+You might hear about **ELT** (Extract, Load, Transform)—a variant where you load raw data first, then transform it:
+
+- **ETL**: Transform before loading (what `etielle` does)
+- **ELT**: Load raw data, transform in the database (common with data warehouses like Snowflake)
+
+`etielle` follows the ETL pattern because:
+
+1. **Transform** (Transforms): Transforming JSON in Python is easier than in SQL
+2. **Extract** (Traversals): Navigating nested JSON requires imperative code, not possible in SQL alone
+3. **Load** (Emissions): Validating data before it reaches your database prevents bad data
+4. Reduces storage costs (don't store raw JSON unnecessarily)
+
+However, you can combine approaches:
+- Use `etielle` for **Extract** and **Transform** (JSON to flat tables)
+- Load raw transformed data into a warehouse
+- Use SQL/dbt for further transformations (ELT)
+
+## Historical Context
+
+ETL has been around since the 1970s, evolving alongside database technology:
+
+- **1970s-1990s**: Manual SQL scripts and batch jobs (all three steps manual)
+- **2000s**: Enterprise ETL tools (Informatica, Talend, SSIS) with visual interfaces
+- **2010s**: Open-source tools (Apache Airflow, dbt) with declarative configs
+- **2020s**: Specialized libraries for specific use cases:
+  - `dbt` for SQL-based transformations
+  - `Singer` for data replication
+  - **`etielle` for JSON-to-relational ETL**
+
+The core concept remains the same: **Extract**, **Transform**, **Load**. What's changed is the tools and the data sources (from databases and CSVs to APIs and JSON).
+
+## When Not to Use ETL (or `etielle`)
+
+Not every data problem needs ETL:
+
+- **Simple queries**: If you just need to read a few fields from an API response, plain Python is fine
+- **One-time tasks**: For quick one-off data transformations, a script might be simpler
+- **Real-time streaming**: ETL is for batch processing; use stream processing tools (Kafka, Flink) for real-time data
+- **Non-nested JSON**: If your JSON is already flat, you don't need `etielle`'s traversal features
+
+## The Three Pillars of `etielle` ETL
+
+To summarize, `etielle` implements ETL through three core features:
+
+### 1. Extract: Traversals and Mappings
+
+**What they do**: Navigate nested JSON structures and decide what to iterate over
+
+**Key classes**:
+- `TraversalSpec`: Defines a path through the JSON
+- `MappingSpec`: Container for multiple traversals
+
+**Example**:
+```python
+TraversalSpec(
+    path=["users"],           # Extract: Start here
+    inner_path=["posts"],     # Extract: Then go here
+    mode="auto",              # Extract: How to iterate
+)
+```
+
+Learn more: [Traversals](traversals.qmd)
+
+### 2. Transform: Transforms
+
+**What they do**: Extract, modify, and format values from the JSON
+
+**Key functions**:
+- `get()`: Get field from current node
+- `get_from_parent()`: Get field from ancestor (for relationships)
+- `concat()`, `format_id()`: Format and combine values
+- `coalesce()`: Provide fallback values
+
+**Example**:
+```python
+Field("user_id", get_from_parent("id"))  # Transform: Link to parent
+Field("full_name", concat(get("first"), literal(" "), get("last")))  # Transform: Combine
+```
+
+Learn more: [Transforms](transforms.qmd)
+
+### 3. Load: Emissions
+
+**What they do**: Define output structure and optionally flush to database
+
+**Key classes**:
+- `TableEmit`: Output to dict tables
+- `InstanceEmit`: Output to Pydantic/TypedDict/ORM instances
+- `flush_to_db()`: Load into database via SQLAlchemy/SQLModel
+
+**Example**:
+```python
+TableEmit(
+    table="users",                # Load: Target table
+    join_keys=[get("id")],        # Load: Unique identifier
+    fields=[                      # Load: Field mapping
+        Field("id", get("id")),
+        Field("name", get("name"))
+    ]
+)
+```
+
+Learn more: [Emissions](emissions.qmd), [Database upserts](loading-data-into-a-database.qmd)
+
+## Next Steps
+
+Now that you understand ETL and how `etielle` implements each step, you're ready to dive deeper:
+
+1. **[Quickstart](index.qmd)** - Jump straight into using `etielle` with a complete example
+2. **[Traversals](traversals.qmd)** - Master the **Extract** step: navigate nested JSON
+3. **[Transforms](transforms.qmd)** - Master the **Transform** step: extract and reshape values
+4. **[Emissions](emissions.qmd)** - Master the **Load** step: output data to tables
+5. **[Database upserts](loading-data-into-a-database.qmd)** - Load data into databases with SQLAlchemy/SQLModel
+6. **[Relationships](relationships.qmd)** - Build foreign key relationships between tables
+
+## Glossary
+
+- **ETL**: Extract, Transform, Load—the process of moving data between systems
+- **Extract**: Navigate and pull data from a source (in `etielle`: Traversals)
+- **Transform**: Reshape and format the data (in `etielle`: Transforms)
+- **Load**: Insert data into the target system (in `etielle`: Emissions)
+- **JSON**: JavaScript Object Notation—a nested data format commonly returned by APIs
+- **Relational tables**: Flat, structured data with rows and columns (like database tables)
+- **Nested data**: Data with multiple levels of arrays and objects
+- **Schema**: The structure and data types of your target tables
+- **Idempotent**: Producing the same result when run multiple times
+- **Traversal**: Instructions for walking through part of the JSON (Extract)
+- **Transform**: A function that extracts values from a context (Transform)
+- **Emit**: Creating a table row from the current context (Load)
+- **Join keys**: Values that uniquely identify a row (like primary keys)
+
+## See also
+
+- [Wikipedia: Extract, transform, load](https://en.wikipedia.org/wiki/Extract,_transform,_load)
+- [Quickstart](index.qmd) - Jump straight into using `etielle`
+- [Traversals](traversals.qmd) - Deep dive into the Extract step
+- [Transforms](transforms.qmd) - Deep dive into the Transform step
+- [Emissions](emissions.qmd) - Deep dive into the Load step
