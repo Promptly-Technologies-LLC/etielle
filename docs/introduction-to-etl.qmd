@@ -218,7 +218,7 @@ Learn more: [Database upserts](loading-data-into-a-database.qmd), [SQLAlchemy ad
 
 Now that you understand ETL and how `etielle` implements each step, you're ready to dive deeper:
 
-1. **[Quickstart](index.qmd)** - Jump straight into using `etielle` with a complete example
+1. **[Quickstart](../index.qmd)** - Jump straight into using `etielle` with a complete example
 2. **[Traversals](traversals.qmd)** - Master the **Extract** step: navigate nested JSON
 3. **[Transforms](transforms.qmd)** - Master the **Transform** step: field-level data extraction and reshaping
 4. **[Emissions](emissions.qmd)** - Master the **Transform** step: table-level structure definition

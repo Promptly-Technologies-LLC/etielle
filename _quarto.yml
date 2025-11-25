@@ -4,24 +4,24 @@ project:
 
 website:
   title: "etielle: Declarative JSON-to-Relational Mapping in Python"
+  sidebar:
+    - href: index.qmd
+      text: Home
+    - href: docs/introduction-to-etl.qmd
+      text: Introduction to ETL
+    - href: docs/field-selectors.qmd
+      text: Field selectors
+    - href: docs/instance-emission.qmd
+      text: Instance emission
+    - href: docs/merge-policies.qmd
+      text: Merge policies
+    - href: docs/error-reporting.qmd
+      text: Error reporting
+    - href: docs/relationships.qmd
+      text: Relationships
+    - href: docs/sqlalchemy-adapter.qmd
+      text: SQLAlchemy & SQLModel adapters
   navbar:
-    left:
-      - href: index.qmd
-        text: Home
-      - href: docs/introduction-to-etl.qmd
-        text: Introduction to ETL
-      - href: docs/field-selectors.qmd
-        text: Field selectors
-      - href: docs/instance-emission.qmd
-        text: Instance emission
-      - href: docs/merge-policies.qmd
-        text: Merge policies
-      - href: docs/error-reporting.qmd
-        text: Error reporting
-      - href: docs/relationships.qmd
-        text: Relationships
-      - href: docs/sqlalchemy-adapter.qmd
-        text: SQLAlchemy & SQLModel adapters
     right:
       - icon: github
         href: https://github.com/promptly-technologies-llc/etielle
