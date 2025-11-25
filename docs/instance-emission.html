@@ -107,7 +107,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 </head>
 
-<body class="nav-fixed quarto-light">
+<body class="nav-sidebar floating nav-fixed quarto-light">
 
 <div id="quarto-search-results"></div>
   <header id="quarto-header" class="headroom fixed-top">
@@ -123,40 +123,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <span class="navbar-toggler-icon"></span>
 </button>
           <div class="collapse navbar-collapse" id="navbarCollapse">
-            <ul class="navbar-nav navbar-nav-scroll me-auto">
-  <li class="nav-item">
-    <a class="nav-link" href="../index.html"> 
-<span class="menu-text">Home</span></a>
-  </li>  
-  <li class="nav-item">
-    <a class="nav-link" href="../docs/introduction-to-etl.html"> 
-<span class="menu-text">Introduction to ETL</span></a>
-  </li>  
-  <li class="nav-item">
-    <a class="nav-link" href="../docs/field-selectors.html"> 
-<span class="menu-text">Field selectors</span></a>
-  </li>  
-  <li class="nav-item">
-    <a class="nav-link active" href="../docs/instance-emission.html" aria-current="page"> 
-<span class="menu-text">Instance emission</span></a>
-  </li>  
-  <li class="nav-item">
-    <a class="nav-link" href="../docs/merge-policies.html"> 
-<span class="menu-text">Merge policies</span></a>
-  </li>  
-  <li class="nav-item">
-    <a class="nav-link" href="../docs/error-reporting.html"> 
-<span class="menu-text">Error reporting</span></a>
-  </li>  
-  <li class="nav-item">
-    <a class="nav-link" href="../docs/relationships.html"> 
-<span class="menu-text">Relationships</span></a>
-  </li>  
-  <li class="nav-item">
-    <a class="nav-link" href="../docs/sqlalchemy-adapter.html"> 
-<span class="menu-text">SQLAlchemy &amp; SQLModel adapters</span></a>
-  </li>  
-</ul>
             <ul class="navbar-nav navbar-nav-scroll ms-auto">
   <li class="nav-item compact">
     <a class="nav-link" href="https://github.com/promptly-technologies-llc/etielle"> <i class="bi bi-github" role="img">
@@ -169,10 +135,23 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
       </div> <!-- /container-fluid -->
     </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item">Instance emission (Pydantic, TypedDict, ORM)</li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+    </div>
+  </nav>
 </header>
 <!-- content -->
 <div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
 <!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
 <!-- margin-sidebar -->
     <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
         <nav id="TOC" role="doc-toc" class="toc-active">
@@ -233,7 +212,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="tableemit-vs.-instanceemit" class="level3">
 <h3 class="anchored" data-anchor-id="tableemit-vs.-instanceemit">TableEmit vs.&nbsp;InstanceEmit</h3>
 <p><strong>With TableEmit</strong> (basic approach):</p>
-<div id="3952b387" class="cell" data-execution_count="1">
+<div id="5ededf1b" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.core <span class="im">import</span> MappingSpec, TraversalSpec, TableEmit, Field</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.transforms <span class="im">import</span> get</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.executor <span class="im">import</span> run_mapping</span>
@@ -254,7 +233,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a><span class="co">#                                        ↑ plain dict</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p><strong>With InstanceEmit</strong> (typed approach):</p>
-<div id="b2dc7d6f" class="cell" data-execution_count="2">
+<div id="b29bf01b" class="cell" data-execution_count="2">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.core <span class="im">import</span> MappingSpec, TraversalSpec, field_of</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.transforms <span class="im">import</span> get</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.instances <span class="im">import</span> InstanceEmit, FieldSpec, PydanticBuilder</span>
@@ -287,7 +266,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="builders" class="level3">
 <h3 class="anchored" data-anchor-id="builders">Builders</h3>
-<div id="eb99bb69" class="cell" data-execution_count="3">
+<div id="c3e12b5b" class="cell" data-execution_count="3">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.instances <span class="im">import</span> InstanceEmit, FieldSpec, PydanticBuilder, TypedDictBuilder</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.transforms <span class="im">import</span> get</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.core <span class="im">import</span> MappingSpec, TraversalSpec, field_of</span>
@@ -318,7 +297,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 <p>TypedDict without Pydantic:</p>
-<div id="02696aa8" class="cell" data-execution_count="4">
+<div id="c24f973a" class="cell" data-execution_count="4">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> typing <span class="im">import</span> TypedDict</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> UserTD(TypedDict):</span>
@@ -358,7 +337,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="strictness-and-error-collection" class="level3">
 <h3 class="anchored" data-anchor-id="strictness-and-error-collection">Strictness and error collection</h3>
 <p>Builders collect update-time and finalize-time errors; the executor returns them in <code>MappingResult</code> per table.</p>
-<div id="828730c4" class="cell" data-execution_count="6">
+<div id="0fb8ac14" class="cell" data-execution_count="6">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.executor <span class="im">import</span> run_mapping</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> run_mapping(root_err, mapping_err)</span>

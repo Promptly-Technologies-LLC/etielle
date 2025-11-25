@@ -107,7 +107,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 </head>
 
-<body class="nav-fixed quarto-light">
+<body class="nav-sidebar floating nav-fixed quarto-light">
 
 <div id="quarto-search-results"></div>
   <header id="quarto-header" class="headroom fixed-top">
@@ -123,40 +123,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <span class="navbar-toggler-icon"></span>
 </button>
           <div class="collapse navbar-collapse" id="navbarCollapse">
-            <ul class="navbar-nav navbar-nav-scroll me-auto">
-  <li class="nav-item">
-    <a class="nav-link" href="../index.html"> 
-<span class="menu-text">Home</span></a>
-  </li>  
-  <li class="nav-item">
-    <a class="nav-link active" href="../docs/introduction-to-etl.html" aria-current="page"> 
-<span class="menu-text">Introduction to ETL</span></a>
-  </li>  
-  <li class="nav-item">
-    <a class="nav-link" href="../docs/field-selectors.html"> 
-<span class="menu-text">Field selectors</span></a>
-  </li>  
-  <li class="nav-item">
-    <a class="nav-link" href="../docs/instance-emission.html"> 
-<span class="menu-text">Instance emission</span></a>
-  </li>  
-  <li class="nav-item">
-    <a class="nav-link" href="../docs/merge-policies.html"> 
-<span class="menu-text">Merge policies</span></a>
-  </li>  
-  <li class="nav-item">
-    <a class="nav-link" href="../docs/error-reporting.html"> 
-<span class="menu-text">Error reporting</span></a>
-  </li>  
-  <li class="nav-item">
-    <a class="nav-link" href="../docs/relationships.html"> 
-<span class="menu-text">Relationships</span></a>
-  </li>  
-  <li class="nav-item">
-    <a class="nav-link" href="../docs/sqlalchemy-adapter.html"> 
-<span class="menu-text">SQLAlchemy &amp; SQLModel adapters</span></a>
-  </li>  
-</ul>
             <ul class="navbar-nav navbar-nav-scroll ms-auto">
   <li class="nav-item compact">
     <a class="nav-link" href="https://github.com/promptly-technologies-llc/etielle"> <i class="bi bi-github" role="img">
@@ -169,10 +135,23 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
       </div> <!-- /container-fluid -->
     </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item">Introduction to ETL</li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+    </div>
+  </nav>
 </header>
 <!-- content -->
 <div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
 <!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
 <!-- margin-sidebar -->
     <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
         <nav id="TOC" role="doc-toc" class="toc-active">
@@ -370,7 +349,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h2 class="anchored" data-anchor-id="next-steps">Next Steps</h2>
 <p>Now that you understand ETL and how <code>etielle</code> implements each step, you’re ready to dive deeper:</p>
 <ol type="1">
-<li><strong><a href="index.qmd">Quickstart</a></strong> - Jump straight into using <code>etielle</code> with a complete example</li>
+<li><strong><a href="../index.html">Quickstart</a></strong> - Jump straight into using <code>etielle</code> with a complete example</li>
 <li><strong><a href="traversals.qmd">Traversals</a></strong> - Master the <strong>Extract</strong> step: navigate nested JSON</li>
 <li><strong><a href="transforms.qmd">Transforms</a></strong> - Master the <strong>Transform</strong> step: field-level data extraction and reshaping</li>
 <li><strong><a href="emissions.qmd">Emissions</a></strong> - Master the <strong>Transform</strong> step: table-level structure definition</li>

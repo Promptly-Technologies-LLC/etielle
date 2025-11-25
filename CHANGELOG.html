@@ -72,7 +72,7 @@ ul.task-list li input[type="checkbox"] {
 
 </head>
 
-<body class="nav-fixed quarto-light">
+<body class="nav-sidebar floating nav-fixed quarto-light">
 
 <div id="quarto-search-results"></div>
   <header id="quarto-header" class="headroom fixed-top">
@@ -88,40 +88,6 @@ ul.task-list li input[type="checkbox"] {
   <span class="navbar-toggler-icon"></span>
 </button>
           <div class="collapse navbar-collapse" id="navbarCollapse">
-            <ul class="navbar-nav navbar-nav-scroll me-auto">
-  <li class="nav-item">
-    <a class="nav-link" href="./index.html"> 
-<span class="menu-text">Home</span></a>
-  </li>  
-  <li class="nav-item">
-    <a class="nav-link" href="./docs/introduction-to-etl.html"> 
-<span class="menu-text">Introduction to ETL</span></a>
-  </li>  
-  <li class="nav-item">
-    <a class="nav-link" href="./docs/field-selectors.html"> 
-<span class="menu-text">Field selectors</span></a>
-  </li>  
-  <li class="nav-item">
-    <a class="nav-link" href="./docs/instance-emission.html"> 
-<span class="menu-text">Instance emission</span></a>
-  </li>  
-  <li class="nav-item">
-    <a class="nav-link" href="./docs/merge-policies.html"> 
-<span class="menu-text">Merge policies</span></a>
-  </li>  
-  <li class="nav-item">
-    <a class="nav-link" href="./docs/error-reporting.html"> 
-<span class="menu-text">Error reporting</span></a>
-  </li>  
-  <li class="nav-item">
-    <a class="nav-link" href="./docs/relationships.html"> 
-<span class="menu-text">Relationships</span></a>
-  </li>  
-  <li class="nav-item">
-    <a class="nav-link" href="./docs/sqlalchemy-adapter.html"> 
-<span class="menu-text">SQLAlchemy &amp; SQLModel adapters</span></a>
-  </li>  
-</ul>
             <ul class="navbar-nav navbar-nav-scroll ms-auto">
   <li class="nav-item compact">
     <a class="nav-link" href="https://github.com/promptly-technologies-llc/etielle"> <i class="bi bi-github" role="img">
@@ -134,10 +100,23 @@ ul.task-list li input[type="checkbox"] {
 </div>
       </div> <!-- /container-fluid -->
     </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+    </div>
+  </nav>
 </header>
 <!-- content -->
 <div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
 <!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
 <!-- margin-sidebar -->
     <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
         <nav id="TOC" role="doc-toc" class="toc-active">
@@ -146,20 +125,26 @@ ul.task-list li input[type="checkbox"] {
   <ul>
   <li><a href="#changelog" id="toc-changelog" class="nav-link active" data-scroll-target="#changelog">Changelog</a>
   <ul class="collapse">
+  <li><a href="#v2.2.1-2025-11-25" id="toc-v2.2.1-2025-11-25" class="nav-link" data-scroll-target="#v2.2.1-2025-11-25">v2.2.1 (2025-11-25)</a>
+  <ul class="collapse">
+  <li><a href="#bug-fixes" id="toc-bug-fixes" class="nav-link" data-scroll-target="#bug-fixes">Bug Fixes</a></li>
+  <li><a href="#chores" id="toc-chores" class="nav-link" data-scroll-target="#chores">Chores</a></li>
+  <li><a href="#documentation" id="toc-documentation" class="nav-link" data-scroll-target="#documentation">Documentation</a></li>
+  </ul></li>
   <li><a href="#v2.2.0-2025-10-23" id="toc-v2.2.0-2025-10-23" class="nav-link" data-scroll-target="#v2.2.0-2025-10-23">v2.2.0 (2025-10-23)</a>
   <ul class="collapse">
-  <li><a href="#chores" id="toc-chores" class="nav-link" data-scroll-target="#chores">Chores</a></li>
+  <li><a href="#chores-1" id="toc-chores-1" class="nav-link" data-scroll-target="#chores-1">Chores</a></li>
   <li><a href="#features" id="toc-features" class="nav-link" data-scroll-target="#features">Features</a></li>
   </ul></li>
   <li><a href="#v2.1.0-2025-10-20" id="toc-v2.1.0-2025-10-20" class="nav-link" data-scroll-target="#v2.1.0-2025-10-20">v2.1.0 (2025-10-20)</a>
   <ul class="collapse">
-  <li><a href="#documentation" id="toc-documentation" class="nav-link" data-scroll-target="#documentation">Documentation</a></li>
+  <li><a href="#documentation-1" id="toc-documentation-1" class="nav-link" data-scroll-target="#documentation-1">Documentation</a></li>
   <li><a href="#features-1" id="toc-features-1" class="nav-link" data-scroll-target="#features-1">Features</a></li>
   </ul></li>
   <li><a href="#v2.0.0-2025-10-19" id="toc-v2.0.0-2025-10-19" class="nav-link" data-scroll-target="#v2.0.0-2025-10-19">v2.0.0 (2025-10-19)</a>
   <ul class="collapse">
-  <li><a href="#bug-fixes" id="toc-bug-fixes" class="nav-link" data-scroll-target="#bug-fixes">Bug Fixes</a></li>
-  <li><a href="#documentation-1" id="toc-documentation-1" class="nav-link" data-scroll-target="#documentation-1">Documentation</a></li>
+  <li><a href="#bug-fixes-1" id="toc-bug-fixes-1" class="nav-link" data-scroll-target="#bug-fixes-1">Bug Fixes</a></li>
+  <li><a href="#documentation-2" id="toc-documentation-2" class="nav-link" data-scroll-target="#documentation-2">Documentation</a></li>
   <li><a href="#features-2" id="toc-features-2" class="nav-link" data-scroll-target="#features-2">Features</a></li>
   </ul></li>
   <li><a href="#v1.4.0-2025-10-15" id="toc-v1.4.0-2025-10-15" class="nav-link" data-scroll-target="#v1.4.0-2025-10-15">v1.4.0 (2025-10-15)</a>
@@ -180,31 +165,31 @@ ul.task-list li input[type="checkbox"] {
   </ul></li>
   <li><a href="#v1.0.6-2025-10-14" id="toc-v1.0.6-2025-10-14" class="nav-link" data-scroll-target="#v1.0.6-2025-10-14">v1.0.6 (2025-10-14)</a>
   <ul class="collapse">
-  <li><a href="#bug-fixes-1" id="toc-bug-fixes-1" class="nav-link" data-scroll-target="#bug-fixes-1">Bug Fixes</a></li>
+  <li><a href="#bug-fixes-2" id="toc-bug-fixes-2" class="nav-link" data-scroll-target="#bug-fixes-2">Bug Fixes</a></li>
   </ul></li>
   <li><a href="#v1.0.5-2025-10-14" id="toc-v1.0.5-2025-10-14" class="nav-link" data-scroll-target="#v1.0.5-2025-10-14">v1.0.5 (2025-10-14)</a>
   <ul class="collapse">
-  <li><a href="#bug-fixes-2" id="toc-bug-fixes-2" class="nav-link" data-scroll-target="#bug-fixes-2">Bug Fixes</a></li>
+  <li><a href="#bug-fixes-3" id="toc-bug-fixes-3" class="nav-link" data-scroll-target="#bug-fixes-3">Bug Fixes</a></li>
   </ul></li>
   <li><a href="#v1.0.4-2025-10-14" id="toc-v1.0.4-2025-10-14" class="nav-link" data-scroll-target="#v1.0.4-2025-10-14">v1.0.4 (2025-10-14)</a>
   <ul class="collapse">
-  <li><a href="#bug-fixes-3" id="toc-bug-fixes-3" class="nav-link" data-scroll-target="#bug-fixes-3">Bug Fixes</a></li>
+  <li><a href="#bug-fixes-4" id="toc-bug-fixes-4" class="nav-link" data-scroll-target="#bug-fixes-4">Bug Fixes</a></li>
   </ul></li>
   <li><a href="#v1.0.3-2025-10-14" id="toc-v1.0.3-2025-10-14" class="nav-link" data-scroll-target="#v1.0.3-2025-10-14">v1.0.3 (2025-10-14)</a>
   <ul class="collapse">
-  <li><a href="#bug-fixes-4" id="toc-bug-fixes-4" class="nav-link" data-scroll-target="#bug-fixes-4">Bug Fixes</a></li>
+  <li><a href="#bug-fixes-5" id="toc-bug-fixes-5" class="nav-link" data-scroll-target="#bug-fixes-5">Bug Fixes</a></li>
   </ul></li>
   <li><a href="#v1.0.2-2025-10-14" id="toc-v1.0.2-2025-10-14" class="nav-link" data-scroll-target="#v1.0.2-2025-10-14">v1.0.2 (2025-10-14)</a>
   <ul class="collapse">
-  <li><a href="#bug-fixes-5" id="toc-bug-fixes-5" class="nav-link" data-scroll-target="#bug-fixes-5">Bug Fixes</a></li>
+  <li><a href="#bug-fixes-6" id="toc-bug-fixes-6" class="nav-link" data-scroll-target="#bug-fixes-6">Bug Fixes</a></li>
   </ul></li>
   <li><a href="#v1.0.1-2025-10-14" id="toc-v1.0.1-2025-10-14" class="nav-link" data-scroll-target="#v1.0.1-2025-10-14">v1.0.1 (2025-10-14)</a>
   <ul class="collapse">
-  <li><a href="#bug-fixes-6" id="toc-bug-fixes-6" class="nav-link" data-scroll-target="#bug-fixes-6">Bug Fixes</a></li>
+  <li><a href="#bug-fixes-7" id="toc-bug-fixes-7" class="nav-link" data-scroll-target="#bug-fixes-7">Bug Fixes</a></li>
   </ul></li>
   <li><a href="#v1.0.0-2025-10-14" id="toc-v1.0.0-2025-10-14" class="nav-link" data-scroll-target="#v1.0.0-2025-10-14">v1.0.0 (2025-10-14)</a>
   <ul class="collapse">
-  <li><a href="#bug-fixes-7" id="toc-bug-fixes-7" class="nav-link" data-scroll-target="#bug-fixes-7">Bug Fixes</a></li>
+  <li><a href="#bug-fixes-8" id="toc-bug-fixes-8" class="nav-link" data-scroll-target="#bug-fixes-8">Bug Fixes</a></li>
   </ul></li>
   </ul></li>
   </ul>
@@ -219,10 +204,33 @@ ul.task-list li input[type="checkbox"] {
 <section id="changelog" class="level1">
 <h1>Changelog</h1>
 <!-- version list -->
-<section id="v2.2.0-2025-10-23" class="level2">
-<h2 class="anchored" data-anchor-id="v2.2.0-2025-10-23">v2.2.0 (2025-10-23)</h2>
+<section id="v2.2.1-2025-11-25" class="level2">
+<h2 class="anchored" data-anchor-id="v2.2.1-2025-11-25">v2.2.1 (2025-11-25)</h2>
+<section id="bug-fixes" class="level3">
+<h3 class="anchored" data-anchor-id="bug-fixes">Bug Fixes</h3>
+<ul>
+<li>Support &gt;1 spec per child table (<a href="https://github.com/Promptly-Technologies-LLC/etielle/commit/57ee01ea40d50350278b91337af3136831f56662"><code>57ee01e</code></a>)</li>
+</ul>
+</section>
 <section id="chores" class="level3">
 <h3 class="anchored" data-anchor-id="chores">Chores</h3>
+<ul>
+<li>Lint code (<a href="https://github.com/Promptly-Technologies-LLC/etielle/commit/9f4d3c89bfc2f39c1fc2d8e6bfe748aa6438f79c"><code>9f4d3c8</code></a>)</li>
+</ul>
+</section>
+<section id="documentation" class="level3">
+<h3 class="anchored" data-anchor-id="documentation">Documentation</h3>
+<ul>
+<li><p>Add comprehensive introduction to ETL documentation (<a href="https://github.com/Promptly-Technologies-LLC/etielle/commit/69e8029cdc441ce330e4f36607bc624c1ca313d3"><code>69e8029</code></a>)</p></li>
+<li><p>Introduction to ETL (<a href="https://github.com/Promptly-Technologies-LLC/etielle/commit/90e0fd1a5d9412562c10b444d7274b56ea3f887b"><code>90e0fd1</code></a>)</p></li>
+<li><p>Refine ETL concept mapping in introduction (<a href="https://github.com/Promptly-Technologies-LLC/etielle/commit/bbdb9a7b36c25b883c4e440782559f24d6042592"><code>bbdb9a7</code></a>)</p></li>
+</ul>
+</section>
+</section>
+<section id="v2.2.0-2025-10-23" class="level2">
+<h2 class="anchored" data-anchor-id="v2.2.0-2025-10-23">v2.2.0 (2025-10-23)</h2>
+<section id="chores-1" class="level3">
+<h3 class="anchored" data-anchor-id="chores-1">Chores</h3>
 <ul>
 <li>Remove lockfile from version control (<a href="https://github.com/Promptly-Technologies-LLC/etielle/commit/022954758ee7e72cb42909bb8bdab8ebff030a6e"><code>0229547</code></a>)</li>
 </ul>
@@ -236,8 +244,8 @@ ul.task-list li input[type="checkbox"] {
 </section>
 <section id="v2.1.0-2025-10-20" class="level2">
 <h2 class="anchored" data-anchor-id="v2.1.0-2025-10-20">v2.1.0 (2025-10-20)</h2>
-<section id="documentation" class="level3">
-<h3 class="anchored" data-anchor-id="documentation">Documentation</h3>
+<section id="documentation-1" class="level3">
+<h3 class="anchored" data-anchor-id="documentation-1">Documentation</h3>
 <ul>
 <li><p>Clarify field selector docs (<a href="https://github.com/Promptly-Technologies-LLC/etielle/commit/cb90959941ab9ede524e33f4293570c7b72f7cfa"><code>cb90959</code></a>)</p></li>
 <li><p>Cross-linking, user-friendliness (<a href="https://github.com/Promptly-Technologies-LLC/etielle/commit/acb8b871912523926cdf0816069d62e55125b8fb"><code>acb8b87</code></a>)</p></li>
@@ -254,14 +262,14 @@ ul.task-list li input[type="checkbox"] {
 </section>
 <section id="v2.0.0-2025-10-19" class="level2">
 <h2 class="anchored" data-anchor-id="v2.0.0-2025-10-19">v2.0.0 (2025-10-19)</h2>
-<section id="bug-fixes" class="level3">
-<h3 class="anchored" data-anchor-id="bug-fixes">Bug Fixes</h3>
+<section id="bug-fixes-1" class="level3">
+<h3 class="anchored" data-anchor-id="bug-fixes-1">Bug Fixes</h3>
 <ul>
 <li>Make release workflow ff after publish (<a href="https://github.com/Promptly-Technologies-LLC/etielle/commit/506d3c86390bbac20cb36ef7fcbbd0b6d97a3b30"><code>506d3c8</code></a>)</li>
 </ul>
 </section>
-<section id="documentation-1" class="level3">
-<h3 class="anchored" data-anchor-id="documentation-1">Documentation</h3>
+<section id="documentation-2" class="level3">
+<h3 class="anchored" data-anchor-id="documentation-2">Documentation</h3>
 <ul>
 <li><p>Add backticks around code (<a href="https://github.com/Promptly-Technologies-LLC/etielle/commit/e251f3f5c24b6f9965b20a3fc006224e60b0fab0"><code>e251f3f</code></a>)</p></li>
 <li><p>All documentation code runs (<a href="https://github.com/Promptly-Technologies-LLC/etielle/commit/61dbb245bdff603dd37b9240e7e0ec74a2241229"><code>61dbb24</code></a>)</p></li>
@@ -317,8 +325,8 @@ ul.task-list li input[type="checkbox"] {
 </section>
 <section id="v1.0.6-2025-10-14" class="level2">
 <h2 class="anchored" data-anchor-id="v1.0.6-2025-10-14">v1.0.6 (2025-10-14)</h2>
-<section id="bug-fixes-1" class="level3">
-<h3 class="anchored" data-anchor-id="bug-fixes-1">Bug Fixes</h3>
+<section id="bug-fixes-2" class="level3">
+<h3 class="anchored" data-anchor-id="bug-fixes-2">Bug Fixes</h3>
 <ul>
 <li>Configure pyproject version stamping (<a href="https://github.com/Promptly-Technologies-LLC/etielle/commit/49c4e07af4cf72c446c3847399abe776e515ab85"><code>49c4e07</code></a>)</li>
 </ul>
@@ -326,8 +334,8 @@ ul.task-list li input[type="checkbox"] {
 </section>
 <section id="v1.0.5-2025-10-14" class="level2">
 <h2 class="anchored" data-anchor-id="v1.0.5-2025-10-14">v1.0.5 (2025-10-14)</h2>
-<section id="bug-fixes-2" class="level3">
-<h3 class="anchored" data-anchor-id="bug-fixes-2">Bug Fixes</h3>
+<section id="bug-fixes-3" class="level3">
+<h3 class="anchored" data-anchor-id="bug-fixes-3">Bug Fixes</h3>
 <ul>
 <li>Make release dependent on test (<a href="https://github.com/Promptly-Technologies-LLC/etielle/commit/b37795886a41674c677bc13e2df676fe42effc6f"><code>b377958</code></a>)</li>
 </ul>
@@ -335,8 +343,8 @@ ul.task-list li input[type="checkbox"] {
 </section>
 <section id="v1.0.4-2025-10-14" class="level2">
 <h2 class="anchored" data-anchor-id="v1.0.4-2025-10-14">v1.0.4 (2025-10-14)</h2>
-<section id="bug-fixes-3" class="level3">
-<h3 class="anchored" data-anchor-id="bug-fixes-3">Bug Fixes</h3>
+<section id="bug-fixes-4" class="level3">
+<h3 class="anchored" data-anchor-id="bug-fixes-4">Bug Fixes</h3>
 <ul>
 <li>Correctly use PyPi env for publish job (<a href="https://github.com/Promptly-Technologies-LLC/etielle/commit/2dd6cea8ff3fd99a5ac64d627721bcdac394750a"><code>2dd6cea</code></a>)</li>
 </ul>
@@ -344,8 +352,8 @@ ul.task-list li input[type="checkbox"] {
 </section>
 <section id="v1.0.3-2025-10-14" class="level2">
 <h2 class="anchored" data-anchor-id="v1.0.3-2025-10-14">v1.0.3 (2025-10-14)</h2>
-<section id="bug-fixes-4" class="level3">
-<h3 class="anchored" data-anchor-id="bug-fixes-4">Bug Fixes</h3>
+<section id="bug-fixes-5" class="level3">
+<h3 class="anchored" data-anchor-id="bug-fixes-5">Bug Fixes</h3>
 <ul>
 <li>Run build in PSR container (<a href="https://github.com/Promptly-Technologies-LLC/etielle/commit/6c359c6bc281118068fe1b41a6f5e8db4d8cad87"><code>6c359c6</code></a>)</li>
 </ul>
@@ -353,8 +361,8 @@ ul.task-list li input[type="checkbox"] {
 </section>
 <section id="v1.0.2-2025-10-14" class="level2">
 <h2 class="anchored" data-anchor-id="v1.0.2-2025-10-14">v1.0.2 (2025-10-14)</h2>
-<section id="bug-fixes-5" class="level3">
-<h3 class="anchored" data-anchor-id="bug-fixes-5">Bug Fixes</h3>
+<section id="bug-fixes-6" class="level3">
+<h3 class="anchored" data-anchor-id="bug-fixes-6">Bug Fixes</h3>
 <ul>
 <li>Restore build step (<a href="https://github.com/Promptly-Technologies-LLC/etielle/commit/42506424365d86a321acc044e0363840da0dc6f3"><code>4250642</code></a>)</li>
 </ul>
@@ -362,8 +370,8 @@ ul.task-list li input[type="checkbox"] {
 </section>
 <section id="v1.0.1-2025-10-14" class="level2">
 <h2 class="anchored" data-anchor-id="v1.0.1-2025-10-14">v1.0.1 (2025-10-14)</h2>
-<section id="bug-fixes-6" class="level3">
-<h3 class="anchored" data-anchor-id="bug-fixes-6">Bug Fixes</h3>
+<section id="bug-fixes-7" class="level3">
+<h3 class="anchored" data-anchor-id="bug-fixes-7">Bug Fixes</h3>
 <ul>
 <li>Gate artifact upload (<a href="https://github.com/Promptly-Technologies-LLC/etielle/commit/5e5bda1ee36397b3913ab3a1cbc58b28e5d3f458"><code>5e5bda1</code></a>)</li>
 </ul>
@@ -371,8 +379,8 @@ ul.task-list li input[type="checkbox"] {
 </section>
 <section id="v1.0.0-2025-10-14" class="level2">
 <h2 class="anchored" data-anchor-id="v1.0.0-2025-10-14">v1.0.0 (2025-10-14)</h2>
-<section id="bug-fixes-7" class="level3">
-<h3 class="anchored" data-anchor-id="bug-fixes-7">Bug Fixes</h3>
+<section id="bug-fixes-8" class="level3">
+<h3 class="anchored" data-anchor-id="bug-fixes-8">Bug Fixes</h3>
 <ul>
 <li><p>Actions-compliant root path (<a href="https://github.com/Promptly-Technologies-LLC/etielle/commit/251d5530f61aaef988f0ed23bcf312e85f3a822c"><code>251d553</code></a>)</p></li>
 <li><p>Add missing semantic release config (<a href="https://github.com/Promptly-Technologies-LLC/etielle/commit/f6235d449d76a8ae9d6788d494f08d44a612fd10"><code>f6235d4</code></a>)</p></li>

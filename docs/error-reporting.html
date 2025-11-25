@@ -107,7 +107,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 </head>
 
-<body class="nav-fixed quarto-light">
+<body class="nav-sidebar floating nav-fixed quarto-light">
 
 <div id="quarto-search-results"></div>
   <header id="quarto-header" class="headroom fixed-top">
@@ -123,40 +123,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <span class="navbar-toggler-icon"></span>
 </button>
           <div class="collapse navbar-collapse" id="navbarCollapse">
-            <ul class="navbar-nav navbar-nav-scroll me-auto">
-  <li class="nav-item">
-    <a class="nav-link" href="../index.html"> 
-<span class="menu-text">Home</span></a>
-  </li>  
-  <li class="nav-item">
-    <a class="nav-link" href="../docs/introduction-to-etl.html"> 
-<span class="menu-text">Introduction to ETL</span></a>
-  </li>  
-  <li class="nav-item">
-    <a class="nav-link" href="../docs/field-selectors.html"> 
-<span class="menu-text">Field selectors</span></a>
-  </li>  
-  <li class="nav-item">
-    <a class="nav-link" href="../docs/instance-emission.html"> 
-<span class="menu-text">Instance emission</span></a>
-  </li>  
-  <li class="nav-item">
-    <a class="nav-link" href="../docs/merge-policies.html"> 
-<span class="menu-text">Merge policies</span></a>
-  </li>  
-  <li class="nav-item">
-    <a class="nav-link active" href="../docs/error-reporting.html" aria-current="page"> 
-<span class="menu-text">Error reporting</span></a>
-  </li>  
-  <li class="nav-item">
-    <a class="nav-link" href="../docs/relationships.html"> 
-<span class="menu-text">Relationships</span></a>
-  </li>  
-  <li class="nav-item">
-    <a class="nav-link" href="../docs/sqlalchemy-adapter.html"> 
-<span class="menu-text">SQLAlchemy &amp; SQLModel adapters</span></a>
-  </li>  
-</ul>
             <ul class="navbar-nav navbar-nav-scroll ms-auto">
   <li class="nav-item compact">
     <a class="nav-link" href="https://github.com/promptly-technologies-llc/etielle"> <i class="bi bi-github" role="img">
@@ -169,10 +135,23 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
       </div> <!-- /container-fluid -->
     </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item">Error reporting and DX</li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+    </div>
+  </nav>
 </header>
 <!-- content -->
 <div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
 <!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
 <!-- margin-sidebar -->
     <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
         <nav id="TOC" role="doc-toc" class="toc-active">
@@ -292,7 +271,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="example" class="level3">
 <h3 class="anchored" data-anchor-id="example">Example</h3>
-<div id="7eb4f4d4" class="cell" data-execution_count="2">
+<div id="545460a5" class="cell" data-execution_count="2">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Not shown: setup of root/emit/mapping</span></span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.executor <span class="im">import</span> run_mapping</span>
