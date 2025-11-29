@@ -2,53 +2,50 @@
 title: Introduction to ETL
 ---
 
-**What you'll learn**: What ETL (Extract, Transform, Load) means, why it's important, how it relates to working with JSON data from APIs, and how `etielle`'s features support each ETL step.
+**What you'll learn**: What ETL (Extract, Transform, Load) means, why it's important, how it relates to working with JSON data from APIs, and how `etielle`'s fluent API supports each ETL step.
 
 ## What is ETL?
 
-**ETL** stands for **Extract, Transform, Load**—the three fundamental steps for moving data from one system to another. Understanding these steps is key to understanding how `etielle` works:
+**ETL** stands for **Extract, Transform, Load**---the three fundamental steps for moving data from one system to another. Understanding these steps is key to understanding how `etielle` works:
 
 | ETL Step | What it means | How `etielle` does it |
 |----------|---------------|----------------------|
-| **Extract** | Navigate and pull data from a source | **Traversals** and **Mappings** walk through nested JSON |
-| **Transform** | Reshape and format the data | **Transforms**, **Emissions**, and **Relationships** reshape data in memory |
-| **Load** | Insert data into the target system | **Database adapters** (`flush_to_db()`) persist to database |
+| **Extract** | Navigate and pull data from a source | `goto()` and `each()` navigate nested JSON |
+| **Transform** | Reshape and format the data | Transforms, `Field`, and `TempField` reshape data |
+| **Load** | Insert data into the target system | `load(session).run()` persists to database |
 
-ETL is a core concept in data engineering and has been used for decades to move data between systems, especially in business intelligence and data warehousing. `etielle` brings declarative ETL to Python for JSON-to-relational transformations.
+ETL is a core concept in data engineering and has been used for decades to move data between systems. `etielle` brings declarative ETL to Python for JSON-to-relational transformations.
 
 ## ETL in Action: A Simple Example
 
-Imagine you're building an app that tracks GitHub repositories. Here's how each ETL step works, with `etielle`'s corresponding concepts:
+Imagine you're building an app that tracks GitHub repositories. Here's how each ETL step works with `etielle`'s fluent API:
 
 ### 1. Extract: Navigate the JSON structure
 
 **Goal**: Pull a subset of data from GitHub's API (returns nested JSON with repositories, contributors, commits)
 
-**How `etielle` does it**: **Traversals** define how to walk through the JSON:
+**How `etielle` does it**: `goto()` and `each()` define how to walk through the JSON:
 
 ```python
-from etielle.core import TraversalSpec
+from etielle import etl, Field, TempField, get
 
-# Extract repositories
-repos_traversal = TraversalSpec(
-    path=["repositories"],  # Start at "repositories" key
-    mode="auto",  # Iterate through the array
-    emits=[...]  # What to do with each repository
-)
+result = (
+    etl(github_data)
+    # Extract: Navigate to repositories array
+    .goto("repositories").each()
+    .map_to(table="repos", fields=[...])
 
-# Extract commits nested inside each repository
-commits_traversal = TraversalSpec(
-    path=["repositories"],
-    mode="auto",
-    inner_path=["commits"],  # Nested path inside each repo
-    inner_mode="auto",
-    emits=[...]  # What to do with each commit
+    # Extract: Navigate to commits nested inside each repo
+    .goto("commits").each()
+    .map_to(table="commits", fields=[...])
+
+    .run()
 )
 ```
 
-**Key concept**: Traversals tell `etielle` *where* to go in the JSON and *how* to iterate through it. They handle the **Extract** step.
+**Key concept**: `goto()` tells `etielle` *where* to go in the JSON, and `each()` tells it to iterate through items. They handle the **Extract** step.
 
-Learn more: [Traversals](traversals.qmd)
+Learn more: [Navigation](navigation.qmd)
 
 ### 2. Transform: Reshape data in memory
 
@@ -58,80 +55,87 @@ Learn more: [Traversals](traversals.qmd)
 
 1. **Field-level transforms** extract and modify individual values:
     ```python
-    from etielle.transforms import get, get_from_parent, concat, literal
+    from etielle import get, get_from_parent, concat, literal
 
     # Transform: Extract a field from the current item
     repo_name = get("name")
 
-    # Transform: Get a field from the parent (e.g., for relationship linking)
+    # Transform: Get a field from the parent (for relationship linking)
     parent_repo_id = get_from_parent("id")
 
-    # Transform: Remix values into a new output value (e.g. "123" -> "repo_123")
+    # Transform: Combine values (e.g. "123" -> "repo_123")
     full_id = concat(literal("repo_"), get("id"))
     ```
 
-2. **Table-level transforms** (Emissions) define output structure:
+2. **Table-level transforms** via `map_to()` define output structure:
     ```python
-    from etielle.core import TableEmit, Field
+    from etielle import etl, Field, TempField, get
 
-    # Transform: Define the output table structure (still in memory)
-    TableEmit(
-        table="repositories",  # Target table name
-        join_keys=[get("id")],  # Unique identifier (like a primary key)
-        fields=[
-            Field("id", get("id")),
-            Field("name", get("name")),
-            Field("url", get("url"))
-        ]
+    (
+        etl(data)
+        .goto("repositories").each()
+        .map_to(table="repositories", fields=[
+            Field("id", get("id")),          # Output column
+            Field("name", get("name")),      # Output column
+            Field("url", get("url")),        # Output column
+            TempField("id", get("id"))       # Join key (not in output)
+        ])
     )
     ```
 
-3. **Relationship transforms** link records together in memory (foreign keys, ORM relationships).
+3. **Relationship transforms** link records together with `link_to()`:
     ```python
-    from etielle.relationships import ManyToOneSpec
+    from etielle import etl, Field, TempField, get, get_from_parent
 
-    # Transform: Define a many-to-one relationship
-    relationship = ManyToOneSpec(
-        child_table="commits",
-        parent_table="repositories",
-        # attribute name on the child instance that references the parent instance
-        attr="repository",
-        child_to_parent_key=[
-            # transform to get the parent's join_key from the child item's context
-            get("repository_id")
-        ],
-        required=True
+    (
+        etl(data)
+        .goto("repositories").each()
+        .map_to(table=Repository, fields=[...])
+
+        .goto("commits").each()
+        .map_to(table=Commit, fields=[
+            Field("message", get("message")),
+            TempField("repo_id", get_from_parent("id"))
+        ])
+        .link_to(Repository, by={"repo_id": "id"})  # Link commits to repos
     )
     ```
 
-**Key concept**: Transforms, emissions, and relationships are all done in-memory, before database persistence. Although shown separately above, transforms, emissions, and relationship linking are typically combined into a mapping that runs all at once.
+**Key concept**: Transforms, fields, and relationships are all processed in-memory, before any database persistence. The fluent API chains these operations naturally.
 
-Learn more: [Transforms](transforms.qmd), [Emissions](emissions.qmd), [Relationships](relationships.qmd)
+Learn more: [Transforms](transforms.qmd), [Mapping Tables](mapping.qmd), [Relationships](relationships.qmd)
 
 ### 3. Load: Persist to database
 
 **Goal**: Insert the transformed data into PostgreSQL
 
-**How `etielle` does it**: **Database adapters** persist the in-memory data:
+**How `etielle` does it**: `load(session).run()` persists the in-memory data:
 
 ```python
-from etielle.sqlalchemy_adapter import flush_to_db
+from etielle import etl, Field, TempField, get
 
-# Load: Write data to the database
-flush_to_db(session, mapping_results)
+result = (
+    etl(data)
+    .goto("users").each()
+    .map_to(table=User, fields=[...])
+    .load(session)   # Configure database session
+    .run()           # Execute and persist
+)
+
+session.commit()     # You control the transaction
 ```
 
-**Key concept**: The **Load** step is optional and happens via database adapters. Without this step, `etielle` just transforms JSON to in-memory Python objects.
+**Key concept**: The **Load** step is optional and happens via `load()`. Without it, `etielle` just transforms JSON to in-memory Python objects.
 
-Learn more: [Database upserts](loading-data-into-a-database.qmd)
+Learn more: [Database Loading](database-loading.qmd)
 
 ---
 
 **The full ETL flow with `etielle`**:
 
-1. **Extract** (Traversals): "Go to `repositories`, iterate through each one"
-2. **Transform** (Transforms + Emissions + Relationships): "Get the `name` field, format the `id`, build table rows in memory, associate child records with parent records by parent id"
-3. **Load** (Database adapters): "Persist the in-memory objects to PostgreSQL" (optional)
+1. **Extract** (`goto()`, `each()`): "Go to `repositories`, iterate through each one"
+2. **Transform** (transforms + `Field` + `link_to()`): "Get the `name` field, format the `id`, build table rows, link children to parents"
+3. **Load** (`load().run()`): "Persist the in-memory objects to PostgreSQL" (optional)
 
 Without `etielle`, you'd write nested loops, manual field extraction, and explicit inserts. With `etielle`, you declare the mapping once, and the library handles the rest.
 
@@ -139,88 +143,93 @@ Without `etielle`, you'd write nested loops, manual field extraction, and explic
 
 To summarize, `etielle` implements ETL through three core feature groups:
 
-### 1. Extract: Traversals and Mappings
+### 1. Extract: Navigation
 
-**What they do**: Navigate nested JSON structures and decide what to iterate over
+**What it does**: Navigate nested JSON structures and iterate over items
 
-**Key classes**:
-- `TraversalSpec`: Defines a path through the JSON
-- `MappingSpec`: Container for multiple traversals
+**Key methods**:
+- `goto(path)`: Navigate to a nested location
+- `each()`: Iterate over list items or dict key-value pairs
+- `goto_root(index)`: Switch between multiple JSON roots
 
 **Example**:
 ```python
-TraversalSpec(
-    path=["users"],           # Extract: Start here
-    inner_path=["posts"],     # Extract: Then go here
-    mode="auto",              # Extract: How to iterate
+(
+    etl(data)
+    .goto("users").each()           # Extract: Navigate and iterate
+    .goto("posts").each()           # Extract: Nested iteration
+    .map_to(...)
 )
 ```
 
-Learn more: [Traversals](traversals.qmd)
+Learn more: [Navigation](navigation.qmd)
 
-### 2. Transform: Transforms, Emissions, and Relationships
+### 2. Transform: Fields, Transforms, and Relationships
 
-**What they do**: Reshape data in memory from nested JSON to structured tables/objects
+**What it does**: Reshape data in memory from nested JSON to structured tables/objects
 
 **Key features**:
 
-**Field-level transforms**:
+**Transforms** (value extraction):
 - `get()`: Get field from current node
 - `get_from_parent()`: Get field from ancestor (for relationships)
 - `concat()`, `format_id()`: Format and combine values
 - `coalesce()`: Provide fallback values
 
-**Table-level transforms (Emissions)**:
-- `TableEmit`: Build dict tables in memory
-- `InstanceEmit`: Build Pydantic/TypedDict/ORM instances in memory
-- `join_keys`: Define unique row identifiers for merging
+**Field types** (table structure):
+- `Field(name, transform)`: Output column
+- `TempField(name, transform)`: Join key only (not in output)
+- `merge` policies: Sum, append, min/max when merging rows
 
-**Relationship transforms**:
-- `RelationshipEmit`: Link records together (foreign keys, ORM relationships)
+**Relationships**:
+- `link_to(Parent, by={...})`: Link child records to parents
 
 **Example**:
 ```python
-# Field transform
-Field("user_id", get_from_parent("id"))  # Link to parent
-
-# Table transform
-TableEmit(
-    table="users",
-    join_keys=[get("id")],
-    fields=[Field("id", get("id")), Field("name", get("name"))]
-)
+.map_to(table=Post, fields=[
+    Field("title", get("title")),
+    Field("user_id", get_from_parent("id")),    # Link to parent
+    TempField("id", get("id"))                   # Join key
+])
+.link_to(User, by={"user_id": "id"})            # Bind relationship
 ```
 
-Learn more: [Transforms](transforms.qmd), [Emissions](emissions.qmd), [Relationships](relationships.qmd)
+Learn more: [Transforms](transforms.qmd), [Mapping Tables](mapping.qmd), [Relationships](relationships.qmd)
 
-### 3. Load: Database Adapters
+### 3. Load: Database Persistence
 
-**What they do**: Persist the in-memory transformed data to a database (optional)
+**What it does**: Persist the in-memory transformed data to a database (optional)
 
 **Key features**:
-- `flush_to_db()`: Persist instances to database via SQLAlchemy/SQLModel
+- `load(session)`: Configure database session
+- `run()`: Execute pipeline and flush to database
 - One-shot flushing for performance
-- Relationship binding before persistence
+- You control the transaction (commit/rollback)
 
 **Example**:
 ```python
-from etielle.sqlalchemy_adapter import flush_to_db
+result = (
+    etl(data)
+    .goto("users").each()
+    .map_to(table=User, fields=[...])
+    .load(session)
+    .run()
+)
 
-# Load: Persist to database
-flush_to_db(session, mapping_results)
+session.commit()  # You control the transaction
 ```
 
 **Note**: This step is optional! You can use `etielle` just for in-memory JSON transformation without database persistence.
 
-Learn more: [Database upserts](loading-data-into-a-database.qmd)
+Learn more: [Database Loading](database-loading.qmd)
 
 ## Next Steps
 
 Now that you understand ETL and how `etielle` implements each step, you're ready to dive deeper:
 
 1. **[Quickstart](../index.qmd)** - Jump straight into using `etielle` with a complete example
-2. **[Traversals](traversals.qmd)** - Master the **Extract** step: navigate nested JSON
-3. **[Transforms](transforms.qmd)** - Master the **Transform** step: field-level data extraction and reshaping
-4. **[Emissions](emissions.qmd)** - Master the **Transform** step: table-level structure definition
-5. **[Relationships](relationships.qmd)** - Master the **Transform** step: link records together
-6. **[Database upserts](loading-data-into-a-database.qmd)** - Master the **Load** step: persist to database
+2. **[Navigation](navigation.qmd)** - Master the **Extract** step: `goto()`, `each()`, `goto_root()`
+3. **[Transforms](transforms.qmd)** - Master the **Transform** step: value extraction and formatting
+4. **[Mapping Tables](mapping.qmd)** - Master the **Transform** step: `Field`, `TempField`, merge policies
+5. **[Relationships](relationships.qmd)** - Master the **Transform** step: `link_to()` for linking records
+6. **[Database Loading](database-loading.qmd)** - Master the **Load** step: `load().run()` for persistence

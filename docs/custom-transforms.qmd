@@ -1,0 +1,440 @@
+---
+title: "Custom Transforms: The @transform Decorator"
+---
+
+**What you'll learn**: How to create custom transforms using the `@transform` decorator for reusable data extraction logic.
+
+**ETL context**: Custom transforms extend the **Transform** step with your own domain-specific data extraction functions.
+
+## What is `@transform`?
+
+The `@transform` decorator converts a function into a reusable transform factory. The function receives a `Context` object as its first parameter, and any additional parameters become factory arguments.
+
+```python
+from etielle import transform
+from etielle.core import Context
+
+@transform
+def uppercase(ctx: Context, field: str) -> str | None:
+    """Extract a field and convert to uppercase."""
+    value = ctx.node.get(field)
+    return value.upper() if value else None
+
+# Usage
+Field("name", uppercase("name"))  # Returns "ALICE" for {"name": "Alice"}
+```
+
+## Basic Custom Transforms
+
+### Simple Field Transformation
+
+``` {python}
+from etielle import etl, Field, TempField, get, transform
+from etielle.core import Context
+import json
+
+@transform
+def initials(ctx: Context, first_field: str, last_field: str) -> str:
+    """Extract initials from first and last name."""
+    first = ctx.node.get(first_field, "")
+    last = ctx.node.get(last_field, "")
+    return f"{first[0]}{last[0]}" if first and last else ""
+
+data = {"users": [
+    {"id": "u1", "first_name": "Alice", "last_name": "Smith"},
+    {"id": "u2", "first_name": "Bob", "last_name": "Jones"}
+]}
+
+result = (
+    etl(data)
+    .goto("users").each()
+    .map_to(table="users", fields=[
+        Field("initials", initials("first_name", "last_name")),
+        TempField("id", get("id"))
+    ])
+    .run()
+)
+
+print(json.dumps(list(result.tables["users"].values()), indent=2))
+```
+
+### Transform with Default Arguments
+
+``` {python}
+from etielle import etl, Field, TempField, get, transform
+from etielle.core import Context
+import json
+
+@transform
+def truncate(ctx: Context, field: str, max_length: int = 50) -> str | None:
+    """Truncate a field to max_length characters."""
+    value = ctx.node.get(field)
+    if value is None:
+        return None
+    return value[:max_length] + "..." if len(value) > max_length else value
+
+data = {"posts": [
+    {"id": "p1", "title": "Short title"},
+    {"id": "p2", "title": "This is a very long title that should be truncated for display"}
+]}
+
+result = (
+    etl(data)
+    .goto("posts").each()
+    .map_to(table="posts", fields=[
+        Field("title", truncate("title", max_length=20)),
+        TempField("id", get("id"))
+    ])
+    .run()
+)
+
+print(json.dumps(list(result.tables["posts"].values()), indent=2))
+```
+
+## Using Context Fields
+
+The `Context` object provides access to:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `ctx.node` | `Any` | Current JSON node being processed |
+| `ctx.root` | `Any` | The entire JSON payload |
+| `ctx.parent` | `Context \| None` | Parent context (one level up) |
+| `ctx.key` | `str \| None` | Current dict key (when iterating dict) |
+| `ctx.index` | `int \| None` | Current list index (when iterating list) |
+| `ctx.path` | `tuple` | Full path from root to current node |
+
+### Accessing Parent Context
+
+``` {python}
+from etielle import etl, Field, TempField, get, transform
+from etielle.core import Context
+import json
+
+@transform
+def full_path(ctx: Context) -> str:
+    """Build a path string from parent name and current name."""
+    parent_name = ""
+    if ctx.parent and ctx.parent.node:
+        parent_name = ctx.parent.node.get("name", "")
+
+    current_name = ctx.node.get("name", "")
+    return f"{parent_name}/{current_name}" if parent_name else current_name
+
+data = {
+    "categories": [{
+        "name": "Electronics",
+        "items": [
+            {"name": "Phone"},
+            {"name": "Laptop"}
+        ]
+    }]
+}
+
+result = (
+    etl(data)
+    .goto("categories").each()
+    .goto("items").each()
+    .map_to(table="items", fields=[
+        Field("path", full_path()),
+        TempField("name", get("name"))
+    ])
+    .run()
+)
+
+print(json.dumps(list(result.tables["items"].values()), indent=2))
+```
+
+### Using Root Context
+
+``` {python}
+from etielle import etl, Field, TempField, get, transform
+from etielle.core import Context
+import json
+
+@transform
+def with_prefix(ctx: Context, field: str) -> str:
+    """Prefix a field value with the root's prefix setting."""
+    prefix = ctx.root.get("prefix", "")
+    value = ctx.node.get(field, "")
+    return f"{prefix}{value}"
+
+data = {
+    "prefix": "APP_",
+    "settings": [
+        {"key": "debug", "value": "true"},
+        {"key": "timeout", "value": "30"}
+    ]
+}
+
+result = (
+    etl(data)
+    .goto("settings").each()
+    .map_to(table="settings", fields=[
+        Field("key", with_prefix("key")),
+        Field("value", get("value")),
+        TempField("key", get("key"))
+    ])
+    .run()
+)
+
+print(json.dumps(list(result.tables["settings"].values()), indent=2))
+```
+
+## Transform Patterns
+
+### Lookup Transform
+
+Use closures to create transforms that reference external data:
+
+``` {python}
+from etielle import etl, Field, TempField, get, transform
+from etielle.core import Context
+import json
+
+# External lookup data
+CATEGORY_NAMES = {
+    "cat1": "Electronics",
+    "cat2": "Clothing",
+    "cat3": "Books"
+}
+
+@transform
+def lookup_category(ctx: Context, field: str) -> str | None:
+    """Look up category name from ID."""
+    category_id = ctx.node.get(field)
+    return CATEGORY_NAMES.get(category_id, "Unknown")
+
+data = {
+    "products": [
+        {"id": "p1", "name": "Phone", "category_id": "cat1"},
+        {"id": "p2", "name": "Shirt", "category_id": "cat2"},
+        {"id": "p3", "name": "Novel", "category_id": "cat3"}
+    ]
+}
+
+result = (
+    etl(data)
+    .goto("products").each()
+    .map_to(table="products", fields=[
+        Field("name", get("name")),
+        Field("category", lookup_category("category_id")),
+        TempField("id", get("id"))
+    ])
+    .run()
+)
+
+print(json.dumps(list(result.tables["products"].values()), indent=2))
+```
+
+### Validation Transform
+
+``` {python}
+from etielle import etl, Field, TempField, get, transform
+from etielle.core import Context
+import re
+import json
+
+@transform
+def validate_email(ctx: Context, field: str) -> str | None:
+    """Validate and normalize email address."""
+    email = ctx.node.get(field)
+    if not email:
+        return None
+
+    email = email.strip().lower()
+    if re.match(r"^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$", email):
+        return email
+    return None  # Invalid email returns None
+
+data = {
+    "contacts": [
+        {"id": "c1", "email": "Alice@Example.COM"},
+        {"id": "c2", "email": "not-an-email"},
+        {"id": "c3", "email": "bob@test.org"}
+    ]
+}
+
+result = (
+    etl(data)
+    .goto("contacts").each()
+    .map_to(table="contacts", fields=[
+        Field("email", validate_email("email")),
+        TempField("id", get("id"))
+    ])
+    .run()
+)
+
+print(json.dumps(list(result.tables["contacts"].values()), indent=2))
+```
+
+### Computed Key Transform
+
+``` {python}
+from etielle import etl, Field, TempField, get, transform
+from etielle.core import Context
+import hashlib
+import json
+
+@transform
+def hash_key(ctx: Context, *fields: str) -> str:
+    """Generate a hash key from multiple fields."""
+    parts = [str(ctx.node.get(f, "")) for f in fields]
+    combined = "|".join(parts)
+    return hashlib.md5(combined.encode()).hexdigest()[:8]
+
+data = {
+    "events": [
+        {"date": "2024-01-15", "type": "login", "user": "alice"},
+        {"date": "2024-01-15", "type": "logout", "user": "alice"}
+    ]
+}
+
+result = (
+    etl(data)
+    .goto("events").each()
+    .map_to(table="events", fields=[
+        Field("date", get("date")),
+        Field("type", get("type")),
+        Field("user", get("user")),
+        TempField("id", hash_key("date", "type", "user"))
+    ])
+    .run()
+)
+
+print(json.dumps(list(result.tables["events"].values()), indent=2))
+```
+
+## No-Argument Transforms
+
+For transforms that don't need parameters, the decorator still works:
+
+``` {python}
+from etielle import etl, Field, TempField, transform
+from etielle.core import Context
+import json
+
+@transform
+def current_path(ctx: Context) -> str:
+    """Return the JSON path to current node as a string."""
+    return ".".join(str(p) for p in ctx.path)
+
+@transform
+def is_first(ctx: Context) -> bool:
+    """Check if this is the first item in an iteration."""
+    return ctx.index == 0
+
+data = {"items": ["a", "b", "c"]}
+
+result = (
+    etl(data)
+    .goto("items").each()
+    .map_to(table="items", fields=[
+        Field("path", current_path()),
+        Field("is_first", is_first()),
+        TempField("index", lambda ctx: ctx.index)
+    ])
+    .run()
+)
+
+print(json.dumps(list(result.tables["items"].values()), indent=2))
+```
+
+## Best Practices
+
+### Keep Transforms Pure
+
+Transforms should be side-effect free:
+
+```python
+# Good: Pure function
+@transform
+def uppercase(ctx: Context, field: str) -> str | None:
+    value = ctx.node.get(field)
+    return value.upper() if value else None
+
+# Bad: Side effects
+counter = 0
+
+@transform
+def counted(ctx: Context) -> int:
+    global counter
+    counter += 1  # Side effect!
+    return counter
+```
+
+### Handle Missing Data
+
+Return `None` rather than raising exceptions:
+
+```python
+# Good: Defensive
+@transform
+def safe_get(ctx: Context, field: str) -> str | None:
+    try:
+        return ctx.node[field]
+    except (KeyError, TypeError):
+        return None
+
+# Bad: May raise
+@transform
+def unsafe_get(ctx: Context, field: str) -> str:
+    return ctx.node[field]  # Raises if missing!
+```
+
+### Document Complex Logic
+
+```python
+@transform
+def compute_score(ctx: Context) -> float:
+    """
+    Calculate weighted score for a product.
+
+    Formula: (rating * 0.7) + (review_count_normalized * 0.3)
+    - rating: 1-5 star rating
+    - review_count_normalized: log10(review_count + 1) / 5
+
+    Returns 0.0 if rating is missing.
+    """
+    rating = ctx.node.get("rating", 0)
+    reviews = ctx.node.get("review_count", 0)
+
+    import math
+    normalized_reviews = math.log10(reviews + 1) / 5
+    return round(rating * 0.7 + normalized_reviews * 0.3, 2)
+```
+
+### Type Hints
+
+Use type hints for better IDE support:
+
+```python
+@transform
+def parse_date(ctx: Context, field: str, format: str = "%Y-%m-%d") -> str | None:
+    """Parse and reformat a date string."""
+    from datetime import datetime
+
+    value = ctx.node.get(field)
+    if not value:
+        return None
+
+    try:
+        dt = datetime.strptime(value, format)
+        return dt.isoformat()
+    except ValueError:
+        return None
+```
+
+## Built-in Transforms as Reference
+
+etielle includes these transforms that follow the same patterns:
+
+- `node()` - Returns `ctx.node`
+- `parent_index(depth=1)` - Returns `ctx.parent.index` at given depth
+
+You can use these as reference implementations for your own transforms.
+
+## See also
+
+- [Transforms](transforms.qmd) - Built-in transforms reference
+- [Mapping Tables](mapping.qmd) - Using transforms in fields

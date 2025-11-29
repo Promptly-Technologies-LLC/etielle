@@ -1,412 +1,397 @@
 ---
-title: "Transforms: Extracting and Reshaping Values"
+title: "Transforms: Extracting and Formatting Values"
 ---
 
-**What you'll learn**: How to use transforms to extract, format, and combine values from JSON data, including how to write custom transforms.
+**What you'll learn**: How to use transforms to extract, format, and combine values from your JSON data.
 
-**ETL context**: Transforms are field-level data extraction—the first part of the **Transform** step.
+**ETL context**: Transforms are part of the **Transform** step---they define how to compute field values from the current position in your JSON.
 
 ## What is a Transform?
 
-A transform is a function that takes a `Context` (your current position in the JSON tree) and returns a value. They're "lazy"—they don't compute until executed, and they adapt to wherever you are in the traversal.
+A transform is a function that extracts or computes a value from the current context. They're "lazy"---they don't run until the pipeline executes, and they adapt to wherever they're used.
 
 ```python
-from etielle.transforms import get
+from etielle import get, literal, concat
 
-# A transform doesn't run immediately—it's a "recipe"
-name_transform = get("name")
+# Extract a field
+Field("name", get("name"))  # Get "name" from current node
 
-# It runs when applied to a Context during traversal
-# and returns the value at ctx.node["name"]
+# Use a constant
+Field("version", literal(1))  # Always returns 1
+
+# Combine values
+Field("full_name", concat(get("first"), literal(" "), get("last")))
 ```
 
-## The Context Object
+## Core Transforms
 
-Every transform receives a `Context` that represents your current position:
+### `get(path)` - Extract from current node
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `root` | `Any` | The entire original JSON payload |
-| `node` | `Any` | The current item being processed |
-| `path` | `tuple[str, int, ...]` | Path from root to current node (e.g., `("users", 0)`) |
-| `parent` | `Context` or `None` | The parent context (one level up in the traversal) |
-| `key` | `str` or `None` | Current dict key when iterating mappings |
-| `index` | `int` or `None` | Current list index when iterating sequences |
-| `slots` | `dict[str, Any]` | Scratchpad for intermediate values |
-
-## Built-in Transforms
-
-### Value Extraction
-
-#### `get(path)` — Get from current node
-
-```python
-from etielle.transforms import get
-
-get("name")                    # ctx.node["name"]
-get("user.email")              # ctx.node["user"]["email"] (dot notation)
-get(["user", "addresses", 0])  # ctx.node["user"]["addresses"][0]
-get([])                        # ctx.node (the current node itself)
-```
-
-#### `get_from_parent(path, depth=1)` — Get from ancestor
-
-```python
-from etielle.transforms import get_from_parent
-
-get_from_parent("id")           # Parent's "id" field
-get_from_parent("id", depth=2)  # Grandparent's "id" field
-get_from_parent("id", depth=3)  # Great-grandparent's "id" field
-```
-
-#### `get_from_root(path)` — Get from document root
-
-```python
-from etielle.transforms import get_from_root
-
-get_from_root("metadata.version")  # Always from the original JSON root
-get_from_root("config.api_key")    # Useful for global values
-```
-
-### Context Position
-
-#### `key()` — Current dict key
-
-```python
-from etielle.transforms import key
-
-# When iterating {"alice": {...}, "bob": {...}}:
-key()  # Returns "alice", then "bob"
-```
-
-#### `index()` — Current list index
-
-```python
-from etielle.transforms import index
-
-# When iterating [item0, item1, item2]:
-index()  # Returns 0, then 1, then 2
-```
-
-#### `parent_key(depth=1)` — Parent's dict key
-
-```python
-from etielle.transforms import parent_key
-
-parent_key()        # Key from immediate parent iteration
-parent_key(depth=2)  # Key from grandparent iteration
-```
-
-### Value Generation
-
-#### `literal(value)` — Constant value
-
-```python
-from etielle.transforms import literal
-
-literal("active")     # Always returns "active"
-literal(42)           # Always returns 42
-literal(None)         # Always returns None
-```
-
-### String Composition
-
-#### `concat(*parts)` — Join strings
-
-```python
-from etielle.transforms import concat, get, literal
-
-concat("Hello, ", get("name"), "!")
-# Result: "Hello, Alice!" when name is "Alice"
-
-concat(get("first"), literal(" "), get("last"))
-# Result: "Ada Lovelace"
-```
-
-#### `format_id(*parts, sep="_")` — Join with separator, skip nulls
-
-```python
-from etielle.transforms import format_id, get
-
-format_id(get("prefix"), get("id"), sep="-")
-# Result: "user-123" (skips None/empty values)
-
-format_id(literal("row"), index(), get("type"))
-# Result: "row_0_order" when index=0 and type="order"
-```
-
-### Utilities
-
-#### `coalesce(*transforms)` — First non-None value
-
-```python
-from etielle.transforms import coalesce, get
-
-coalesce(get("nickname"), get("username"), get("email"))
-# Returns the first non-None value found
-```
-
-#### `len_of(inner)` — Length of a value
-
-```python
-from etielle.transforms import len_of, get
-
-len_of(get("tags"))       # Number of items in the tags array
-len_of(get("name"))       # Length of the name string
-```
-
-## Complete Example
+The most common transform. Extracts a value from the current JSON node.
 
 ``` {python}
-from etielle.core import MappingSpec, TraversalSpec, TableEmit, Field
-from etielle.transforms import get, get_from_root, get_from_parent, key, index, parent_key, literal, concat, format_id, coalesce
-from etielle.executor import run_mapping
+from etielle import etl, Field, TempField, get
+import json
+
+data = {"users": [{"id": "u1", "profile": {"name": "Alice", "age": 30}}]}
+
+result = (
+    etl(data)
+    .goto("users").each()
+    .map_to(table="users", fields=[
+        Field("id", get("id")),              # Simple field
+        Field("name", get("profile.name")),  # Nested with dot notation
+        Field("age", get(["profile", "age"])),  # Nested with list
+        TempField("id", get("id"))
+    ])
+    .run()
+)
+
+print(json.dumps(list(result.tables["users"].values()), indent=2))
+```
+
+### `get_from_parent(path, depth=1)` - Extract from ancestor
+
+Gets a value from a parent context. Essential for linking child records to parents.
+
+``` {python}
+from etielle import etl, Field, TempField, get, get_from_parent
 import json
 
 data = {
-    "company": "Acme Corp",
-    "departments": {
-        "engineering": {
-            "employees": [
-                {"id": "e1", "name": "Alice", "nickname": None},
-                {"id": "e2", "name": "Bob", "nickname": "Bobby"}
-            ]
-        },
-        "sales": {
-            "employees": [
-                {"id": "e3", "name": "Carol", "nickname": "C"}
-            ]
-        }
+    "users": [{
+        "id": "u1",
+        "name": "Alice",
+        "posts": [{"id": "p1", "title": "Hello"}]
+    }]
+}
+
+result = (
+    etl(data)
+    .goto("users").each()
+    .map_to(table="users", fields=[
+        Field("id", get("id")),
+        Field("name", get("name")),
+        TempField("id", get("id"))
+    ])
+
+    .goto("posts").each()
+    .map_to(table="posts", fields=[
+        Field("id", get("id")),
+        Field("title", get("title")),
+        Field("user_id", get_from_parent("id")),   # Get id from parent user
+        Field("user_name", get_from_parent("name")),  # Get name from parent
+        TempField("id", get("id"))
+    ])
+    .run()
+)
+
+print(json.dumps(list(result.tables["posts"].values()), indent=2))
+```
+
+#### Depth parameter
+
+Use `depth` to access grandparents and beyond:
+
+```python
+get_from_parent("id")           # Parent (depth=1, default)
+get_from_parent("id", depth=2)  # Grandparent
+get_from_parent("id", depth=3)  # Great-grandparent
+```
+
+### `get_from_root(path)` - Extract from JSON root
+
+Gets a value from the top-level JSON object, regardless of current position.
+
+``` {python}
+from etielle import etl, Field, TempField, get, get_from_root
+import json
+
+data = {
+    "version": "2.0",
+    "users": [{"id": "u1", "name": "Alice"}]
+}
+
+result = (
+    etl(data)
+    .goto("users").each()
+    .map_to(table="users", fields=[
+        Field("id", get("id")),
+        Field("name", get("name")),
+        Field("api_version", get_from_root("version")),  # From root
+        TempField("id", get("id"))
+    ])
+    .run()
+)
+
+print(json.dumps(list(result.tables["users"].values()), indent=2))
+```
+
+### `literal(value)` - Constant value
+
+Returns a constant value, useful for defaults or computed fields.
+
+``` {python}
+from etielle import etl, Field, TempField, get, literal
+import json
+
+data = {"users": [{"id": "u1", "name": "Alice"}]}
+
+result = (
+    etl(data)
+    .goto("users").each()
+    .map_to(table="users", fields=[
+        Field("id", get("id")),
+        Field("name", get("name")),
+        Field("status", literal("active")),  # Constant value
+        Field("count", literal(0)),          # Numeric constant
+        TempField("id", get("id"))
+    ])
+    .run()
+)
+
+print(json.dumps(list(result.tables["users"].values()), indent=2))
+```
+
+## Iteration Transforms
+
+### `key()` - Current dict key
+
+When iterating over a dict with `each()`, returns the current key.
+
+``` {python}
+from etielle import etl, Field, TempField, get, key
+import json
+
+data = {
+    "scores": {
+        "alice": 95,
+        "bob": 87,
+        "carol": 92
     }
 }
 
-spec = MappingSpec(traversals=[
-    TraversalSpec(
-        path=["departments"],
-        mode="items",  # Iterate dept key-value pairs
-        inner_path=["employees"],
-        inner_mode="auto",
-        emits=[TableEmit(
-            table="employees",
-            join_keys=[get("id")],
-            fields=[
-                Field("id", get("id")),
-                Field("name", get("name")),
-                Field("display_name", coalesce(get("nickname"), get("name"))),
-                Field("department", parent_key()),  # "engineering" or "sales"
-                Field("company", get_from_root("company")),
-                Field("full_id", format_id(parent_key(), get("id"), sep="-")),
-            ]
-        )]
-    )
-])
+result = (
+    etl(data)
+    .goto("scores").each()  # Iterate dict key-value pairs
+    .map_to(table="scores", fields=[
+        Field("player", key()),       # "alice", "bob", "carol"
+        Field("score", get([])),      # 95, 87, 92 (empty path = current node)
+        TempField("player", key())
+    ])
+    .run()
+)
 
-result = run_mapping(data, spec)
-print(json.dumps(list(result["employees"].instances.values()), indent=2))
+print(json.dumps(list(result.tables["scores"].values()), indent=2))
 ```
 
-## Writing Custom Transforms
+### `index()` - Current list index
 
-A transform is any callable with signature `(Context) -> T`. You can write your own:
-
-### Simple Custom Transform
-
-```python
-from etielle.core import Context
-
-def uppercase_name(ctx: Context) -> str | None:
-    """Extract and uppercase the name field."""
-    name = ctx.node.get("name")
-    return name.upper() if name else None
-```
-
-### Transform Using Context Fields
-
-```python
-from etielle.core import Context
-
-def full_path_string(ctx: Context) -> str:
-    """Return the full JSON path as a string."""
-    return ".".join(str(p) for p in ctx.path)
-
-def is_first_item(ctx: Context) -> bool:
-    """Check if this is the first item in a list."""
-    return ctx.index == 0
-```
-
-### Transform with External State (Closures)
-
-Use closures to create transforms that reference external data. This is powerful for lookups and cross-referencing:
-
-```python
-from etielle.core import Context
-from etielle.transforms import Transform
-
-def make_lookup_transform(lookup_dict: dict[str, str]) -> Transform[str | None]:
-    """Create a transform that looks up values in an external dict."""
-    def lookup(ctx: Context) -> str | None:
-        key = ctx.node.get("foreign_id")
-        return lookup_dict.get(key)
-    return lookup
-
-# Build lookup from some source
-id_to_category = {"p1": "electronics", "p2": "clothing", "p3": "electronics"}
-
-# Create the transform
-get_category = make_lookup_transform(id_to_category)
-
-# Use in a field
-# Field("category", get_category)
-```
-
-### Transform Composition
-
-Transforms compose naturally—the output of one can feed into another:
-
-```python
-from etielle.core import Context
-from etielle.transforms import get
-
-def trim_and_lower(inner: Transform) -> Transform[str | None]:
-    """Compose: apply inner transform, then trim and lowercase."""
-    def composed(ctx: Context) -> str | None:
-        value = inner(ctx)
-        if isinstance(value, str):
-            return value.strip().lower()
-        return None
-    return composed
-
-# Usage:
-# Field("normalized_email", trim_and_lower(get("email")))
-```
-
-### Precomputed Index Example
-
-A common pattern is building an index from the JSON before mapping, then using it in transforms:
+When iterating over a list with `each()`, returns the current index.
 
 ``` {python}
-from etielle.core import Context, MappingSpec, TraversalSpec, TableEmit, Field
-from etielle.transforms import get, get_from_parent
-from etielle.executor import run_mapping
+from etielle import etl, Field, TempField, get, index
 import json
 
-# Complex JSON with relationships defined elsewhere
+data = {"items": ["apple", "banana", "cherry"]}
+
+result = (
+    etl(data)
+    .goto("items").each()
+    .map_to(table="items", fields=[
+        Field("position", index()),   # 0, 1, 2
+        Field("name", get([])),       # "apple", "banana", "cherry"
+        TempField("position", index())
+    ])
+    .run()
+)
+
+print(json.dumps(list(result.tables["items"].values()), indent=2))
+```
+
+### `parent_key(depth=1)` - Parent's dict key
+
+Gets the dict key from a parent iteration.
+
+``` {python}
+from etielle import etl, Field, TempField, get, parent_key
+import json
+
 data = {
-    "categories": [
-        {"id": "cat1", "name": "Electronics"},
-        {"id": "cat2", "name": "Clothing"}
-    ],
-    "products": [
-        {"id": "p1", "name": "Phone", "category_id": "cat1"},
-        {"id": "p2", "name": "Shirt", "category_id": "cat2"},
-        {"id": "p3", "name": "Laptop", "category_id": "cat1"}
+    "categories": {
+        "fruits": ["apple", "banana"],
+        "vegetables": ["carrot", "broccoli"]
+    }
+}
+
+result = (
+    etl(data)
+    .goto("categories").each()  # Iterate categories (dict)
+    .each()                      # Iterate items in each category (list)
+    .map_to(table="items", fields=[
+        Field("category", parent_key()),  # "fruits" or "vegetables"
+        Field("name", get([])),           # The item name
+        TempField("id", get([]))
+    ])
+    .run()
+)
+
+print(json.dumps(list(result.tables["items"].values()), indent=2))
+```
+
+### `parent_index(depth=1)` - Parent's list index
+
+Gets the list index from a parent iteration.
+
+``` {python}
+from etielle import etl, Field, TempField, get, parent_index, index, concat, literal
+import json
+
+data = {
+    "rows": [
+        ["a", "b", "c"],
+        ["d", "e", "f"]
     ]
 }
 
-# Step 1: Build index from the JSON
-category_names = {
-    cat["id"]: cat["name"]
-    for cat in data["categories"]
-}
+result = (
+    etl(data)
+    .goto("rows").each()  # Iterate rows
+    .each()               # Iterate cells in each row
+    .map_to(table="cells", fields=[
+        Field("row", parent_index()),  # 0 or 1
+        Field("col", index()),         # 0, 1, or 2
+        Field("value", get([])),       # The cell value
+        TempField("id", concat(literal("r"), parent_index(), literal("c"), index()))
+    ])
+    .run()
+)
 
-# Step 2: Create transform that uses the index
-def get_category_name(ctx: Context) -> str | None:
-    category_id = ctx.node.get("category_id")
-    return category_names.get(category_id)
-
-# Step 3: Use in mapping
-spec = MappingSpec(traversals=[
-    TraversalSpec(
-        path=["products"],
-        mode="auto",
-        emits=[TableEmit(
-            table="products",
-            join_keys=[get("id")],
-            fields=[
-                Field("id", get("id")),
-                Field("name", get("name")),
-                Field("category_id", get("category_id")),
-                Field("category_name", get_category_name),  # Custom transform!
-            ]
-        )]
-    )
-])
-
-result = run_mapping(data, spec)
-print(json.dumps(list(result["products"].instances.values()), indent=2))
+print(json.dumps(list(result.tables["cells"].values()), indent=2))
 ```
 
-## Best Practices
+### `node()` - Current node value
 
-### Keep Transforms Pure
+Returns the entire current node. Useful when iterating over scalar values.
 
-Transforms should be side-effect free:
+``` {python}
+from etielle import etl, Field, TempField, node
+import json
 
-```python
-# Good: Pure function
-def get_uppercase_name(ctx: Context) -> str | None:
-    name = ctx.node.get("name")
-    return name.upper() if name else None
+data = {"ids": [101, 102, 103]}
 
-# Bad: Side effects
-counter = 0
-def counted_name(ctx: Context) -> str:
-    global counter
-    counter += 1  # Side effect!
-    return ctx.node.get("name")
+result = (
+    etl(data)
+    .goto("ids").each()
+    .map_to(table="items", fields=[
+        Field("id", node()),  # The id value itself
+        TempField("id", node())
+    ])
+    .run()
+)
+
+print(json.dumps(list(result.tables["items"].values()), indent=2))
 ```
 
-### Handle Missing Values Defensively
+## Combining Transforms
 
-Return `None` instead of raising exceptions:
+### `concat(*parts)` - Join strings
 
-```python
-# Good: Defensive
-def safe_get_nested(ctx: Context) -> str | None:
-    try:
-        return ctx.node["deeply"]["nested"]["value"]
-    except (KeyError, TypeError):
-        return None
+Concatenates multiple transforms into a single string.
 
-# Bad: May raise
-def unsafe_get_nested(ctx: Context) -> str:
-    return ctx.node["deeply"]["nested"]["value"]  # Raises if missing!
+``` {python}
+from etielle import etl, Field, TempField, get, literal, concat
+import json
+
+data = {"users": [{"first": "Alice", "last": "Smith", "id": "u1"}]}
+
+result = (
+    etl(data)
+    .goto("users").each()
+    .map_to(table="users", fields=[
+        Field("full_name", concat(get("first"), literal(" "), get("last"))),
+        Field("user_key", concat(literal("user_"), get("id"))),
+        TempField("id", get("id"))
+    ])
+    .run()
+)
+
+print(json.dumps(list(result.tables["users"].values()), indent=2))
 ```
 
-### Document Complex Transforms
+### `format_id(*parts, sep="_")` - Join with separator
 
-```python
-def compute_composite_key(ctx: Context) -> str | None:
-    """
-    Builds a composite key for order items.
+Joins non-empty parts with a separator. Skips `None` values.
 
-    Format: {order_id}_{line_number}
-    Returns None if order_id is missing (row will be skipped).
-    """
-    order_id = ctx.parent.node.get("id") if ctx.parent else None
-    line_num = ctx.index
-    if order_id is None:
-        return None
-    return f"{order_id}_{line_num}"
+``` {python}
+from etielle import etl, Field, TempField, get, format_id
+import json
+
+data = {"records": [{"type": "post", "id": "123", "sub": None}]}
+
+result = (
+    etl(data)
+    .goto("records").each()
+    .map_to(table="records", fields=[
+        Field("key", format_id(get("type"), get("id"), get("sub"))),  # "post_123" (None skipped)
+        TempField("id", get("id"))
+    ])
+    .run()
+)
+
+print(json.dumps(list(result.tables["records"].values()), indent=2))
+```
+
+### `coalesce(*transforms)` - First non-None value
+
+Returns the first non-`None` result from the given transforms.
+
+``` {python}
+from etielle import etl, Field, TempField, get, literal, coalesce
+import json
+
+data = {"users": [
+    {"id": "u1", "nickname": "Ali", "name": "Alice"},
+    {"id": "u2", "nickname": None, "name": "Bob"}
+]}
+
+result = (
+    etl(data)
+    .goto("users").each()
+    .map_to(table="users", fields=[
+        Field("display_name", coalesce(get("nickname"), get("name"), literal("Anonymous"))),
+        TempField("id", get("id"))
+    ])
+    .run()
+)
+
+print(json.dumps(list(result.tables["users"].values()), indent=2))
 ```
 
 ## Transform Reference
 
-| Transform | Signature | Description |
-|-----------|-----------|-------------|
-| `get(path)` | `str` or `list` → `Any` | Get from current node |
-| `get_from_parent(path, depth)` | `str` or `list`, `int` → `Any` | Get from ancestor |
-| `get_from_root(path)` | `str` or `list` → `Any` | Get from document root |
-| `key()` | → `str` or `None` | Current dict key |
-| `index()` | → `int` or `None` | Current list index |
-| `parent_key(depth)` | `int` → `str` or `None` | Parent's dict key |
-| `literal(value)` | `T` → `T` | Constant value |
-| `concat(*parts)` | `*str` → `str` | Join strings |
-| `format_id(*parts, sep)` | `*str`, `str` → `str` | Join with separator, skip nulls |
-| `coalesce(*inners)` | `*Transform` → `Any` | First non-None value |
-| `len_of(inner)` | `Transform` → `int` or `None` | Length of a value |
+| Transform | Purpose | Example |
+|-----------|---------|---------|
+| `get(path)` | Extract from current node | `get("user.name")` |
+| `get_from_parent(path, depth=1)` | Extract from ancestor | `get_from_parent("id", depth=2)` |
+| `get_from_root(path)` | Extract from JSON root | `get_from_root("version")` |
+| `literal(value)` | Constant value | `literal("active")` |
+| `key()` | Current dict key | When iterating `{"a": 1}` |
+| `index()` | Current list index | 0, 1, 2, ... |
+| `parent_key(depth=1)` | Parent's dict key | Access parent iteration key |
+| `parent_index(depth=1)` | Parent's list index | Access parent iteration index |
+| `node()` | Current node value | The entire current object |
+| `concat(*parts)` | Join strings | `concat(get("a"), get("b"))` |
+| `format_id(*parts, sep="_")` | Join with separator | `format_id(get("type"), get("id"))` |
+| `coalesce(*transforms)` | First non-None | `coalesce(get("nick"), get("name"))` |
+| `len_of(inner)` | Length of list/dict/string | `len_of(get("tags"))` |
+
+## Custom Transforms
+
+You can create custom transforms using the `@transform` decorator. See [Custom Transforms](custom-transforms.qmd) for details.
 
 ## See also
 
-- [Traversals](traversals.qmd) - Where transforms execute in the JSON structure
-- [Emissions](emissions.qmd) - Using transforms in TableEmit and InstanceEmit
+- [Navigation](navigation.qmd) - How to position yourself in the JSON
+- [Mapping Tables](mapping.qmd) - Using transforms in `Field` and `TempField`
+- [Custom Transforms](custom-transforms.qmd) - Creating your own transforms

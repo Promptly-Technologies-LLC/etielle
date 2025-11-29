@@ -1,0 +1,395 @@
+---
+title: "Database Loading: Persisting with load().run()"
+---
+
+**What you'll learn**: How to use `load()` to persist your transformed data to a database using SQLAlchemy or SQLModel.
+
+**ETL context**: Database loading is the **Load** step---the final step that persists your in-memory objects to a database.
+
+## What is `load()`?
+
+The `load(session)` method configures your pipeline to persist results to a database. When combined with `run()`, it:
+
+1. Builds all instances in memory
+2. Binds relationships
+3. Adds instances to the session
+4. Flushes (but does NOT commit)
+
+You control the transaction (commit/rollback).
+
+```python
+from etielle import etl, Field, TempField, get
+
+result = (
+    etl(data)
+    .goto("users").each()
+    .map_to(table=User, fields=[...])
+    .load(session)  # Configure database session
+    .run()          # Execute and flush
+)
+
+session.commit()    # You control the transaction
+```
+
+## Basic Database Persistence
+
+### SQLModel Example
+
+``` {python}
+#| eval: false
+from sqlmodel import SQLModel, Field as SQLField, Session, create_engine
+from etielle import etl, Field, TempField, get
+
+# Define your model
+class User(SQLModel, table=True):
+    id: str = SQLField(primary_key=True)
+    name: str
+    email: str | None = None
+
+# Create engine and tables
+engine = create_engine("sqlite:///example.db")
+SQLModel.metadata.create_all(engine)
+
+# Your JSON data
+data = {
+    "users": [
+        {"id": "u1", "name": "Alice", "email": "alice@example.com"},
+        {"id": "u2", "name": "Bob", "email": "bob@example.com"}
+    ]
+}
+
+# Run pipeline with database loading
+with Session(engine) as session:
+    result = (
+        etl(data)
+        .goto("users").each()
+        .map_to(table=User, fields=[
+            Field("id", get("id")),
+            Field("name", get("name")),
+            Field("email", get("email")),
+            TempField("id", get("id"))
+        ])
+        .load(session)
+        .run()
+    )
+
+    session.commit()  # Persist to database
+
+# Query back
+with Session(engine) as session:
+    users = session.query(User).all()
+    for user in users:
+        print(f"{user.name}: {user.email}")
+```
+
+### SQLAlchemy Example
+
+``` {python}
+#| eval: false
+from sqlalchemy import Column, String, create_engine
+from sqlalchemy.orm import declarative_base, Session
+from etielle import etl, Field, TempField, get
+
+Base = declarative_base()
+
+class User(Base):
+    __tablename__ = "users"
+    id = Column(String, primary_key=True)
+    name = Column(String)
+    email = Column(String)
+
+engine = create_engine("sqlite:///example.db")
+Base.metadata.create_all(engine)
+
+data = {"users": [{"id": "u1", "name": "Alice", "email": "alice@example.com"}]}
+
+with Session(engine) as session:
+    result = (
+        etl(data)
+        .goto("users").each()
+        .map_to(table=User, fields=[
+            Field("id", get("id")),
+            Field("name", get("name")),
+            Field("email", get("email")),
+            TempField("id", get("id"))
+        ])
+        .load(session)
+        .run()
+    )
+
+    session.commit()
+```
+
+## Transaction Control
+
+### You Control Commit/Rollback
+
+`load().run()` flushes but does NOT commit. This gives you full control:
+
+```python
+with Session(engine) as session:
+    try:
+        result = (
+            etl(data)
+            .goto("users").each()
+            .map_to(table=User, fields=[...])
+            .load(session)
+            .run()
+        )
+
+        # Do additional work...
+        session.execute(...)
+
+        session.commit()  # Commit everything together
+
+    except Exception:
+        session.rollback()  # Rollback on error
+        raise
+```
+
+### Batch Processing
+
+Process multiple JSON payloads in one transaction:
+
+```python
+with Session(engine) as session:
+    for json_payload in payloads:
+        result = (
+            etl(json_payload)
+            .goto("users").each()
+            .map_to(table=User, fields=[...])
+            .load(session)
+            .run()
+        )
+
+    session.commit()  # Commit all batches together
+```
+
+## Relationships and Database Loading
+
+When using `link_to()` with ORM models, relationships are bound before flushing:
+
+``` {python}
+#| eval: false
+from sqlmodel import SQLModel, Field as SQLField, Relationship, Session, create_engine
+from etielle import etl, Field, TempField, get, get_from_parent
+
+class User(SQLModel, table=True):
+    id: str = SQLField(primary_key=True)
+    name: str
+    posts: list["Post"] = Relationship(back_populates="user")
+
+class Post(SQLModel, table=True):
+    id: str = SQLField(primary_key=True)
+    title: str
+    user_id: str = SQLField(foreign_key="user.id")
+    user: User | None = Relationship(back_populates="posts")
+
+engine = create_engine("sqlite:///example.db")
+SQLModel.metadata.create_all(engine)
+
+data = {
+    "users": [{
+        "id": "u1",
+        "name": "Alice",
+        "posts": [
+            {"id": "p1", "title": "Hello"},
+            {"id": "p2", "title": "World"}
+        ]
+    }]
+}
+
+with Session(engine) as session:
+    result = (
+        etl(data)
+        .goto("users").each()
+        .map_to(table=User, fields=[
+            Field("id", get("id")),
+            Field("name", get("name")),
+            TempField("id", get("id"))
+        ])
+
+        .goto("posts").each()
+        .map_to(table=Post, fields=[
+            Field("id", get("id")),
+            Field("title", get("title")),
+            Field("user_id", get_from_parent("id")),  # Foreign key column
+            TempField("id", get("id")),
+            TempField("user_id", get_from_parent("id"))
+        ])
+        .link_to(User, by={"user_id": "id"})  # Bind relationship
+        .load(session)
+        .run()
+    )
+
+    session.commit()
+
+# Query with relationships
+with Session(engine) as session:
+    user = session.get(User, "u1")
+    print(f"{user.name} has {len(user.posts)} posts")
+```
+
+## Upsert Behavior
+
+etielle uses "upsert" semantics---if a row with the same key already exists, it's updated:
+
+```python
+# First load: creates user u1
+data1 = {"users": [{"id": "u1", "name": "Alice", "email": "old@example.com"}]}
+etl(data1).goto("users").each().map_to(...).load(session).run()
+
+# Second load: updates user u1
+data2 = {"users": [{"id": "u1", "name": "Alice", "email": "new@example.com"}]}
+etl(data2).goto("users").each().map_to(...).load(session).run()
+
+session.commit()
+# User u1 now has email "new@example.com"
+```
+
+### Merge Policies with Database Loading
+
+Merge policies work with database loading too:
+
+```python
+from etielle import AddPolicy
+
+# Each load adds to the count
+.map_to(table=Stats, fields=[
+    Field("count", literal(1), merge=AddPolicy()),
+    TempField("id", get("id"))
+])
+.load(session)
+.run()
+```
+
+## Without Database Loading
+
+You can use etielle without database loading for in-memory transformations:
+
+```python
+# No load() = no database interaction
+result = (
+    etl(data)
+    .goto("users").each()
+    .map_to(table=User, fields=[...])
+    .run()  # Just run(), no load()
+)
+
+# Result contains Pydantic/dataclass instances in memory
+for key, user in result.tables[User].items():
+    print(user.name)  # Access in-memory objects
+```
+
+## Error Handling During Load
+
+### Check Errors Before Commit
+
+```python
+with Session(engine) as session:
+    result = (
+        etl(data)
+        .goto("users").each()
+        .map_to(table=User, fields=[...])
+        .load(session)
+        .run()
+    )
+
+    if result.errors:
+        # Log or handle errors
+        for table, errors in result.errors.items():
+            for key, messages in errors.items():
+                print(f"Error in {table}[{key}]: {messages}")
+
+        session.rollback()
+    else:
+        session.commit()
+```
+
+### Fail Fast Mode
+
+Use `errors="fail_fast"` to raise immediately on validation errors:
+
+```python
+try:
+    result = (
+        etl(data, errors="fail_fast")
+        .goto("users").each()
+        .map_to(table=User, fields=[...])
+        .load(session)
+        .run()
+    )
+    session.commit()
+except ValueError as e:
+    print(f"Validation failed: {e}")
+    session.rollback()
+```
+
+## `load()` Reference
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `session` | SQLAlchemy/SQLModel Session | The database session to use |
+
+### Behavior
+
+1. All ORM instances are added to the session via `session.add()`
+2. `session.flush()` is called to send SQL to the database
+3. Transaction is NOT committed---you must call `session.commit()`
+4. Plain dict results (from `table="name"`) are NOT added to session
+
+### Requirements
+
+- Model classes must be ORM models (have `__tablename__`)
+- Session must be active and not in an error state
+- Model's table must exist in the database
+
+## Best Practices
+
+### Use Context Managers
+
+```python
+with Session(engine) as session:
+    result = etl(data)...load(session).run()
+    session.commit()
+# Session is automatically closed
+```
+
+### Handle Large Datasets in Batches
+
+```python
+BATCH_SIZE = 1000
+
+with Session(engine) as session:
+    for i in range(0, len(records), BATCH_SIZE):
+        batch = {"users": records[i:i + BATCH_SIZE]}
+        etl(batch).goto("users").each().map_to(...).load(session).run()
+
+    session.commit()
+```
+
+### Separate Transform and Load
+
+For complex pipelines, consider separating concerns:
+
+```python
+# Transform step (no database)
+result = etl(data).goto("users").each().map_to(table=User, ...).run()
+
+# Validate
+if result.errors:
+    handle_errors(result.errors)
+    return
+
+# Load step
+with Session(engine) as session:
+    for user in result.tables[User].values():
+        session.add(user)
+    session.commit()
+```
+
+## See also
+
+- [Mapping Tables](mapping.qmd) - Defining output structure
+- [Relationships](relationships.qmd) - Linking tables before persistence
+- [Error Handling](error-handling.qmd) - Handling validation errors
