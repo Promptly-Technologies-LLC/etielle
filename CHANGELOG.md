@@ -2,6 +2,22 @@
 
 <!-- version list -->
 
+## v2.3.0 (2025-11-29)
+
+### Documentation
+
+- More logical sequence, better examples
+  ([`16f9b32`](https://github.com/Promptly-Technologies-LLC/etielle/commit/16f9b320711e1873286f935cb6c27e82f421de1d))
+
+- Resolve some link resolution issues
+  ([`0663cbd`](https://github.com/Promptly-Technologies-LLC/etielle/commit/0663cbdbf27fc3214b15653356bcf717173fba8b))
+
+### Features
+
+- New `fields` selector for class instances
+  ([`0d0dc11`](https://github.com/Promptly-Technologies-LLC/etielle/commit/0d0dc11260cc7c4ef426fb8ff387ea3e333f231d))
+
+
 ## v2.2.1 (2025-11-25)
 
 ### Bug Fixes
