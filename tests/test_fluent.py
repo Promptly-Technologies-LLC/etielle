@@ -391,3 +391,87 @@ class TestEach:
         builder = etl({})
         builder.goto("users").each().goto("posts").each()
         assert builder._iteration_points == [["users"], ["users", "posts"]]
+
+
+class TestMapTo:
+    """Tests for map_to() emission."""
+
+    def test_map_to_returns_self(self):
+        """map_to() returns the builder for chaining."""
+        from etielle.fluent import etl
+
+        builder = etl({"users": []})
+        result = builder.goto("users").each().map_to(
+            table="users",
+            fields=[Field("name", get("name"))]
+        )
+        assert result is builder
+
+    def test_map_to_records_emission(self):
+        """map_to() records the emission spec."""
+        from etielle.fluent import etl
+
+        builder = etl({})
+        builder.goto("users").each().map_to(
+            table="users",
+            fields=[Field("name", get("name")), TempField("id", get("id"))]
+        )
+        assert len(builder._emissions) == 1
+        emission = builder._emissions[0]
+        assert emission["table"] == "users"
+        assert len(emission["fields"]) == 2
+
+    def test_map_to_with_model_class(self):
+        """map_to() accepts model class as table."""
+        from etielle.fluent import etl
+
+        class User:
+            __tablename__ = "users"
+
+        builder = etl({})
+        builder.goto("users").each().map_to(
+            table=User,
+            fields=[Field("name", get("name"))]
+        )
+        emission = builder._emissions[0]
+        assert emission["table_class"] is User
+        assert emission["table"] == "users"
+
+    def test_map_to_captures_navigation_state(self):
+        """map_to() captures current path and iteration state."""
+        from etielle.fluent import etl
+
+        builder = etl({})
+        builder.goto("data").goto("users").each().map_to(
+            table="users",
+            fields=[Field("name", get("name"))]
+        )
+        emission = builder._emissions[0]
+        assert emission["path"] == ["data", "users"]
+        assert emission["iteration_depth"] == 1
+
+    def test_map_to_with_join_on(self):
+        """map_to() accepts join_on for row merging."""
+        from etielle.fluent import etl
+
+        builder = etl({})
+        builder.goto("users").each().map_to(
+            table="users",
+            join_on=["id"],
+            fields=[Field("email", get("email")), TempField("id", get("id"))]
+        )
+        emission = builder._emissions[0]
+        assert emission["join_on"] == ["id"]
+
+    def test_map_to_with_error_override(self):
+        """map_to() can override error mode."""
+        from etielle.fluent import etl
+
+        builder = etl({}, errors="collect")
+        builder.goto("users").each().map_to(
+            table="users",
+            fields=[Field("name", get("name"))],
+            errors="fail_fast"
+        )
+        emission = builder._emissions[0]
+        assert emission["errors"] == "fail_fast"

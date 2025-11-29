@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import functools
 import inspect
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal
 
@@ -323,6 +323,53 @@ class PipelineBuilder:
         self._iteration_depth += 1
         # Record where this iteration occurs
         self._iteration_points.append(list(self._current_path))
+        return self
+
+    def map_to(
+        self,
+        table: str | type,
+        fields: Sequence[FieldUnion],
+        join_on: Sequence[str] | None = None,
+        errors: ErrorMode | None = None
+    ) -> PipelineBuilder:
+        """Emit rows to a table from the current traversal position.
+
+        Args:
+            table: Table name (string) or model class.
+            fields: List of Field and TempField definitions.
+            join_on: Field names to use as composite key for merging.
+                    Required for subsequent map_to calls to the same table.
+            errors: Override the pipeline's error mode for this table.
+
+        Returns:
+            Self for method chaining.
+
+        Example:
+            .map_to(table=User, fields=[
+                Field("name", get("name")),
+                TempField("id", get("id"))
+            ])
+        """
+        # Resolve table name and class
+        if isinstance(table, str):
+            table_name = table
+            table_class = None
+        else:
+            table_class = table
+            table_name = getattr(table, "__tablename__", table.__name__.lower())
+
+        emission = {
+            "table": table_name,
+            "table_class": table_class,
+            "fields": list(fields),
+            "join_on": list(join_on) if join_on else None,
+            "errors": errors,
+            "path": list(self._current_path),
+            "iteration_depth": self._iteration_depth,
+            "iteration_points": [list(p) for p in self._iteration_points],
+            "root_index": self._current_root_index,
+        }
+        self._emissions.append(emission)
         return self
 
 
