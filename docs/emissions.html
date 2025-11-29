@@ -270,7 +270,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="tableemit-quick-and-simple" class="level2">
 <h2 class="anchored" data-anchor-id="tableemit-quick-and-simple">TableEmit: Quick and Simple</h2>
 <p>Use <code>TableEmit</code> for prototyping or when you just need dictionaries:</p>
-<div id="a94d6207" class="cell" data-execution_count="1">
+<div id="96c9e901" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.core <span class="im">import</span> MappingSpec, TraversalSpec, TableEmit, Field</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.transforms <span class="im">import</span> get</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.executor <span class="im">import</span> run_mapping</span>
@@ -347,7 +347,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li><strong>Type safety</strong>: Your IDE knows the exact type</li>
 <li><strong>ORM integration</strong>: Create database objects directly</li>
 </ul>
-<div id="88492552" class="cell" data-execution_count="2">
+<div id="46b65ec6" class="cell" data-execution_count="2">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> MappingSpec, TraversalSpec, fields, InstanceEmit, FieldSpec, PydanticBuilder</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.transforms <span class="im">import</span> get</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.executor <span class="im">import</span> run_mapping</span>
@@ -429,7 +429,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="progressive-construction" class="level2">
 <h2 class="anchored" data-anchor-id="progressive-construction">Progressive Construction</h2>
 <p>Multiple traversals can contribute to the same instance. Rows with matching <code>join_keys</code> are merged:</p>
-<div id="b46ab827" class="cell" data-execution_count="3">
+<div id="fecc47cb" class="cell" data-execution_count="3">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.core <span class="im">import</span> MappingSpec, TraversalSpec, TableEmit, Field</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.transforms <span class="im">import</span> get</span>
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.executor <span class="im">import</span> run_mapping</span>
@@ -527,7 +527,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </table>
 <section id="example-counting-with-addpolicy" class="level3">
 <h3 class="anchored" data-anchor-id="example-counting-with-addpolicy">Example: Counting with AddPolicy</h3>
-<div id="da635c04" class="cell" data-execution_count="4">
+<div id="dc72d935" class="cell" data-execution_count="4">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.instances <span class="im">import</span> InstanceEmit, FieldSpec, PydanticBuilder, AddPolicy</span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.transforms <span class="im">import</span> get, literal</span>
 <span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.core <span class="im">import</span> MappingSpec, TraversalSpec</span>
@@ -565,7 +565,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="example-collecting-tags-with-appendpolicy" class="level3">
 <h3 class="anchored" data-anchor-id="example-collecting-tags-with-appendpolicy">Example: Collecting Tags with AppendPolicy</h3>
-<div id="45b16d86" class="cell" data-execution_count="5">
+<div id="c1ddf71a" class="cell" data-execution_count="5">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> MappingSpec, TraversalSpec, fields, InstanceEmit, FieldSpec, PydanticBuilder, AppendPolicy</span>
 <span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.transforms <span class="im">import</span> get, literal</span>
 <span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.executor <span class="im">import</span> run_mapping</span>

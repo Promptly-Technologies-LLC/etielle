@@ -437,7 +437,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="complete-example" class="level2">
 <h2 class="anchored" data-anchor-id="complete-example">Complete Example</h2>
-<div id="a3e773bb" class="cell" data-execution_count="1">
+<div id="7a744f92" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.core <span class="im">import</span> MappingSpec, TraversalSpec, TableEmit, Field</span>
 <span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.transforms <span class="im">import</span> get, get_from_root, get_from_parent, key, index, parent_key, literal, concat, format_id, coalesce</span>
 <span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.executor <span class="im">import</span> run_mapping</span>
@@ -580,7 +580,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="precomputed-index-example" class="level3">
 <h3 class="anchored" data-anchor-id="precomputed-index-example">Precomputed Index Example</h3>
 <p>A common pattern is building an index from the JSON before mapping, then using it in transforms:</p>
-<div id="737b4a9a" class="cell" data-execution_count="2">
+<div id="f1b97146" class="cell" data-execution_count="2">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.core <span class="im">import</span> Context, MappingSpec, TraversalSpec, TableEmit, Field</span>
 <span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.transforms <span class="im">import</span> get, get_from_parent</span>
 <span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.executor <span class="im">import</span> run_mapping</span>
