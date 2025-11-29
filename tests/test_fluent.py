@@ -204,3 +204,42 @@ class TestPipelineResult:
             errors={"users": {(1,): ["Field 'email' is required"]}}
         )
         assert result.errors["users"][(1,)] == ["Field 'email' is required"]
+
+
+class TestEtlEntryPoint:
+    """Tests for etl() entry point."""
+
+    def test_etl_returns_pipeline_builder(self):
+        """etl() returns a PipelineBuilder."""
+        from etielle.fluent import etl, PipelineBuilder
+
+        builder = etl({"users": []})
+        assert isinstance(builder, PipelineBuilder)
+
+    def test_etl_accepts_single_root(self):
+        """etl() accepts a single JSON root."""
+        from etielle.fluent import etl
+
+        builder = etl({"x": 1})
+        assert builder._roots == ({"x": 1},)
+
+    def test_etl_accepts_multiple_roots(self):
+        """etl() accepts multiple JSON roots."""
+        from etielle.fluent import etl
+
+        builder = etl({"a": 1}, {"b": 2})
+        assert builder._roots == ({"a": 1}, {"b": 2})
+
+    def test_etl_default_error_mode(self):
+        """etl() defaults to collect errors."""
+        from etielle.fluent import etl
+
+        builder = etl({})
+        assert builder._error_mode == "collect"
+
+    def test_etl_fail_fast_mode(self):
+        """etl() can be configured for fail_fast."""
+        from etielle.fluent import etl
+
+        builder = etl({}, errors="fail_fast")
+        assert builder._error_mode == "fail_fast"

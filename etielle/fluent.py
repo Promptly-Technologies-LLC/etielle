@@ -21,13 +21,15 @@ import functools
 import inspect
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 from etielle.core import Context
 
 if TYPE_CHECKING:
     from etielle.core import Transform
     from etielle.instances import MergePolicy
+
+ErrorMode = Literal["collect", "fail_fast"]
 
 
 @dataclass(frozen=True)
@@ -221,3 +223,58 @@ class PipelineResult:
     def errors(self) -> dict[str, dict[tuple[Any, ...], list[str]]]:
         """Validation errors keyed by table name, then row key."""
         return self._errors
+
+
+class PipelineBuilder:
+    """Fluent builder for E→T→L pipelines.
+
+    Use etl() to create instances of this class.
+
+    Example:
+        result = (
+            etl(data)
+            .goto("users").each()
+            .map_to(table=User, fields=[...])
+            .run()
+        )
+    """
+
+    def __init__(
+        self,
+        roots: tuple[Any, ...],
+        error_mode: ErrorMode = "collect"
+    ) -> None:
+        self._roots = roots
+        self._error_mode = error_mode
+        # Navigation state
+        self._current_root_index: int = 0
+        self._current_path: list[str] = []
+        self._iteration_depth: int = 0
+        # Accumulated specs
+        self._emissions: list[dict[str, Any]] = []
+        self._relationships: list[dict[str, Any]] = []
+        # Session for loading
+        self._session: Any | None = None
+
+
+def etl(*roots: Any, errors: ErrorMode = "collect") -> PipelineBuilder:
+    """Entry point for fluent E→T→L pipelines.
+
+    Args:
+        *roots: One or more JSON objects to process.
+        errors: Error handling mode - "collect" (default) or "fail_fast".
+
+    Returns:
+        A PipelineBuilder for chaining navigation and mapping calls.
+
+    Example:
+        result = (
+            etl(data)
+            .goto("users").each()
+            .map_to(table=User, fields=[
+                Field("name", get("name"))
+            ])
+            .run()
+        )
+    """
+    return PipelineBuilder(roots, errors)
