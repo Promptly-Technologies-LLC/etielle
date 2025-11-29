@@ -783,3 +783,76 @@ class TestRunRelationships:
         post = list(posts.values())[0]
         assert post.user is not None
         assert post.user.name == "Alice"
+
+
+class TestModelDetection:
+    """Tests for automatic model type detection."""
+
+    def test_pydantic_model_detection(self):
+        """Pydantic models use PydanticBuilder."""
+        from pydantic import BaseModel
+        from etielle.fluent import etl
+
+        class User(BaseModel):
+            name: str
+
+        # Set __tablename__ to match the data path
+        User.__tablename__ = "users"
+
+        data = {"users": [{"name": "Alice", "id": 1}]}
+        result = (
+            etl(data)
+            .goto("users").each()
+            .map_to(table=User, fields=[
+                Field("name", get("name")),
+                TempField("id", get("id"))
+            ])
+            .run()
+        )
+        users = result.tables[User]
+        user = list(users.values())[0]
+        assert isinstance(user, User)
+        assert user.name == "Alice"
+
+    def test_dataclass_detection(self):
+        """Dataclasses use ConstructorBuilder."""
+        from dataclasses import dataclass as dc
+        from etielle.fluent import etl
+
+        @dc
+        class Item:
+            __tablename__ = "items"
+            value: int
+
+        data = {"items": [{"value": 42, "id": 1}]}
+        result = (
+            etl(data)
+            .goto("items").each()
+            .map_to(table=Item, fields=[
+                Field("value", get("value")),
+                TempField("id", get("id"))
+            ])
+            .run()
+        )
+        items = result.tables[Item]
+        item = list(items.values())[0]
+        assert isinstance(item, Item)
+        assert item.value == 42
+
+    def test_string_table_returns_dicts(self):
+        """String table names return plain dicts."""
+        from etielle.fluent import etl
+
+        data = {"items": [{"x": 1, "id": 1}]}
+        result = (
+            etl(data)
+            .goto("items").each()
+            .map_to(table="items", fields=[
+                Field("x", get("x")),
+                TempField("id", get("id"))
+            ])
+            .run()
+        )
+        items = result.tables["items"]
+        item = list(items.values())[0]
+        assert isinstance(item, dict)

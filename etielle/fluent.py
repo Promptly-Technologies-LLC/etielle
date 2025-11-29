@@ -225,6 +225,40 @@ class PipelineResult:
         return self._errors
 
 
+def _detect_builder(table_class: type | None) -> Any:
+    """Detect appropriate builder for a model class.
+
+    Returns:
+        Builder instance or None for plain dicts.
+    """
+    if table_class is None:
+        return None  # Use TableEmit for dicts
+
+    # Check for Pydantic
+    try:
+        from pydantic import BaseModel
+        if issubclass(table_class, BaseModel):
+            from etielle.instances import PydanticBuilder
+            return PydanticBuilder(table_class)
+    except ImportError:
+        pass
+
+    # Check for SQLAlchemy/SQLModel ORM
+    if hasattr(table_class, "__tablename__") and hasattr(table_class, "__mapper__"):
+        from etielle.instances import ConstructorBuilder
+        return ConstructorBuilder(table_class)
+
+    # Check for TypedDict
+    import typing
+    if hasattr(typing, "is_typeddict") and typing.is_typeddict(table_class):
+        from etielle.instances import TypedDictBuilder
+        return TypedDictBuilder(table_class)
+
+    # Default: ConstructorBuilder for dataclasses and other classes
+    from etielle.instances import ConstructorBuilder
+    return ConstructorBuilder(table_class)
+
+
 class PipelineBuilder:
     """Fluent builder for E→T→L pipelines.
 
@@ -510,19 +544,17 @@ class PipelineBuilder:
 
             # Choose emit type based on whether we have a model class or merge policies
             table_class = emission["table_class"]
-            if table_class or merge_policies:
+            builder = _detect_builder(table_class)
+
+            if builder or merge_policies:
                 # Use InstanceEmit with appropriate builder
-                from etielle.instances import InstanceEmit, FieldSpec, ConstructorBuilder
+                from etielle.instances import InstanceEmit, FieldSpec
 
                 # Convert CoreField to FieldSpec
                 field_specs = [FieldSpec(selector=f.name, transform=f.transform) for f in fields]
 
-                # Choose builder based on table_class
-                if table_class:
-                    # Use ConstructorBuilder for dataclasses and other model classes
-                    builder = ConstructorBuilder(table_class)
-                else:
-                    # Use TypedDictBuilder for plain dicts with merge policies
+                # If we have merge policies but no model class, use TypedDictBuilder for plain dicts
+                if not builder and merge_policies:
                     from etielle.instances import TypedDictBuilder
                     builder = TypedDictBuilder(lambda d: d)
 
