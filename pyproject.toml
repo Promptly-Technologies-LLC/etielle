@@ -30,6 +30,7 @@ dev = [
     "python-semantic-release>=10.4.1",
     "quarto>=0.1.0",
     "ruff>=0.14.3",
+    "ty>=0.0.1a29",
 ]
 
 [tool.mypy]
