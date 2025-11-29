@@ -723,6 +723,14 @@ class PipelineBuilder:
             if emission["table_class"]:
                 table_class_map[emission["table"]] = emission["table_class"]
 
+        # If session provided, add instances and flush
+        if self._session is not None:
+            for table_name, instances in tables.items():
+                for key, instance in instances.items():
+                    if not isinstance(instance, dict):  # ORM instance
+                        self._session.add(instance)
+            self._session.flush()
+
         return PipelineResult(
             tables=tables,
             errors=errors,
