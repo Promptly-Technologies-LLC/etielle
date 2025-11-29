@@ -508,23 +508,33 @@ class PipelineBuilder:
                 inner_path = remaining_path if remaining_path else None
                 inner_mode = "auto"
 
-            # Choose emit type based on whether we need merge policies
-            if merge_policies:
-                # Use InstanceEmit with TypedDictBuilder for merge policy support
-                from etielle.instances import InstanceEmit, FieldSpec, TypedDictBuilder
+            # Choose emit type based on whether we have a model class or merge policies
+            table_class = emission["table_class"]
+            if table_class or merge_policies:
+                # Use InstanceEmit with appropriate builder
+                from etielle.instances import InstanceEmit, FieldSpec, ConstructorBuilder
 
                 # Convert CoreField to FieldSpec
                 field_specs = [FieldSpec(selector=f.name, transform=f.transform) for f in fields]
+
+                # Choose builder based on table_class
+                if table_class:
+                    # Use ConstructorBuilder for dataclasses and other model classes
+                    builder = ConstructorBuilder(table_class)
+                else:
+                    # Use TypedDictBuilder for plain dicts with merge policies
+                    from etielle.instances import TypedDictBuilder
+                    builder = TypedDictBuilder(lambda d: d)
 
                 table_emit = InstanceEmit(
                     table=emission["table"],
                     join_keys=tuple(join_keys) if join_keys else (literal(None),),
                     fields=tuple(field_specs),
-                    builder=TypedDictBuilder(lambda d: d),
+                    builder=builder,
                     policies=merge_policies
                 )
             else:
-                # Use simpler TableEmit when no merge policies needed
+                # Use simpler TableEmit when no model class or merge policies needed
                 table_emit = TableEmit(
                     table=emission["table"],
                     join_keys=tuple(join_keys) if join_keys else (literal(None),),
@@ -562,6 +572,45 @@ class PipelineBuilder:
 
         # Execute using existing infrastructure
         raw_results = run_mapping(root, mapping_spec)
+
+        # Handle relationship binding if any relationships were recorded
+        if self._relationships:
+            from etielle.relationships import compute_relationship_keys, bind_many_to_one, ManyToOneSpec
+
+            # Build ManyToOneSpec objects from recorded relationships
+            rel_specs = []
+            for rel in self._relationships:
+                # Find the child emission to get the transforms for parent key computation
+                child_emission = self._emissions[rel["emission_index"]]
+
+                # Build list of transforms that compute parent key from child context
+                child_to_parent_transforms = []
+                for child_field, parent_field in rel["by"].items():
+                    # Find the transform for this child field
+                    for f in child_emission["fields"]:
+                        if f.name == child_field:
+                            child_to_parent_transforms.append(f.transform)
+                            break
+
+                # Infer attr name from parent table name (singular, lowercase)
+                # e.g., "users" -> "user", "posts" -> "post"
+                parent_table_name = rel["parent_table"]
+                attr_name = parent_table_name.rstrip("s") if parent_table_name.endswith("s") else parent_table_name
+
+                spec = ManyToOneSpec(
+                    child_table=rel["child_table"],
+                    parent_table=rel["parent_table"],
+                    attr=attr_name,
+                    child_to_parent_key=tuple(child_to_parent_transforms),
+                    required=False  # Don't fail on missing parents by default
+                )
+                rel_specs.append(spec)
+
+            # Compute relationship keys by traversing the data again
+            child_to_parent = compute_relationship_keys(root, specs, rel_specs)
+
+            # Bind the parent references to child instances
+            bind_many_to_one(raw_results, rel_specs, child_to_parent, fail_on_missing=False)
 
         # Convert to PipelineResult format
         tables: dict[str, dict[tuple[Any, ...], Any]] = {}

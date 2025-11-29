@@ -733,3 +733,53 @@ class TestRunMerging:
         sales = result.tables["sales"]
         assert len(sales) == 1
         assert sales[("A",)]["total"] == 150
+
+
+class TestRunRelationships:
+    """Tests for run() with relationship binding."""
+
+    def test_link_to_binds_parent_reference(self):
+        """link_to() causes parent reference to be bound."""
+        from dataclasses import dataclass as dc
+        from etielle.fluent import etl
+
+        @dc
+        class User:
+            __tablename__ = "users"
+            name: str
+            id: int = 0
+
+        @dc
+        class Post:
+            __tablename__ = "posts"
+            title: str
+            user: User | None = None
+            user_id: int = 0
+
+        data = {
+            "users": [{"id": 1, "name": "Alice"}],
+            "posts": [{"id": 101, "title": "Hello", "user_id": 1}]
+        }
+
+        result = (
+            etl(data)
+            .goto("users").each()
+            .map_to(table=User, fields=[
+                Field("name", get("name")),
+                TempField("id", get("id"))
+            ])
+            .goto_root()
+            .goto("posts").each()
+            .map_to(table=Post, fields=[
+                Field("title", get("title")),
+                TempField("id", get("id")),
+                TempField("user_id", get("user_id"))
+            ])
+            .link_to(User, by={"user_id": "id"})
+            .run()
+        )
+
+        posts = result.tables[Post]
+        post = list(posts.values())[0]
+        assert post.user is not None
+        assert post.user.name == "Alice"
