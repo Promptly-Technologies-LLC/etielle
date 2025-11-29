@@ -123,7 +123,7 @@ flush_to_db(session, mapping_results)
 
 **Key concept**: The **Load** step is optional and happens via database adapters. Without this step, `etielle` just transforms JSON to in-memory Python objects.
 
-Learn more: [Database upserts](loading-data-into-a-database.qmd), [SQLAlchemy adapter](sqlalchemy-adapter.qmd)
+Learn more: [Database upserts](loading-data-into-a-database.qmd)
 
 ---
 
@@ -212,7 +212,7 @@ flush_to_db(session, mapping_results)
 
 **Note**: This step is optional! You can use `etielle` just for in-memory JSON transformation without database persistence.
 
-Learn more: [Database upserts](loading-data-into-a-database.qmd), [SQLAlchemy adapter](sqlalchemy-adapter.qmd)
+Learn more: [Database upserts](loading-data-into-a-database.qmd)
 
 ## Next Steps
 

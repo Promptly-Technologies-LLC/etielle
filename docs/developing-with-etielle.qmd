@@ -1,0 +1,252 @@
+---
+title: "Developing with etielle"
+---
+
+**What you'll learn**: Developer experience features including error reporting, debugging, and type-safe field selectors.
+
+This page covers the tooling that makes etielle easier to develop with: error diagnostics, debugging workflows, and type safety features.
+
+## Error Reporting
+
+etielle aggregates errors with precise context and returns them alongside your instances.
+
+### Result Shape
+
+Every `run_mapping()` call returns a dict of `MappingResult` objects:
+
+```python
+from etielle.core import MappingResult
+
+# MappingResult[T] contains:
+# - instances: Dict[tuple, T]           # Successful instances keyed by join_keys
+# - update_errors: Dict[tuple, list[str]]  # Errors during field updates
+# - finalize_errors: Dict[tuple, list[str]]  # Errors during instance construction
+# - stats: Dict[str, int]               # Summary statistics
+```
+
+### Error Types
+
+**Update errors** happen during field updates:
+
+| Error | Cause | Fix |
+|-------|-------|-----|
+| Unknown field | Referenced a field that doesn't exist | Check spelling, add field to model |
+| Type mismatch | Merge policy expected different type | Ensure transforms return correct type |
+| Merge failure | Policy couldn't combine values | Check field initialization |
+
+**Finalize errors** happen during instance construction:
+
+| Error | Cause | Fix |
+|-------|-------|-----|
+| Missing required field | Model requires a field that wasn't set | Add FieldSpec or make optional |
+| Validation error | Pydantic validation failed | Check transform outputs match field types |
+
+### Debugging Workflow
+
+``` {python}
+from etielle.core import MappingSpec, TraversalSpec
+from etielle.instances import InstanceEmit, FieldSpec, PydanticBuilder
+from etielle.transforms import get
+from etielle.executor import run_mapping
+from pydantic import BaseModel
+
+class User(BaseModel):
+    id: str
+    email: str
+
+root = {"users": [{"id": "u1", "email": "alice@example.com"}]}
+
+# Intentional typo to demonstrate error handling
+emit = InstanceEmit[User](
+    table="users",
+    join_keys=[get("id")],
+    fields=[
+        FieldSpec(selector="id", transform=get("id")),
+        FieldSpec(selector="emali", transform=get("email")),  # Typo!
+    ],
+    builder=PydanticBuilder(User),
+)
+
+mapping = MappingSpec(traversals=[TraversalSpec(path=["users"], mode="auto", emits=[emit])])
+result = run_mapping(root, mapping)
+
+# Step 1: Check stats
+print("Stats:", result["users"].stats)
+
+# Step 2: Inspect update errors
+for key, errors in result["users"].update_errors.items():
+    print(f"Row {key} update errors: {errors}")
+
+# Step 3: Inspect finalize errors
+for key, errors in result["users"].finalize_errors.items():
+    print(f"Row {key} finalize errors: {errors}")
+```
+
+### Unknown Field Suggestions
+
+When using string field names with a typo, etielle suggests corrections:
+
+```
+Unknown field 'emali' for table 'users'. Did you mean: 'email'?
+```
+
+### Strictness Modes
+
+Control how unknown fields are handled:
+
+```python
+emit = InstanceEmit[User](
+    table="users",
+    # ...
+    strict_fields=True,      # Check field names (default)
+    strict_mode="collect",   # Collect errors (default)
+    # strict_mode="fail_fast",  # Raise immediately instead
+)
+```
+
+## Field Selectors
+
+Field selectors provide type-safe field references that your IDE and type checker can verify.
+
+### Basic Usage
+
+``` {python}
+from etielle.core import field_of
+
+class User:
+    id: str
+    email: str
+
+# Returns "email" at runtime, type-checked at development time
+print(field_of(User, lambda u: u.email))
+```
+
+### Benefits
+
+1. **IDE autocomplete**: Your editor suggests available fields
+2. **Type-check errors**: Typos caught before running
+3. **Refactoring safety**: Renaming a field updates all references
+
+### Usage in InstanceEmit
+
+``` {python}
+#| eval: false
+from etielle.core import field_of
+from etielle.instances import InstanceEmit, FieldSpec, PydanticBuilder
+from etielle.transforms import get
+from pydantic import BaseModel
+
+class User(BaseModel):
+    id: str
+    email: str
+
+emit = InstanceEmit[User](
+    table="users",
+    join_keys=[get("id")],
+    fields=[
+        FieldSpec(selector=field_of(User, lambda u: u.id), transform=get("id")),
+        FieldSpec(selector=field_of(User, lambda u: u.email), transform=get("email")),
+    ],
+    builder=PydanticBuilder(User),
+)
+```
+
+### Constraints
+
+The `field_of()` function enforces:
+
+- Exactly one attribute access
+- No method calls
+- No indexing
+- No chained attributes
+
+``` {python}
+from etielle.core import field_of
+
+class Model:
+    x: int
+
+# OK
+print(field_of(Model, lambda m: m.x))
+
+# Would raise ValueError: method call
+try:
+    field_of(Model, lambda m: m.x.__str__())
+except ValueError as e:
+    print(f"Error: {e}")
+
+# Would raise ValueError: chained access
+try:
+    field_of(Model, lambda m: m.x.real)
+except ValueError as e:
+    print(f"Error: {e}")
+```
+
+### When to Use What
+
+| Use `field_of()` selectors | Use string field names |
+|---------------------------|------------------------|
+| Pydantic models, dataclasses, typed classes | Plain dicts, dynamic data |
+| Using a type checker (mypy, pyright) | Prototyping quickly |
+| Want IDE autocomplete | Field names computed at runtime |
+
+## Common Debugging Scenarios
+
+### Empty Results
+
+**Symptoms**: `result["table"].instances` is empty
+
+**Checklist**:
+
+1. Check `path` matches JSON structure exactly
+2. Verify iteration mode is appropriate for the data type
+3. Check `join_keys` aren't returning `None` (rows with null keys are skipped)
+4. Look at `stats` for counts
+
+### Missing Parent Data
+
+**Symptoms**: `get_from_parent()` returns `None`
+
+**Checklist**:
+
+1. Verify `depth` parameter matches nesting level
+2. Ensure parent context exists (check traversal structure)
+3. Confirm the parent field exists at that level
+
+### Duplicate or Missing Rows
+
+**Symptoms**: Unexpected row counts
+
+**Checklist**:
+
+1. Verify `join_keys` are unique per row
+2. Check for `None` values in join_keys (skipped)
+3. Look for overlapping traversals merging rows
+
+### Type Validation Failures
+
+**Symptoms**: Finalize errors about types
+
+**Checklist**:
+
+1. Check transform outputs match model field types
+2. Ensure optional fields are marked `Optional` in model
+3. Verify Pydantic validators aren't rejecting values
+
+## Performance Monitoring
+
+Access processing statistics:
+
+```python
+result = run_mapping(data, spec)
+for table, mapping_result in result.items():
+    print(f"{table}:")
+    print(f"  Instances: {mapping_result.stats.get('num_instances', 0)}")
+    print(f"  Update errors: {mapping_result.stats.get('num_update_errors', 0)}")
+    print(f"  Finalize errors: {mapping_result.stats.get('num_finalize_errors', 0)}")
+```
+
+## See also
+
+- [Transforms](transforms.qmd) - Writing and debugging transforms
+- [Emissions](emissions.qmd) - Understanding update vs finalize errors
