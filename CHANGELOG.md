@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v2.3.2 (2025-11-29)
+
+### Bug Fixes
+
+- Transform from Protocol to TypeAlias
+  ([`3f8a377`](https://github.com/Promptly-Technologies-LLC/etielle/commit/3f8a37766503dc93e78b8696903bb5d859e026b9))
+
+
 ## v2.3.1 (2025-11-29)
 
 ### Bug Fixes
