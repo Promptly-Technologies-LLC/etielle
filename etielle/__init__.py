@@ -1,13 +1,11 @@
 from .core import (
     Context,
     Field as CoreField,  # Renamed to avoid conflict with fluent.Field
-    FieldRef,
     MappingSpec,
     TableEmit,
     Transform,
     TraversalSpec,
     field_of,
-    fields,
 )
 
 from .instances import (
@@ -57,13 +55,11 @@ __all__ = [
     # core
     "Context",
     "CoreField",  # Legacy core Field
-    "FieldRef",
     "MappingSpec",
     "TableEmit",
     "Transform",
     "TraversalSpec",
     "field_of",
-    "fields",
     # instances
     "InstanceEmit",
     "FieldSpec",

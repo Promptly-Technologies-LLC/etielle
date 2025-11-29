@@ -15,7 +15,7 @@ from typing import (
 )
 from typing import get_args, get_origin, Union as _Union
 
-from .core import Transform, field_of, FieldRef
+from .core import Transform, field_of
 
 
 K = Tuple[Any, ...]
@@ -133,8 +133,8 @@ class InstanceBuilder(Generic[T]):
 
 @dataclass(frozen=True)
 class FieldSpec(Generic[T]):
-    # Accept FieldRef (preferred), string field name, or callable selector (deprecated)
-    selector: Union[FieldRef, str, Callable[[T], Any]]
+    # Accept string field name or callable selector (via field_of)
+    selector: Union[str, Callable[[T], Any]]
     transform: Transform[Any]
 
 
@@ -417,8 +417,6 @@ def resolve_field_name_for_builder(
 ) -> str:
     if isinstance(spec.selector, str):
         return spec.selector
-    if isinstance(spec.selector, FieldRef):
-        return spec.selector.name
     # Try to resolve from typed selector via builder.model if available
     model = getattr(builder, "model", None)
     if model is None:
