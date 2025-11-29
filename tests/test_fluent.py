@@ -1,8 +1,10 @@
 """Tests for the fluent E→T→L API."""
 
 import pytest
-from etielle.fluent import Field, TempField, FieldUnion
+from etielle.fluent import Field, TempField, FieldUnion, transform
 from etielle.transforms import get, literal
+from etielle.core import Context
+from typing import Any
 
 
 class TestField:
@@ -67,3 +69,40 @@ class TestFieldUnion:
         """TempField is a valid FieldUnion."""
         field: FieldUnion = TempField("id", get("id"))
         assert isinstance(field, (Field, TempField))
+
+
+class TestTransformDecorator:
+    """Tests for @transform decorator."""
+
+    def test_transform_with_no_extra_args(self):
+        """Transform with only ctx works as identity wrapper."""
+        @transform
+        def node_value(ctx: Context) -> Any:
+            return ctx.node
+
+        # Calling without args returns a Transform
+        t = node_value()
+        # The transform should work with a context
+        ctx = Context(root={"x": 1}, node=42, path=(), parent=None, key=None, index=None, slots={})
+        assert t(ctx) == 42
+
+    def test_transform_with_extra_args(self):
+        """Transform with extra args creates curried factory."""
+        @transform
+        def get_field(ctx: Context, field: str) -> Any:
+            return ctx.node[field]
+
+        # Calling with field arg returns a Transform
+        t = get_field("name")
+        ctx = Context(root={}, node={"name": "Alice"}, path=(), parent=None, key=None, index=None, slots={})
+        assert t(ctx) == "Alice"
+
+    def test_transform_with_multiple_args(self):
+        """Transform with multiple extra args."""
+        @transform
+        def split_field(ctx: Context, field: str, index: int) -> str:
+            return ctx.node[field].split("_")[index]
+
+        t = split_field("composite_id", 0)
+        ctx = Context(root={}, node={"composite_id": "user_123"}, path=(), parent=None, key=None, index=None, slots={})
+        assert t(ctx) == "user"
