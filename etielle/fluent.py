@@ -256,6 +256,32 @@ class PipelineBuilder:
         # Session for loading
         self._session: Any | None = None
 
+    def goto_root(self, index: int = 0) -> PipelineBuilder:
+        """Navigate to a specific JSON root.
+
+        Resets the current path and iteration state.
+
+        Args:
+            index: Which root to navigate to (0-indexed, defaults to 0).
+
+        Returns:
+            Self for method chaining.
+
+        Raises:
+            IndexError: If index is out of range.
+
+        Example:
+            etl(users_json, posts_json)
+            .goto_root(0).goto("users").each()  # Process users
+            .goto_root(1).goto("posts").each()  # Process posts
+        """
+        if index < 0 or index >= len(self._roots):
+            raise IndexError(f"Root index {index} out of range (have {len(self._roots)} roots)")
+        self._current_root_index = index
+        self._current_path = []
+        self._iteration_depth = 0
+        return self
+
 
 def etl(*roots: Any, errors: ErrorMode = "collect") -> PipelineBuilder:
     """Entry point for fluent E→T→L pipelines.

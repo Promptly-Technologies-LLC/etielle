@@ -243,3 +243,50 @@ class TestEtlEntryPoint:
 
         builder = etl({}, errors="fail_fast")
         assert builder._error_mode == "fail_fast"
+
+
+class TestGotoRoot:
+    """Tests for goto_root() navigation."""
+
+    def test_goto_root_returns_self(self):
+        """goto_root() returns the builder for chaining."""
+        from etielle.fluent import etl
+
+        builder = etl({}, {})
+        result = builder.goto_root()
+        assert result is builder
+
+    def test_goto_root_defaults_to_zero(self):
+        """goto_root() defaults to index 0."""
+        from etielle.fluent import etl
+
+        builder = etl({"a": 1}, {"b": 2})
+        builder.goto_root()
+        assert builder._current_root_index == 0
+
+    def test_goto_root_with_index(self):
+        """goto_root(n) selects the nth root."""
+        from etielle.fluent import etl
+
+        builder = etl({"a": 1}, {"b": 2})
+        builder.goto_root(1)
+        assert builder._current_root_index == 1
+
+    def test_goto_root_resets_path(self):
+        """goto_root() resets navigation path."""
+        from etielle.fluent import etl
+
+        builder = etl({"users": []})
+        builder._current_path = ["users", "0", "posts"]
+        builder._iteration_depth = 2
+        builder.goto_root()
+        assert builder._current_path == []
+        assert builder._iteration_depth == 0
+
+    def test_goto_root_invalid_index_raises(self):
+        """goto_root() with invalid index raises."""
+        from etielle.fluent import etl
+
+        builder = etl({"a": 1})
+        with pytest.raises(IndexError, match="Root index 5 out of range"):
+            builder.goto_root(5)
