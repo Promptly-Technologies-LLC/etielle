@@ -593,3 +593,86 @@ class TestLoad:
             fields=[Field("name", get("name"))]
         ).load(mock_session)
         assert builder._session is mock_session
+
+
+class TestRunBasic:
+    """Tests for run() basic execution without database."""
+
+    def test_run_returns_pipeline_result(self):
+        """run() returns a PipelineResult."""
+        from etielle.fluent import etl, PipelineResult
+
+        data = {"users": [{"name": "Alice"}]}
+        result = (
+            etl(data)
+            .goto("users").each()
+            .map_to(table="users", fields=[Field("name", get("name"))])
+            .run()
+        )
+        assert isinstance(result, PipelineResult)
+
+    def test_run_extracts_simple_list(self):
+        """run() extracts data from a simple list."""
+        from etielle.fluent import etl
+
+        data = {"users": [
+            {"id": 1, "name": "Alice"},
+            {"id": 2, "name": "Bob"}
+        ]}
+        result = (
+            etl(data)
+            .goto("users").each()
+            .map_to(table="users", fields=[
+                Field("name", get("name")),
+                TempField("id", get("id"))
+            ])
+            .run()
+        )
+        # Access by string name
+        users = result.tables["users"]
+        assert len(users) == 2
+        # Keyed by TempField values (join key)
+        assert (1,) in users or (2,) in users
+
+    def test_run_tempfield_not_in_output(self):
+        """TempField values are not in the output dict."""
+        from etielle.fluent import etl
+
+        data = {"users": [{"user_id": 1, "name": "Alice"}]}
+        result = (
+            etl(data)
+            .goto("users").each()
+            .map_to(table="users", fields=[
+                Field("name", get("name")),
+                TempField("user_id", get("user_id"))
+            ])
+            .run()
+        )
+        users = result.tables["users"]
+        row = list(users.values())[0]
+        assert "name" in row
+        assert "user_id" not in row  # TempField excluded
+        # Note: "id" may be auto-injected by executor for single-key tables
+
+    def test_run_with_nested_iteration(self):
+        """run() handles nested iteration."""
+        from etielle.fluent import etl
+        from etielle.transforms import get_from_parent, index
+
+        data = {"users": [
+            {"id": 1, "posts": [{"title": "Post A"}, {"title": "Post B"}]}
+        ]}
+        result = (
+            etl(data)
+            .goto("users").each()
+            .map_to(table="users", fields=[TempField("id", get("id"))])
+            .goto("posts").each()
+            .map_to(table="posts", fields=[
+                Field("title", get("title")),
+                TempField("user_id", get_from_parent("id")),
+                TempField("post_index", index())
+            ])
+            .run()
+        )
+        posts = result.tables["posts"]
+        assert len(posts) == 2

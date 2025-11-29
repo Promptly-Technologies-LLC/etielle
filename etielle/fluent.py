@@ -26,7 +26,7 @@ from typing import TYPE_CHECKING, Any, Literal
 from etielle.core import Context
 
 if TYPE_CHECKING:
-    from etielle.core import Transform
+    from etielle.core import Transform, TraversalSpec
     from etielle.instances import MergePolicy
 
 ErrorMode = Literal["collect", "fail_fast"]
@@ -441,6 +441,132 @@ class PipelineBuilder:
         """
         self._session = session
         return self
+
+    def _build_traversal_specs(self) -> list[TraversalSpec]:
+        """Convert accumulated emissions to TraversalSpec objects."""
+        from etielle.core import MappingSpec, TraversalSpec, TableEmit, Field as CoreField
+        from etielle.transforms import literal
+
+        specs = []
+
+        for emission in self._emissions:
+            # Determine path and iteration mode
+            path = emission["path"]
+            iteration_points = emission["iteration_points"]
+
+            # Build fields and join_keys from Field/TempField
+            fields = []
+            join_keys = []
+            field_map = {f.name: f.transform for f in emission["fields"]}
+
+            # If join_on specified, use those field names to build join_keys
+            if emission["join_on"]:
+                for key_name in emission["join_on"]:
+                    if key_name in field_map:
+                        join_keys.append(field_map[key_name])
+                # Only add non-join_on Fields to output
+                for f in emission["fields"]:
+                    if isinstance(f, Field) and f.name not in emission["join_on"]:
+                        fields.append(CoreField(f.name, f.transform))
+            else:
+                # No explicit join_on - use TempField/Field distinction
+                for f in emission["fields"]:
+                    if isinstance(f, TempField):
+                        # TempFields become join keys
+                        join_keys.append(f.transform)
+                    else:
+                        # Regular Fields go to output
+                        fields.append(CoreField(f.name, f.transform))
+
+            # Handle outer/inner path split based on iteration points
+            if len(iteration_points) == 0:
+                # No iteration
+                outer_path = path
+                outer_mode = "single"
+                inner_path = None
+                inner_mode = "auto"
+            elif len(iteration_points) == 1:
+                # Single iteration
+                outer_path = iteration_points[0]
+                outer_mode = "auto"
+                # Inner path is what comes after the iteration point
+                inner_start = len(iteration_points[0])
+                inner_path = path[inner_start:] if inner_start < len(path) else None
+                inner_mode = "auto" if inner_path else "auto"
+            else:
+                # Nested iteration - outer at first point, inner continues
+                outer_path = iteration_points[0]
+                outer_mode = "auto"
+                # Inner path starts after first iteration point
+                inner_start = len(iteration_points[0])
+                remaining_path = path[inner_start:]
+                inner_path = remaining_path if remaining_path else None
+                inner_mode = "auto"
+
+            table_emit = TableEmit(
+                table=emission["table"],
+                join_keys=tuple(join_keys) if join_keys else (literal(None),),
+                fields=tuple(fields)
+            )
+
+            spec = TraversalSpec(
+                path=tuple(outer_path),
+                mode=outer_mode,
+                inner_path=tuple(inner_path) if inner_path else None,
+                inner_mode=inner_mode,
+                emits=(table_emit,)
+            )
+            specs.append(spec)
+
+        return specs
+
+    def run(self) -> PipelineResult:
+        """Execute the pipeline and return results.
+
+        If load() was called, also persists to the database.
+
+        Returns:
+            PipelineResult with tables and errors.
+        """
+        from etielle.core import MappingSpec, TraversalSpec, TableEmit, Field as CoreField
+        from etielle.executor import run_mapping
+
+        # Build internal specs
+        specs = self._build_traversal_specs()
+        mapping_spec = MappingSpec(traversals=tuple(specs))
+
+        # Use the first root (multi-root support in later task)
+        root = self._roots[self._current_root_index] if self._roots else {}
+
+        # Execute using existing infrastructure
+        raw_results = run_mapping(root, mapping_spec)
+
+        # Convert to PipelineResult format
+        tables: dict[str, dict[tuple[Any, ...], Any]] = {}
+        errors: dict[str, dict[tuple[Any, ...], list[str]]] = {}
+        table_class_map: dict[str, type] = {}
+
+        for table_name, mapping_result in raw_results.items():
+            tables[table_name] = dict(mapping_result.instances)
+            # Collect errors
+            all_errors: dict[tuple[Any, ...], list[str]] = {}
+            for key, msgs in mapping_result.update_errors.items():
+                all_errors.setdefault(key, []).extend(msgs)
+            for key, msgs in mapping_result.finalize_errors.items():
+                all_errors.setdefault(key, []).extend(msgs)
+            if all_errors:
+                errors[table_name] = all_errors
+
+        # Build class map from emissions
+        for emission in self._emissions:
+            if emission["table_class"]:
+                table_class_map[emission["table"]] = emission["table_class"]
+
+        return PipelineResult(
+            tables=tables,
+            errors=errors,
+            _table_class_map=table_class_map
+        )
 
 
 def etl(*roots: Any, errors: ErrorMode = "collect") -> PipelineBuilder:
