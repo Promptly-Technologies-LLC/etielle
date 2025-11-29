@@ -4,7 +4,6 @@ from typing import (
     Any,
     Callable,
     Optional,
-    Protocol,
     Sequence,
     Tuple,
     TypeVar,
@@ -52,18 +51,15 @@ class Context:
     slots: dict[str, Any] = field(default_factory=dict)
 
 
-T = TypeVar("T", covariant=True)
+T = TypeVar("T")
 U = TypeVar("U")
 
 
-class Transform(Protocol, Generic[T]):
-    """
-    Transforms are functions that take a Context and return a value.
-    They're composable, side-effect free, and lazily evaluated in the context of the current traversal step.
-    """
-
-    def __call__(self, ctx: Context) -> T:  # pragma: no cover - interface only
-        ...
+Transform = Callable[[Context], T]
+"""
+Transforms are functions that take a Context and return a value.
+They're composable, side-effect free, and lazily evaluated in the context of the current traversal step.
+"""
 
 
 # -----------------------------
