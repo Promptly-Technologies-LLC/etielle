@@ -1,0 +1,396 @@
+---
+title: "Migration from v2 to v3"
+---
+
+**What you'll learn**: How to migrate your existing etielle v2 code to the new v3 fluent API.
+
+## Overview of Changes
+
+etielle v3 introduces a new fluent API that replaces the spec-based API from v2. The core concepts remain the same, but the syntax is more intuitive and easier to read.
+
+| v2 Concept | v3 Equivalent |
+|------------|---------------|
+| `TraversalSpec(path=[...], mode="auto")` | `.goto(...).each()` |
+| `inner_path=[...]` | Chained `.goto(...).each()` |
+| `TableEmit(table=..., fields=[...])` | `.map_to(table=..., fields=[...])` |
+| `InstanceEmit[Model](...)` | `.map_to(table=Model, fields=[...])` |
+| `Field(name, transform)` (core) | `Field(name, transform)` (fluent) |
+| `join_keys=[...]` | `TempField(name, transform)` |
+| `ManyToOneSpec(...)` + `bind_many_to_one()` | `.link_to(Parent, by={...})` |
+| `run_mapping(data, spec)` | `etl(data)...run()` |
+| `flush_to_db(session, results)` | `.load(session).run()` |
+
+## Migration Examples
+
+### Basic Mapping
+
+**v2 (Spec-based)**:
+```python
+from etielle.core import MappingSpec, TraversalSpec, TableEmit, Field
+from etielle.transforms import get
+from etielle.executor import run_mapping
+
+spec = MappingSpec(traversals=[
+    TraversalSpec(
+        path=["users"],
+        mode="auto",
+        emits=[TableEmit(
+            table="users",
+            join_keys=[get("id")],
+            fields=[
+                Field("id", get("id")),
+                Field("name", get("name"))
+            ]
+        )]
+    )
+])
+
+result = run_mapping(data, spec)
+users = result["users"].instances
+```
+
+**v3 (Fluent)**:
+```python
+from etielle import etl, Field, TempField, get
+
+result = (
+    etl(data)
+    .goto("users").each()
+    .map_to(table="users", fields=[
+        Field("id", get("id")),
+        Field("name", get("name")),
+        TempField("id", get("id"))
+    ])
+    .run()
+)
+
+users = result.tables["users"]
+```
+
+### Nested Traversal
+
+**v2 (Spec-based)**:
+```python
+spec = MappingSpec(traversals=[
+    TraversalSpec(
+        path=["users"],
+        mode="auto",
+        inner_path=["posts"],
+        inner_mode="auto",
+        emits=[TableEmit(
+            table="posts",
+            join_keys=[get("id")],
+            fields=[
+                Field("id", get("id")),
+                Field("user_id", get_from_parent("id")),
+                Field("title", get("title"))
+            ]
+        )]
+    )
+])
+```
+
+**v3 (Fluent)**:
+```python
+result = (
+    etl(data)
+    .goto("users").each()
+    .goto("posts").each()
+    .map_to(table="posts", fields=[
+        Field("id", get("id")),
+        Field("user_id", get_from_parent("id")),
+        Field("title", get("title")),
+        TempField("id", get("id"))
+    ])
+    .run()
+)
+```
+
+### Typed Output with Pydantic
+
+**v2 (Spec-based)**:
+```python
+from etielle import InstanceEmit, FieldSpec, PydanticBuilder, fields
+
+emit = InstanceEmit[User](
+    table="users",
+    join_keys=[get("id")],
+    fields=[
+        FieldSpec(selector=fields(User).id, transform=get("id")),
+        FieldSpec(selector=fields(User).name, transform=get("name")),
+    ],
+    builder=PydanticBuilder(User),
+)
+
+spec = MappingSpec(traversals=[
+    TraversalSpec(path=["users"], mode="auto", emits=[emit])
+])
+
+result = run_mapping(data, spec)
+```
+
+**v3 (Fluent)**:
+```python
+result = (
+    etl(data)
+    .goto("users").each()
+    .map_to(table=User, fields=[  # Pass model class directly
+        Field("id", get("id")),
+        Field("name", get("name")),
+        TempField("id", get("id"))
+    ])
+    .run()
+)
+
+# Access by model class
+users = result.tables[User]
+```
+
+### Relationships
+
+**v2 (Spec-based)**:
+```python
+from etielle.relationships import ManyToOneSpec, compute_relationship_keys, bind_many_to_one
+
+relationships = [
+    ManyToOneSpec(
+        child_table="posts",
+        parent_table="users",
+        attr="user",
+        child_to_parent_key=[get_from_parent("id")],
+    )
+]
+
+results = run_mapping(data, spec)
+sidecar = compute_relationship_keys(data, spec.traversals, relationships)
+bind_many_to_one(results, relationships, sidecar)
+```
+
+**v3 (Fluent)**:
+```python
+result = (
+    etl(data)
+    .goto("users").each()
+    .map_to(table=User, fields=[...])
+
+    .goto("posts").each()
+    .map_to(table=Post, fields=[
+        Field("title", get("title")),
+        TempField("id", get("id")),
+        TempField("user_id", get_from_parent("id"))
+    ])
+    .link_to(User, by={"user_id": "id"})  # Inline relationship binding
+    .run()
+)
+```
+
+### Database Loading
+
+**v2 (Spec-based)**:
+```python
+from etielle.sqlalchemy_adapter import flush_to_db
+
+results = run_mapping(data, spec)
+bind_many_to_one(results, relationships, sidecar)
+flush_to_db(session, results)
+session.commit()
+```
+
+**v3 (Fluent)**:
+```python
+result = (
+    etl(data)
+    .goto("users").each()
+    .map_to(table=User, fields=[...])
+    .load(session)  # Configure session
+    .run()          # Execute and flush
+)
+
+session.commit()  # You still control commit
+```
+
+### Multiple Traversals
+
+**v2 (Spec-based)**:
+```python
+spec = MappingSpec(traversals=[
+    TraversalSpec(path=["users"], mode="auto", emits=[users_emit]),
+    TraversalSpec(path=["products"], mode="auto", emits=[products_emit]),
+])
+
+result = run_mapping(data, spec)
+```
+
+**v3 (Fluent)**:
+```python
+result = (
+    etl(data)
+    .goto("users").each()
+    .map_to(table="users", fields=[...])
+
+    .goto_root()  # Reset to root
+    .goto("products").each()
+    .map_to(table="products", fields=[...])
+
+    .run()
+)
+```
+
+### Row Merging
+
+**v2 (Spec-based)**:
+```python
+# Both emit to "users" table with same join_keys
+spec = MappingSpec(traversals=[
+    TraversalSpec(path=["users"], mode="auto", emits=[
+        TableEmit(table="users", join_keys=[get("id")], fields=[...])
+    ]),
+    TraversalSpec(path=["profiles"], mode="auto", emits=[
+        TableEmit(table="users", join_keys=[get("user_id")], fields=[...])
+    ]),
+])
+```
+
+**v3 (Fluent)**:
+```python
+result = (
+    etl(data)
+    .goto("users").each()
+    .map_to(table="users", fields=[
+        Field("name", get("name")),
+        TempField("id", get("id"))
+    ])
+
+    .goto_root()
+    .goto("profiles").each()
+    .map_to(table="users", join_on=["id"], fields=[  # join_on for second emission
+        Field("email", get("email")),
+        TempField("id", get("user_id"))
+    ])
+
+    .run()
+)
+```
+
+## Import Changes
+
+**v2 imports**:
+```python
+from etielle.core import MappingSpec, TraversalSpec, TableEmit, Field
+from etielle.instances import InstanceEmit, FieldSpec, PydanticBuilder
+from etielle.transforms import get, get_from_parent, literal, concat
+from etielle.executor import run_mapping
+from etielle.relationships import ManyToOneSpec, compute_relationship_keys, bind_many_to_one
+from etielle.sqlalchemy_adapter import flush_to_db
+```
+
+**v3 imports**:
+```python
+from etielle import (
+    etl,           # Entry point
+    Field,         # Output field (fluent version)
+    TempField,     # Join key field
+    get,           # Transform
+    get_from_parent,
+    literal,
+    concat,
+    # Merge policies (if needed)
+    AddPolicy,
+    AppendPolicy,
+)
+```
+
+## Key Differences
+
+### 1. `join_keys` → `TempField`
+
+In v2, `join_keys` was separate from `fields`. In v3, use `TempField` within the fields list:
+
+```python
+# v2
+join_keys=[get("id")]
+fields=[Field("name", get("name"))]
+
+# v3
+fields=[
+    Field("name", get("name")),
+    TempField("id", get("id"))  # This is the join key
+]
+```
+
+### 2. Builder Auto-Detection
+
+In v2, you explicitly specified builders. In v3, builders are auto-detected:
+
+```python
+# v2
+InstanceEmit[User](
+    builder=PydanticBuilder(User),
+    ...
+)
+
+# v3
+.map_to(table=User, ...)  # Builder auto-detected from User class
+```
+
+### 3. Inline Relationship Binding
+
+In v2, relationships were bound after mapping. In v3, use `link_to()` inline:
+
+```python
+# v2
+bind_many_to_one(results, relationships, sidecar)
+
+# v3
+.map_to(table=Post, fields=[...])
+.link_to(User, by={"user_id": "id"})
+```
+
+### 4. Result Access
+
+In v2, results were `dict[str, MappingResult]`. In v3, use `result.tables`:
+
+```python
+# v2
+users = result["users"].instances
+
+# v3
+users = result.tables["users"]  # or result.tables[User]
+```
+
+## Backward Compatibility
+
+The v2 spec-based API is still available for advanced use cases:
+
+```python
+# v2 API still works
+from etielle.core import MappingSpec, TraversalSpec, TableEmit
+from etielle.executor import run_mapping
+
+spec = MappingSpec(traversals=[...])
+result = run_mapping(data, spec)
+```
+
+However, we recommend migrating to the fluent API for new code.
+
+## Migration Checklist
+
+- [ ] Replace `MappingSpec`/`TraversalSpec` with `etl().goto().each()`
+- [ ] Replace `TableEmit`/`InstanceEmit` with `.map_to()`
+- [ ] Convert `join_keys` to `TempField` entries
+- [ ] Remove explicit builder specifications (auto-detected)
+- [ ] Replace relationship binding with inline `.link_to()`
+- [ ] Replace `run_mapping()` with `.run()`
+- [ ] Replace `flush_to_db()` with `.load(session).run()`
+- [ ] Update result access from `result["table"].instances` to `result.tables["table"]`
+- [ ] Update imports
+
+## Getting Help
+
+If you encounter issues migrating, please open an issue on GitHub with:
+
+1. Your v2 code
+2. Your attempted v3 code
+3. Any error messages
+
+We're happy to help with migration questions!

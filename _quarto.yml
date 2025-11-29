@@ -7,22 +7,34 @@ website:
   sidebar:
     style: docked
     contents:
-      - href: index.qmd
-        text: Quickstart
-      - href: docs/introduction-to-etl.qmd
-        text: Introduction to ETL
-      - href: docs/traversals.qmd
-        text: Traversals
-      - href: docs/transforms.qmd
-        text: Transforms
-      - href: docs/emissions.qmd
-        text: Emissions
-      - href: docs/relationships.qmd
-        text: Relationships
-      - href: docs/loading-data-into-a-database.qmd
-        text: Database upserts
-      - href: docs/developing-with-etielle.qmd
-        text: Developing with etielle
+      - section: "Getting Started"
+        contents:
+          - href: index.qmd
+            text: Quickstart
+          - href: docs/introduction-to-etl.qmd
+            text: Introduction to ETL
+      - section: "Core Concepts"
+        contents:
+          - href: docs/navigation.qmd
+            text: "Navigation"
+          - href: docs/transforms.qmd
+            text: Transforms
+          - href: docs/mapping.qmd
+            text: "Mapping Tables"
+          - href: docs/relationships.qmd
+            text: Relationships
+      - section: "Advanced Topics"
+        contents:
+          - href: docs/database-loading.qmd
+            text: Database Loading
+          - href: docs/custom-transforms.qmd
+            text: Custom Transforms
+          - href: docs/error-handling.qmd
+            text: Error Handling
+      - section: "Reference"
+        contents:
+          - href: docs/migration.qmd
+            text: "Migration from v2"
   navbar:
     right:
       - icon: github

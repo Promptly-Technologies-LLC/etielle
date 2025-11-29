@@ -49,6 +49,7 @@ from .transforms import (
     key,
     index,
     parent_key,
+    len_of,
 )
 
 __all__ = [
@@ -95,6 +96,7 @@ __all__ = [
     "parent_key",
     "parent_index",
     "node",
+    "len_of",
 ]
 
 # relationships (core)
