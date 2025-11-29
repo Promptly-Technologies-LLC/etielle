@@ -38,3 +38,22 @@ class Field:
     name: str
     transform: Transform[Any]
     merge: MergePolicy | None = None
+
+
+@dataclass(frozen=True)
+class TempField:
+    """A field used only for joining/linking, not persisted.
+
+    TempFields are used to:
+    - Compute join keys for merging rows
+    - Store parent IDs for relationship linking
+
+    They do not appear in the final output objects.
+
+    Args:
+        name: The field name (used in join_on and link_to).
+        transform: How to compute the value from the current context.
+    """
+
+    name: str
+    transform: Transform[Any]

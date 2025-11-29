@@ -1,7 +1,7 @@
 """Tests for the fluent E→T→L API."""
 
 import pytest
-from etielle.fluent import Field
+from etielle.fluent import Field, TempField
 from etielle.transforms import get, literal
 
 
@@ -31,3 +31,25 @@ class TestField:
         field = Field("name", get("name"))
         with pytest.raises(AttributeError):
             field.name = "other"
+
+
+class TestTempField:
+    """Tests for TempField dataclass."""
+
+    def test_tempfield_creation(self):
+        """TempField stores name and transform."""
+        field = TempField("id", get("id"))
+        assert field.name == "id"
+        assert field.transform is not None
+
+    def test_tempfield_is_frozen(self):
+        """TempField is immutable."""
+        field = TempField("id", get("id"))
+        with pytest.raises(AttributeError):
+            field.name = "other"
+
+    def test_tempfield_distinct_from_field(self):
+        """TempField is a different type from Field."""
+        field = Field("name", get("name"))
+        temp = TempField("id", get("id"))
+        assert type(field) is not type(temp)
