@@ -1,6 +1,6 @@
 from .core import (
     Context,
-    Field,
+    Field as CoreField,  # Renamed to avoid conflict with fluent.Field
     FieldRef,
     MappingSpec,
     TableEmit,
@@ -26,10 +26,37 @@ from .instances import (
     FirstNonNullPolicy,
 )
 
+# Fluent API (v3.0.0)
+from .fluent import (
+    etl,
+    Field,
+    TempField,
+    FieldUnion,
+    transform,
+    node,
+    parent_index,
+    PipelineResult,
+    PipelineBuilder,
+)
+
+# Re-export transforms for fluent API
+from .transforms import (
+    get,
+    get_from_root,
+    get_from_parent,
+    literal,
+    concat,
+    coalesce,
+    format_id,
+    key,
+    index,
+    parent_key,
+)
+
 __all__ = [
     # core
     "Context",
-    "Field",
+    "CoreField",  # Legacy core Field
     "FieldRef",
     "MappingSpec",
     "TableEmit",
@@ -51,6 +78,27 @@ __all__ = [
     "MinPolicy",
     "MaxPolicy",
     "FirstNonNullPolicy",
+    # Fluent API (v3.0.0)
+    "etl",
+    "Field",
+    "TempField",
+    "FieldUnion",
+    "transform",
+    "PipelineResult",
+    "PipelineBuilder",
+    # Transforms
+    "get",
+    "get_from_root",
+    "get_from_parent",
+    "literal",
+    "concat",
+    "coalesce",
+    "format_id",
+    "key",
+    "index",
+    "parent_key",
+    "parent_index",
+    "node",
 ]
 
 # relationships (core)

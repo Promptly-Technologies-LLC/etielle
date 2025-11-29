@@ -957,3 +957,32 @@ class TestErrorHandling:
                 ])
                 .run()
             )
+
+
+class TestPublicAPI:
+    """Tests for public API exports."""
+
+    def test_import_from_package(self):
+        """Core fluent API is importable from etielle."""
+        from etielle import etl, Field, TempField, transform
+        assert callable(etl)
+        assert Field is not None
+        assert TempField is not None
+        assert callable(transform)
+
+    def test_transforms_from_package(self):
+        """Transforms are importable from etielle."""
+        from etielle import get, get_from_root, get_from_parent
+        from etielle import literal, concat, coalesce, format_id
+        from etielle import key, index, parent_key, parent_index, node
+        # All should be callable
+        assert all(callable(t) for t in [
+            get, get_from_root, get_from_parent,
+            literal, concat, coalesce, format_id,
+            key, index, parent_key, parent_index, node
+        ])
+
+    def test_policies_from_package(self):
+        """Merge policies are importable from etielle."""
+        from etielle import AddPolicy, ExtendPolicy, MaxPolicy
+        assert AddPolicy is not None
