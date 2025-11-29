@@ -4,7 +4,7 @@ import pytest
 from etielle.fluent import Field, TempField, FieldUnion, transform
 from etielle.transforms import get, literal
 from etielle.core import Context
-from typing import Any
+from typing import Any, ClassVar
 
 
 class TestField:
@@ -32,7 +32,7 @@ class TestField:
         """Field is immutable."""
         field = Field("name", get("name"))
         with pytest.raises(AttributeError):
-            field.name = "other"
+            setattr(field, "name", "other")
 
 
 class TestTempField:
@@ -48,7 +48,7 @@ class TestTempField:
         """TempField is immutable."""
         field = TempField("id", get("id"))
         with pytest.raises(AttributeError):
-            field.name = "other"
+            setattr(field, "name", "other")
 
     def test_tempfield_distinct_from_field(self):
         """TempField is a different type from Field."""
@@ -795,9 +795,7 @@ class TestModelDetection:
 
         class User(BaseModel):
             name: str
-
-        # Set __tablename__ to match the data path
-        User.__tablename__ = "users"
+            __tablename__: ClassVar[str] = "users"
 
         data = {"users": [{"name": "Alice", "id": 1}]}
         result = (
@@ -901,9 +899,7 @@ class TestErrorHandling:
         class StrictUser(BaseModel):
             name: str
             age: int
-
-        # Set __tablename__ to match expected table name
-        StrictUser.__tablename__ = "strictuser"
+            __tablename__: ClassVar[str] = "strictuser"
 
         data = {"users": [
             {"name": "Alice", "age": 30, "id": 1},
@@ -937,9 +933,7 @@ class TestErrorHandling:
         class StrictUser(BaseModel):
             name: str
             age: int
-
-        # Set __tablename__ to match expected table name
-        StrictUser.__tablename__ = "strictuser"
+            __tablename__: ClassVar[str] = "strictuser"
 
         data = {"users": [
             {"name": "Alice", "age": "invalid", "id": 1},

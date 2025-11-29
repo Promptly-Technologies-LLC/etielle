@@ -27,7 +27,7 @@ from etielle.core import Context
 
 if TYPE_CHECKING:
     from etielle.core import Transform, TraversalSpec
-    from etielle.instances import MergePolicy
+    from etielle.instances import InstanceEmit, MergePolicy
 
 ErrorMode = Literal["collect", "fail_fast"]
 
@@ -485,8 +485,8 @@ class PipelineBuilder:
 
         for emission in self._emissions:
             # Determine path and iteration mode
-            path = emission["path"]
-            iteration_points = emission["iteration_points"]
+            path: list[str] = emission["path"]
+            iteration_points: list[list[str]] = emission["iteration_points"]
 
             # Build fields and join_keys from Field/TempField
             fields = []
@@ -517,6 +517,11 @@ class PipelineBuilder:
                         if f.merge is not None:
                             merge_policies[f.name] = f.merge
 
+            outer_path: list[str] = path
+            outer_mode: Literal["auto", "items", "single"] = "auto"
+            inner_path: list[str] | None = None
+            inner_mode: Literal["auto", "items", "single"] = "auto"
+
             # Handle outer/inner path split based on iteration points
             if len(iteration_points) == 0:
                 # No iteration
@@ -531,7 +536,7 @@ class PipelineBuilder:
                 # Inner path is what comes after the iteration point
                 inner_start = len(iteration_points[0])
                 inner_path = path[inner_start:] if inner_start < len(path) else None
-                inner_mode = "auto" if inner_path else "auto"
+                inner_mode = "auto"
             else:
                 # Nested iteration - outer at first point, inner continues
                 outer_path = iteration_points[0]
@@ -551,12 +556,16 @@ class PipelineBuilder:
             # Map to strict_mode parameter
             strict_mode = "fail_fast" if error_mode == "fail_fast" else "collect_all"
 
+            table_emit: InstanceEmit[Any] | TableEmit
+
             if builder or merge_policies:
                 # Use InstanceEmit with appropriate builder
                 from etielle.instances import InstanceEmit, FieldSpec
 
                 # Convert CoreField to FieldSpec
-                field_specs = [FieldSpec(selector=f.name, transform=f.transform) for f in fields]
+                field_specs: list[FieldSpec] = [
+                    FieldSpec(selector=f.name, transform=f.transform) for f in fields
+                ]
 
                 # If we have merge policies but no model class, use TypedDictBuilder for plain dicts
                 if not builder and merge_policies:

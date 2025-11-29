@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from types import NoneType
 from typing import (
     Any,
     Callable,
@@ -250,7 +251,7 @@ class PydanticPartialBuilder(InstanceBuilder[T]):
                 optional_ann = ann
             else:
                 # Build Optional[ann] dynamically as Union[ann, NoneType]
-                optional_ann = Union[ann, type(None)]
+                optional_ann = Union[ann, NoneType]
             partial_fields[name] = (optional_ann, None)
         self.partial = _create_model(f"{model.__name__}Partial", **partial_fields)
         self.acc: Dict[K, Dict[str, Any]] = {}
