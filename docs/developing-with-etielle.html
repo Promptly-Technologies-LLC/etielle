@@ -340,7 +340,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="debugging-workflow" class="level3">
 <h3 class="anchored" data-anchor-id="debugging-workflow">Debugging Workflow</h3>
-<div id="2aac22e5" class="cell" data-execution_count="1">
+<div id="94a0991b" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.core <span class="im">import</span> MappingSpec, TraversalSpec</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.instances <span class="im">import</span> InstanceEmit, FieldSpec, PydanticBuilder</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.transforms <span class="im">import</span> get</span>
@@ -406,7 +406,7 @@ Row ('u1',) finalize errors: ["table=users key=('u1',) 1 validation error for Us
 <p>Field selectors provide type-safe field references that your IDE and type checker can verify.</p>
 <section id="basic-usage" class="level3">
 <h3 class="anchored" data-anchor-id="basic-usage">Basic Usage</h3>
-<div id="b84b074d" class="cell" data-execution_count="2">
+<div id="043175a1" class="cell" data-execution_count="2">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> fields</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> User:</span>
@@ -433,7 +433,7 @@ email</code></pre>
 </section>
 <section id="usage-in-instanceemit" class="level3">
 <h3 class="anchored" data-anchor-id="usage-in-instanceemit">Usage in InstanceEmit</h3>
-<div id="ad047a20" class="cell" data-execution_count="3">
+<div id="5895dbb6" class="cell" data-execution_count="3">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> fields, InstanceEmit, FieldSpec, PydanticBuilder</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.transforms <span class="im">import</span> get</span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pydantic <span class="im">import</span> BaseModel</span>
@@ -456,7 +456,7 @@ email</code></pre>
 <section id="runtime-validation" class="level3">
 <h3 class="anchored" data-anchor-id="runtime-validation">Runtime Validation</h3>
 <p>At runtime, <code>fields()</code> validates that the accessed field exists in the model’s annotations:</p>
-<div id="040aac30" class="cell" data-execution_count="4">
+<div id="c3fdbe81" class="cell" data-execution_count="4">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> fields</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Model:</span>
