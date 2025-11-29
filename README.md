@@ -357,21 +357,22 @@ full_name = concat(get("first"), literal(" "), get("last"))  # "Alice Smith"
 - **Lazy Evaluation**: Transforms don’t compute until executed, adapting
   to the current spot in JSON.
 - **Custom Transforms**: Define your own functions that take Context and
-  return values.
+  return values. See [Transforms](docs/transforms.qmd).
 - **Row Merging Rules**: Last write wins for duplicate fields; missing
   keys skip rows.
-- **Field selectors**: Type-safe field references. See [Field
-  selectors](docs/field-selectors.qmd).
-- **Instance emission**: Build Pydantic/TypedDict/ORM instances directly
-  instead of dicts. See [Instance emission](docs/instance-emission.qmd).
+- **Type-safe field selectors**: IDE autocomplete and compile-time typo
+  detection. See [Developing with
+  etielle](docs/developing-with-etielle.qmd).
+- **Typed emissions**: Build Pydantic/TypedDict/ORM instances directly
+  instead of dicts. See [Emissions](docs/emissions.qmd).
 - **Merge policies**: Sum/append/min/max instead of overwrite when
-  multiple traversals update the same field. See [Merge
-  policies](docs/merge-policies.qmd).
-- **Error reporting**: Per-key diagnostics in results. See [Error
-  reporting](docs/error-reporting.qmd).
+  multiple traversals update the same field. See
+  [Emissions](docs/emissions.qmd).
+- **Error reporting**: Per-key diagnostics in results. See [Developing
+  with etielle](docs/developing-with-etielle.qmd).
 - **Relationships without extra round trips**: Bind in-memory, flush
-  once. See [Relationships](docs/relationships.qmd) and [SQLAlchemy
-  adapter](docs/sqlalchemy-adapter.qmd).
+  once. See [Relationships](docs/relationships.qmd) and [Database
+  upserts](docs/loading-data-into-a-database.qmd).
 - **Performance**: Efficient for large JSON; traversals are independent.
 
 ## Roadmap Ideas
