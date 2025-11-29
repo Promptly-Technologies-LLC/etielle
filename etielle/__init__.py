@@ -1,10 +1,12 @@
 from .core import (
     Context,
     Field,
+    FieldRef,
     MappingSpec,
     TableEmit,
     TraversalSpec,
     field_of,
+    fields,
 )
 
 from .instances import (
@@ -27,10 +29,12 @@ __all__ = [
     # core
     "Context",
     "Field",
+    "FieldRef",
     "MappingSpec",
     "TableEmit",
     "TraversalSpec",
     "field_of",
+    "fields",
     # instances
     "InstanceEmit",
     "FieldSpec",

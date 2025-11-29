@@ -46,11 +46,10 @@ Post(id="p2", user=<User u1>)  ← Now linked!
 ### Complete example
 
 ``` {python}
+from etielle import MappingSpec, TraversalSpec, fields, InstanceEmit, FieldSpec, PydanticBuilder
 from etielle.relationships import ManyToOneSpec, compute_relationship_keys, bind_many_to_one
 from etielle.executor import run_mapping
 from etielle.transforms import get, get_from_parent
-from etielle.core import MappingSpec, TraversalSpec, field_of
-from etielle.instances import InstanceEmit, FieldSpec, PydanticBuilder
 from pydantic import BaseModel
 
 class User(BaseModel):
@@ -76,8 +75,8 @@ users_emit = InstanceEmit[User](
     table="users",
     join_keys=[get("id")],
     fields=[
-        FieldSpec(selector=field_of(User, lambda u: u.id), transform=get("id")),
-        FieldSpec(selector=field_of(User, lambda u: u.email), transform=get("email")),
+        FieldSpec(selector=fields(User).id, transform=get("id")),
+        FieldSpec(selector=fields(User).email, transform=get("email")),
     ],
     builder=PydanticBuilder(User),
 )
@@ -86,8 +85,8 @@ posts_emit = InstanceEmit[Post](
     table="posts",
     join_keys=[get("id")],
     fields=[
-        FieldSpec(selector=field_of(Post, lambda p: p.id), transform=get("id")),
-        FieldSpec(selector=field_of(Post, lambda p: p.title), transform=get("title")),
+        FieldSpec(selector=fields(Post).id, transform=get("id")),
+        FieldSpec(selector=fields(Post).title, transform=get("title")),
     ],
     builder=PydanticBuilder(Post),
 )

@@ -111,28 +111,29 @@ Field selectors provide type-safe field references that your IDE and type checke
 ### Basic Usage
 
 ``` {python}
-from etielle.core import field_of
+from etielle import fields
 
 class User:
     id: str
     email: str
 
-# Returns "email" at runtime, type-checked at development time
-print(field_of(User, lambda u: u.email))
+# Returns FieldRef("email") at runtime, type-checked at development time
+ref = fields(User).email
+print(ref)
+print(ref.name)
 ```
 
 ### Benefits
 
-1. **IDE autocomplete**: Your editor suggests available fields
-2. **Type-check errors**: Typos caught before running
+1. **IDE autocomplete**: Your editor suggests available fields when you type `fields(User).`
+2. **Type-check errors**: Typos caught before running by pyright, ty, and mypy
 3. **Refactoring safety**: Renaming a field updates all references
 
 ### Usage in InstanceEmit
 
 ``` {python}
 #| eval: false
-from etielle.core import field_of
-from etielle.instances import InstanceEmit, FieldSpec, PydanticBuilder
+from etielle import fields, InstanceEmit, FieldSpec, PydanticBuilder
 from etielle.transforms import get
 from pydantic import BaseModel
 
@@ -144,50 +145,39 @@ emit = InstanceEmit[User](
     table="users",
     join_keys=[get("id")],
     fields=[
-        FieldSpec(selector=field_of(User, lambda u: u.id), transform=get("id")),
-        FieldSpec(selector=field_of(User, lambda u: u.email), transform=get("email")),
+        FieldSpec(selector=fields(User).id, transform=get("id")),
+        FieldSpec(selector=fields(User).email, transform=get("email")),
     ],
     builder=PydanticBuilder(User),
 )
 ```
 
-### Constraints
+### Runtime Validation
 
-The `field_of()` function enforces:
-
-- Exactly one attribute access
-- No method calls
-- No indexing
-- No chained attributes
+At runtime, `fields()` validates that the accessed field exists in the model's annotations:
 
 ``` {python}
-from etielle.core import field_of
+from etielle import fields
 
 class Model:
     x: int
 
-# OK
-print(field_of(Model, lambda m: m.x))
+# OK - returns FieldRef("x")
+print(fields(Model).x)
 
-# Would raise ValueError: method call
+# Would raise AttributeError: Model has no field 'nonexistent'
 try:
-    field_of(Model, lambda m: m.x.__str__())
-except ValueError as e:
-    print(f"Error: {e}")
-
-# Would raise ValueError: chained access
-try:
-    field_of(Model, lambda m: m.x.real)
-except ValueError as e:
+    fields(Model).nonexistent
+except AttributeError as e:
     print(f"Error: {e}")
 ```
 
 ### When to Use What
 
-| Use `field_of()` selectors | Use string field names |
+| Use `fields()` selectors | Use string field names |
 |---------------------------|------------------------|
 | Pydantic models, dataclasses, typed classes | Plain dicts, dynamic data |
-| Using a type checker (mypy, pyright) | Prototyping quickly |
+| Using a type checker (mypy, pyright, ty) | Prototyping quickly |
 | Want IDE autocomplete | Field names computed at runtime |
 
 ## Common Debugging Scenarios
