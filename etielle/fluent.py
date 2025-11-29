@@ -412,6 +412,36 @@ class PipelineBuilder:
         self._relationships.append(relationship)
         return self
 
+    def load(self, session: Any) -> PipelineBuilder:
+        """Configure database session for persistence.
+
+        When load() is called before run(), the pipeline will:
+        1. Build all instances in memory
+        2. Bind relationships
+        3. Add instances to the session
+        4. Flush (but not commit)
+
+        The caller controls the transaction (commit/rollback).
+
+        Args:
+            session: SQLAlchemy/SQLModel session.
+
+        Returns:
+            Self for method chaining.
+
+        Example:
+            result = (
+                etl(data)
+                .goto("users").each()
+                .map_to(table=User, fields=[...])
+                .load(session)
+                .run()
+            )
+            session.commit()  # Caller controls transaction
+        """
+        self._session = session
+        return self
+
 
 def etl(*roots: Any, errors: ErrorMode = "collect") -> PipelineBuilder:
     """Entry point for fluent E→T→L pipelines.

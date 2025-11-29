@@ -558,3 +558,38 @@ class TestLinkTo:
         builder = etl({})
         with pytest.raises(ValueError, match="link_to.*map_to"):
             builder.link_to(User, by={"user_id": "id"})
+
+
+class TestLoad:
+    """Tests for load() session configuration."""
+
+    def test_load_returns_self(self):
+        """load() returns the builder for chaining."""
+        from etielle.fluent import etl
+
+        builder = etl({})
+        mock_session = object()
+        result = builder.load(mock_session)
+        assert result is builder
+
+    def test_load_stores_session(self):
+        """load() stores the session reference."""
+        from etielle.fluent import etl
+
+        builder = etl({})
+        mock_session = object()
+        builder.load(mock_session)
+        assert builder._session is mock_session
+
+    def test_load_can_be_chained_before_run(self):
+        """load() is typically chained before run()."""
+        from etielle.fluent import etl
+
+        builder = etl({})
+        mock_session = object()
+        # Should not raise
+        builder.goto("users").each().map_to(
+            table="users",
+            fields=[Field("name", get("name"))]
+        ).load(mock_session)
+        assert builder._session is mock_session
