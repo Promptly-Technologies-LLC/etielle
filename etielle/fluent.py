@@ -250,6 +250,7 @@ class PipelineBuilder:
         self._current_root_index: int = 0
         self._current_path: list[str] = []
         self._iteration_depth: int = 0
+        self._iteration_points: list[list[str]] = []
         # Accumulated specs
         self._emissions: list[dict[str, Any]] = []
         self._relationships: list[dict[str, Any]] = []
@@ -280,6 +281,7 @@ class PipelineBuilder:
         self._current_root_index = index
         self._current_path = []
         self._iteration_depth = 0
+        self._iteration_points = []
         return self
 
     def goto(self, path: str | list[str]) -> PipelineBuilder:
@@ -301,6 +303,26 @@ class PipelineBuilder:
         else:
             segments = list(path)
         self._current_path.extend(segments)
+        return self
+
+    def each(self) -> PipelineBuilder:
+        """Iterate over items at the current path.
+
+        For lists: iterates by index.
+        For dicts: iterates key-value pairs.
+
+        Can be chained for nested iteration.
+
+        Returns:
+            Self for method chaining.
+
+        Example:
+            .goto("users").each()           # Iterate list
+            .goto("userPosts").each().each() # Dict of lists
+        """
+        self._iteration_depth += 1
+        # Record where this iteration occurs
+        self._iteration_points.append(list(self._current_path))
         return self
 
 

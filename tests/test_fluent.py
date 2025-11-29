@@ -345,3 +345,49 @@ class TestGoto:
         builder.goto("posts")
         # Path continues from current position
         assert builder._current_path == ["users", "posts"]
+
+
+class TestEach:
+    """Tests for each() iteration marker."""
+
+    def test_each_returns_self(self):
+        """each() returns the builder for chaining."""
+        from etielle.fluent import etl
+
+        builder = etl({"items": []})
+        result = builder.goto("items").each()
+        assert result is builder
+
+    def test_each_increments_iteration_depth(self):
+        """each() increments iteration depth."""
+        from etielle.fluent import etl
+
+        builder = etl({})
+        assert builder._iteration_depth == 0
+        builder.goto("items").each()
+        assert builder._iteration_depth == 1
+
+    def test_each_chained_for_nested_iteration(self):
+        """Multiple each() calls for nested iteration."""
+        from etielle.fluent import etl
+
+        builder = etl({})
+        builder.goto("rows").each().each()
+        assert builder._iteration_depth == 2
+
+    def test_each_records_iteration_point(self):
+        """each() records the path where iteration occurs."""
+        from etielle.fluent import etl
+
+        builder = etl({})
+        builder.goto("users").each()
+        # Should record that iteration happens at ["users"]
+        assert builder._iteration_points == [["users"]]
+
+    def test_each_multiple_records_all_points(self):
+        """Multiple each() records all iteration points."""
+        from etielle.fluent import etl
+
+        builder = etl({})
+        builder.goto("users").each().goto("posts").each()
+        assert builder._iteration_points == [["users"], ["users", "posts"]]
