@@ -106,3 +106,19 @@ def transform(func: Callable[..., Any]) -> Callable[..., Transform[Any]]:
         return transform_fn
 
     return factory
+
+
+@transform
+def node(ctx: Context) -> Any:
+    """Return the current node value.
+
+    Useful when iterating and the node itself is the value you want.
+
+    Example:
+        # Data: {"ids": [1, 2, 3]}
+        .goto("ids").each()
+        .map_to(table=Item, fields=[
+            Field("id", node())
+        ])
+    """
+    return ctx.node

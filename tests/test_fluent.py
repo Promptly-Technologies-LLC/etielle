@@ -106,3 +106,23 @@ class TestTransformDecorator:
         t = split_field("composite_id", 0)
         ctx = Context(root={}, node={"composite_id": "user_123"}, path=(), parent=None, key=None, index=None, slots={})
         assert t(ctx) == "user"
+
+
+class TestNodeTransform:
+    """Tests for node() transform."""
+
+    def test_node_returns_current_node(self):
+        """node() returns the current context node."""
+        from etielle.fluent import node
+
+        t = node()
+        ctx = Context(root={}, node={"x": 1}, path=(), parent=None, key=None, index=None, slots={})
+        assert t(ctx) == {"x": 1}
+
+    def test_node_with_scalar(self):
+        """node() works with scalar values."""
+        from etielle.fluent import node
+
+        t = node()
+        ctx = Context(root={}, node=42, path=(), parent=None, key=None, index=None, slots={})
+        assert t(ctx) == 42
