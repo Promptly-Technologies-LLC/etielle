@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v2.3.1 (2025-11-29)
+
+### Bug Fixes
+
+- Export types
+  ([`e8d66d9`](https://github.com/Promptly-Technologies-LLC/etielle/commit/e8d66d9f174eb6193e69e4f52dfca86f0b1d57ad))
+
+
 ## v2.3.0 (2025-11-29)
 
 ### Documentation
