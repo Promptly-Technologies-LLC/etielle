@@ -119,9 +119,9 @@ print(sorted([(p.id, p.user.id if p.user else None) for p in results["posts"].in
 - Missing parents aggregate clear errors (optional raise).
 - No mutation of domain objects during key computation (keys stored in sidecar map).
 
-For a complete SQLAlchemy integration example with automatic flushing, see [SQLAlchemy adapter](sqlalchemy-adapter.qmd).
+For a complete SQLAlchemy integration example with automatic flushing, see [Database upserts](loading-data-into-a-database.qmd).
 
 ### See also
 
-- [SQLAlchemy adapter](sqlalchemy-adapter.qmd) - Full integration with SQLAlchemy ORM
-- [Instance emission](instance-emission.qmd) - Creating the instances that relationships link
+- [Database upserts](loading-data-into-a-database.qmd) - Full integration with SQLAlchemy/SQLModel ORM
+- [Emissions](emissions.qmd) - Creating the instances that relationships link

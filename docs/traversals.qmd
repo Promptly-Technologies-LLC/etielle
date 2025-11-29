@@ -1,0 +1,253 @@
+---
+title: "Traversals: Navigating JSON Structure"
+---
+
+**What you'll learn**: How to use `TraversalSpec` to navigate nested JSON structures and control iteration behavior.
+
+**ETL context**: Traversals are the **Extract** step—they tell etielle *where* to find data in your JSON and *how* to iterate through it.
+
+## What is a Traversal?
+
+A traversal defines a path through your JSON structure. Think of it as giving directions: "Start at the 'users' key, then loop through each item in that array."
+
+```python
+from etielle.core import TraversalSpec
+
+traversal = TraversalSpec(
+    path=["users"],  # Navigate to the "users" key
+    mode="auto",     # Automatically iterate (list → by index, dict → by key-value)
+    emits=[...],     # What to emit at each position (covered later)
+)
+```
+
+## Path Navigation
+
+The `path` parameter is a list of keys/indices that navigate to your target data:
+
+``` {python}
+#| eval: false
+# Simple path: data["users"]
+TraversalSpec(path=["users"])
+
+# Nested path: data["response"]["data"]["users"]
+TraversalSpec(path=["response", "data", "users"])
+
+# With index: data["pages"][0]["items"]
+TraversalSpec(path=["pages", 0, "items"])
+```
+
+## Iteration Modes
+
+The `mode` parameter controls how etielle iterates over the container at your path:
+
+| Mode | Behavior | Use case |
+|------|----------|----------|
+| `"auto"` | Detects container type: lists iterate by index, dicts iterate by key-value pairs | Default, works for most cases |
+| `"items"` | Iterates dict key-value pairs (like `dict.items()`) | When you need both key and value from a dict |
+| `"single"` | No iteration—treats the container as a single node | When you want the whole object, not its children |
+
+``` {python}
+from etielle.core import MappingSpec, TraversalSpec, TableEmit, Field
+from etielle.transforms import get, key
+from etielle.executor import run_mapping
+import json
+
+# Example: Iterating a dict by key-value pairs
+data = {
+    "settings": {
+        "theme": "dark",
+        "language": "en",
+        "notifications": "enabled"
+    }
+}
+
+traversal = TraversalSpec(
+    path=["settings"],
+    mode="items",  # Iterate key-value pairs
+    emits=[
+        TableEmit(
+            table="settings",
+            join_keys=[key()],  # Use the dict key as identifier
+            fields=[
+                Field("name", key()),      # "theme", "language", etc.
+                Field("value", get([])),   # "dark", "en", etc. (empty path = current node)
+            ]
+        )
+    ]
+)
+
+result = run_mapping(data, MappingSpec(traversals=[traversal]))
+print(json.dumps(list(result["settings"].instances.values()), indent=2))
+```
+
+## Nested Traversals with inner_path
+
+For parent-child relationships (users → posts, orders → items), use `inner_path`:
+
+``` {python}
+from etielle.core import MappingSpec, TraversalSpec, TableEmit, Field
+from etielle.transforms import get, get_from_parent
+from etielle.executor import run_mapping
+import json
+
+data = {
+    "users": [
+        {"id": "u1", "name": "Alice", "posts": [
+            {"id": "p1", "title": "Hello"},
+            {"id": "p2", "title": "World"}
+        ]},
+        {"id": "u2", "name": "Bob", "posts": []}
+    ]
+}
+
+# Outer traversal: iterate users
+# Inner traversal: for each user, iterate their posts
+posts_traversal = TraversalSpec(
+    path=["users"],          # First, go to users array
+    mode="auto",             # Iterate each user
+    inner_path=["posts"],    # Then, for each user, go to posts
+    inner_mode="auto",       # Iterate each post
+    emits=[
+        TableEmit(
+            table="posts",
+            join_keys=[get("id")],
+            fields=[
+                Field("id", get("id")),
+                Field("user_id", get_from_parent("id")),  # Link to parent user
+                Field("title", get("title"))
+            ]
+        )
+    ]
+)
+
+result = run_mapping(data, MappingSpec(traversals=[posts_traversal]))
+print(json.dumps(list(result["posts"].instances.values()), indent=2))
+```
+
+## Deep Nesting (Arbitrary Depth)
+
+Use longer `inner_path` lists for deeply nested structures. Use the `depth` parameter in `get_from_parent()` to access ancestors:
+
+``` {python}
+#| eval: false
+# servers → channels → messages → reactions (3 levels deep)
+TraversalSpec(
+    path=["servers"],
+    mode="auto",
+    inner_path=["channels", "messages", "reactions"],
+    inner_mode="auto",
+    emits=[
+        TableEmit(
+            table="reactions",
+            join_keys=[
+                get_from_parent("id", depth=3),  # server_id (great-grandparent)
+                get_from_parent("id", depth=2),  # channel_id (grandparent)
+                get_from_parent("id", depth=1),  # message_id (parent)
+                get("id")                         # reaction_id
+            ],
+            fields=[
+                Field("server_id", get_from_parent("id", depth=3)),
+                Field("channel_id", get_from_parent("id", depth=2)),
+                Field("message_id", get_from_parent("id", depth=1)),
+                Field("emoji", get("emoji"))
+            ]
+        )
+    ]
+)
+```
+
+## Multiple Traversals
+
+A `MappingSpec` can contain multiple traversals. They run independently:
+
+``` {python}
+from etielle.core import MappingSpec, TraversalSpec, TableEmit, Field
+from etielle.transforms import get
+from etielle.executor import run_mapping
+import json
+
+data = {
+    "users": [{"id": "u1", "name": "Alice"}],
+    "products": [{"id": "prod1", "name": "Widget"}]
+}
+
+spec = MappingSpec(traversals=[
+    TraversalSpec(
+        path=["users"],
+        mode="auto",
+        emits=[TableEmit(
+            table="users",
+            join_keys=[get("id")],
+            fields=[Field("id", get("id")), Field("name", get("name"))]
+        )]
+    ),
+    TraversalSpec(
+        path=["products"],
+        mode="auto",
+        emits=[TableEmit(
+            table="products",
+            join_keys=[get("id")],
+            fields=[Field("id", get("id")), Field("name", get("name"))]
+        )]
+    )
+])
+
+result = run_mapping(data, spec)
+print("Users:", list(result["users"].instances.values()))
+print("Products:", list(result["products"].instances.values()))
+```
+
+## Row Merging with join_keys
+
+When multiple traversals emit to the same table with matching `join_keys`, rows are merged:
+
+``` {python}
+from etielle.core import MappingSpec, TraversalSpec, TableEmit, Field
+from etielle.transforms import get
+from etielle.executor import run_mapping
+
+data = {
+    "users": [{"id": "u1", "name": "Alice"}],
+    "profiles": [{"user_id": "u1", "email": "alice@example.com"}]
+}
+
+spec = MappingSpec(traversals=[
+    TraversalSpec(
+        path=["users"],
+        mode="auto",
+        emits=[TableEmit(
+            table="users",
+            join_keys=[get("id")],  # Key: u1
+            fields=[Field("id", get("id")), Field("name", get("name"))]
+        )]
+    ),
+    TraversalSpec(
+        path=["profiles"],
+        mode="auto",
+        emits=[TableEmit(
+            table="users",  # Same table!
+            join_keys=[get("user_id")],  # Key: u1 (matches above)
+            fields=[Field("email", get("email"))]
+        )]
+    )
+])
+
+result = run_mapping(data, spec)
+user = list(result["users"].instances.values())[0]
+print(user)  # {"id": "u1", "name": "Alice", "email": "alice@example.com"}
+```
+
+## TraversalSpec Reference
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `path` | `list[str, int]` | Path segments to navigate to the target container |
+| `mode` | `"auto"`, `"items"`, `"single"` | How to iterate the outer container (default: `"auto"`) |
+| `inner_path` | `list[str, int]` | Optional nested path for parent-child traversals |
+| `inner_mode` | `"auto"`, `"items"`, `"single"` | How to iterate the inner container (default: `"auto"`) |
+| `emits` | `list[TableEmit, InstanceEmit]` | What to emit at each iteration position |
+
+## See also
+
+- [Transforms](transforms.qmd) - Extracting values from each traversal position
+- [Emissions](emissions.qmd) - Defining output structure (TableEmit, InstanceEmit)
