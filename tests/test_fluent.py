@@ -676,3 +676,60 @@ class TestRunBasic:
         )
         posts = result.tables["posts"]
         assert len(posts) == 2
+
+
+class TestRunMerging:
+    """Tests for run() with row merging."""
+
+    def test_merge_rows_same_traversal_different_paths(self):
+        """Rows from different paths merge by join key."""
+        from etielle.fluent import etl
+
+        data = {
+            "users": [{"id": 1, "name": "Alice"}],
+            "emails": [{"user_id": 1, "email": "alice@example.com"}]
+        }
+        result = (
+            etl(data)
+            .goto("users").each()
+            .map_to(table="users", fields=[
+                Field("name", get("name")),
+                TempField("id", get("id"))
+            ])
+            .goto_root()
+            .goto("emails").each()
+            .map_to(table="users", join_on=["id"], fields=[
+                Field("email", get("email")),
+                TempField("id", get("user_id"))
+            ])
+            .run()
+        )
+        users = result.tables["users"]
+        assert len(users) == 1
+        user = users[(1,)]
+        assert user["name"] == "Alice"
+        assert user["email"] == "alice@example.com"
+
+    def test_merge_with_policy(self):
+        """Merge policies apply when combining rows."""
+        from etielle.fluent import etl
+        from etielle.instances import AddPolicy
+
+        data = {
+            "sales": [
+                {"product": "A", "amount": 100},
+                {"product": "A", "amount": 50}
+            ]
+        }
+        result = (
+            etl(data)
+            .goto("sales").each()
+            .map_to(table="sales", fields=[
+                Field("total", get("amount"), merge=AddPolicy()),
+                TempField("product", get("product"))
+            ])
+            .run()
+        )
+        sales = result.tables["sales"]
+        assert len(sales) == 1
+        assert sales[("A",)]["total"] == 150

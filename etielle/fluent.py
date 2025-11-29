@@ -457,6 +457,7 @@ class PipelineBuilder:
             # Build fields and join_keys from Field/TempField
             fields = []
             join_keys = []
+            merge_policies = {}
             field_map = {f.name: f.transform for f in emission["fields"]}
 
             # If join_on specified, use those field names to build join_keys
@@ -468,6 +469,8 @@ class PipelineBuilder:
                 for f in emission["fields"]:
                     if isinstance(f, Field) and f.name not in emission["join_on"]:
                         fields.append(CoreField(f.name, f.transform))
+                        if f.merge is not None:
+                            merge_policies[f.name] = f.merge
             else:
                 # No explicit join_on - use TempField/Field distinction
                 for f in emission["fields"]:
@@ -477,6 +480,8 @@ class PipelineBuilder:
                     else:
                         # Regular Fields go to output
                         fields.append(CoreField(f.name, f.transform))
+                        if f.merge is not None:
+                            merge_policies[f.name] = f.merge
 
             # Handle outer/inner path split based on iteration points
             if len(iteration_points) == 0:
@@ -503,11 +508,28 @@ class PipelineBuilder:
                 inner_path = remaining_path if remaining_path else None
                 inner_mode = "auto"
 
-            table_emit = TableEmit(
-                table=emission["table"],
-                join_keys=tuple(join_keys) if join_keys else (literal(None),),
-                fields=tuple(fields)
-            )
+            # Choose emit type based on whether we need merge policies
+            if merge_policies:
+                # Use InstanceEmit with TypedDictBuilder for merge policy support
+                from etielle.instances import InstanceEmit, FieldSpec, TypedDictBuilder
+
+                # Convert CoreField to FieldSpec
+                field_specs = [FieldSpec(selector=f.name, transform=f.transform) for f in fields]
+
+                table_emit = InstanceEmit(
+                    table=emission["table"],
+                    join_keys=tuple(join_keys) if join_keys else (literal(None),),
+                    fields=tuple(field_specs),
+                    builder=TypedDictBuilder(lambda d: d),
+                    policies=merge_policies
+                )
+            else:
+                # Use simpler TableEmit when no merge policies needed
+                table_emit = TableEmit(
+                    table=emission["table"],
+                    join_keys=tuple(join_keys) if join_keys else (literal(None),),
+                    fields=tuple(fields)
+                )
 
             spec = TraversalSpec(
                 path=tuple(outer_path),
