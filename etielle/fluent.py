@@ -546,6 +546,11 @@ class PipelineBuilder:
             table_class = emission["table_class"]
             builder = _detect_builder(table_class)
 
+            # Determine error mode (emission can override pipeline level)
+            error_mode = emission.get("errors") or self._error_mode
+            # Map to strict_mode parameter
+            strict_mode = "fail_fast" if error_mode == "fail_fast" else "collect_all"
+
             if builder or merge_policies:
                 # Use InstanceEmit with appropriate builder
                 from etielle.instances import InstanceEmit, FieldSpec
@@ -563,7 +568,8 @@ class PipelineBuilder:
                     join_keys=tuple(join_keys) if join_keys else (literal(None),),
                     fields=tuple(field_specs),
                     builder=builder,
-                    policies=merge_policies
+                    policies=merge_policies,
+                    strict_mode=strict_mode
                 )
             else:
                 # Use simpler TableEmit when no model class or merge policies needed
@@ -722,6 +728,14 @@ class PipelineBuilder:
         for emission in self._emissions:
             if emission["table_class"]:
                 table_class_map[emission["table"]] = emission["table_class"]
+
+        # Check if we should fail fast on errors
+        if self._error_mode == "fail_fast" and errors:
+            # Raise an exception with details about the first error
+            for table_name, table_errors in errors.items():
+                for key, msgs in table_errors.items():
+                    error_msg = f"Validation failed for table '{table_name}' key {key}:\n" + "\n".join(msgs)
+                    raise ValueError(error_msg)
 
         # If session provided, add instances and flush
         if self._session is not None:

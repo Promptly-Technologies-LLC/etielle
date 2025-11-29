@@ -888,3 +888,72 @@ class TestMultipleRoots:
         user = users[(1,)]
         assert user["name"] == "Alice"
         assert user["bio"] == "Hello"
+
+
+class TestErrorHandling:
+    """Tests for error handling modes."""
+
+    def test_collect_errors_continues_processing(self):
+        """errors='collect' continues after validation errors."""
+        from pydantic import BaseModel
+        from etielle.fluent import etl
+
+        class StrictUser(BaseModel):
+            name: str
+            age: int
+
+        # Set __tablename__ to match expected table name
+        StrictUser.__tablename__ = "strictuser"
+
+        data = {"users": [
+            {"name": "Alice", "age": 30, "id": 1},
+            {"name": "Bob", "age": "not a number", "id": 2},  # Invalid
+            {"name": "Carol", "age": 25, "id": 3}
+        ]}
+
+        result = (
+            etl(data, errors="collect")
+            .goto("users").each()
+            .map_to(table=StrictUser, fields=[
+                Field("name", get("name")),
+                Field("age", get("age")),
+                TempField("id", get("id"))
+            ])
+            .run()
+        )
+
+        # Should have 2 valid users
+        users = result.tables[StrictUser]
+        assert len(users) == 2
+
+        # Should have 1 error
+        assert "strictuser" in result.errors or "StrictUser" in result.errors
+
+    def test_fail_fast_stops_on_first_error(self):
+        """errors='fail_fast' raises on first error."""
+        from pydantic import BaseModel
+        from etielle.fluent import etl
+
+        class StrictUser(BaseModel):
+            name: str
+            age: int
+
+        # Set __tablename__ to match expected table name
+        StrictUser.__tablename__ = "strictuser"
+
+        data = {"users": [
+            {"name": "Alice", "age": "invalid", "id": 1},
+            {"name": "Bob", "age": 30, "id": 2}
+        ]}
+
+        with pytest.raises(Exception):  # Specific exception TBD
+            (
+                etl(data, errors="fail_fast")
+                .goto("users").each()
+                .map_to(table=StrictUser, fields=[
+                    Field("name", get("name")),
+                    Field("age", get("age")),
+                    TempField("id", get("id"))
+                ])
+                .run()
+            )
