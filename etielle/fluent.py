@@ -372,6 +372,46 @@ class PipelineBuilder:
         self._emissions.append(emission)
         return self
 
+    def link_to(
+        self,
+        parent: type,
+        by: dict[str, str]
+    ) -> PipelineBuilder:
+        """Define a relationship from the current table to a parent table.
+
+        The `by` dict maps child field names to parent field names.
+        Both Field and TempField names can be used.
+
+        Args:
+            parent: The parent model class.
+            by: Mapping of {child_field: parent_field}.
+
+        Returns:
+            Self for method chaining.
+
+        Raises:
+            ValueError: If called without a preceding map_to().
+
+        Example:
+            .map_to(table=Post, fields=[
+                TempField("user_id", get("author_id"))
+            ])
+            .link_to(User, by={"user_id": "id"})
+        """
+        if not self._emissions:
+            raise ValueError("link_to() must follow a map_to() call")
+
+        last_emission = self._emissions[-1]
+        relationship = {
+            "child_table": last_emission["table"],
+            "parent_class": parent,
+            "parent_table": getattr(parent, "__tablename__", parent.__name__.lower()),
+            "by": dict(by),
+            "emission_index": len(self._emissions) - 1,
+        }
+        self._relationships.append(relationship)
+        return self
+
 
 def etl(*roots: Any, errors: ErrorMode = "collect") -> PipelineBuilder:
     """Entry point for fluent E→T→L pipelines.

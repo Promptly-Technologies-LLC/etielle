@@ -475,3 +475,86 @@ class TestMapTo:
         )
         emission = builder._emissions[0]
         assert emission["errors"] == "fail_fast"
+
+
+class TestLinkTo:
+    """Tests for link_to() relationship definition."""
+
+    def test_link_to_returns_self(self):
+        """link_to() returns the builder for chaining."""
+        from etielle.fluent import etl
+
+        class User:
+            __tablename__ = "users"
+
+        builder = etl({})
+        builder.goto("posts").each().map_to(
+            table="posts",
+            fields=[Field("title", get("title")), TempField("user_id", get("user_id"))]
+        )
+        result = builder.link_to(User, by={"user_id": "id"})
+        assert result is builder
+
+    def test_link_to_records_relationship(self):
+        """link_to() records the relationship spec."""
+        from etielle.fluent import etl
+
+        class User:
+            __tablename__ = "users"
+
+        builder = etl({})
+        builder.goto("posts").each().map_to(
+            table="posts",
+            fields=[TempField("user_id", get("user_id"))]
+        )
+        builder.link_to(User, by={"user_id": "id"})
+
+        assert len(builder._relationships) == 1
+        rel = builder._relationships[0]
+        assert rel["parent_class"] is User
+        assert rel["by"] == {"user_id": "id"}
+
+    def test_link_to_multiple_parents(self):
+        """Multiple link_to() calls for multiple parents."""
+        from etielle.fluent import etl
+
+        class User:
+            __tablename__ = "users"
+        class Post:
+            __tablename__ = "posts"
+
+        builder = etl({})
+        builder.goto("comments").each().map_to(
+            table="comments",
+            fields=[TempField("user_id", get("uid")), TempField("post_id", get("pid"))]
+        )
+        builder.link_to(User, by={"user_id": "id"})
+        builder.link_to(Post, by={"post_id": "id"})
+
+        assert len(builder._relationships) == 2
+
+    def test_link_to_associates_with_last_emission(self):
+        """link_to() associates with the most recent map_to()."""
+        from etielle.fluent import etl
+
+        class User:
+            __tablename__ = "users"
+
+        builder = etl({})
+        builder.goto("users").each().map_to(table="users", fields=[])
+        builder.goto("posts").each().map_to(table="posts", fields=[TempField("user_id", get("uid"))])
+        builder.link_to(User, by={"user_id": "id"})
+
+        rel = builder._relationships[0]
+        assert rel["child_table"] == "posts"
+
+    def test_link_to_without_map_to_raises(self):
+        """link_to() without preceding map_to() raises."""
+        from etielle.fluent import etl
+
+        class User:
+            __tablename__ = "users"
+
+        builder = etl({})
+        with pytest.raises(ValueError, match="link_to.*map_to"):
+            builder.link_to(User, by={"user_id": "id"})
