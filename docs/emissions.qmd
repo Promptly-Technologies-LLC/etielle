@@ -61,9 +61,8 @@ Use `InstanceEmit` when you want:
 - **ORM integration**: Create database objects directly
 
 ``` {python}
-from etielle.core import MappingSpec, TraversalSpec, field_of
+from etielle import MappingSpec, TraversalSpec, fields, InstanceEmit, FieldSpec, PydanticBuilder
 from etielle.transforms import get
-from etielle.instances import InstanceEmit, FieldSpec, PydanticBuilder
 from etielle.executor import run_mapping
 from pydantic import BaseModel
 
@@ -82,8 +81,8 @@ spec = MappingSpec(traversals=[
             join_keys=[get("id")],
             builder=PydanticBuilder(User),
             fields=[
-                FieldSpec(selector=field_of(User, lambda u: u.id), transform=get("id")),
-                FieldSpec(selector=field_of(User, lambda u: u.email), transform=get("email")),
+                FieldSpec(selector=fields(User).id, transform=get("id")),
+                FieldSpec(selector=fields(User).email, transform=get("email")),
             ]
         )]
     )
@@ -248,9 +247,8 @@ print(f"login_count: {user.login_count}")  # 2 (1 + 1)
 ### Example: Collecting Tags with AppendPolicy
 
 ``` {python}
-from etielle.instances import InstanceEmit, FieldSpec, PydanticBuilder, AppendPolicy
+from etielle import MappingSpec, TraversalSpec, fields, InstanceEmit, FieldSpec, PydanticBuilder, AppendPolicy
 from etielle.transforms import get, literal
-from etielle.core import MappingSpec, TraversalSpec, field_of
 from etielle.executor import run_mapping
 from pydantic import BaseModel
 
@@ -262,8 +260,8 @@ emit1 = InstanceEmit[User](
     table="users",
     join_keys=[get("id")],
     fields=[
-        FieldSpec(selector=field_of(User, lambda u: u.id), transform=get("id")),
-        FieldSpec(selector=field_of(User, lambda u: u.tags), transform=literal("verified")),
+        FieldSpec(selector=fields(User).id, transform=get("id")),
+        FieldSpec(selector=fields(User).tags, transform=literal("verified")),
     ],
     builder=PydanticBuilder(User),
     policies={"tags": AppendPolicy()},
@@ -273,7 +271,7 @@ emit2 = InstanceEmit[User](
     table="users",
     join_keys=[get("id")],
     fields=[
-        FieldSpec(selector=field_of(User, lambda u: u.tags), transform=literal("premium")),
+        FieldSpec(selector=fields(User).tags, transform=literal("premium")),
     ],
     builder=PydanticBuilder(User),
     policies={"tags": AppendPolicy()},
@@ -292,28 +290,28 @@ print(f"tags: {user.tags}")  # ["verified", "premium"]
 
 ## Type-Safe Field Selectors
 
-Use `field_of()` for type-checked field references:
+Use `fields()` for type-checked field references:
 
 ```python
-from etielle.core import field_of
+from etielle import fields
 
 class User:
     id: str
     email: str
 
 # Type-safe: IDE autocomplete, typos caught at type-check time
-field_of(User, lambda u: u.email)  # Returns "email"
+fields(User).email  # Returns FieldRef("email")
 
 # Typo would be caught by type checker:
-# field_of(User, lambda u: u.emial)  # Error!
+# fields(User).emial  # Error!
 ```
 
 When to use field selectors vs strings:
 
-| Use `field_of()` when... | Use strings when... |
-|--------------------------|---------------------|
+| Use `fields()` when... | Use strings when... |
+|------------------------|---------------------|
 | Working with typed models | Working with plain dicts |
-| Using a type checker | Prototyping quickly |
+| Using a type checker (pyright, ty, mypy) | Prototyping quickly |
 | Want IDE autocomplete | Field names are dynamic |
 
 ## InstanceEmit Reference
