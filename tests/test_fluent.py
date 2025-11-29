@@ -1,7 +1,7 @@
 """Tests for the fluent E→T→L API."""
 
 import pytest
-from etielle.fluent import Field, TempField
+from etielle.fluent import Field, TempField, FieldUnion
 from etielle.transforms import get, literal
 
 
@@ -53,3 +53,17 @@ class TestTempField:
         field = Field("name", get("name"))
         temp = TempField("id", get("id"))
         assert type(field) is not type(temp)
+
+
+class TestFieldUnion:
+    """Tests for FieldUnion type alias."""
+
+    def test_field_is_fieldunion(self):
+        """Field is a valid FieldUnion."""
+        field: FieldUnion = Field("name", get("name"))
+        assert isinstance(field, (Field, TempField))
+
+    def test_tempfield_is_fieldunion(self):
+        """TempField is a valid FieldUnion."""
+        field: FieldUnion = TempField("id", get("id"))
+        assert isinstance(field, (Field, TempField))

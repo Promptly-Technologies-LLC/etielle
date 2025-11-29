@@ -57,3 +57,7 @@ class TempField:
 
     name: str
     transform: Transform[Any]
+
+
+FieldUnion = Field | TempField
+"""Type alias for fields that can appear in map_to()."""
