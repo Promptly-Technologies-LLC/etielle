@@ -282,6 +282,27 @@ class PipelineBuilder:
         self._iteration_depth = 0
         return self
 
+    def goto(self, path: str | list[str]) -> PipelineBuilder:
+        """Navigate to a relative path from the current position.
+
+        Args:
+            path: Path segments as string (dot-separated) or list.
+
+        Returns:
+            Self for method chaining.
+
+        Example:
+            .goto("users")           # Single segment
+            .goto("data.users")      # Dot notation
+            .goto(["data", "users"]) # List of segments
+        """
+        if isinstance(path, str):
+            segments = path.split(".") if "." in path else [path]
+        else:
+            segments = list(path)
+        self._current_path.extend(segments)
+        return self
+
 
 def etl(*roots: Any, errors: ErrorMode = "collect") -> PipelineBuilder:
     """Entry point for fluent E→T→L pipelines.

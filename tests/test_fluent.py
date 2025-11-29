@@ -290,3 +290,58 @@ class TestGotoRoot:
         builder = etl({"a": 1})
         with pytest.raises(IndexError, match="Root index 5 out of range"):
             builder.goto_root(5)
+
+
+class TestGoto:
+    """Tests for goto() navigation."""
+
+    def test_goto_returns_self(self):
+        """goto() returns the builder for chaining."""
+        from etielle.fluent import etl
+
+        builder = etl({"users": []})
+        result = builder.goto("users")
+        assert result is builder
+
+    def test_goto_string_path(self):
+        """goto() with string adds to path."""
+        from etielle.fluent import etl
+
+        builder = etl({})
+        builder.goto("users")
+        assert builder._current_path == ["users"]
+
+    def test_goto_chained(self):
+        """Multiple goto() calls accumulate path."""
+        from etielle.fluent import etl
+
+        builder = etl({})
+        builder.goto("data").goto("users")
+        assert builder._current_path == ["data", "users"]
+
+    def test_goto_list_path(self):
+        """goto() with list adds all segments."""
+        from etielle.fluent import etl
+
+        builder = etl({})
+        builder.goto(["data", "users"])
+        assert builder._current_path == ["data", "users"]
+
+    def test_goto_dot_notation(self):
+        """goto() with dot notation splits path."""
+        from etielle.fluent import etl
+
+        builder = etl({})
+        builder.goto("data.users.active")
+        assert builder._current_path == ["data", "users", "active"]
+
+    def test_goto_after_each_resets_iteration(self):
+        """goto() after each() starts fresh inner path."""
+        from etielle.fluent import etl
+
+        builder = etl({})
+        builder.goto("users")
+        builder._iteration_depth = 1  # Simulating each() was called
+        builder.goto("posts")
+        # Path continues from current position
+        assert builder._current_path == ["users", "posts"]
