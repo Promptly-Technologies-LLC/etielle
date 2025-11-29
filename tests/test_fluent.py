@@ -126,3 +126,36 @@ class TestNodeTransform:
         t = node()
         ctx = Context(root={}, node=42, path=(), parent=None, key=None, index=None, slots={})
         assert t(ctx) == 42
+
+
+class TestParentIndexTransform:
+    """Tests for parent_index() transform."""
+
+    def test_parent_index_depth_1(self):
+        """parent_index() returns parent's list index."""
+        from etielle.fluent import parent_index
+
+        parent_ctx = Context(root={}, node=[1, 2], path=("items",), parent=None, key=None, index=0, slots={})
+        child_ctx = Context(root={}, node=1, path=("items", 0), parent=parent_ctx, key=None, index=None, slots={})
+
+        t = parent_index()
+        assert t(child_ctx) == 0
+
+    def test_parent_index_depth_2(self):
+        """parent_index(depth=2) returns grandparent's index."""
+        from etielle.fluent import parent_index
+
+        grandparent = Context(root={}, node=[], path=("a",), parent=None, key=None, index=1, slots={})
+        parent = Context(root={}, node=[], path=("a", 1), parent=grandparent, key=None, index=None, slots={})
+        child = Context(root={}, node={}, path=("a", 1, "b"), parent=parent, key=None, index=None, slots={})
+
+        t = parent_index(depth=2)
+        assert t(child) == 1
+
+    def test_parent_index_none_when_no_parent(self):
+        """parent_index() returns None if no parent exists."""
+        from etielle.fluent import parent_index
+
+        ctx = Context(root={}, node={}, path=(), parent=None, key=None, index=None, slots={})
+        t = parent_index()
+        assert t(ctx) is None
