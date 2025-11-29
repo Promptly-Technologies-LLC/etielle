@@ -75,7 +75,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link href="../site_libs/quarto-html/quarto-syntax-highlighting-587c61ba64f3a5504c4d52d930310e48.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../site_libs/bootstrap/bootstrap-0b37c64f34216b628666a8dac638b53b.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="../site_libs/bootstrap/bootstrap-320e1ef9edb861ce49b497581fe021d4.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -107,7 +107,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 </head>
 
-<body class="nav-sidebar floating nav-fixed quarto-light">
+<body class="nav-sidebar docked nav-fixed quarto-light">
 
 <div id="quarto-search-results"></div>
   <header id="quarto-header" class="headroom fixed-top">
@@ -140,7 +140,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
         <i class="bi bi-layout-text-sidebar-reverse"></i>
       </button>
-        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item">Introduction to ETL</li></ol></nav>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../docs/introduction-to-etl.html">Introduction to ETL</a></li></ol></nav>
         <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
         </a>
     </div>
@@ -149,7 +149,59 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <!-- content -->
 <div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
 <!-- sidebar -->
-  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation docked overflow-auto">
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Quickstart</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../docs/introduction-to-etl.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">Introduction to ETL</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../docs/traversals.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Traversals</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../docs/transforms.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Transforms</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../docs/emissions.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Emissions</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../docs/relationships.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Relationships</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../docs/loading-data-into-a-database.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Database upserts</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../docs/developing-with-etielle.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Developing with etielle</span></a>
+  </div>
+</li>
+    </ul>
+    </div>
 </nav>
 <div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
 <!-- margin-sidebar -->
@@ -259,7 +311,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>    emits<span class="op">=</span>[...]  <span class="co"># What to do with each commit</span></span>
 <span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p><strong>Key concept</strong>: Traversals tell <code>etielle</code> <em>where</em> to go in the JSON and <em>how</em> to iterate through it. They handle the <strong>Extract</strong> step.</p>
-<p>Learn more: <a href="traversals.qmd">Traversals</a></p>
+<p>Learn more: <a href="../docs/traversals.html">Traversals</a></p>
 </section>
 <section id="transform-reshape-data-in-memory" class="level3">
 <h3 class="anchored" data-anchor-id="transform-reshape-data-in-memory">2. Transform: Reshape data in memory</h3>
@@ -276,7 +328,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p># Transform: Define a many-to-one relationship relationship = ManyToOneSpec( child_table=“commits”, parent_table=“repositories”, # attribute name on the child instance that references the parent instance attr=“repository”, child_to_parent_key=[ # transform to get the parent’s join_key from the child item’s context get(“repository_id”) ], required=True ) ```</p></li>
 </ol>
 <p><strong>Key concept</strong>: Transforms, emissions, and relationships are all done in-memory, before database persistence. Although shown separately above, transforms, emissions, and relationship linking are typically combined into a mapping that runs all at once.</p>
-<p>Learn more: <a href="transforms.qmd">Transforms</a>, <a href="emissions.qmd">Emissions</a>, <a href="../docs/relationships.html">Relationships</a></p>
+<p>Learn more: <a href="../docs/transforms.html">Transforms</a>, <a href="../docs/emissions.html">Emissions</a>, <a href="../docs/relationships.html">Relationships</a></p>
 </section>
 <section id="load-persist-to-database" class="level3">
 <h3 class="anchored" data-anchor-id="load-persist-to-database">3. Load: Persist to database</h3>
@@ -287,7 +339,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Load: Write data to the database</span></span>
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>flush_to_db(session, mapping_results)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p><strong>Key concept</strong>: The <strong>Load</strong> step is optional and happens via database adapters. Without this step, <code>etielle</code> just transforms JSON to in-memory Python objects.</p>
-<p>Learn more: <a href="loading-data-into-a-database.qmd">Database upserts</a>, <a href="../docs/sqlalchemy-adapter.html">SQLAlchemy adapter</a></p>
+<p>Learn more: <a href="../docs/loading-data-into-a-database.html">Database upserts</a></p>
 <hr>
 <p><strong>The full ETL flow with <code>etielle</code></strong>:</p>
 <ol type="1">
@@ -311,7 +363,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    inner_path<span class="op">=</span>[<span class="st">"posts"</span>],     <span class="co"># Extract: Then go here</span></span>
 <span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    mode<span class="op">=</span><span class="st">"auto"</span>,              <span class="co"># Extract: How to iterate</span></span>
 <span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>Learn more: <a href="traversals.qmd">Traversals</a></p>
+<p>Learn more: <a href="../docs/traversals.html">Traversals</a></p>
 </section>
 <section id="transform-transforms-emissions-and-relationships" class="level3">
 <h3 class="anchored" data-anchor-id="transform-transforms-emissions-and-relationships">2. Transform: Transforms, Emissions, and Relationships</h3>
@@ -330,7 +382,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    join_keys<span class="op">=</span>[get(<span class="st">"id"</span>)],</span>
 <span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>    fields<span class="op">=</span>[Field(<span class="st">"id"</span>, get(<span class="st">"id"</span>)), Field(<span class="st">"name"</span>, get(<span class="st">"name"</span>))]</span>
 <span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>Learn more: <a href="transforms.qmd">Transforms</a>, <a href="emissions.qmd">Emissions</a>, <a href="../docs/relationships.html">Relationships</a></p>
+<p>Learn more: <a href="../docs/transforms.html">Transforms</a>, <a href="../docs/emissions.html">Emissions</a>, <a href="../docs/relationships.html">Relationships</a></p>
 </section>
 <section id="load-database-adapters" class="level3">
 <h3 class="anchored" data-anchor-id="load-database-adapters">3. Load: Database Adapters</h3>
@@ -342,7 +394,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Load: Persist to database</span></span>
 <span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>flush_to_db(session, mapping_results)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p><strong>Note</strong>: This step is optional! You can use <code>etielle</code> just for in-memory JSON transformation without database persistence.</p>
-<p>Learn more: <a href="loading-data-into-a-database.qmd">Database upserts</a>, <a href="../docs/sqlalchemy-adapter.html">SQLAlchemy adapter</a></p>
+<p>Learn more: <a href="../docs/loading-data-into-a-database.html">Database upserts</a></p>
 </section>
 </section>
 <section id="next-steps" class="level2">
@@ -350,11 +402,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>Now that you understand ETL and how <code>etielle</code> implements each step, you’re ready to dive deeper:</p>
 <ol type="1">
 <li><strong><a href="../index.html">Quickstart</a></strong> - Jump straight into using <code>etielle</code> with a complete example</li>
-<li><strong><a href="traversals.qmd">Traversals</a></strong> - Master the <strong>Extract</strong> step: navigate nested JSON</li>
-<li><strong><a href="transforms.qmd">Transforms</a></strong> - Master the <strong>Transform</strong> step: field-level data extraction and reshaping</li>
-<li><strong><a href="emissions.qmd">Emissions</a></strong> - Master the <strong>Transform</strong> step: table-level structure definition</li>
+<li><strong><a href="../docs/traversals.html">Traversals</a></strong> - Master the <strong>Extract</strong> step: navigate nested JSON</li>
+<li><strong><a href="../docs/transforms.html">Transforms</a></strong> - Master the <strong>Transform</strong> step: field-level data extraction and reshaping</li>
+<li><strong><a href="../docs/emissions.html">Emissions</a></strong> - Master the <strong>Transform</strong> step: table-level structure definition</li>
 <li><strong><a href="../docs/relationships.html">Relationships</a></strong> - Master the <strong>Transform</strong> step: link records together</li>
-<li><strong><a href="loading-data-into-a-database.qmd">Database upserts</a></strong> - Master the <strong>Load</strong> step: persist to database</li>
+<li><strong><a href="../docs/loading-data-into-a-database.html">Database upserts</a></strong> - Master the <strong>Load</strong> step: persist to database</li>
 </ol>
 
 

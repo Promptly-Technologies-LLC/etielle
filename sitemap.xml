@@ -1,39 +1,39 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://Promptly-Technologies-LLC.github.io/etielle/docs/sqlalchemy-adapter.html</loc>
-    <lastmod>2025-11-25T22:30:08.584Z</lastmod>
+    <loc>https://Promptly-Technologies-LLC.github.io/etielle/docs/introduction-to-etl.html</loc>
+    <lastmod>2025-11-29T00:50:43.805Z</lastmod>
   </url>
   <url>
-    <loc>https://Promptly-Technologies-LLC.github.io/etielle/docs/merge-policies.html</loc>
-    <lastmod>2025-11-25T22:30:08.584Z</lastmod>
-  </url>
-  <url>
-    <loc>https://Promptly-Technologies-LLC.github.io/etielle/docs/instance-emission.html</loc>
-    <lastmod>2025-11-25T22:30:08.583Z</lastmod>
+    <loc>https://Promptly-Technologies-LLC.github.io/etielle/docs/emissions.html</loc>
+    <lastmod>2025-11-29T00:50:43.805Z</lastmod>
   </url>
   <url>
     <loc>https://Promptly-Technologies-LLC.github.io/etielle/docs/relationships.html</loc>
-    <lastmod>2025-11-25T22:30:08.584Z</lastmod>
+    <lastmod>2025-11-29T00:50:43.805Z</lastmod>
+  </url>
+  <url>
+    <loc>https://Promptly-Technologies-LLC.github.io/etielle/docs/traversals.html</loc>
+    <lastmod>2025-11-29T00:50:43.805Z</lastmod>
   </url>
   <url>
     <loc>https://Promptly-Technologies-LLC.github.io/etielle/CHANGELOG.html</loc>
-    <lastmod>2025-11-25T22:30:08.583Z</lastmod>
+    <lastmod>2025-11-29T00:50:43.805Z</lastmod>
   </url>
   <url>
     <loc>https://Promptly-Technologies-LLC.github.io/etielle/index.html</loc>
-    <lastmod>2025-11-25T22:30:08.584Z</lastmod>
+    <lastmod>2025-11-29T00:50:43.806Z</lastmod>
   </url>
   <url>
-    <loc>https://Promptly-Technologies-LLC.github.io/etielle/docs/error-reporting.html</loc>
-    <lastmod>2025-11-25T22:30:08.583Z</lastmod>
+    <loc>https://Promptly-Technologies-LLC.github.io/etielle/docs/loading-data-into-a-database.html</loc>
+    <lastmod>2025-11-29T00:50:43.805Z</lastmod>
   </url>
   <url>
-    <loc>https://Promptly-Technologies-LLC.github.io/etielle/docs/field-selectors.html</loc>
-    <lastmod>2025-11-25T22:30:08.583Z</lastmod>
+    <loc>https://Promptly-Technologies-LLC.github.io/etielle/docs/transforms.html</loc>
+    <lastmod>2025-11-29T00:50:43.805Z</lastmod>
   </url>
   <url>
-    <loc>https://Promptly-Technologies-LLC.github.io/etielle/docs/introduction-to-etl.html</loc>
-    <lastmod>2025-11-25T22:30:08.584Z</lastmod>
+    <loc>https://Promptly-Technologies-LLC.github.io/etielle/docs/developing-with-etielle.html</loc>
+    <lastmod>2025-11-29T00:50:43.805Z</lastmod>
   </url>
 </urlset>
