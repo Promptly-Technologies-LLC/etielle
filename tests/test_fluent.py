@@ -159,3 +159,48 @@ class TestParentIndexTransform:
         ctx = Context(root={}, node={}, path=(), parent=None, key=None, index=None, slots={})
         t = parent_index()
         assert t(ctx) is None
+
+
+class TestPipelineResult:
+    """Tests for PipelineResult dataclass."""
+
+    def test_tables_access_by_string(self):
+        """Can access tables by string name."""
+        from etielle.fluent import PipelineResult
+
+        result = PipelineResult(
+            tables={"users": {(1,): {"id": 1, "name": "Alice"}}},
+            errors={}
+        )
+        assert result.tables["users"] == {(1,): {"id": 1, "name": "Alice"}}
+
+    def test_tables_access_by_class(self):
+        """Can access tables by model class."""
+        from etielle.fluent import PipelineResult
+
+        class User:
+            __tablename__ = "users"
+
+        result = PipelineResult(
+            tables={"users": {(1,): {"id": 1}}},
+            errors={},
+            _table_class_map={"users": User}
+        )
+        assert result.tables[User] == {(1,): {"id": 1}}
+
+    def test_errors_empty_by_default(self):
+        """Errors dict is empty when no errors."""
+        from etielle.fluent import PipelineResult
+
+        result = PipelineResult(tables={}, errors={})
+        assert result.errors == {}
+
+    def test_errors_structure(self):
+        """Errors are keyed by table then row key."""
+        from etielle.fluent import PipelineResult
+
+        result = PipelineResult(
+            tables={},
+            errors={"users": {(1,): ["Field 'email' is required"]}}
+        )
+        assert result.errors["users"][(1,)] == ["Field 'email' is required"]

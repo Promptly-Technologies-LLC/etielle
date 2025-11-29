@@ -148,3 +148,76 @@ def parent_index(ctx: Context, depth: int = 1) -> int | None:
             return None
         current = current.parent
     return current.index
+
+
+class _TablesProxy:
+    """Proxy for accessing tables by string name or model class."""
+
+    def __init__(
+        self,
+        tables: dict[str, dict[tuple[Any, ...], Any]],
+        class_map: dict[str, type] | None = None
+    ) -> None:
+        self._tables = tables
+        self._class_map = class_map or {}
+        self._reverse_map = {v: k for k, v in self._class_map.items()}
+
+    def __getitem__(self, key: str | type) -> dict[tuple[Any, ...], Any]:
+        if isinstance(key, str):
+            return self._tables[key]
+        # It's a class - look up by tablename or class name
+        table_name = self._reverse_map.get(key)
+        if table_name is None:
+            # Try __tablename__ attribute
+            table_name = getattr(key, "__tablename__", key.__name__.lower())
+        return self._tables[table_name]
+
+    def __contains__(self, key: str | type) -> bool:
+        try:
+            self[key]
+            return True
+        except KeyError:
+            return False
+
+    def items(self):
+        return self._tables.items()
+
+    def keys(self):
+        return self._tables.keys()
+
+    def values(self):
+        return self._tables.values()
+
+
+@dataclass
+class PipelineResult:
+    """Result from running a pipeline without database loading.
+
+    Attributes:
+        tables: Access tables by string name or model class.
+        errors: Validation/transform errors keyed by table then row key.
+    """
+
+    _tables: dict[str, dict[tuple[Any, ...], Any]]
+    _errors: dict[str, dict[tuple[Any, ...], list[str]]]
+    _table_class_map: dict[str, type] | None = None
+
+    def __init__(
+        self,
+        tables: dict[str, dict[tuple[Any, ...], Any]],
+        errors: dict[str, dict[tuple[Any, ...], list[str]]],
+        _table_class_map: dict[str, type] | None = None
+    ) -> None:
+        self._tables = tables
+        self._errors = errors
+        self._table_class_map = _table_class_map
+
+    @property
+    def tables(self) -> _TablesProxy:
+        """Access extracted tables by name or model class."""
+        return _TablesProxy(self._tables, self._table_class_map)
+
+    @property
+    def errors(self) -> dict[str, dict[tuple[Any, ...], list[str]]]:
+        """Validation errors keyed by table name, then row key."""
+        return self._errors
