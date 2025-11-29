@@ -856,3 +856,35 @@ class TestModelDetection:
         items = result.tables["items"]
         item = list(items.values())[0]
         assert isinstance(item, dict)
+
+
+class TestMultipleRoots:
+    """Tests for multiple JSON root support."""
+
+    def test_multiple_roots_separate_traversals(self):
+        """Can traverse different roots in same pipeline."""
+        from etielle.fluent import etl
+
+        users_json = {"users": [{"id": 1, "name": "Alice"}]}
+        profiles_json = {"profiles": [{"user_id": 1, "bio": "Hello"}]}
+
+        result = (
+            etl(users_json, profiles_json)
+            .goto_root(0).goto("users").each()
+            .map_to(table="users", fields=[
+                Field("name", get("name")),
+                TempField("id", get("id"))
+            ])
+            .goto_root(1).goto("profiles").each()
+            .map_to(table="users", join_on=["id"], fields=[
+                Field("bio", get("bio")),
+                TempField("id", get("user_id"))
+            ])
+            .run()
+        )
+
+        users = result.tables["users"]
+        assert len(users) == 1
+        user = users[(1,)]
+        assert user["name"] == "Alice"
+        assert user["bio"] == "Hello"

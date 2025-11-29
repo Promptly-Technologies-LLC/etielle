@@ -595,15 +595,58 @@ class PipelineBuilder:
         from etielle.core import MappingSpec, TraversalSpec, TableEmit, Field as CoreField
         from etielle.executor import run_mapping
 
-        # Build internal specs
-        specs = self._build_traversal_specs()
-        mapping_spec = MappingSpec(traversals=tuple(specs))
+        # Group emissions by root index
+        emissions_by_root: dict[int, list[dict[str, Any]]] = {}
+        for emission in self._emissions:
+            root_idx = emission["root_index"]
+            emissions_by_root.setdefault(root_idx, []).append(emission)
 
-        # Use the first root (multi-root support in later task)
-        root = self._roots[self._current_root_index] if self._roots else {}
+        # Execute for each root and merge results
+        all_raw_results: dict[str, Any] = {}
 
-        # Execute using existing infrastructure
-        raw_results = run_mapping(root, mapping_spec)
+        for root_idx in sorted(emissions_by_root.keys()):
+            emissions = emissions_by_root[root_idx]
+            root = self._roots[root_idx]
+
+            # Build specs for this root's emissions only
+            specs = []
+            for emission in emissions:
+                # Temporarily set self._emissions to only this emission's list
+                # to reuse _build_traversal_specs logic
+                original_emissions = self._emissions
+                self._emissions = [emission]
+                emission_specs = self._build_traversal_specs()
+                self._emissions = original_emissions
+                specs.extend(emission_specs)
+
+            mapping_spec = MappingSpec(traversals=tuple(specs))
+            raw_results = run_mapping(root, mapping_spec)
+
+            # Merge into combined results
+            for table_name, mapping_result in raw_results.items():
+                if table_name not in all_raw_results:
+                    all_raw_results[table_name] = mapping_result
+                else:
+                    # Merge instances from this root with existing ones
+                    existing = all_raw_results[table_name]
+                    for key, row in mapping_result.instances.items():
+                        if key in existing.instances:
+                            # Update existing row with new fields
+                            if hasattr(existing.instances[key], 'update'):
+                                existing.instances[key].update(row)
+                            elif hasattr(existing.instances[key], '__dict__'):
+                                # For object instances, merge attributes
+                                for k, v in (row.__dict__ if hasattr(row, '__dict__') else row).items():
+                                    setattr(existing.instances[key], k, v)
+                        else:
+                            existing.instances[key] = row
+                    # Merge errors
+                    for key, msgs in mapping_result.update_errors.items():
+                        existing.update_errors.setdefault(key, []).extend(msgs)
+                    for key, msgs in mapping_result.finalize_errors.items():
+                        existing.finalize_errors.setdefault(key, []).extend(msgs)
+
+        raw_results = all_raw_results
 
         # Handle relationship binding if any relationships were recorded
         if self._relationships:
@@ -638,8 +681,23 @@ class PipelineBuilder:
                 )
                 rel_specs.append(spec)
 
-            # Compute relationship keys by traversing the data again
-            child_to_parent = compute_relationship_keys(root, specs, rel_specs)
+            # Compute relationship keys by traversing all roots
+            # We need to rebuild the traversal specs for relationship computation
+            all_specs = []
+            for root_idx in sorted(emissions_by_root.keys()):
+                emissions = emissions_by_root[root_idx]
+                for emission in emissions:
+                    original_emissions = self._emissions
+                    self._emissions = [emission]
+                    emission_specs = self._build_traversal_specs()
+                    self._emissions = original_emissions
+                    all_specs.extend(emission_specs)
+
+            # For now, use the first root for relationship key computation
+            # This works when all data is in one root, but may need enhancement
+            # for cross-root relationships in the future
+            first_root = self._roots[0] if self._roots else {}
+            child_to_parent = compute_relationship_keys(first_root, all_specs, rel_specs)
 
             # Bind the parent references to child instances
             bind_many_to_one(raw_results, rel_specs, child_to_parent, fail_on_missing=False)
