@@ -501,9 +501,9 @@ class PipelineBuilder:
                 for key_name in emission["join_on"]:
                     if key_name in field_map:
                         join_keys.append(field_map[key_name])
-                # Only add non-join_on Fields to output
+                # Add ALL Fields to output (join_on fields are persisted too)
                 for f in emission["fields"]:
-                    if isinstance(f, Field) and f.name not in emission["join_on"]:
+                    if isinstance(f, Field):
                         fields.append(CoreField(f.name, f.transform))
                         if f.merge is not None:
                             merge_policies[f.name] = f.merge

@@ -5,7 +5,7 @@ from sqlalchemy import create_engine, Column, Integer, String, ForeignKey
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 
 from etielle.fluent import etl, Field, TempField
-from etielle.transforms import get, get_from_parent
+from etielle.transforms import get, get_from_parent, key
 
 Base = declarative_base()
 
@@ -196,6 +196,86 @@ class TestNotNullFKFlushOrdering:
 
         # Verify relationship from parent side
         assert len(parent.children) == 2
+
+
+class TestDictIteration:
+    """Tests for iterating over dict items with .goto().each()."""
+
+    def test_dict_iteration_creates_instances(self, session):
+        """Dict iteration (.goto("dict").each()) should create instances for each item.
+
+        Regression test: After singleton fix, dict iteration stopped working.
+        """
+        data = {
+            "questions": {
+                "Q1": {"text": "Question 1"},
+                "Q2": {"text": "Question 2"},
+                "Q3": {"text": "Question 3"}
+            }
+        }
+
+        result = (
+            etl(data)
+            .goto("questions").each()
+            .map_to(table=User, fields=[
+                Field("name", get("text")),
+                TempField("qid", key()),  # Use the dict key
+            ])
+            .load(session)
+            .run()
+        )
+
+        session.commit()
+
+        # Verify instances were created
+        users = session.query(User).all()
+        assert len(users) == 3, f"Expected 3 users, got {len(users)}"
+        names = {u.name for u in users}
+        assert names == {"Question 1", "Question 2", "Question 3"}
+
+
+class TestJoinOnFieldPersistence:
+    """Tests that join_on fields are persisted to the database.
+
+    Prior to this fix, join_on excluded fields from output, requiring
+    users to create redundant TempFields for fields that needed to be
+    both persisted AND used as join keys.
+    """
+
+    def test_join_on_field_is_persisted(self, session):
+        """Fields in join_on should be persisted, not excluded from output.
+
+        Bug: join_on previously excluded fields from output, meaning:
+        - Field("external_id", ...) with join_on=["external_id"]
+        - Would NOT persist external_id to the database
+        - User had to duplicate: Field("external_id", ...) + TempField("ext_id", ...)
+
+        Expected: join_on fields should be BOTH persisted AND used as join keys.
+        """
+        data = {
+            "questions": {
+                "Q1": {"text": "Question 1"},
+                "Q2": {"text": "Question 2"},
+            }
+        }
+
+        result = (
+            etl(data)
+            .goto("questions").each()
+            .map_to(table=User, fields=[
+                Field("name", key()),  # Use dict key as both name AND join key
+            ], join_on=["name"])
+            .load(session)
+            .run()
+        )
+
+        session.commit()
+
+        # Verify instances were created with name field persisted
+        users = session.query(User).all()
+        assert len(users) == 2, f"Expected 2 users, got {len(users)}"
+        names = {u.name for u in users}
+        assert names == {"Q1", "Q2"}, f"Expected names Q1, Q2 but got {names}"
 
 
 class TestSingletonMapping:
