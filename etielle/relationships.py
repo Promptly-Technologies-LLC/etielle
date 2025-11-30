@@ -3,8 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Dict, Mapping, Sequence, Tuple
 
-from .core import Transform, TraversalSpec
-from .executor import MappingResult, _iter_traversal_nodes
+from .core import MappingResult, Transform, TraversalSpec
+from .executor import _iter_traversal_nodes
 from .instances import InstanceEmit
 
 
@@ -149,3 +149,49 @@ def bind_many_to_one(
         raise RuntimeError(
             "relationship binding failed (many-to-one):\n" + "\n".join(errors)
         )
+
+
+def bind_many_to_one_via_index(
+    parent_result: MappingResult[Any],
+    children: Sequence[Any],
+    parent_index_field: str,
+    child_lookup_field: str,
+    relationship_attr: str,
+    *,
+    required: bool = True,
+) -> list[str]:
+    """
+    Bind child -> parent using secondary index lookup.
+
+    Args:
+        parent_result: MappingResult containing parent instances with indices
+        children: List of child instances
+        parent_index_field: Field name in parent's secondary index
+        child_lookup_field: Attribute name on child containing lookup value
+        relationship_attr: Attribute name on child to set to parent
+        required: If True, collect errors for missing parents
+
+    Returns:
+        List of error messages (empty if all bindings succeeded)
+    """
+    errors: list[str] = []
+    parent_index = parent_result.indices.get(parent_index_field, {})
+
+    for child in children:
+        lookup_value = getattr(child, child_lookup_field, None)
+        if lookup_value is None:
+            if required:
+                errors.append(f"Child has no value for {child_lookup_field}")
+            continue
+
+        parent = parent_index.get(lookup_value)
+        if parent is None:
+            if required:
+                errors.append(
+                    f"Parent not found for {parent_index_field}={lookup_value}"
+                )
+            continue
+
+        setattr(child, relationship_attr, parent)
+
+    return errors
