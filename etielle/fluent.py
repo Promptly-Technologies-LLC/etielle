@@ -481,7 +481,7 @@ class PipelineBuilder:
     def _build_traversal_specs(self) -> list[TraversalSpec]:
         """Convert accumulated emissions to TraversalSpec objects."""
         from etielle.core import MappingSpec, TraversalSpec, TableEmit, Field as CoreField
-        from etielle.transforms import literal
+        from etielle.transforms import literal, key
 
         specs = []
 
@@ -574,9 +574,13 @@ class PipelineBuilder:
                     from etielle.instances import TypedDictBuilder
                     builder = TypedDictBuilder(lambda d: d)
 
-                # Default join key for singleton mappings (no iteration)
-                # Use "__singleton__" sentinel to avoid None-skip in executor
-                default_join_key = (literal("__singleton__"),) if outer_mode == "single" else (literal(None),)
+                # Default join key depends on whether we're iterating or not
+                # - singleton: use "__singleton__" sentinel
+                # - iteration: use key() to get dict key or list index
+                if outer_mode == "single":
+                    default_join_key = (literal("__singleton__"),)
+                else:
+                    default_join_key = (key(),)
 
                 table_emit = InstanceEmit(
                     table=emission["table"],
@@ -588,8 +592,11 @@ class PipelineBuilder:
                 )
             else:
                 # Use simpler TableEmit when no model class or merge policies needed
-                # Default join key for singleton mappings (no iteration)
-                default_join_key = (literal("__singleton__"),) if outer_mode == "single" else (literal(None),)
+                # Default join key depends on whether we're iterating or not
+                if outer_mode == "single":
+                    default_join_key = (literal("__singleton__"),)
+                else:
+                    default_join_key = (key(),)
 
                 table_emit = TableEmit(
                     table=emission["table"],
@@ -622,6 +629,21 @@ class PipelineBuilder:
             graph.setdefault(child, set()).add(parent)
 
         return graph
+
+    def _get_linkable_fields(self) -> dict[str, set[str]]:
+        """Extract fields that are used for relationship linking.
+
+        Returns:
+            Dict mapping parent table name to set of field names used in link_to.
+        """
+        linkable: dict[str, set[str]] = {}
+        for rel in self._relationships:
+            parent_table = rel["parent_table"]
+            # The 'by' dict maps child_field -> parent_field
+            # We need to index parent by the parent_field values
+            for parent_field in rel["by"].values():
+                linkable.setdefault(parent_table, set()).add(parent_field)
+        return linkable
 
     def run(self) -> PipelineResult:
         """Execute the pipeline and return results.

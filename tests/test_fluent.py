@@ -1059,3 +1059,37 @@ class TestBuildDependencyGraph:
 
         graph = builder._build_dependency_graph()
         assert graph == {"comments": {"users", "posts"}}
+
+
+class TestGetLinkableFields:
+    """Tests for _get_linkable_fields method."""
+
+    def test_extract_linkable_fields_from_link_to(self):
+        """Pipeline should extract which fields are used for linking."""
+        from etielle.fluent import etl
+        from etielle.transforms import key
+
+        class Parent:
+            __tablename__ = "parents"
+
+        class Child:
+            __tablename__ = "children"
+
+        builder = (
+            etl({"parents": [], "children": []})
+            .goto("parents").each()
+            .map_to(table=Parent, fields=[
+                Field("external_id", key()),
+                Field("name", get("name")),
+            ])
+            .goto_root()
+            .goto("children").each()
+            .map_to(table=Child, fields=[
+                Field("title", get("title")),
+                TempField("parent_ref", get("parent_id")),
+            ])
+            .link_to(Parent, by={"parent_ref": "external_id"})
+        )
+
+        linkable = builder._get_linkable_fields()
+        assert linkable == {"parents": {"external_id"}}
