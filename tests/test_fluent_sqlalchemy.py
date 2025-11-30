@@ -196,3 +196,50 @@ class TestNotNullFKFlushOrdering:
 
         # Verify relationship from parent side
         assert len(parent.children) == 2
+
+
+class TestSingletonMapping:
+    """Tests for mapping a single root object (no iteration).
+
+    This tests the case where map_to is called directly on the root
+    without .each(), creating a single instance.
+    """
+
+    def test_singleton_mapping_persists_to_database(self, session):
+        """map_to on root without .each() should persist a single instance."""
+        data = {
+            "name": "Alice",
+            "email": "alice@example.com"
+        }
+
+        result = (
+            etl(data)
+            .map_to(table=User, fields=[
+                Field("name", get("name")),
+            ])
+            .load(session)
+            .run()
+        )
+
+        session.commit()
+
+        # Verify instance was created and persisted
+        users = session.query(User).all()
+        assert len(users) == 1
+        assert users[0].name == "Alice"
+
+    def test_singleton_mapping_uses_singleton_key(self, session):
+        """Singleton mapping should use __singleton__ as the join key."""
+        data = {"name": "Bob"}
+
+        result = (
+            etl(data)
+            .map_to(table=User, fields=[
+                Field("name", get("name")),
+            ])
+            .run()
+        )
+
+        # Check the key used
+        assert ("__singleton__",) in result.tables["users"]
+        assert result.tables["users"][("__singleton__",)].name == "Bob"

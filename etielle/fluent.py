@@ -234,7 +234,14 @@ def _detect_builder(table_class: type | None) -> Any:
     if table_class is None:
         return None  # Use TableEmit for dicts
 
-    # Check for Pydantic
+    # Check for SQLAlchemy/SQLModel ORM FIRST
+    # SQLModel inherits from Pydantic BaseModel, but we want to use ConstructorBuilder
+    # to allow SQLModel's special handling of auto-generated primary keys
+    if hasattr(table_class, "__tablename__") and hasattr(table_class, "__mapper__"):
+        from etielle.instances import ConstructorBuilder
+        return ConstructorBuilder(table_class)
+
+    # Check for Pydantic (after SQLModel check)
     try:
         from pydantic import BaseModel
         if issubclass(table_class, BaseModel):
@@ -242,11 +249,6 @@ def _detect_builder(table_class: type | None) -> Any:
             return PydanticBuilder(table_class)
     except ImportError:
         pass
-
-    # Check for SQLAlchemy/SQLModel ORM
-    if hasattr(table_class, "__tablename__") and hasattr(table_class, "__mapper__"):
-        from etielle.instances import ConstructorBuilder
-        return ConstructorBuilder(table_class)
 
     # Check for TypedDict
     import typing
@@ -572,9 +574,13 @@ class PipelineBuilder:
                     from etielle.instances import TypedDictBuilder
                     builder = TypedDictBuilder(lambda d: d)
 
+                # Default join key for singleton mappings (no iteration)
+                # Use "__singleton__" sentinel to avoid None-skip in executor
+                default_join_key = (literal("__singleton__"),) if outer_mode == "single" else (literal(None),)
+
                 table_emit = InstanceEmit(
                     table=emission["table"],
-                    join_keys=tuple(join_keys) if join_keys else (literal(None),),
+                    join_keys=tuple(join_keys) if join_keys else default_join_key,
                     fields=tuple(field_specs),
                     builder=builder,
                     policies=merge_policies,
@@ -582,9 +588,12 @@ class PipelineBuilder:
                 )
             else:
                 # Use simpler TableEmit when no model class or merge policies needed
+                # Default join key for singleton mappings (no iteration)
+                default_join_key = (literal("__singleton__"),) if outer_mode == "single" else (literal(None),)
+
                 table_emit = TableEmit(
                     table=emission["table"],
-                    join_keys=tuple(join_keys) if join_keys else (literal(None),),
+                    join_keys=tuple(join_keys) if join_keys else default_join_key,
                     fields=tuple(fields)
                 )
 
