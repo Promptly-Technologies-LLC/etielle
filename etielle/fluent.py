@@ -678,12 +678,14 @@ class PipelineBuilder:
 
         raw_results = all_raw_results
 
-        # Handle relationship binding if any relationships were recorded
+        # Handle relationship binding and staged flushing
+        rel_specs: list[Any] = []
+        child_to_parent: dict[int, dict[tuple[Any, ...], tuple[Any, ...]]] = {}
+
         if self._relationships:
             from etielle.relationships import compute_relationship_keys, bind_many_to_one, ManyToOneSpec
 
             # Build ManyToOneSpec objects from recorded relationships
-            rel_specs = []
             for rel in self._relationships:
                 # Find the child emission to get the transforms for parent key computation
                 child_emission = self._emissions[rel["emission_index"]]
@@ -729,8 +731,9 @@ class PipelineBuilder:
             first_root = self._roots[0] if self._roots else {}
             child_to_parent = compute_relationship_keys(first_root, all_specs, rel_specs)
 
-            # Bind the parent references to child instances
-            bind_many_to_one(raw_results, rel_specs, child_to_parent, fail_on_missing=False)
+            # If no session, bind all relationships now (non-DB use case)
+            if self._session is None:
+                bind_many_to_one(raw_results, rel_specs, child_to_parent, fail_on_missing=False)
 
         # Convert to PipelineResult format
         tables: dict[str, dict[tuple[Any, ...], Any]] = {}
@@ -761,13 +764,43 @@ class PipelineBuilder:
                     error_msg = f"Validation failed for table '{table_name}' key {key}:\n" + "\n".join(msgs)
                     raise ValueError(error_msg)
 
-        # If session provided, add instances and flush
+        # If session provided, flush in dependency order
         if self._session is not None:
-            for table_name, instances in tables.items():
-                for key, instance in instances.items():
-                    if not isinstance(instance, dict):  # ORM instance
+            from etielle.utils import topological_sort
+
+            # Build flush order from dependency graph (parents before children)
+            dep_graph = self._build_dependency_graph()
+            all_tables = set(tables.keys())
+            flush_order = topological_sort(dep_graph, all_tables)
+
+            for table_name in flush_order:
+                if table_name not in tables:
+                    continue
+
+                # Add and flush this table's instances
+                for key, instance in tables[table_name].items():
+                    if not isinstance(instance, dict):
                         self._session.add(instance)
-            self._session.flush()
+                self._session.flush()
+
+                # After flush, this table's instances have IDs
+                # Bind relationships where this table is the parent
+                for idx, spec in enumerate(rel_specs):
+                    if spec.parent_table == table_name:
+                        child_table = spec.child_table
+                        if child_table not in tables:
+                            continue
+                        key_map = child_to_parent.get(idx, {})
+                        parent_instances = tables[table_name]
+                        child_instances = tables[child_table]
+                        for child_key, child_obj in child_instances.items():
+                            if isinstance(child_obj, dict):
+                                continue
+                            parent_key = key_map.get(child_key)
+                            if parent_key and parent_key in parent_instances:
+                                parent_obj = parent_instances[parent_key]
+                                if not isinstance(parent_obj, dict):
+                                    setattr(child_obj, spec.attr, parent_obj)
 
         return PipelineResult(
             tables=tables,
