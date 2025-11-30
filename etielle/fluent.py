@@ -203,16 +203,19 @@ class PipelineResult:
     _tables: dict[str, dict[tuple[Any, ...], Any]]
     _errors: dict[str, dict[tuple[Any, ...], list[str]]]
     _table_class_map: dict[str, type] | None = None
+    _raw_results: dict[str, Any] | None = None
 
     def __init__(
         self,
         tables: dict[str, dict[tuple[Any, ...], Any]],
         errors: dict[str, dict[tuple[Any, ...], list[str]]],
-        _table_class_map: dict[str, type] | None = None
+        _table_class_map: dict[str, type] | None = None,
+        _raw_results: dict[str, Any] | None = None
     ) -> None:
         self._tables = tables
         self._errors = errors
         self._table_class_map = _table_class_map
+        self._raw_results = _raw_results
 
     @property
     def tables(self) -> _TablesProxy:
@@ -656,6 +659,9 @@ class PipelineBuilder:
         from etielle.core import MappingSpec, TraversalSpec, TableEmit, Field as CoreField
         from etielle.executor import run_mapping
 
+        # Extract linkable fields from link_to declarations
+        linkable_fields = self._get_linkable_fields()
+
         # Group emissions by root index
         emissions_by_root: dict[int, list[dict[str, Any]]] = {}
         for emission in self._emissions:
@@ -681,7 +687,7 @@ class PipelineBuilder:
                 specs.extend(emission_specs)
 
             mapping_spec = MappingSpec(traversals=tuple(specs))
-            raw_results = run_mapping(root, mapping_spec)
+            raw_results = run_mapping(root, mapping_spec, linkable_fields=linkable_fields)
 
             # Merge into combined results
             for table_name, mapping_result in raw_results.items():
@@ -861,7 +867,8 @@ class PipelineBuilder:
         return PipelineResult(
             tables=tables,
             errors=errors,
-            _table_class_map=table_class_map
+            _table_class_map=table_class_map,
+            _raw_results=raw_results
         )
 
 

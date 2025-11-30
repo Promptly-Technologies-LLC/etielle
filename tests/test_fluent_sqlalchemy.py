@@ -233,6 +233,40 @@ class TestDictIteration:
         names = {u.name for u in users}
         assert names == {"Question 1", "Question 2", "Question 3"}
 
+    def test_dict_iteration_without_tempfield_or_join_on(self, session):
+        """Dict iteration should work without explicit TempField or join_on.
+
+        Bug: Without TempField or join_on, default join key was literal(None),
+        which caused executor to skip all rows.
+
+        Expected: For iteration, default join key should be key() (dict key or list index).
+        """
+        data = {
+            "questions": {
+                "Q1": {"text": "Question 1"},
+                "Q2": {"text": "Question 2"},
+            }
+        }
+
+        result = (
+            etl(data)
+            .goto("questions").each()
+            .map_to(table=User, fields=[
+                Field("name", get("text")),
+                # NO TempField, NO join_on - should still work!
+            ])
+            .load(session)
+            .run()
+        )
+
+        session.commit()
+
+        # Verify instances were created
+        users = session.query(User).all()
+        assert len(users) == 2, f"Expected 2 users, got {len(users)}"
+        names = {u.name for u in users}
+        assert names == {"Question 1", "Question 2"}
+
 
 class TestJoinOnFieldPersistence:
     """Tests that join_on fields are persisted to the database.

@@ -94,13 +94,24 @@ def _iter_traversal_nodes(root: Any, spec: TraversalSpec) -> Iterable[Context]:
                 yield inner_ctx
 
 
-def run_mapping(root: Any, spec: MappingSpec) -> Dict[str, MappingResult[Any]]:
+def run_mapping(
+    root: Any,
+    spec: MappingSpec,
+    linkable_fields: Dict[str, set[str]] | None = None
+) -> Dict[str, MappingResult[Any]]:
     """
     Execute mapping spec against root JSON, returning rows per table.
 
     Rows are merged by composite join keys per table. If any join-key part is
     None/empty, the row is skipped.
+
+    Args:
+        root: The JSON data to process
+        spec: The mapping specification
+        linkable_fields: Dict mapping table name to set of field names used in link_to
     """
+    if linkable_fields is None:
+        linkable_fields = {}
     # For classic table rows (index by composite key)
     table_to_index: Dict[str, Dict[Tuple[Any, ...], Dict[str, Any]]] = {}
     table_row_order: Dict[str, List[Tuple[Any, ...]]] = {}
@@ -240,6 +251,18 @@ def run_mapping(root: Any, spec: MappingSpec) -> Dict[str, MappingResult[Any]]:
             upd_errors[key_tuple] = [f"table={table} key={key_tuple} {m}" for m in msgs]
         for key_tuple, msgs in fin_errors_raw.items():
             fin_errors[key_tuple] = [f"table={table} key={key_tuple} {m}" for m in msgs]
+
+        # Build secondary indices for linkable fields
+        indices: Dict[str, Dict[Any, Any]] = {}
+        for field_name in linkable_fields.get(table, set()):
+            field_index: Dict[Any, Any] = {}
+            for key_tuple, instance in instances.items():
+                field_value = getattr(instance, field_name, None)
+                if field_value is not None:
+                    field_index[field_value] = instance
+            if field_index:
+                indices[field_name] = field_index
+
         outputs[table] = MappingResult(
             instances=instances,
             update_errors=upd_errors,
@@ -249,6 +272,7 @@ def run_mapping(root: Any, spec: MappingSpec) -> Dict[str, MappingResult[Any]]:
                 "num_update_errors": sum(len(v) for v in upd_errors.values()),
                 "num_finalize_errors": sum(len(v) for v in fin_errors.values()),
             },
+            indices=indices,
         )
 
     return outputs

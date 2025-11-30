@@ -1093,3 +1093,57 @@ class TestGetLinkableFields:
 
         linkable = builder._get_linkable_fields()
         assert linkable == {"parents": {"external_id"}}
+
+    def test_secondary_indices_built_for_linkable_fields(self):
+        """Pipeline should build secondary indices for fields used in link_to."""
+        from etielle.fluent import etl, Field, TempField
+        from etielle.transforms import get, key
+
+        data = {
+            "parents": {"P1": {"name": "Parent1"}, "P2": {"name": "Parent2"}},
+            "children": [{"title": "Child1", "parent_id": "P1"}]
+        }
+
+        class FakeParent:
+            def __init__(self, external_id=None, name=None):
+                self.external_id = external_id
+                self.name = name
+
+        class FakeChild:
+            def __init__(self, title=None, parent_ref=None):
+                self.title = title
+                self.parent_ref = parent_ref
+                self.parent = None
+
+        # Mock __tablename__ for detection
+        FakeParent.__tablename__ = "parents"
+        FakeChild.__tablename__ = "children"
+
+        result = (
+            etl(data)
+            .goto("parents").each()
+            .map_to(table=FakeParent, fields=[
+                Field("external_id", key()),
+                Field("name", get("name")),
+            ])
+            .goto_root()
+            .goto("children").each()
+            .map_to(table=FakeChild, fields=[
+                Field("title", get("title")),
+                TempField("parent_ref", get("parent_id")),
+            ])
+            .link_to(FakeParent, by={"parent_ref": "external_id"})
+            .run()
+        )
+
+        # Check secondary index was built
+        # Access the raw MappingResult which should have indices
+        parents_result = result._raw_results["parents"]
+        assert parents_result.indices is not None
+        assert "external_id" in parents_result.indices
+        # Should have index: {"P1": parent1_instance, "P2": parent2_instance}
+        assert "P1" in parents_result.indices["external_id"]
+        assert "P2" in parents_result.indices["external_id"]
+        # Verify the indexed instances have the correct external_id
+        assert parents_result.indices["external_id"]["P1"].external_id == "P1"
+        assert parents_result.indices["external_id"]["P2"].external_id == "P2"
