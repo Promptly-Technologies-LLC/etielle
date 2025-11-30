@@ -211,9 +211,11 @@ class MappingResult(Generic[T]):
     - update_errors: per-key errors recorded during incremental updates
     - finalize_errors: per-key errors recorded while finalizing/validating instances
     - stats: simple counters to aid diagnostics (keys: num_instances, num_update_errors, num_finalize_errors)
+    - indices: secondary indices for relationship linking {field_name: {value: instance}}
     """
 
     instances: Dict[Tuple[Any, ...], T]
     update_errors: Dict[Tuple[Any, ...], List[str]]
     finalize_errors: Dict[Tuple[Any, ...], List[str]]
     stats: Dict[str, int]
+    indices: Dict[str, Dict[Any, T]] = field(default_factory=dict)
