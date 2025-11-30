@@ -112,6 +112,14 @@ def bind_many_to_one(
         parents = table_to_instances.get(rel.parent_table, {})
         children = table_to_instances.get(rel.child_table, {})
         key_map = child_to_parent.get(idx, {})
+
+        # Check if parent table is a singleton (single instance with __singleton__ key)
+        singleton_parent = None
+        if len(parents) == 1:
+            only_key = next(iter(parents.keys()))
+            if only_key == ("__singleton__",):
+                singleton_parent = parents[only_key]
+
         for child_ck, child_obj in children.items():
             parent_ck = key_map.get(child_ck)
             if parent_ck is None:
@@ -121,6 +129,9 @@ def bind_many_to_one(
                     )
                 continue
             parent_obj = parents.get(parent_ck)
+            # Fallback to singleton parent if exact key lookup failed
+            if parent_obj is None and singleton_parent is not None:
+                parent_obj = singleton_parent
             if parent_obj is None:
                 if rel.required:
                     errors.append(

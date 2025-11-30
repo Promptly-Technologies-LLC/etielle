@@ -812,14 +812,26 @@ class PipelineBuilder:
                     key_map = child_to_parent.get(idx, {})
                     parent_instances = tables[parent_table]
                     child_instances = tables[table_name]
+
+                    # Check if parent table is a singleton
+                    singleton_parent = None
+                    if len(parent_instances) == 1:
+                        only_key = next(iter(parent_instances.keys()))
+                        if only_key == ("__singleton__",):
+                            singleton_parent = parent_instances[only_key]
+
                     for child_key, child_obj in child_instances.items():
                         if isinstance(child_obj, dict):
                             continue
                         parent_key = key_map.get(child_key)
+                        parent_obj = None
                         if parent_key and parent_key in parent_instances:
                             parent_obj = parent_instances[parent_key]
-                            if not isinstance(parent_obj, dict):
-                                setattr(child_obj, spec.attr, parent_obj)
+                        # Fallback to singleton parent if exact key lookup failed
+                        elif singleton_parent is not None:
+                            parent_obj = singleton_parent
+                        if parent_obj is not None and not isinstance(parent_obj, dict):
+                            setattr(child_obj, spec.attr, parent_obj)
 
                 # Flush this table - relationships are bound, FKs will be set
                 self._session.flush()

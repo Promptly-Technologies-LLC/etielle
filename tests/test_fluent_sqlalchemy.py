@@ -243,3 +243,60 @@ class TestSingletonMapping:
         # Check the key used
         assert ("__singleton__",) in result.tables["users"]
         assert result.tables["users"][("__singleton__",)].name == "Bob"
+
+    def test_singleton_parent_can_be_linked_by_children(self, session):
+        """Children should be able to link to singleton parents via natural keys.
+
+        This tests the case where:
+        - Parent is mapped at ROOT level with NO TempField (uses __singleton__ key)
+        - Children link using a field value that matches parent's Field value
+        - The FK should be properly set despite key mismatch
+
+        Bug scenario:
+        - User singleton stored with key ("__singleton__",) because no TempField
+        - User has Field "name" = "Alice" (regular field, not join key)
+        - Post has TempField "author_name" = "Alice"
+        - link_to(User, by={"author_name": "name"}) tries to find parent by name
+        - Lookup fails: parents indexed by ("__singleton__",), not ("Alice",)
+        """
+        data = {
+            "name": "Alice",
+            "posts": [
+                {"title": "Post 1", "author": "Alice"},
+                {"title": "Post 2", "author": "Alice"}
+            ]
+        }
+
+        result = (
+            etl(data)
+            # ROOT-LEVEL singleton user mapping - NO TempField!
+            # This means it gets __singleton__ as join key
+            .map_to(table=User, fields=[
+                Field("name", get("name")),
+            ])
+            # Posts with linking - try to link by matching name
+            .goto("posts").each()
+            .map_to(table=Post, fields=[
+                Field("title", get("title")),
+                TempField("post_id", get("title")),
+                TempField("author_name", get("author")),
+            ])
+            .link_to(User, by={"author_name": "name"})
+            .load(session)
+            .run()
+        )
+
+        session.commit()
+
+        # Verify user was created
+        users = session.query(User).all()
+        assert len(users) == 1
+        alice = users[0]
+        assert alice.name == "Alice"
+
+        # Verify posts were created AND linked to user
+        posts = session.query(Post).all()
+        assert len(posts) == 2
+        for post in posts:
+            assert post.user_id == alice.id, f"Post '{post.title}' not linked to user"
+            assert post.user == alice
