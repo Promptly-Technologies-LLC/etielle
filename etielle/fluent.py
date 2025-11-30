@@ -599,6 +599,21 @@ class PipelineBuilder:
 
         return specs
 
+    def _build_dependency_graph(self) -> dict[str, set[str]]:
+        """Build dependency graph from link_to relationships.
+
+        Returns:
+            Dict mapping child_table -> set of parent_tables.
+        """
+        graph: dict[str, set[str]] = {}
+
+        for rel in self._relationships:
+            child = rel["child_table"]
+            parent = rel["parent_table"]
+            graph.setdefault(child, set()).add(parent)
+
+        return graph
+
     def run(self) -> PipelineResult:
         """Execute the pipeline and return results.
 

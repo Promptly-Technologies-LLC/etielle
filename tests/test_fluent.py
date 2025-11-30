@@ -980,3 +980,82 @@ class TestPublicAPI:
         """Merge policies are importable from etielle."""
         from etielle import AddPolicy, ExtendPolicy, MaxPolicy
         assert AddPolicy is not None
+
+
+class TestBuildDependencyGraph:
+    """Tests for _build_dependency_graph method."""
+
+    def test_no_relationships_empty_graph(self):
+        """No link_to calls means empty graph."""
+        from etielle.fluent import etl
+
+        builder = etl({})
+        builder.goto("users").each().map_to(table="users", fields=[])
+
+        graph = builder._build_dependency_graph()
+        assert graph == {}
+
+    def test_single_relationship(self):
+        """Single link_to creates edge."""
+        from etielle.fluent import etl
+
+        class User:
+            __tablename__ = "users"
+
+        builder = etl({})
+        builder.goto("users").each().map_to(table="users", fields=[])
+        builder.goto("posts").each().map_to(table="posts", fields=[
+            TempField("user_id", get("user_id"))
+        ])
+        builder.link_to(User, by={"user_id": "id"})
+
+        graph = builder._build_dependency_graph()
+        assert graph == {"posts": {"users"}}
+
+    def test_chain_of_relationships(self):
+        """Chain: grandchild -> child -> parent."""
+        from etielle.fluent import etl
+
+        class Survey:
+            __tablename__ = "surveys"
+        class Block:
+            __tablename__ = "blocks"
+
+        builder = etl({})
+        builder.goto("surveys").each().map_to(table="surveys", fields=[])
+        builder.goto("blocks").each().map_to(table="blocks", fields=[
+            TempField("survey_id", get("survey_id"))
+        ])
+        builder.link_to(Survey, by={"survey_id": "id"})
+        builder.goto("questions").each().map_to(table="questions", fields=[
+            TempField("block_id", get("block_id"))
+        ])
+        builder.link_to(Block, by={"block_id": "id"})
+
+        graph = builder._build_dependency_graph()
+        assert graph == {
+            "blocks": {"surveys"},
+            "questions": {"blocks"}
+        }
+
+    def test_multiple_parents(self):
+        """Child with multiple parents."""
+        from etielle.fluent import etl
+
+        class User:
+            __tablename__ = "users"
+        class Post:
+            __tablename__ = "posts"
+
+        builder = etl({})
+        builder.goto("users").each().map_to(table="users", fields=[])
+        builder.goto("posts").each().map_to(table="posts", fields=[])
+        builder.goto("comments").each().map_to(table="comments", fields=[
+            TempField("user_id", get("uid")),
+            TempField("post_id", get("pid"))
+        ])
+        builder.link_to(User, by={"user_id": "id"})
+        builder.link_to(Post, by={"post_id": "id"})
+
+        graph = builder._build_dependency_graph()
+        assert graph == {"comments": {"users", "posts"}}
