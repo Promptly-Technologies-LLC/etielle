@@ -773,34 +773,47 @@ class PipelineBuilder:
             all_tables = set(tables.keys())
             flush_order = topological_sort(dep_graph, all_tables)
 
+            # Build pending bindings index: {child_table: [(rel_spec_idx, parent_table)]}
+            # This tracks which relationships need to be bound when processing each child
+            pending_bindings: dict[str, list[tuple[int, str]]] = {}
+            for idx, spec in enumerate(rel_specs):
+                pending_bindings.setdefault(spec.child_table, []).append(
+                    (idx, spec.parent_table)
+                )
+
+            # Process tables in dependency order (parents before children):
+            # 1. Add this table's instances to session
+            # 2. Bind relationships where this table is the CHILD (parents already flushed)
+            # 3. Flush this table
             for table_name in flush_order:
                 if table_name not in tables:
                     continue
 
-                # Add and flush this table's instances
+                # Add this table's instances to session
                 for key, instance in tables[table_name].items():
                     if not isinstance(instance, dict):
                         self._session.add(instance)
-                self._session.flush()
 
-                # After flush, this table's instances have IDs
-                # Bind relationships where this table is the parent
-                for idx, spec in enumerate(rel_specs):
-                    if spec.parent_table == table_name:
-                        child_table = spec.child_table
-                        if child_table not in tables:
+                # Bind pending parent relationships for this table
+                # At this point, all parents have been flushed and have IDs
+                for idx, parent_table in pending_bindings.get(table_name, []):
+                    spec = rel_specs[idx]
+                    if parent_table not in tables:
+                        continue
+                    key_map = child_to_parent.get(idx, {})
+                    parent_instances = tables[parent_table]
+                    child_instances = tables[table_name]
+                    for child_key, child_obj in child_instances.items():
+                        if isinstance(child_obj, dict):
                             continue
-                        key_map = child_to_parent.get(idx, {})
-                        parent_instances = tables[table_name]
-                        child_instances = tables[child_table]
-                        for child_key, child_obj in child_instances.items():
-                            if isinstance(child_obj, dict):
-                                continue
-                            parent_key = key_map.get(child_key)
-                            if parent_key and parent_key in parent_instances:
-                                parent_obj = parent_instances[parent_key]
-                                if not isinstance(parent_obj, dict):
-                                    setattr(child_obj, spec.attr, parent_obj)
+                        parent_key = key_map.get(child_key)
+                        if parent_key and parent_key in parent_instances:
+                            parent_obj = parent_instances[parent_key]
+                            if not isinstance(parent_obj, dict):
+                                setattr(child_obj, spec.attr, parent_obj)
+
+                # Flush this table - relationships are bound, FKs will be set
+                self._session.flush()
 
         return PipelineResult(
             tables=tables,
