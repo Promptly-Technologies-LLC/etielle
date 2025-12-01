@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from types import NoneType
 from typing import (
     Any,
     Callable,
@@ -15,7 +16,7 @@ from typing import (
 )
 from typing import get_args, get_origin, Union as _Union
 
-from .core import Transform, field_of, FieldRef
+from .core import Transform, field_of
 
 
 K = Tuple[Any, ...]
@@ -133,8 +134,8 @@ class InstanceBuilder(Generic[T]):
 
 @dataclass(frozen=True)
 class FieldSpec(Generic[T]):
-    # Accept FieldRef (preferred), string field name, or callable selector (deprecated)
-    selector: Union[FieldRef, str, Callable[[T], Any]]
+    # Accept string field name or callable selector (via field_of)
+    selector: Union[str, Callable[[T], Any]]
     transform: Transform[Any]
 
 
@@ -149,6 +150,9 @@ class InstanceEmit(Generic[T]):
     allow_extras: bool = False
     # strictness mode: 'collect_all' (default) or 'fail_fast'
     strict_mode: str = "collect_all"
+    # Field names that should be stored in shadow but NOT persisted to instances
+    # Used for TempFields that are needed for relationship linking
+    temp_fields: frozenset[str] = field(default_factory=frozenset)
 
 
 # -----------------------------
@@ -250,7 +254,7 @@ class PydanticPartialBuilder(InstanceBuilder[T]):
                 optional_ann = ann
             else:
                 # Build Optional[ann] dynamically as Union[ann, NoneType]
-                optional_ann = Union[ann, type(None)]
+                optional_ann = Union[ann, NoneType]
             partial_fields[name] = (optional_ann, None)
         self.partial = _create_model(f"{model.__name__}Partial", **partial_fields)
         self.acc: Dict[K, Dict[str, Any]] = {}
@@ -417,8 +421,6 @@ def resolve_field_name_for_builder(
 ) -> str:
     if isinstance(spec.selector, str):
         return spec.selector
-    if isinstance(spec.selector, FieldRef):
-        return spec.selector.name
     # Try to resolve from typed selector via builder.model if available
     model = getattr(builder, "model", None)
     if model is None:

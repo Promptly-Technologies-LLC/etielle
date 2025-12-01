@@ -3,7 +3,7 @@ from typing import Any, Dict
 
 import pytest
 
-from etielle.core import MappingSpec, TraversalSpec
+from etielle.core import MappingSpec, MappingResult, TraversalSpec
 from etielle.transforms import get
 from etielle.instances import InstanceEmit, FieldSpec, TypedDictBuilder
 from etielle.executor import run_mapping
@@ -11,6 +11,7 @@ from etielle.relationships import (
     ManyToOneSpec,
     compute_relationship_keys,
     bind_many_to_one,
+    bind_many_to_one_via_index,
 )
 
 
@@ -267,3 +268,170 @@ def test_bind_many_to_one_multiple_specs_same_child_table():
     assert posts[("p1",)].category is categories[("c1",)]
     assert posts[("p2",)].user is users[("u2",)]
     assert posts[("p2",)].category is categories[("c2",)]
+
+
+def test_bind_many_to_one_via_index():
+    """Relationship binding should use secondary indices instead of join keys."""
+
+    @dataclass
+    class Parent:
+        external_id: str
+
+    @dataclass
+    class Child:
+        parent_ref: str
+        parent: Parent | None = None
+
+    parent1 = Parent(external_id="P1")
+    parent2 = Parent(external_id="P2")
+    child1 = Child(parent_ref="P1")
+    child2 = Child(parent_ref="P2")
+
+    # Parents indexed by external_id (secondary index)
+    parent_result = MappingResult(
+        instances={},  # No join key
+        update_errors={},
+        finalize_errors={},
+        stats={},
+        indices={"external_id": {"P1": parent1, "P2": parent2}},
+    )
+
+    # Children in a list (no join key)
+    children_list = [child1, child2]
+
+    # Bind using secondary index
+    errors = bind_many_to_one_via_index(
+        parent_result=parent_result,
+        children=children_list,
+        parent_index_field="external_id",
+        child_lookup_field="parent_ref",
+        relationship_attr="parent",
+    )
+
+    assert errors == []
+    assert child1.parent is parent1
+    assert child2.parent is parent2
+
+
+def test_bind_many_to_one_via_index_missing_parent():
+    """Should collect errors when parent not found in index."""
+
+    @dataclass
+    class Parent:
+        external_id: str
+
+    @dataclass
+    class Child:
+        parent_ref: str
+        parent: Parent | None = None
+
+    parent1 = Parent(external_id="P1")
+    child1 = Child(parent_ref="P1")
+    child2 = Child(parent_ref="P_MISSING")
+
+    # Only P1 in index
+    parent_result = MappingResult(
+        instances={},
+        update_errors={},
+        finalize_errors={},
+        stats={},
+        indices={"external_id": {"P1": parent1}},
+    )
+
+    children_list = [child1, child2]
+
+    # Bind with required=True (default)
+    errors = bind_many_to_one_via_index(
+        parent_result=parent_result,
+        children=children_list,
+        parent_index_field="external_id",
+        child_lookup_field="parent_ref",
+        relationship_attr="parent",
+    )
+
+    assert len(errors) == 1
+    assert "P_MISSING" in errors[0]
+    assert child1.parent is parent1
+    assert child2.parent is None
+
+
+def test_bind_many_to_one_via_index_missing_lookup_value():
+    """Should handle children with None lookup values."""
+
+    @dataclass
+    class Parent:
+        external_id: str
+
+    @dataclass
+    class Child:
+        parent_ref: str | None
+        parent: Parent | None = None
+
+    parent1 = Parent(external_id="P1")
+    child1 = Child(parent_ref="P1")
+    child2 = Child(parent_ref=None)
+
+    parent_result = MappingResult(
+        instances={},
+        update_errors={},
+        finalize_errors={},
+        stats={},
+        indices={"external_id": {"P1": parent1}},
+    )
+
+    children_list = [child1, child2]
+
+    # Bind with required=True
+    errors = bind_many_to_one_via_index(
+        parent_result=parent_result,
+        children=children_list,
+        parent_index_field="external_id",
+        child_lookup_field="parent_ref",
+        relationship_attr="parent",
+    )
+
+    assert len(errors) == 1
+    assert "no value for parent_ref" in errors[0]
+    assert child1.parent is parent1
+    assert child2.parent is None
+
+
+def test_bind_many_to_one_via_index_not_required():
+    """Should not collect errors when required=False."""
+
+    @dataclass
+    class Parent:
+        external_id: str
+
+    @dataclass
+    class Child:
+        parent_ref: str
+        parent: Parent | None = None
+
+    parent1 = Parent(external_id="P1")
+    child1 = Child(parent_ref="P1")
+    child2 = Child(parent_ref="P_MISSING")
+
+    parent_result = MappingResult(
+        instances={},
+        update_errors={},
+        finalize_errors={},
+        stats={},
+        indices={"external_id": {"P1": parent1}},
+    )
+
+    children_list = [child1, child2]
+
+    # Bind with required=False
+    errors = bind_many_to_one_via_index(
+        parent_result=parent_result,
+        children=children_list,
+        parent_index_field="external_id",
+        child_lookup_field="parent_ref",
+        relationship_attr="parent",
+        required=False,
+    )
+
+    assert errors == []
+    assert child1.parent is parent1
+    assert child2.parent is None

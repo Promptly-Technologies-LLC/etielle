@@ -1,7 +1,6 @@
 import pytest
-import warnings
 
-from etielle.core import field_of, fields, FieldRef, Field, MappingSpec, TableEmit, TraversalSpec
+from etielle.core import field_of, Field, MappingSpec, TableEmit, TraversalSpec
 from etielle.transforms import get
 
 
@@ -16,15 +15,8 @@ class UserModel:
 
 
 def test_field_of_happy_path_single_attribute():
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", DeprecationWarning)
-        assert field_of(UserModel, lambda u: u.email) == "email"
-        assert field_of(UserModel, lambda u: u.id) == "id"
-
-
-def test_field_of_emits_deprecation_warning():
-    with pytest.warns(DeprecationWarning, match="field_of.*deprecated"):
-        field_of(UserModel, lambda u: u.email)
+    assert field_of(UserModel, lambda u: u.email) == "email"
+    assert field_of(UserModel, lambda u: u.id) == "id"
 
 
 @pytest.mark.parametrize(
@@ -46,71 +38,31 @@ def test_field_of_emits_deprecation_warning():
     ],
 )
 def test_field_of_invalid_patterns(selector, expected_message):
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", DeprecationWarning)
-        if expected_message is None:
-            # Should succeed
-            assert field_of(UserModel, selector) == "email"
-            return
-        with pytest.raises(ValueError) as err:
-            field_of(UserModel, selector)
-        assert expected_message in str(err.value)
+    if expected_message is None:
+        # Should succeed
+        assert field_of(UserModel, selector) == "email"
+        return
+    with pytest.raises(ValueError) as err:
+        field_of(UserModel, selector)
+    assert expected_message in str(err.value)
 
 
 def test_field_of_rejects_chained_attributes():
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", DeprecationWarning)
-        with pytest.raises(ValueError) as err:
-            field_of(
-                UserModel, lambda u: u.name.title
-            )  # chained attribute (attribute of attribute)
-        assert "must access exactly one attribute" in str(err.value)
+    with pytest.raises(ValueError) as err:
+        field_of(
+            UserModel, lambda u: u.name.title
+        )  # chained attribute (attribute of attribute)
+    assert "must access exactly one attribute" in str(err.value)
 
 
 def test_field_of_rejects_indexing():
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", DeprecationWarning)
-        with pytest.raises(ValueError) as err:
-            field_of(UserModel, lambda u: u.email[0])
-        assert "indexing on attribute selector" in str(err.value)
-
-
-# -----------------------------
-# fields() proxy tests
-# -----------------------------
-
-
-def test_fields_returns_field_ref():
-    result = fields(UserModel).email
-    assert isinstance(result, FieldRef)
-    assert result.name == "email"
-
-
-def test_fields_works_for_all_annotated_fields():
-    assert fields(UserModel).id.name == "id"
-    assert fields(UserModel).email.name == "email"
-    assert fields(UserModel).name.name == "name"
-
-
-def test_fields_rejects_nonexistent_field():
-    with pytest.raises(AttributeError) as err:
-        fields(UserModel).nonexistent
-    assert "has no field 'nonexistent'" in str(err.value)
-
-
-def test_fields_rejects_private_attributes():
-    with pytest.raises(AttributeError):
-        fields(UserModel)._private
-
-
-def test_field_ref_is_frozen():
-    ref = FieldRef("test")
-    with pytest.raises(Exception):  # FrozenInstanceError
-        ref.name = "other"
+    with pytest.raises(ValueError) as err:
+        field_of(UserModel, lambda u: u.email[0])
+    assert "indexing on attribute selector" in str(err.value)
 
 
 def test_integration_with_field_and_executor():
-    """Integration test using the new fields() proxy."""
+    """Integration test using field_of."""
     data = {
         "users": [
             {"id": "u1", "email": "ada@example.com", "name": "Ada"},
@@ -128,9 +80,9 @@ def test_integration_with_field_and_executor():
                         table="users",
                         join_keys=[get("id")],
                         fields=[
-                            Field(fields(UserModel).id.name, get("id")),
-                            Field(fields(UserModel).email.name, get("email")),
-                            Field(fields(UserModel).name.name, get("name")),
+                            Field(field_of(UserModel, lambda u: u.id), get("id")),
+                            Field(field_of(UserModel, lambda u: u.email), get("email")),
+                            Field(field_of(UserModel, lambda u: u.name), get("name")),
                         ],
                     )
                 ],
@@ -149,13 +101,19 @@ def test_integration_with_field_and_executor():
     ]
 
 
-def test_integration_fields_with_instance_emit():
-    """Integration test using fields() with InstanceEmit and FieldSpec."""
-    from dataclasses import dataclass
-    from etielle import InstanceEmit, FieldSpec, TypedDictBuilder
+def test_integration_field_of_with_instance_emit():
+    """Integration test using field_of with InstanceEmit and FieldSpec."""
+    from etielle import InstanceEmit, FieldSpec, PydanticBuilder
 
-    @dataclass
-    class User:
+    # Try to import Pydantic for this test
+    try:
+        from pydantic import BaseModel
+    except ImportError:
+        import pytest
+
+        pytest.skip("Pydantic not installed")
+
+    class User(BaseModel):
         id: str
         email: str
 
@@ -176,10 +134,10 @@ def test_integration_fields_with_instance_emit():
                         table="users",
                         join_keys=[get("id")],
                         fields=[
-                            FieldSpec(selector=fields(User).id, transform=get("id")),
-                            FieldSpec(selector=fields(User).email, transform=get("email")),
+                            FieldSpec(selector=lambda u: u.id, transform=get("id")),
+                            FieldSpec(selector=lambda u: u.email, transform=get("email")),
                         ],
-                        builder=TypedDictBuilder(lambda d: d),
+                        builder=PydanticBuilder(User),
                     )
                 ],
             )
@@ -189,8 +147,8 @@ def test_integration_fields_with_instance_emit():
     from etielle.executor import run_mapping
 
     result = run_mapping(data, spec)
-    rows = sorted(result["users"].instances.values(), key=lambda r: r["id"])
-    assert rows == [
+    rows = sorted(result["users"].instances.values(), key=lambda r: r.id)
+    assert [{"id": r.id, "email": r.email} for r in rows] == [
         {"id": "u1", "email": "ada@example.com"},
         {"id": "u2", "email": "linus@example.com"},
     ]

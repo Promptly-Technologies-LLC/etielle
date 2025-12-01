@@ -67,67 +67,6 @@ They're composable, side-effect free, and lazily evaluated in the context of the
 # -----------------------------
 
 
-@dataclass(frozen=True)
-class FieldRef:
-    """
-    A reference to a field name, returned by fields(Model).field_name.
-
-    This enables type-safe field selection with IDE autocomplete:
-        fields(User).email  # Returns FieldRef("email")
-    """
-
-    name: str
-
-
-M = TypeVar("M")
-
-
-class _FieldsProxy(Generic[M]):
-    """
-    Runtime proxy that captures attribute access and returns FieldRef.
-
-    At runtime: fields(User).id returns FieldRef("id")
-    At type-check time: fields(User).id is seen as accessing User.id
-    """
-
-    __slots__ = ("_model",)
-
-    def __init__(self, model: type[M]) -> None:
-        object.__setattr__(self, "_model", model)
-
-    def __getattr__(self, name: str) -> FieldRef:
-        if name.startswith("_"):
-            raise AttributeError(name)
-        model = object.__getattribute__(self, "_model")
-        annotations = getattr(model, "__annotations__", {})
-        if name not in annotations:
-            raise AttributeError(f"{model.__name__} has no field '{name}'")
-        return FieldRef(name)
-
-
-if TYPE_CHECKING:
-
-    def fields(model: type[M]) -> M:
-        """
-        Return a proxy for type-safe field selection with IDE autocomplete.
-
-        Usage:
-            fields(User).email  # Type checker sees User.email, runtime gets FieldRef("email")
-        """
-        ...
-
-else:
-
-    def fields(model: type[M]) -> _FieldsProxy[M]:
-        """
-        Return a proxy for type-safe field selection with IDE autocomplete.
-
-        Usage:
-            fields(User).email  # Type checker sees User.email, runtime gets FieldRef("email")
-        """
-        return _FieldsProxy(model)
-
-
 Attr = Callable[[T], U]
 
 
@@ -184,10 +123,6 @@ def field_of(model: type[T], selector: Attr[T, Any]) -> str:
     """
     Resolve a model field name from a type-checked selector lambda.
 
-    .. deprecated::
-        Use ``fields(Model).field_name`` instead for better IDE support.
-        Example: ``fields(User).email`` instead of ``field_of(User, lambda u: u.email)``
-
     Example:
         field_of(UserModel, lambda u: u.email) -> "email"
 
@@ -195,15 +130,6 @@ def field_of(model: type[T], selector: Attr[T, Any]) -> str:
       - Exactly one attribute access must occur.
       - No method calls, indexing, or chained attribute access.
     """
-    import warnings
-
-    warnings.warn(
-        "field_of() is deprecated. Use fields(Model).field_name instead. "
-        "Example: fields(User).email instead of field_of(User, lambda u: u.email)",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-
     trace = cast(Any, _FieldTrace())
     try:
         result = selector(trace)
@@ -285,9 +211,11 @@ class MappingResult(Generic[T]):
     - update_errors: per-key errors recorded during incremental updates
     - finalize_errors: per-key errors recorded while finalizing/validating instances
     - stats: simple counters to aid diagnostics (keys: num_instances, num_update_errors, num_finalize_errors)
+    - indices: secondary indices for relationship linking {field_name: {value: instance}}
     """
 
     instances: Dict[Tuple[Any, ...], T]
     update_errors: Dict[Tuple[Any, ...], List[str]]
     finalize_errors: Dict[Tuple[Any, ...], List[str]]
     stats: Dict[str, int]
+    indices: Dict[str, Dict[Any, T]] = field(default_factory=dict)

@@ -136,3 +136,29 @@ def test_composite_join_keys_merging_from_multiple_traversals():
         {"person_id": "p1", "year": 2024, "score": 7, "bonus": 100},
         {"person_id": "p1", "year": 2025, "score": 9, "bonus": 200},
     ]
+
+
+def test_mapping_result_supports_secondary_indices():
+    """MappingResult should support secondary indices for relationship linking."""
+    from etielle.core import MappingResult
+
+    # Create instances
+    class FakeUser:
+        def __init__(self, id, name):
+            self.id = id
+            self.name = name
+
+    user1 = FakeUser(1, "Alice")
+    user2 = FakeUser(2, "Bob")
+
+    # MappingResult with instances dict and secondary index
+    result = MappingResult(
+        instances={("k1",): user1, ("k2",): user2},
+        update_errors={},
+        finalize_errors={},
+        stats={},
+        indices={"name": {"Alice": user1, "Bob": user2}}
+    )
+
+    assert result.indices["name"]["Alice"] is user1
+    assert result.indices["name"]["Bob"] is user2

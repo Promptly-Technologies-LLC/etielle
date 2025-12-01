@@ -3,8 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Dict, Mapping, Sequence, Tuple
 
-from .core import Transform, TraversalSpec
-from .executor import MappingResult, _iter_traversal_nodes
+from .core import MappingResult, Transform, TraversalSpec
+from .executor import _iter_traversal_nodes
 from .instances import InstanceEmit
 
 
@@ -56,6 +56,9 @@ def compute_relationship_keys(
     # compute composite keys for InstanceEmit. Keys are stored per relationship
     # spec index so multiple specs can share the same child table.
 
+    # Auto-generated key counters for instances without join_on (must match executor)
+    auto_key_counters: Dict[str, int] = {}
+
     out: Dict[int, Dict[KeyTuple, KeyTuple]] = {}
 
     for trav in traversals:
@@ -68,10 +71,18 @@ def compute_relationship_keys(
                 if not child_specs:
                     continue
                 # Compute child's composite key for this emit
-                child_key_parts = [tr(ctx) for tr in emit.join_keys]
-                if any(part is None or part == "" for part in child_key_parts):
-                    continue
-                child_ck: KeyTuple = tuple(child_key_parts)
+                if emit.join_keys:
+                    # Join keys specified - compute composite key
+                    child_key_parts = [tr(ctx) for tr in emit.join_keys]
+                    if any(part is None or part == "" for part in child_key_parts):
+                        continue
+                    child_ck: KeyTuple = tuple(child_key_parts)
+                else:
+                    # No join keys - use auto-generated unique key (must match executor)
+                    table_name = emit.table
+                    counter = auto_key_counters.get(table_name, 0)
+                    child_ck = (f"__auto_{counter}__",)
+                    auto_key_counters[table_name] = counter + 1
                 # For each spec on this child table, compute parent key and store
                 for spec_idx, spec in child_specs:
                     parent_key_parts = [tr(ctx) for tr in spec.child_to_parent_key]
@@ -112,6 +123,7 @@ def bind_many_to_one(
         parents = table_to_instances.get(rel.parent_table, {})
         children = table_to_instances.get(rel.child_table, {})
         key_map = child_to_parent.get(idx, {})
+
         for child_ck, child_obj in children.items():
             parent_ck = key_map.get(child_ck)
             if parent_ck is None:
@@ -138,3 +150,192 @@ def bind_many_to_one(
         raise RuntimeError(
             "relationship binding failed (many-to-one):\n" + "\n".join(errors)
         )
+
+
+def bind_many_to_one_via_index(
+    parent_result: MappingResult[Any],
+    children: Sequence[Any],
+    parent_index_field: str,
+    child_lookup_field: str,
+    relationship_attr: str,
+    *,
+    required: bool = True,
+) -> list[str]:
+    """
+    Bind child -> parent using secondary index lookup.
+
+    Args:
+        parent_result: MappingResult containing parent instances with indices
+        children: List of child instances
+        parent_index_field: Field name in parent's secondary index
+        child_lookup_field: Attribute name on child containing lookup value
+        relationship_attr: Attribute name on child to set to parent
+        required: If True, collect errors for missing parents
+
+    Returns:
+        List of error messages (empty if all bindings succeeded)
+    """
+    errors: list[str] = []
+    parent_index = parent_result.indices.get(parent_index_field, {})
+
+    for child in children:
+        lookup_value = getattr(child, child_lookup_field, None)
+        if lookup_value is None:
+            if required:
+                errors.append(f"Child has no value for {child_lookup_field}")
+            continue
+
+        parent = parent_index.get(lookup_value)
+        if parent is None:
+            if required:
+                errors.append(
+                    f"Parent not found for {parent_index_field}={lookup_value}"
+                )
+            continue
+
+        setattr(child, relationship_attr, parent)
+
+    return errors
+
+
+def compute_child_lookup_values(
+    root: Any,
+    traversals: Sequence[TraversalSpec],
+    relationships: Sequence[dict[str, Any]],
+    emissions: Sequence[dict[str, Any]],
+) -> Dict[str, Dict[KeyTuple, Dict[str, Any]]]:
+    """
+    Compute TempField/Field values for children that will be used in relationship binding.
+
+    Returns dict: {child_table: {child_key: {field_name: value}}}
+    """
+    from .instances import InstanceEmit
+
+    # Map child_table -> emission index -> field transforms
+    # We need to find which emissions have relationships and what field values to compute
+    child_field_transforms: Dict[str, Dict[str, Any]] = {}  # {child_table: {field_name: transform}}
+
+    for rel in relationships:
+        child_table = rel["child_table"]
+        emission_idx = rel["emission_index"]
+        emission = emissions[emission_idx]
+
+        # Get transforms for the fields used in link_to
+        for child_field in rel["by"].keys():
+            for f in emission["fields"]:
+                if f.name == child_field:
+                    child_field_transforms.setdefault(child_table, {})[child_field] = f.transform
+                    break
+
+    # Auto-generated key counters (must match executor)
+    auto_key_counters: Dict[str, int] = {}
+
+    out: Dict[str, Dict[KeyTuple, Dict[str, Any]]] = {}
+
+    for trav in traversals:
+        for ctx in _iter_traversal_nodes(root, trav):
+            for emit in trav.emits:
+                if not isinstance(emit, InstanceEmit):
+                    continue
+
+                # Check if this table has relationship fields to compute
+                field_transforms = child_field_transforms.get(emit.table)
+                if not field_transforms:
+                    continue
+
+                # Compute child's key (must match executor logic)
+                if emit.join_keys:
+                    key_parts = [tr(ctx) for tr in emit.join_keys]
+                    if any(part is None or part == "" for part in key_parts):
+                        continue
+                    child_key: KeyTuple = tuple(key_parts)
+                else:
+                    counter = auto_key_counters.get(emit.table, 0)
+                    child_key = (f"__auto_{counter}__",)
+                    auto_key_counters[emit.table] = counter + 1
+
+                # Compute field values
+                field_values: Dict[str, Any] = {}
+                for field_name, transform in field_transforms.items():
+                    field_values[field_name] = transform(ctx)
+
+                out.setdefault(emit.table, {})[child_key] = field_values
+
+    return out
+
+
+def bind_relationships_via_index(
+    raw_results: Mapping[str, MappingResult[Any]],
+    relationships: Sequence[dict[str, Any]],
+    child_lookup_values: Dict[str, Dict[KeyTuple, Dict[str, Any]]],
+    *,
+    fail_on_missing: bool = False,
+) -> list[str]:
+    """
+    Bind all relationships using secondary indices.
+
+    This is the preferred method when using the new "no default join key" approach.
+    Instead of computing child->parent key mappings, it uses secondary indices
+    built during instance creation.
+
+    Args:
+        raw_results: Dict mapping table name to MappingResult (with indices)
+        relationships: List of relationship dicts from PipelineBuilder._relationships
+                      Each has: child_table, parent_table, by (dict of child_field->parent_field)
+        child_lookup_values: Pre-computed TempField values for children
+                            {child_table: {child_key: {field_name: value}}}
+        fail_on_missing: If True, raise error on missing parents; if False, return errors
+
+    Returns:
+        List of error messages (empty if all succeeded)
+    """
+    all_errors: list[str] = []
+
+    for rel in relationships:
+        child_table = rel["child_table"]
+        parent_table = rel["parent_table"]
+        by_mapping = rel["by"]  # {child_field: parent_field}
+
+        # Get parent and child results
+        parent_result = raw_results.get(parent_table)
+        child_result = raw_results.get(child_table)
+
+        if parent_result is None or child_result is None:
+            continue
+
+        # Get lookup values for this child table
+        lookup_values = child_lookup_values.get(child_table, {})
+
+        # Infer attr name from parent table name (singular)
+        attr_name = parent_table.rstrip("s") if parent_table.endswith("s") else parent_table
+
+        # Bind each child to its parent
+        for child_key, child_obj in child_result.instances.items():
+            child_values = lookup_values.get(child_key, {})
+
+            # For each field mapping, look up parent
+            for child_field, parent_field in by_mapping.items():
+                lookup_value = child_values.get(child_field)
+                if lookup_value is None:
+                    if fail_on_missing:
+                        all_errors.append(f"Child {child_table} key={child_key} has no value for {child_field}")
+                    continue
+
+                # Look up parent in secondary index
+                parent_index = parent_result.indices.get(parent_field, {})
+                parent_obj = parent_index.get(lookup_value)
+
+                if parent_obj is None:
+                    if fail_on_missing:
+                        all_errors.append(f"Parent not found for {parent_field}={lookup_value}")
+                    continue
+
+                # Set relationship
+                setattr(child_obj, attr_name, parent_obj)
+
+    if all_errors and fail_on_missing:
+        raise RuntimeError(
+            "relationship binding failed (via index):\n" + "\n".join(all_errors)
+        )
+
+    return all_errors
