@@ -79,7 +79,6 @@ result = (
     .map_to(table="users", fields=[
         Field("id", get("id")),
         Field("name", get("name")),
-        TempField("id", get("id"))  # For joining with posts
     ])
     # Extract posts (nested under each user)
     .goto("posts").each()
@@ -87,7 +86,6 @@ result = (
         Field("id", get("id")),
         Field("user_id", get_from_parent("id")),  # Link to parent user
         Field("title", get("title")),
-        TempField("id", get("id"))
     ])
     .run()
 )
@@ -141,8 +139,8 @@ When you call `map_to()`, you define what data to extract:
 
 ```python
 .map_to(table="users", fields=[
+    Field("id", get("id")),          # Output column (also available for joins)
     Field("name", get("name")),      # Output column
-    TempField("id", get("id"))       # Join key only
 ])
 ```
 
@@ -202,17 +200,16 @@ result = (
     etl(data)
     # First path: basic user data
     .goto("users").each()
-    .map_to(table="users", fields=[
+    .map_to(table="users", join_on=["id"], fields=[
         Field("id", get("id")),
         Field("name", get("name")),
-        TempField("id", get("id"))
     ])
     # Second path: profile data (same table, merged by id)
     .goto_root()
     .goto("profiles").each()
     .map_to(table="users", join_on=["id"], fields=[
         Field("email", get("email")),
-        TempField("id", get("user_id"))  # Matches first emission's key
+        TempField("id", get("user_id"))  # Join key for merging
     ])
     .run()
 )
@@ -270,7 +267,6 @@ result = (
     .map_to(table=User, fields=[  # Pass model class, not string
         Field("id", get("id")),
         Field("name", get("name")),
-        TempField("id", get("id"))
     ])
     .run()
 )

@@ -65,7 +65,6 @@ result = (
     .map_to(table=User, fields=[
         Field("id", get("id")),
         Field("name", get("name")),
-        TempField("id", get("id"))  # Parent key
     ])
 
     # Map posts and link to users
@@ -73,8 +72,7 @@ result = (
     .map_to(table=Post, fields=[
         Field("id", get("id")),
         Field("title", get("title")),
-        TempField("id", get("id")),
-        TempField("user_id", get_from_parent("id"))  # Foreign key
+        TempField("user_id", get_from_parent("id"))  # Foreign key (not persisted)
     ])
     .link_to(User, by={"user_id": "id"})  # Link by user_id -> id
     .run()
@@ -145,7 +143,6 @@ result = (
     .map_to(table=User, fields=[
         Field("id", get("id")),
         Field("name", get("name")),
-        TempField("id", get("id"))
     ])
 
     .goto_root()
@@ -153,7 +150,6 @@ result = (
     .map_to(table=Post, fields=[
         Field("id", get("id")),
         Field("title", get("title")),
-        TempField("id", get("id"))
     ])
 
     .goto_root()
@@ -161,9 +157,8 @@ result = (
     .map_to(table=Comment, fields=[
         Field("id", get("id")),
         Field("body", get("body")),
-        TempField("id", get("id")),
-        TempField("user_id", get("user_id")),
-        TempField("post_id", get("post_id"))
+        TempField("user_id", get("user_id")),  # Foreign key (not persisted)
+        TempField("post_id", get("post_id"))   # Foreign key (not persisted)
     ])
     .link_to(User, by={"user_id": "id"})  # Link to user
     .link_to(Post, by={"post_id": "id"})  # Link to post
@@ -210,15 +205,13 @@ result = (
     .map_to(table=Order, fields=[
         Field("id", get("id")),
         Field("customer", get("customer")),
-        TempField("id", get("id"))
     ])
 
     .goto("items").each()
     .map_to(table=Item, fields=[
         Field("id", get("id")),
         Field("product", get("product")),
-        TempField("id", get("id")),
-        TempField("order_id", get_from_parent("id"))  # From parent order
+        TempField("order_id", get_from_parent("id"))  # Foreign key (not persisted)
     ])
     .link_to(Order, by={"order_id": "id"})
     .run()
@@ -299,9 +292,11 @@ Foreign key values should be in `TempField`, not `Field`, unless you also need t
 # Good: Foreign key is TempField (not in output, just for linking)
 TempField("user_id", get_from_parent("id"))
 
-# Also valid: If you need user_id in output AND for linking
+# If you need user_id in output: use Field (it's also available for linking)
 Field("user_id", get_from_parent("id"))
-TempField("user_id", get_from_parent("id"))
+
+# Note: Don't use both Field and TempField with the same name
+# The TempField will shadow the Field and prevent it from being persisted
 ```
 
 ### Order Matters
