@@ -2,6 +2,137 @@
 
 <!-- version list -->
 
+## v2.4.0 (2025-12-01)
+
+### Bug Fixes
+
+- Join_on fields are now persisted instead of excluded
+  ([`6b7b895`](https://github.com/Promptly-Technologies-LLC/etielle/commit/6b7b895f9f477cf6847eb3c906014706732ef7c4))
+
+- Proper flush ordering for NOT NULL FK constraints
+  ([`ba23476`](https://github.com/Promptly-Technologies-LLC/etielle/commit/ba23476bf97075ce424c0cbecc73b7b0e59f3ade))
+
+- Remove fields() proxy and undeprecate field_of
+  ([`6eed551`](https://github.com/Promptly-Technologies-LLC/etielle/commit/6eed551aa8d98c3b43a1550a8d8099d830ad9c33))
+
+- Resolve spurious iteration bug
+  ([`50af234`](https://github.com/Promptly-Technologies-LLC/etielle/commit/50af234e55a9dcd5a9113716c213ab56b80202d3))
+
+- Resolve type errors
+  ([`eb30b0f`](https://github.com/Promptly-Technologies-LLC/etielle/commit/eb30b0faa4eabbbb822264542bb6241ca3615ddc))
+
+- Singleton mapping without explicit join key now persists correctly
+  ([`965ffd2`](https://github.com/Promptly-Technologies-LLC/etielle/commit/965ffd2c2b3372729befba7eeef23f5ecbdf2395))
+
+- Singleton parents can now be linked by children
+  ([`cb19d14`](https://github.com/Promptly-Technologies-LLC/etielle/commit/cb19d14a2c6c3cb0a86747b14c12e3354f84fe22))
+
+### Documentation
+
+- Add fluent API documentation to README
+  ([`ae9078a`](https://github.com/Promptly-Technologies-LLC/etielle/commit/ae9078a483cfdf2aa1f521079911395209db5887))
+
+- Full documentation rewrite
+  ([`c2b553c`](https://github.com/Promptly-Technologies-LLC/etielle/commit/c2b553c5489dfdf748e9f2c8630b94a6fbd434da))
+
+- Update docs to reflect architecture changes
+  ([`b3744e7`](https://github.com/Promptly-Technologies-LLC/etielle/commit/b3744e78d69c607c1a0fada534b9e459bf4cd03f))
+
+### Features
+
+- Add _build_dependency_graph to PipelineBuilder
+  ([`682eef7`](https://github.com/Promptly-Technologies-LLC/etielle/commit/682eef71c628363e393ac8459094ce9ef508959d))
+
+- Add _get_linkable_fields to extract linking fields from pipeline
+  ([`f5e02d4`](https://github.com/Promptly-Technologies-LLC/etielle/commit/f5e02d47d8d1a069d584a0af411a98894eaef34e))
+
+- Add bind_many_to_one_via_index for secondary index lookup
+  ([`4ed9ab1`](https://github.com/Promptly-Technologies-LLC/etielle/commit/4ed9ab1192e528064a0cd4158a97768f2260a2e1))
+
+- Add indices field to MappingResult for secondary indices
+  ([`cbd05c7`](https://github.com/Promptly-Technologies-LLC/etielle/commit/cbd05c7b0cd0070ff841c7d4b5962ba3797116cc))
+
+- Add topological_sort utility for dependency ordering
+  ([`42b416e`](https://github.com/Promptly-Technologies-LLC/etielle/commit/42b416efa953f45c20f5d1689a37b036d857e376))
+
+- Build secondary indices for linkable fields during instance creation
+  ([`4cdf311`](https://github.com/Promptly-Technologies-LLC/etielle/commit/4cdf31178bfa0df1f0bbaa984a41b8df91949e12))
+
+- Decouple join keys from relationship linking
+  ([`4295408`](https://github.com/Promptly-Technologies-LLC/etielle/commit/429540876e5e7e7ca67c24ed352a84c7a5c8dff4))
+
+- Export fluent API from package root
+  ([`4b3b4aa`](https://github.com/Promptly-Technologies-LLC/etielle/commit/4b3b4aabda6f652df11d9620565e175d1d93d0c3))
+
+- Implement dependency-ordered flushing for auto-generated PKs
+  ([`06864f8`](https://github.com/Promptly-Technologies-LLC/etielle/commit/06864f885d5b784fa8cdc63d4d34f3b5f7627161))
+
+- **fluent**: Add @transform decorator for custom transforms
+  ([`fada2b7`](https://github.com/Promptly-Technologies-LLC/etielle/commit/fada2b7fd3ddbaf3a57b23d160197e6bd2c34321))
+
+- **fluent**: Add automatic model type detection for builders
+  ([`a64ff0d`](https://github.com/Promptly-Technologies-LLC/etielle/commit/a64ff0d0d25d9ac692ea306a3a6714c90df5db20))
+
+- **fluent**: Add database persistence with load().run()
+  ([`e14cd8c`](https://github.com/Promptly-Technologies-LLC/etielle/commit/e14cd8cb7c98421ea6a7ccec80ff03f408c9d600))
+
+- **fluent**: Add each() iteration marker
+  ([`8a817a0`](https://github.com/Promptly-Technologies-LLC/etielle/commit/8a817a054ec366e01b8ea34a4bcd4bdbe09d921b))
+
+- **fluent**: Add Field dataclass for persisted fields
+  ([`9e382c1`](https://github.com/Promptly-Technologies-LLC/etielle/commit/9e382c16720c83c6f7c6897efc04c219f0151e80))
+
+- **fluent**: Add FieldUnion type alias
+  ([`9f5ae39`](https://github.com/Promptly-Technologies-LLC/etielle/commit/9f5ae39a7834760d913aff5ca87d06629db485f5))
+
+- **fluent**: Add goto() navigation method
+  ([`9b3e14a`](https://github.com/Promptly-Technologies-LLC/etielle/commit/9b3e14a803e28ede170bc3c34a102fa10e4db05c))
+
+- **fluent**: Add goto_root() navigation method
+  ([`4c52b32`](https://github.com/Promptly-Technologies-LLC/etielle/commit/4c52b321bcf1142faddb8e6b249737ae44044ac8))
+
+- **fluent**: Add link_to() relationship method
+  ([`bc67613`](https://github.com/Promptly-Technologies-LLC/etielle/commit/bc67613dee17dc85c9f1cfcf9803511ff46fb412))
+
+- **fluent**: Add load() session configuration method
+  ([`0f6edf8`](https://github.com/Promptly-Technologies-LLC/etielle/commit/0f6edf89af6f091635dd83b8e9d3c7288fc23073))
+
+- **fluent**: Add map_to() emission method
+  ([`09b1e6a`](https://github.com/Promptly-Technologies-LLC/etielle/commit/09b1e6a5a9188fadf750d864acae08fc9a84974a))
+
+- **fluent**: Add multiple root support in run()
+  ([`3fc47ee`](https://github.com/Promptly-Technologies-LLC/etielle/commit/3fc47eeee6e3888e51a2a6325b27a3f477a8f7d4))
+
+- **fluent**: Add node() transform
+  ([`5a5d5e1`](https://github.com/Promptly-Technologies-LLC/etielle/commit/5a5d5e164b0979a0641c9466591be248156f4d7e))
+
+- **fluent**: Add parent_index() transform
+  ([`0620c99`](https://github.com/Promptly-Technologies-LLC/etielle/commit/0620c99326a5139bdfe8d12ab955c819cfff175e))
+
+- **fluent**: Add PipelineBuilder skeleton and etl() entry point
+  ([`e5d1c0d`](https://github.com/Promptly-Technologies-LLC/etielle/commit/e5d1c0d3d50f55b4aa5c459a4b17420e9953af3b))
+
+- **fluent**: Add PipelineResult with _TablesProxy
+  ([`2ed4844`](https://github.com/Promptly-Technologies-LLC/etielle/commit/2ed48444d539dfd972a916d51f59b520e5bf0d7f))
+
+- **fluent**: Add relationship binding in run()
+  ([`da4f6a2`](https://github.com/Promptly-Technologies-LLC/etielle/commit/da4f6a2ce855f28747fe53bf7882a623072fc1bd))
+
+- **fluent**: Add run() execution method with basic extraction
+  ([`dd8a627`](https://github.com/Promptly-Technologies-LLC/etielle/commit/dd8a627e2ab7d8a4ddaba2865dcb70774dd8fef7))
+
+- **fluent**: Add TempField dataclass for join-only fields
+  ([`5cd86b8`](https://github.com/Promptly-Technologies-LLC/etielle/commit/5cd86b8f7b196d9fd95430e640ef0a78544bb331))
+
+### Testing
+
+- **fluent**: Add error handling mode tests
+  ([`4b04968`](https://github.com/Promptly-Technologies-LLC/etielle/commit/4b0496897109f6233b2ac4e3ae55ed9a9fb112b8))
+
+- **fluent**: Add tests for row merging with join_on
+  ([`3e0382b`](https://github.com/Promptly-Technologies-LLC/etielle/commit/3e0382b524c08133a930fda88de92f58d3c88c12))
+
+
 ## v2.3.2 (2025-11-29)
 
 ### Bug Fixes
