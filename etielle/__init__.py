@@ -39,6 +39,7 @@ from .fluent import (
 
 # Re-export transforms for fluent API
 from .transforms import (
+    apply,
     get,
     get_from_root,
     get_from_parent,
@@ -84,6 +85,7 @@ __all__ = [
     "PipelineResult",
     "PipelineBuilder",
     # Transforms
+    "apply",
     "get",
     "get_from_root",
     "get_from_parent",
