@@ -150,6 +150,9 @@ class InstanceEmit(Generic[T]):
     allow_extras: bool = False
     # strictness mode: 'collect_all' (default) or 'fail_fast'
     strict_mode: str = "collect_all"
+    # Field names that should be stored in shadow but NOT persisted to instances
+    # Used for TempFields that are needed for relationship linking
+    temp_fields: frozenset[str] = field(default_factory=frozenset)
 
 
 # -----------------------------

@@ -102,8 +102,11 @@ def run_mapping(
     """
     Execute mapping spec against root JSON, returning rows per table.
 
-    Rows are merged by composite join keys per table. If any join-key part is
-    None/empty, the row is skipped.
+    When join_on is specified, rows are merged by composite join keys per table.
+    If any join-key part is None/empty, the row is skipped.
+
+    When join_on is NOT specified, each iteration creates a distinct instance
+    with an auto-generated unique key (no merging, no deduplication).
 
     Args:
         root: The JSON data to process
@@ -119,14 +122,26 @@ def run_mapping(
     # For instance emission
     instance_tables: Dict[str, Dict[str, Any]] = {}
 
+    # Auto-generated key counter for instances without join_on
+    auto_key_counters: Dict[str, int] = {}
+
     for traversal in spec.traversals:
         for ctx in _iter_traversal_nodes(root, traversal):
             for emit in traversal.emits:
                 # Compute join key
-                key_parts: List[Any] = [tr(ctx) for tr in emit.join_keys]
-                if any(part is None or part == "" for part in key_parts):
-                    continue
-                composite_key = tuple(key_parts)
+                if emit.join_keys:
+                    # Join keys specified - compute composite key
+                    key_parts: List[Any] = [tr(ctx) for tr in emit.join_keys]
+                    if any(part is None or part == "" for part in key_parts):
+                        continue
+                    composite_key = tuple(key_parts)
+                else:
+                    # No join keys - use auto-generated unique key
+                    # This allows each iteration to create a distinct instance
+                    table_name = emit.table
+                    counter = auto_key_counters.get(table_name, 0)
+                    composite_key = (f"__auto_{counter}__",)
+                    auto_key_counters[table_name] = counter + 1
 
                 # Branch by emit type
                 if isinstance(emit, TableEmit):
@@ -157,13 +172,17 @@ def run_mapping(
                     shadow_bucket = shadow.setdefault(composite_key, {})
 
                     # Build updates with optional merge policies
+                    # TempFields are stored in shadow but not persisted to instances
+                    temp_fields = getattr(emit, "temp_fields", frozenset())
                     updates: Dict[str, Any] = {}
                     for spec_field in emit.fields:
                         field_name = resolve_field_name_for_builder(
                             tbl["builder"], spec_field
                         )
+                        is_temp = field_name in temp_fields
                         # Strict field checks with suggestions for string selectors
-                        if emit.strict_fields:
+                        # Skip check for TempFields since they're not persisted
+                        if emit.strict_fields and not is_temp:
                             known = tbl["builder"].known_fields()
                             if known and field_name not in known:
                                 suggestions = get_close_matches(
@@ -200,8 +219,11 @@ def run_mapping(
                                 )
                                 # Skip updating this field on error
                                 continue
+                        # Always store in shadow (for secondary indices)
                         shadow_bucket[field_name] = value
-                        updates[field_name] = value
+                        # Only persist non-TempFields to instances
+                        if not is_temp:
+                            updates[field_name] = value
 
                     tbl["builder"].update(composite_key, updates)
                     continue
@@ -253,11 +275,18 @@ def run_mapping(
             fin_errors[key_tuple] = [f"table={table} key={key_tuple} {m}" for m in msgs]
 
         # Build secondary indices for linkable fields
+        # Use shadow values first (for TempFields), fall back to instance attributes (for Fields)
+        shadow = meta["shadow"]
         indices: Dict[str, Dict[Any, Any]] = {}
         for field_name in linkable_fields.get(table, set()):
             field_index: Dict[Any, Any] = {}
             for key_tuple, instance in instances.items():
-                field_value = getattr(instance, field_name, None)
+                # First try shadow (includes TempFields that aren't on instance)
+                shadow_bucket = shadow.get(key_tuple, {})
+                field_value = shadow_bucket.get(field_name)
+                # Fall back to instance attribute for regular Fields
+                if field_value is None:
+                    field_value = getattr(instance, field_name, None)
                 if field_value is not None:
                     field_index[field_value] = instance
             if field_index:

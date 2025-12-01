@@ -5,7 +5,7 @@ from sqlalchemy import create_engine, Column, Integer, String, ForeignKey
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 
 from etielle.fluent import etl, Field, TempField
-from etielle.transforms import get, get_from_parent, key
+from etielle.transforms import get, key
 
 Base = declarative_base()
 
@@ -267,6 +267,38 @@ class TestDictIteration:
         names = {u.name for u in users}
         assert names == {"Question 1", "Question 2"}
 
+    def test_no_join_key_creates_list_of_instances(self, session):
+        """Without join_on, instances should be stored in a list, not keyed dict.
+
+        This means duplicate values should create separate instances (no deduplication).
+        Previously, the code used key() as default join key, which caused deduplication.
+        Now, with no default join key, each iteration creates a distinct instance.
+        """
+        data = {
+            "items": [
+                {"name": "Item1"},
+                {"name": "Item2"},
+                {"name": "Item1"},  # Duplicate name - should create 3 instances, not 2
+            ]
+        }
+
+        result = (
+            etl(data)
+            .goto("items").each()
+            .map_to(table=User, fields=[
+                Field("name", get("name")),
+            ])
+            .load(session)
+            .run()
+        )
+
+        session.commit()
+
+        # Should have 3 instances (no deduplication without join_on)
+        users = session.query(User).all()
+        assert len(users) == 3, f"Expected 3 users (no deduplication), got {len(users)}"
+        assert [u.name for u in users].count("Item1") == 2
+
 
 class TestJoinOnFieldPersistence:
     """Tests that join_on fields are persisted to the database.
@@ -342,8 +374,8 @@ class TestSingletonMapping:
         assert len(users) == 1
         assert users[0].name == "Alice"
 
-    def test_singleton_mapping_uses_singleton_key(self, session):
-        """Singleton mapping should use __singleton__ as the join key."""
+    def test_singleton_mapping_uses_auto_key(self, session):
+        """Root-level mapping without join_on should use auto-generated key."""
         data = {"name": "Bob"}
 
         result = (
@@ -354,9 +386,12 @@ class TestSingletonMapping:
             .run()
         )
 
-        # Check the key used
-        assert ("__singleton__",) in result.tables["users"]
-        assert result.tables["users"][("__singleton__",)].name == "Bob"
+        # Check that an instance was created (with auto-generated key)
+        users_dict = result.tables["users"]
+        assert len(users_dict) == 1
+        # The key should be auto-generated, not __singleton__
+        user = next(iter(users_dict.values()))
+        assert user.name == "Bob"
 
     def test_singleton_parent_can_be_linked_by_children(self, session):
         """Children should be able to link to singleton parents via natural keys.

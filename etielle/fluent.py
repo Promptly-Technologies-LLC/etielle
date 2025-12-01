@@ -483,8 +483,7 @@ class PipelineBuilder:
 
     def _build_traversal_specs(self) -> list[TraversalSpec]:
         """Convert accumulated emissions to TraversalSpec objects."""
-        from etielle.core import MappingSpec, TraversalSpec, TableEmit, Field as CoreField
-        from etielle.transforms import literal, key
+        from etielle.core import TraversalSpec, TableEmit, Field as CoreField
 
         specs = []
 
@@ -497,6 +496,7 @@ class PipelineBuilder:
             fields = []
             join_keys = []
             merge_policies = {}
+            temp_field_names: set[str] = set()  # Track TempFields
             field_map = {f.name: f.transform for f in emission["fields"]}
 
             # If join_on specified, use those field names to build join_keys
@@ -504,23 +504,23 @@ class PipelineBuilder:
                 for key_name in emission["join_on"]:
                     if key_name in field_map:
                         join_keys.append(field_map[key_name])
-                # Add ALL Fields to output (join_on fields are persisted too)
+                # Add ALL fields to output (both Field and TempField)
                 for f in emission["fields"]:
-                    if isinstance(f, Field):
-                        fields.append(CoreField(f.name, f.transform))
-                        if f.merge is not None:
-                            merge_policies[f.name] = f.merge
-            else:
-                # No explicit join_on - use TempField/Field distinction
-                for f in emission["fields"]:
+                    fields.append(CoreField(f.name, f.transform))
                     if isinstance(f, TempField):
-                        # TempFields become join keys
-                        join_keys.append(f.transform)
-                    else:
-                        # Regular Fields go to output
-                        fields.append(CoreField(f.name, f.transform))
-                        if f.merge is not None:
-                            merge_policies[f.name] = f.merge
+                        temp_field_names.add(f.name)
+                    elif f.merge is not None:
+                        merge_policies[f.name] = f.merge
+            else:
+                # No explicit join_on - NO default join key
+                # Each iteration creates a distinct instance (auto-generated key)
+                # ALL fields go to output (both Field and TempField)
+                for f in emission["fields"]:
+                    fields.append(CoreField(f.name, f.transform))
+                    if isinstance(f, TempField):
+                        temp_field_names.add(f.name)
+                    elif f.merge is not None:
+                        merge_policies[f.name] = f.merge
 
             outer_path: list[str] = path
             outer_mode: Literal["auto", "items", "single"] = "auto"
@@ -577,13 +577,10 @@ class PipelineBuilder:
                     from etielle.instances import TypedDictBuilder
                     builder = TypedDictBuilder(lambda d: d)
 
-                # Default join key depends on whether we're iterating or not
-                # - singleton: use "__singleton__" sentinel
-                # - iteration: use key() to get dict key or list index
-                if outer_mode == "single":
-                    default_join_key = (literal("__singleton__"),)
-                else:
-                    default_join_key = (key(),)
+                # No default join key - if join_on is not specified, instances are
+                # stored in a list without keying (no merging, no deduplication).
+                # Each iteration creates a distinct instance.
+                default_join_key = ()
 
                 table_emit = InstanceEmit(
                     table=emission["table"],
@@ -591,20 +588,22 @@ class PipelineBuilder:
                     fields=tuple(field_specs),
                     builder=builder,
                     policies=merge_policies,
-                    strict_mode=strict_mode
+                    strict_mode=strict_mode,
+                    temp_fields=frozenset(temp_field_names)
                 )
             else:
                 # Use simpler TableEmit when no model class or merge policies needed
-                # Default join key depends on whether we're iterating or not
-                if outer_mode == "single":
-                    default_join_key = (literal("__singleton__"),)
-                else:
-                    default_join_key = (key(),)
+                # No default join key - if join_on is not specified, instances are
+                # stored in a list without keying (no merging, no deduplication).
+                default_join_key = ()
+
+                # For TableEmit, exclude TempFields from output (they're not persisted)
+                non_temp_fields = [f for f in fields if f.name not in temp_field_names]
 
                 table_emit = TableEmit(
                     table=emission["table"],
                     join_keys=tuple(join_keys) if join_keys else default_join_key,
-                    fields=tuple(fields)
+                    fields=tuple(non_temp_fields)
                 )
 
             spec = TraversalSpec(
@@ -656,7 +655,7 @@ class PipelineBuilder:
         Returns:
             PipelineResult with tables and errors.
         """
-        from etielle.core import MappingSpec, TraversalSpec, TableEmit, Field as CoreField
+        from etielle.core import MappingSpec
         from etielle.executor import run_mapping
 
         # Extract linkable fields from link_to declarations
@@ -717,10 +716,9 @@ class PipelineBuilder:
 
         # Handle relationship binding and staged flushing
         rel_specs: list[Any] = []
-        child_to_parent: dict[int, dict[tuple[Any, ...], tuple[Any, ...]]] = {}
 
         if self._relationships:
-            from etielle.relationships import compute_relationship_keys, bind_many_to_one, ManyToOneSpec
+            from etielle.relationships import ManyToOneSpec, bind_relationships_via_index, compute_child_lookup_values
 
             # Build ManyToOneSpec objects from recorded relationships
             for rel in self._relationships:
@@ -762,15 +760,19 @@ class PipelineBuilder:
                     self._emissions = original_emissions
                     all_specs.extend(emission_specs)
 
-            # For now, use the first root for relationship key computation
-            # This works when all data is in one root, but may need enhancement
-            # for cross-root relationships in the future
+            # Compute child lookup values (TempField values) by re-traversing
             first_root = self._roots[0] if self._roots else {}
-            child_to_parent = compute_relationship_keys(first_root, all_specs, rel_specs)
+            # This is needed for both session and non-session paths
+            child_lookup_values = compute_child_lookup_values(
+                first_root, all_specs, self._relationships, self._emissions
+            )
 
             # If no session, bind all relationships now (non-DB use case)
+            # Use secondary indices for binding instead of join key computation
             if self._session is None:
-                bind_many_to_one(raw_results, rel_specs, child_to_parent, fail_on_missing=False)
+                bind_relationships_via_index(
+                    raw_results, self._relationships, child_lookup_values, fail_on_missing=False
+                )
 
         # Convert to PipelineResult format
         tables: dict[str, dict[tuple[Any, ...], Any]] = {}
@@ -831,35 +833,39 @@ class PipelineBuilder:
                     if not isinstance(instance, dict):
                         self._session.add(instance)
 
-                # Bind pending parent relationships for this table
+                # Bind pending parent relationships for this table using secondary indices
                 # At this point, all parents have been flushed and have IDs
                 for idx, parent_table in pending_bindings.get(table_name, []):
-                    spec = rel_specs[idx]
-                    if parent_table not in tables:
+                    if parent_table not in raw_results:
                         continue
-                    key_map = child_to_parent.get(idx, {})
-                    parent_instances = tables[parent_table]
-                    child_instances = tables[table_name]
 
-                    # Check if parent table is a singleton
-                    singleton_parent = None
-                    if len(parent_instances) == 1:
-                        only_key = next(iter(parent_instances.keys()))
-                        if only_key == ("__singleton__",):
-                            singleton_parent = parent_instances[only_key]
+                    # Find the relationship spec for this binding
+                    rel = self._relationships[idx]
+                    parent_result = raw_results[parent_table]
+                    child_result = raw_results[table_name]
 
-                    for child_key, child_obj in child_instances.items():
+                    # Infer attr name from parent table name (singular)
+                    attr_name = parent_table.rstrip("s") if parent_table.endswith("s") else parent_table
+
+                    # Get pre-computed child lookup values
+                    lookup_values = child_lookup_values.get(table_name, {})
+
+                    # Bind each child to its parent using secondary indices
+                    for child_key, child_obj in child_result.instances.items():
                         if isinstance(child_obj, dict):
                             continue
-                        parent_key = key_map.get(child_key)
-                        parent_obj = None
-                        if parent_key and parent_key in parent_instances:
-                            parent_obj = parent_instances[parent_key]
-                        # Fallback to singleton parent if exact key lookup failed
-                        elif singleton_parent is not None:
-                            parent_obj = singleton_parent
-                        if parent_obj is not None and not isinstance(parent_obj, dict):
-                            setattr(child_obj, spec.attr, parent_obj)
+                        child_values = lookup_values.get(child_key, {})
+
+                        for child_field, parent_field in rel["by"].items():
+                            lookup_value = child_values.get(child_field)
+                            if lookup_value is None:
+                                continue
+
+                            parent_index = parent_result.indices.get(parent_field, {})
+                            parent_obj = parent_index.get(lookup_value)
+
+                            if parent_obj is not None:
+                                setattr(child_obj, attr_name, parent_obj)
 
                 # Flush this table - relationships are bound, FKs will be set
                 self._session.flush()

@@ -631,8 +631,10 @@ class TestRunBasic:
         # Access by string name
         users = result.tables["users"]
         assert len(users) == 2
-        # Keyed by TempField values (join key)
-        assert (1,) in users or (2,) in users
+        # Without join_on, keys are auto-generated (no TempField-based keys)
+        # Each iteration creates a distinct instance
+        names = {v["name"] for v in users.values()}
+        assert names == {"Alice", "Bob"}
 
     def test_run_tempfield_not_in_output(self):
         """TempField values are not in the output dict."""
@@ -692,7 +694,8 @@ class TestRunMerging:
         result = (
             etl(data)
             .goto("users").each()
-            .map_to(table="users", fields=[
+            # Both map_to calls need join_on for merging
+            .map_to(table="users", join_on=["id"], fields=[
                 Field("name", get("name")),
                 TempField("id", get("id"))
             ])
@@ -724,7 +727,8 @@ class TestRunMerging:
         result = (
             etl(data)
             .goto("sales").each()
-            .map_to(table="sales", fields=[
+            # Explicit join_on required for merging
+            .map_to(table="sales", join_on=["product"], fields=[
                 Field("total", get("amount"), merge=AddPolicy()),
                 TempField("product", get("product"))
             ])
@@ -869,7 +873,8 @@ class TestMultipleRoots:
         result = (
             etl(users_json, profiles_json)
             .goto_root(0).goto("users").each()
-            .map_to(table="users", fields=[
+            # Both map_to calls need join_on for merging
+            .map_to(table="users", join_on=["id"], fields=[
                 Field("name", get("name")),
                 TempField("id", get("id"))
             ])
@@ -978,7 +983,7 @@ class TestPublicAPI:
 
     def test_policies_from_package(self):
         """Merge policies are importable from etielle."""
-        from etielle import AddPolicy, ExtendPolicy, MaxPolicy
+        from etielle import AddPolicy
         assert AddPolicy is not None
 
 
