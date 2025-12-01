@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Relationship building (no extra DB round trips) – etielle: Declarative JSON-to-Relational Mapping in Python</title>
+<title>Relationships: Linking Tables with link_to() – etielle: Declarative JSON-to-Relational Mapping in Python</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -140,7 +140,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
         <i class="bi bi-layout-text-sidebar-reverse"></i>
       </button>
-        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../docs/relationships.html">Relationships</a></li></ol></nav>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../docs/navigation.html">Core Concepts</a></li><li class="breadcrumb-item"><a href="../docs/relationships.html">Relationships</a></li></ol></nav>
         <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
         </a>
     </div>
@@ -152,54 +152,110 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation docked overflow-auto">
     <div class="sidebar-menu-container"> 
     <ul class="list-unstyled mt-1">
-        <li class="sidebar-item">
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true">
+ <span class="menu-text">Getting Started</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../index.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Quickstart</span></a>
   </div>
 </li>
-        <li class="sidebar-item">
+          <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../docs/introduction-to-etl.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Introduction to ETL</span></a>
   </div>
 </li>
-        <li class="sidebar-item">
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true">
+ <span class="menu-text">Core Concepts</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../docs/traversals.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Traversals</span></a>
+  <a href="../docs/navigation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Navigation</span></a>
   </div>
 </li>
-        <li class="sidebar-item">
+          <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../docs/transforms.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Transforms</span></a>
   </div>
 </li>
-        <li class="sidebar-item">
+          <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../docs/emissions.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Emissions</span></a>
+  <a href="../docs/mapping.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Mapping Tables</span></a>
   </div>
 </li>
-        <li class="sidebar-item">
+          <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../docs/relationships.html" class="sidebar-item-text sidebar-link active">
  <span class="menu-text">Relationships</span></a>
   </div>
 </li>
-        <li class="sidebar-item">
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true">
+ <span class="menu-text">Advanced Topics</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../docs/loading-data-into-a-database.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Database upserts</span></a>
+  <a href="../docs/database-loading.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Database Loading</span></a>
   </div>
 </li>
-        <li class="sidebar-item">
+          <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../docs/developing-with-etielle.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Developing with etielle</span></a>
+  <a href="../docs/custom-transforms.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Custom Transforms</span></a>
   </div>
 </li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../docs/error-handling.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Error Handling</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" role="navigation" aria-expanded="true">
+ <span class="menu-text">Reference</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-4" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../docs/migration.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Migration from v2</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
     </ul>
     </div>
 </nav>
@@ -210,10 +266,31 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#many-to-one-via-relationship-keys" id="toc-many-to-one-via-relationship-keys" class="nav-link active" data-scroll-target="#many-to-one-via-relationship-keys">Many-to-one via relationship keys</a></li>
-  <li><a href="#example-structure" id="toc-example-structure" class="nav-link" data-scroll-target="#example-structure">Example structure</a></li>
-  <li><a href="#complete-example" id="toc-complete-example" class="nav-link" data-scroll-target="#complete-example">Complete example</a></li>
-  <li><a href="#behavior" id="toc-behavior" class="nav-link" data-scroll-target="#behavior">Behavior</a></li>
+  <li><a href="#what-is-link_to" id="toc-what-is-link_to" class="nav-link active" data-scroll-target="#what-is-link_to">What is <code>link_to()</code>?</a></li>
+  <li><a href="#basic-relationship-binding" id="toc-basic-relationship-binding" class="nav-link" data-scroll-target="#basic-relationship-binding">Basic Relationship Binding</a>
+  <ul class="collapse">
+  <li><a href="#one-to-many-users---posts" id="toc-one-to-many-users---posts" class="nav-link" data-scroll-target="#one-to-many-users---posts">One-to-Many (Users -&gt; Posts)</a></li>
+  </ul></li>
+  <li><a href="#how-link_to-works" id="toc-how-link_to-works" class="nav-link" data-scroll-target="#how-link_to-works">How <code>link_to()</code> Works</a>
+  <ul class="collapse">
+  <li><a href="#the-by-parameter" id="toc-the-by-parameter" class="nav-link" data-scroll-target="#the-by-parameter">The <code>by</code> Parameter</a></li>
+  <li><a href="#attribute-inference" id="toc-attribute-inference" class="nav-link" data-scroll-target="#attribute-inference">Attribute Inference</a></li>
+  </ul></li>
+  <li><a href="#multiple-relationships" id="toc-multiple-relationships" class="nav-link" data-scroll-target="#multiple-relationships">Multiple Relationships</a></li>
+  <li><a href="#nested-data-relationships" id="toc-nested-data-relationships" class="nav-link" data-scroll-target="#nested-data-relationships">Nested Data Relationships</a></li>
+  <li><a href="#composite-keys" id="toc-composite-keys" class="nav-link" data-scroll-target="#composite-keys">Composite Keys</a></li>
+  <li><a href="#junction-tables-reverse-lookups" id="toc-junction-tables-reverse-lookups" class="nav-link" data-scroll-target="#junction-tables-reverse-lookups">Junction Tables (Reverse Lookups)</a></li>
+  <li><a href="#link_to-reference" id="toc-link_to-reference" class="nav-link" data-scroll-target="#link_to-reference"><code>link_to()</code> Reference</a>
+  <ul class="collapse">
+  <li><a href="#requirements" id="toc-requirements" class="nav-link" data-scroll-target="#requirements">Requirements</a></li>
+  <li><a href="#error-handling" id="toc-error-handling" class="nav-link" data-scroll-target="#error-handling">Error Handling</a></li>
+  </ul></li>
+  <li><a href="#best-practices" id="toc-best-practices" class="nav-link" data-scroll-target="#best-practices">Best Practices</a>
+  <ul class="collapse">
+  <li><a href="#use-tempfield-for-foreign-keys" id="toc-use-tempfield-for-foreign-keys" class="nav-link" data-scroll-target="#use-tempfield-for-foreign-keys">Use TempField for Foreign Keys</a></li>
+  <li><a href="#order-matters" id="toc-order-matters" class="nav-link" data-scroll-target="#order-matters">Order Matters</a></li>
+  <li><a href="#match-key-types" id="toc-match-key-types" class="nav-link" data-scroll-target="#match-key-types">Match Key Types</a></li>
+  </ul></li>
   <li><a href="#see-also" id="toc-see-also" class="nav-link" data-scroll-target="#see-also">See also</a></li>
   </ul>
 </nav>
@@ -221,9 +298,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <!-- main -->
 <main class="content" id="quarto-document-content">
 
-<header id="title-block-header" class="quarto-title-block default">
+<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../docs/navigation.html">Core Concepts</a></li><li class="breadcrumb-item"><a href="../docs/relationships.html">Relationships</a></li></ol></nav>
 <div class="quarto-title">
-<h1 class="title">Relationship building (no extra DB round trips)</h1>
+<h1 class="title">Relationships: Linking Tables with link_to()</h1>
 </div>
 
 
@@ -240,128 +317,361 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<p><strong>What you’ll learn</strong>: How to build parent-child relationships in memory and flush once, avoiding N+1 database queries.</p>
-<p><strong>Prerequisites</strong>: Understanding of <code>InstanceEmit</code> and composite keys.</p>
-<p>Build relationships in-memory using composite keys, then flush once. This avoids per-row database round trips.</p>
-<section id="many-to-one-via-relationship-keys" class="level3">
-<h3 class="anchored" data-anchor-id="many-to-one-via-relationship-keys">Many-to-one via relationship keys</h3>
-<p>Here’s how etielle builds relationships without database round trips:</p>
-<ol type="1">
-<li><strong>Compute keys</strong>: Walk through your JSON again to compute which child belongs to which parent</li>
-<li><strong>Store in sidecar</strong>: Keep these relationships separate from your instances (in a “sidecar” dict)</li>
-<li><strong>Bind in memory</strong>: Link child objects to parent objects using Python references</li>
-<li><strong>Flush once</strong>: Save everything to the database in one operation</li>
-</ol>
-<p>This avoids the typical ORM pattern of “insert parent, get ID, insert child with foreign key” which requires multiple queries.</p>
+<p><strong>What you’ll learn</strong>: How to use <code>link_to()</code> to build parent-child relationships between tables, avoiding N+1 database queries.</p>
+<p><strong>ETL context</strong>: Relationships are part of the <strong>Transform</strong> step—they link child records to parent records in memory before persistence.</p>
+<section id="what-is-link_to" class="level2">
+<h2 class="anchored" data-anchor-id="what-is-link_to">What is <code>link_to()</code>?</h2>
+<p><code>link_to()</code> establishes a many-to-one relationship between the current table (child) and a parent table. It links records in memory so you can navigate between them or persist with proper foreign keys.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get, get_from_parent</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> (</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    etl(data)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    .goto(<span class="st">"users"</span>).each()</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    .map_to(table<span class="op">=</span>User, fields<span class="op">=</span>[...])</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    .goto(<span class="st">"posts"</span>).each()</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    .map_to(table<span class="op">=</span>Post, fields<span class="op">=</span>[</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>        Field(<span class="st">"title"</span>, get(<span class="st">"title"</span>)),</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>        TempField(<span class="st">"user_id"</span>, get_from_parent(<span class="st">"id"</span>))  <span class="co"># Foreign key value</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    ])</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>    .link_to(User, by<span class="op">=</span>{<span class="st">"user_id"</span>: <span class="st">"id"</span>})  <span class="co"># Link posts to users</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>    .run()</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
-<section id="example-structure" class="level3">
-<h3 class="anchored" data-anchor-id="example-structure">Example structure</h3>
-<pre><code>JSON:
-{
-  "users": [
-    {"id": "u1", "posts": [
-      {"id": "p1", "title": "Hello"},
-      {"id": "p2", "title": "World"}
-    ]}
-  ]
-}
-
-In memory after mapping:
-User(id="u1")
-Post(id="p1", user=None)  ← We need to link this
-Post(id="p2", user=None)  ← And this
-
-After bind_many_to_one:
-User(id="u1")
-Post(id="p1", user=&lt;User u1&gt;)  ← Now linked!
-Post(id="p2", user=&lt;User u1&gt;)  ← Now linked!</code></pre>
-</section>
-<section id="complete-example" class="level3">
-<h3 class="anchored" data-anchor-id="complete-example">Complete example</h3>
-<div id="bb179b62" class="cell" data-execution_count="1">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> MappingSpec, TraversalSpec, fields, InstanceEmit, FieldSpec, PydanticBuilder</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.relationships <span class="im">import</span> ManyToOneSpec, compute_relationship_keys, bind_many_to_one</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.executor <span class="im">import</span> run_mapping</span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.transforms <span class="im">import</span> get, get_from_parent</span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pydantic <span class="im">import</span> BaseModel</span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> User(BaseModel):</span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>    <span class="bu">id</span>: <span class="bu">str</span></span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>    email: <span class="bu">str</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span></span>
-<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Post(BaseModel):</span>
-<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>    <span class="bu">id</span>: <span class="bu">str</span></span>
-<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>    title: <span class="bu">str</span></span>
-<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>    user: User <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span></span>
-<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>root <span class="op">=</span> {</span>
-<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>  <span class="st">"users"</span>: [</span>
-<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>    {<span class="st">"id"</span>: <span class="st">"u1"</span>, <span class="st">"email"</span>: <span class="st">"alice@example.com"</span>, <span class="st">"posts"</span>: [</span>
-<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>      {<span class="st">"id"</span>: <span class="st">"p1"</span>, <span class="st">"title"</span>: <span class="st">"Hello"</span>},</span>
-<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a>      {<span class="st">"id"</span>: <span class="st">"p2"</span>, <span class="st">"title"</span>: <span class="st">"World"</span>}</span>
-<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>    ]},</span>
-<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>    {<span class="st">"id"</span>: <span class="st">"u2"</span>, <span class="st">"email"</span>: <span class="st">"bob@example.com"</span>, <span class="st">"posts"</span>: []}</span>
-<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a>  ]</span>
-<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a>users_emit <span class="op">=</span> InstanceEmit[User](</span>
-<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a>    table<span class="op">=</span><span class="st">"users"</span>,</span>
-<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a>    join_keys<span class="op">=</span>[get(<span class="st">"id"</span>)],</span>
-<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a>    fields<span class="op">=</span>[</span>
-<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a>        FieldSpec(selector<span class="op">=</span>fields(User).<span class="bu">id</span>, transform<span class="op">=</span>get(<span class="st">"id"</span>)),</span>
-<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a>        FieldSpec(selector<span class="op">=</span>fields(User).email, transform<span class="op">=</span>get(<span class="st">"email"</span>)),</span>
-<span id="cb2-32"><a href="#cb2-32" aria-hidden="true" tabindex="-1"></a>    ],</span>
-<span id="cb2-33"><a href="#cb2-33" aria-hidden="true" tabindex="-1"></a>    builder<span class="op">=</span>PydanticBuilder(User),</span>
-<span id="cb2-34"><a href="#cb2-34" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb2-35"><a href="#cb2-35" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-36"><a href="#cb2-36" aria-hidden="true" tabindex="-1"></a>posts_emit <span class="op">=</span> InstanceEmit[Post](</span>
-<span id="cb2-37"><a href="#cb2-37" aria-hidden="true" tabindex="-1"></a>    table<span class="op">=</span><span class="st">"posts"</span>,</span>
-<span id="cb2-38"><a href="#cb2-38" aria-hidden="true" tabindex="-1"></a>    join_keys<span class="op">=</span>[get(<span class="st">"id"</span>)],</span>
-<span id="cb2-39"><a href="#cb2-39" aria-hidden="true" tabindex="-1"></a>    fields<span class="op">=</span>[</span>
-<span id="cb2-40"><a href="#cb2-40" aria-hidden="true" tabindex="-1"></a>        FieldSpec(selector<span class="op">=</span>fields(Post).<span class="bu">id</span>, transform<span class="op">=</span>get(<span class="st">"id"</span>)),</span>
-<span id="cb2-41"><a href="#cb2-41" aria-hidden="true" tabindex="-1"></a>        FieldSpec(selector<span class="op">=</span>fields(Post).title, transform<span class="op">=</span>get(<span class="st">"title"</span>)),</span>
-<span id="cb2-42"><a href="#cb2-42" aria-hidden="true" tabindex="-1"></a>    ],</span>
-<span id="cb2-43"><a href="#cb2-43" aria-hidden="true" tabindex="-1"></a>    builder<span class="op">=</span>PydanticBuilder(Post),</span>
-<span id="cb2-44"><a href="#cb2-44" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb2-45"><a href="#cb2-45" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-46"><a href="#cb2-46" aria-hidden="true" tabindex="-1"></a>mapping <span class="op">=</span> MappingSpec(traversals<span class="op">=</span>[</span>
-<span id="cb2-47"><a href="#cb2-47" aria-hidden="true" tabindex="-1"></a>    TraversalSpec(path<span class="op">=</span>[<span class="st">"users"</span>], mode<span class="op">=</span><span class="st">"auto"</span>, emits<span class="op">=</span>[users_emit]),</span>
-<span id="cb2-48"><a href="#cb2-48" aria-hidden="true" tabindex="-1"></a>    TraversalSpec(path<span class="op">=</span>[<span class="st">"users"</span>], mode<span class="op">=</span><span class="st">"auto"</span>, inner_path<span class="op">=</span>[<span class="st">"posts"</span>], inner_mode<span class="op">=</span><span class="st">"auto"</span>, emits<span class="op">=</span>[posts_emit]),</span>
-<span id="cb2-49"><a href="#cb2-49" aria-hidden="true" tabindex="-1"></a>])</span>
-<span id="cb2-50"><a href="#cb2-50" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-51"><a href="#cb2-51" aria-hidden="true" tabindex="-1"></a><span class="co"># Using the models, emits, mapping, and root from above</span></span>
-<span id="cb2-52"><a href="#cb2-52" aria-hidden="true" tabindex="-1"></a>relationships <span class="op">=</span> [</span>
-<span id="cb2-53"><a href="#cb2-53" aria-hidden="true" tabindex="-1"></a>    ManyToOneSpec(</span>
-<span id="cb2-54"><a href="#cb2-54" aria-hidden="true" tabindex="-1"></a>        child_table<span class="op">=</span><span class="st">"posts"</span>,</span>
-<span id="cb2-55"><a href="#cb2-55" aria-hidden="true" tabindex="-1"></a>        parent_table<span class="op">=</span><span class="st">"users"</span>,</span>
-<span id="cb2-56"><a href="#cb2-56" aria-hidden="true" tabindex="-1"></a>        attr<span class="op">=</span><span class="st">"user"</span>,</span>
-<span id="cb2-57"><a href="#cb2-57" aria-hidden="true" tabindex="-1"></a>        child_to_parent_key<span class="op">=</span>[get_from_parent(<span class="st">"id"</span>)],</span>
-<span id="cb2-58"><a href="#cb2-58" aria-hidden="true" tabindex="-1"></a>    )</span>
-<span id="cb2-59"><a href="#cb2-59" aria-hidden="true" tabindex="-1"></a>]</span>
-<span id="cb2-60"><a href="#cb2-60" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-61"><a href="#cb2-61" aria-hidden="true" tabindex="-1"></a>results <span class="op">=</span> run_mapping(root, mapping)</span>
-<span id="cb2-62"><a href="#cb2-62" aria-hidden="true" tabindex="-1"></a>sidecar <span class="op">=</span> compute_relationship_keys(root, mapping.traversals, relationships)</span>
-<span id="cb2-63"><a href="#cb2-63" aria-hidden="true" tabindex="-1"></a>bind_many_to_one(results, relationships, sidecar)</span>
-<span id="cb2-64"><a href="#cb2-64" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="bu">sorted</span>([(p.<span class="bu">id</span>, p.user.<span class="bu">id</span> <span class="cf">if</span> p.user <span class="cf">else</span> <span class="va">None</span>) <span class="cf">for</span> p <span class="kw">in</span> results[<span class="st">"posts"</span>].instances.values()]))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<section id="basic-relationship-binding" class="level2">
+<h2 class="anchored" data-anchor-id="basic-relationship-binding">Basic Relationship Binding</h2>
+<section id="one-to-many-users---posts" class="level3">
+<h3 class="anchored" data-anchor-id="one-to-many-users---posts">One-to-Many (Users -&gt; Posts)</h3>
+<p>The most common pattern: users have many posts.</p>
+<div id="a9a1dc0d" class="cell" data-execution_count="1">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pydantic <span class="im">import</span> BaseModel</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get, get_from_parent</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> User(BaseModel):</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">id</span>: <span class="bu">str</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    name: <span class="bu">str</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Post(BaseModel):</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>    <span class="bu">id</span>: <span class="bu">str</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>    title: <span class="bu">str</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>    user: User <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>  <span class="co"># Relationship attribute</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> {</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>    <span class="st">"users"</span>: [{</span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>        <span class="st">"id"</span>: <span class="st">"u1"</span>,</span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>        <span class="st">"name"</span>: <span class="st">"Alice"</span>,</span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>        <span class="st">"posts"</span>: [</span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>            {<span class="st">"id"</span>: <span class="st">"p1"</span>, <span class="st">"title"</span>: <span class="st">"Hello"</span>},</span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>            {<span class="st">"id"</span>: <span class="st">"p2"</span>, <span class="st">"title"</span>: <span class="st">"World"</span>}</span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a>        ]</span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>    }]</span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> (</span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a>    etl(data)</span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Map users</span></span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a>    .goto(<span class="st">"users"</span>).each()</span>
+<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a>    .map_to(table<span class="op">=</span>User, fields<span class="op">=</span>[</span>
+<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a>        Field(<span class="st">"id"</span>, get(<span class="st">"id"</span>)),</span>
+<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a>        Field(<span class="st">"name"</span>, get(<span class="st">"name"</span>)),</span>
+<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a>    ])</span>
+<span id="cb2-32"><a href="#cb2-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-33"><a href="#cb2-33" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Map posts and link to users</span></span>
+<span id="cb2-34"><a href="#cb2-34" aria-hidden="true" tabindex="-1"></a>    .goto(<span class="st">"posts"</span>).each()</span>
+<span id="cb2-35"><a href="#cb2-35" aria-hidden="true" tabindex="-1"></a>    .map_to(table<span class="op">=</span>Post, fields<span class="op">=</span>[</span>
+<span id="cb2-36"><a href="#cb2-36" aria-hidden="true" tabindex="-1"></a>        Field(<span class="st">"id"</span>, get(<span class="st">"id"</span>)),</span>
+<span id="cb2-37"><a href="#cb2-37" aria-hidden="true" tabindex="-1"></a>        Field(<span class="st">"title"</span>, get(<span class="st">"title"</span>)),</span>
+<span id="cb2-38"><a href="#cb2-38" aria-hidden="true" tabindex="-1"></a>        TempField(<span class="st">"user_id"</span>, get_from_parent(<span class="st">"id"</span>))  <span class="co"># Foreign key (not persisted)</span></span>
+<span id="cb2-39"><a href="#cb2-39" aria-hidden="true" tabindex="-1"></a>    ])</span>
+<span id="cb2-40"><a href="#cb2-40" aria-hidden="true" tabindex="-1"></a>    .link_to(User, by<span class="op">=</span>{<span class="st">"user_id"</span>: <span class="st">"id"</span>})  <span class="co"># Link by user_id -&gt; id</span></span>
+<span id="cb2-41"><a href="#cb2-41" aria-hidden="true" tabindex="-1"></a>    .run()</span>
+<span id="cb2-42"><a href="#cb2-42" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb2-43"><a href="#cb2-43" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-44"><a href="#cb2-44" aria-hidden="true" tabindex="-1"></a><span class="co"># Posts now have user references</span></span>
+<span id="cb2-45"><a href="#cb2-45" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> key, post <span class="kw">in</span> result.tables[Post].items():</span>
+<span id="cb2-46"><a href="#cb2-46" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>post<span class="sc">.</span>title<span class="sc">}</span><span class="ss"> by </span><span class="sc">{</span>post<span class="sc">.</span>user<span class="sc">.</span>name <span class="cf">if</span> post<span class="sc">.</span>user <span class="cf">else</span> <span class="st">'Unknown'</span><span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>[('p1', 'u1'), ('p2', 'u1')]</code></pre>
+<pre><code>Hello by Alice
+World by Alice</code></pre>
 </div>
 </div>
 </section>
-<section id="behavior" class="level3">
-<h3 class="anchored" data-anchor-id="behavior">Behavior</h3>
+</section>
+<section id="how-link_to-works" class="level2">
+<h2 class="anchored" data-anchor-id="how-link_to-works">How <code>link_to()</code> Works</h2>
+<section id="the-by-parameter" class="level3">
+<h3 class="anchored" data-anchor-id="the-by-parameter">The <code>by</code> Parameter</h3>
+<p>The <code>by</code> dict maps child field names to parent field names:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>.link_to(User, by<span class="op">=</span>{<span class="st">"user_id"</span>: <span class="st">"id"</span>})</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>This means: “Match the child’s <code>user_id</code> TempField to the parent’s <code>id</code> TempField.”</p>
+</section>
+<section id="attribute-inference" class="level3">
+<h3 class="anchored" data-anchor-id="attribute-inference">Attribute Inference</h3>
+<p>etielle infers the relationship attribute name from the parent table name:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Parent Table</th>
+<th>Inferred Attribute</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>users</code></td>
+<td><code>user</code></td>
+</tr>
+<tr class="even">
+<td><code>posts</code></td>
+<td><code>post</code></td>
+</tr>
+<tr class="odd">
+<td><code>categories</code></td>
+<td><code>categorie</code> (strips trailing ‘s’)</td>
+</tr>
+</tbody>
+</table>
+<p>You can override this by using a model class with an explicit attribute.</p>
+</section>
+</section>
+<section id="multiple-relationships" class="level2">
+<h2 class="anchored" data-anchor-id="multiple-relationships">Multiple Relationships</h2>
+<p>A child table can link to multiple parent tables:</p>
+<div id="061444f4" class="cell" data-execution_count="2">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pydantic <span class="im">import</span> BaseModel</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get, get_from_parent</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> User(BaseModel):</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">id</span>: <span class="bu">str</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    name: <span class="bu">str</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Post(BaseModel):</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>    <span class="bu">id</span>: <span class="bu">str</span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>    title: <span class="bu">str</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Comment(BaseModel):</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>    <span class="bu">id</span>: <span class="bu">str</span></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>    body: <span class="bu">str</span></span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>    user: User <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span></span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>    post: Post <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span></span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> {</span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>    <span class="st">"users"</span>: [{<span class="st">"id"</span>: <span class="st">"u1"</span>, <span class="st">"name"</span>: <span class="st">"Alice"</span>}],</span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>    <span class="st">"posts"</span>: [{<span class="st">"id"</span>: <span class="st">"p1"</span>, <span class="st">"title"</span>: <span class="st">"Hello"</span>, <span class="st">"user_id"</span>: <span class="st">"u1"</span>}],</span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>    <span class="st">"comments"</span>: [</span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>        {<span class="st">"id"</span>: <span class="st">"c1"</span>, <span class="st">"body"</span>: <span class="st">"Great post!"</span>, <span class="st">"user_id"</span>: <span class="st">"u1"</span>, <span class="st">"post_id"</span>: <span class="st">"p1"</span>}</span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>    ]</span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> (</span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a>    etl(data)</span>
+<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a>    .goto(<span class="st">"users"</span>).each()</span>
+<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a>    .map_to(table<span class="op">=</span>User, fields<span class="op">=</span>[</span>
+<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a>        Field(<span class="st">"id"</span>, get(<span class="st">"id"</span>)),</span>
+<span id="cb5-31"><a href="#cb5-31" aria-hidden="true" tabindex="-1"></a>        Field(<span class="st">"name"</span>, get(<span class="st">"name"</span>)),</span>
+<span id="cb5-32"><a href="#cb5-32" aria-hidden="true" tabindex="-1"></a>    ])</span>
+<span id="cb5-33"><a href="#cb5-33" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-34"><a href="#cb5-34" aria-hidden="true" tabindex="-1"></a>    .goto_root()</span>
+<span id="cb5-35"><a href="#cb5-35" aria-hidden="true" tabindex="-1"></a>    .goto(<span class="st">"posts"</span>).each()</span>
+<span id="cb5-36"><a href="#cb5-36" aria-hidden="true" tabindex="-1"></a>    .map_to(table<span class="op">=</span>Post, fields<span class="op">=</span>[</span>
+<span id="cb5-37"><a href="#cb5-37" aria-hidden="true" tabindex="-1"></a>        Field(<span class="st">"id"</span>, get(<span class="st">"id"</span>)),</span>
+<span id="cb5-38"><a href="#cb5-38" aria-hidden="true" tabindex="-1"></a>        Field(<span class="st">"title"</span>, get(<span class="st">"title"</span>)),</span>
+<span id="cb5-39"><a href="#cb5-39" aria-hidden="true" tabindex="-1"></a>    ])</span>
+<span id="cb5-40"><a href="#cb5-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-41"><a href="#cb5-41" aria-hidden="true" tabindex="-1"></a>    .goto_root()</span>
+<span id="cb5-42"><a href="#cb5-42" aria-hidden="true" tabindex="-1"></a>    .goto(<span class="st">"comments"</span>).each()</span>
+<span id="cb5-43"><a href="#cb5-43" aria-hidden="true" tabindex="-1"></a>    .map_to(table<span class="op">=</span>Comment, fields<span class="op">=</span>[</span>
+<span id="cb5-44"><a href="#cb5-44" aria-hidden="true" tabindex="-1"></a>        Field(<span class="st">"id"</span>, get(<span class="st">"id"</span>)),</span>
+<span id="cb5-45"><a href="#cb5-45" aria-hidden="true" tabindex="-1"></a>        Field(<span class="st">"body"</span>, get(<span class="st">"body"</span>)),</span>
+<span id="cb5-46"><a href="#cb5-46" aria-hidden="true" tabindex="-1"></a>        TempField(<span class="st">"user_id"</span>, get(<span class="st">"user_id"</span>)),  <span class="co"># Foreign key (not persisted)</span></span>
+<span id="cb5-47"><a href="#cb5-47" aria-hidden="true" tabindex="-1"></a>        TempField(<span class="st">"post_id"</span>, get(<span class="st">"post_id"</span>))   <span class="co"># Foreign key (not persisted)</span></span>
+<span id="cb5-48"><a href="#cb5-48" aria-hidden="true" tabindex="-1"></a>    ])</span>
+<span id="cb5-49"><a href="#cb5-49" aria-hidden="true" tabindex="-1"></a>    .link_to(User, by<span class="op">=</span>{<span class="st">"user_id"</span>: <span class="st">"id"</span>})  <span class="co"># Link to user</span></span>
+<span id="cb5-50"><a href="#cb5-50" aria-hidden="true" tabindex="-1"></a>    .link_to(Post, by<span class="op">=</span>{<span class="st">"post_id"</span>: <span class="st">"id"</span>})  <span class="co"># Link to post</span></span>
+<span id="cb5-51"><a href="#cb5-51" aria-hidden="true" tabindex="-1"></a>    .run()</span>
+<span id="cb5-52"><a href="#cb5-52" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb5-53"><a href="#cb5-53" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-54"><a href="#cb5-54" aria-hidden="true" tabindex="-1"></a>comment <span class="op">=</span> <span class="bu">list</span>(result.tables[Comment].values())[<span class="dv">0</span>]</span>
+<span id="cb5-55"><a href="#cb5-55" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Comment: </span><span class="sc">{</span>comment<span class="sc">.</span>body<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb5-56"><a href="#cb5-56" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"By: </span><span class="sc">{</span>comment<span class="sc">.</span>user<span class="sc">.</span>name <span class="cf">if</span> comment<span class="sc">.</span>user <span class="cf">else</span> <span class="st">'Unknown'</span><span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb5-57"><a href="#cb5-57" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"On: </span><span class="sc">{</span>comment<span class="sc">.</span>post<span class="sc">.</span>title <span class="cf">if</span> comment<span class="sc">.</span>post <span class="cf">else</span> <span class="st">'Unknown'</span><span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Comment: Great post!
+By: Alice
+On: Hello</code></pre>
+</div>
+</div>
+</section>
+<section id="nested-data-relationships" class="level2">
+<h2 class="anchored" data-anchor-id="nested-data-relationships">Nested Data Relationships</h2>
+<p>When data is nested, use <code>get_from_parent()</code> to extract the foreign key:</p>
+<div id="bccb0a1b" class="cell" data-execution_count="3">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pydantic <span class="im">import</span> BaseModel</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get, get_from_parent</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Order(BaseModel):</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">id</span>: <span class="bu">str</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>    customer: <span class="bu">str</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Item(BaseModel):</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>    <span class="bu">id</span>: <span class="bu">str</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>    product: <span class="bu">str</span></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>    order: Order <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> {</span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>    <span class="st">"orders"</span>: [{</span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>        <span class="st">"id"</span>: <span class="st">"o1"</span>,</span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>        <span class="st">"customer"</span>: <span class="st">"Alice"</span>,</span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>        <span class="st">"items"</span>: [</span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>            {<span class="st">"id"</span>: <span class="st">"i1"</span>, <span class="st">"product"</span>: <span class="st">"Widget"</span>},</span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>            {<span class="st">"id"</span>: <span class="st">"i2"</span>, <span class="st">"product"</span>: <span class="st">"Gadget"</span>}</span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>        ]</span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>    }]</span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> (</span>
+<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a>    etl(data)</span>
+<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a>    .goto(<span class="st">"orders"</span>).each()</span>
+<span id="cb7-27"><a href="#cb7-27" aria-hidden="true" tabindex="-1"></a>    .map_to(table<span class="op">=</span>Order, fields<span class="op">=</span>[</span>
+<span id="cb7-28"><a href="#cb7-28" aria-hidden="true" tabindex="-1"></a>        Field(<span class="st">"id"</span>, get(<span class="st">"id"</span>)),</span>
+<span id="cb7-29"><a href="#cb7-29" aria-hidden="true" tabindex="-1"></a>        Field(<span class="st">"customer"</span>, get(<span class="st">"customer"</span>)),</span>
+<span id="cb7-30"><a href="#cb7-30" aria-hidden="true" tabindex="-1"></a>    ])</span>
+<span id="cb7-31"><a href="#cb7-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-32"><a href="#cb7-32" aria-hidden="true" tabindex="-1"></a>    .goto(<span class="st">"items"</span>).each()</span>
+<span id="cb7-33"><a href="#cb7-33" aria-hidden="true" tabindex="-1"></a>    .map_to(table<span class="op">=</span>Item, fields<span class="op">=</span>[</span>
+<span id="cb7-34"><a href="#cb7-34" aria-hidden="true" tabindex="-1"></a>        Field(<span class="st">"id"</span>, get(<span class="st">"id"</span>)),</span>
+<span id="cb7-35"><a href="#cb7-35" aria-hidden="true" tabindex="-1"></a>        Field(<span class="st">"product"</span>, get(<span class="st">"product"</span>)),</span>
+<span id="cb7-36"><a href="#cb7-36" aria-hidden="true" tabindex="-1"></a>        TempField(<span class="st">"order_id"</span>, get_from_parent(<span class="st">"id"</span>))  <span class="co"># Foreign key (not persisted)</span></span>
+<span id="cb7-37"><a href="#cb7-37" aria-hidden="true" tabindex="-1"></a>    ])</span>
+<span id="cb7-38"><a href="#cb7-38" aria-hidden="true" tabindex="-1"></a>    .link_to(Order, by<span class="op">=</span>{<span class="st">"order_id"</span>: <span class="st">"id"</span>})</span>
+<span id="cb7-39"><a href="#cb7-39" aria-hidden="true" tabindex="-1"></a>    .run()</span>
+<span id="cb7-40"><a href="#cb7-40" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb7-41"><a href="#cb7-41" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-42"><a href="#cb7-42" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> key, item <span class="kw">in</span> result.tables[Item].items():</span>
+<span id="cb7-43"><a href="#cb7-43" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>item<span class="sc">.</span>product<span class="sc">}</span><span class="ss"> - Order: </span><span class="sc">{</span>item<span class="sc">.</span>order<span class="sc">.</span><span class="bu">id</span> <span class="cf">if</span> item<span class="sc">.</span>order <span class="cf">else</span> <span class="st">'None'</span><span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Widget - Order: o1
+Gadget - Order: o1</code></pre>
+</div>
+</div>
+</section>
+<section id="composite-keys" class="level2">
+<h2 class="anchored" data-anchor-id="composite-keys">Composite Keys</h2>
+<p>For relationships with composite keys, include multiple entries in the <code>by</code> dict:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Child has both region_id and store_id pointing to parent</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>.link_to(Store, by<span class="op">=</span>{</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">"region_id"</span>: <span class="st">"region_id"</span>,</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">"store_id"</span>: <span class="st">"store_id"</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>})</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="junction-tables-reverse-lookups" class="level2">
+<h2 class="anchored" data-anchor-id="junction-tables-reverse-lookups">Junction Tables (Reverse Lookups)</h2>
+<p>Handle junction tables where the relationship is defined outside the child:</p>
+<div id="4652c271" class="cell" data-execution_count="4">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Data: {"userPosts": {"u1": [101, 102], "u2": [103]}}</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="co"># This maps user_id -&gt; list of post_ids</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> (</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    etl(data)</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>    .goto(<span class="st">"users"</span>).each()</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>    .map_to(table<span class="op">=</span>User, fields<span class="op">=</span>[...])</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>    .goto_root()</span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>    .goto(<span class="st">"posts"</span>).each()</span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>    .map_to(table<span class="op">=</span>Post, fields<span class="op">=</span>[...])</span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>    .goto_root()</span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>    .goto(<span class="st">"userPosts"</span>).each()    <span class="co"># key() = user_id</span></span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>    .each()                       <span class="co"># node() = post_id</span></span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>    .map_to(table<span class="op">=</span>Post, join_on<span class="op">=</span>[<span class="st">"id"</span>], fields<span class="op">=</span>[</span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a>        TempField(<span class="st">"id"</span>, node()),</span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a>        TempField(<span class="st">"user_id"</span>, parent_key())</span>
+<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a>    ])</span>
+<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a>    .link_to(User, by<span class="op">=</span>{<span class="st">"user_id"</span>: <span class="st">"id"</span>})</span>
+<span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a>    .run()</span>
+<span id="cb10-22"><a href="#cb10-22" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="link_to-reference" class="level2">
+<h2 class="anchored" data-anchor-id="link_to-reference"><code>link_to()</code> Reference</h2>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>parent</code></td>
+<td><code>type</code></td>
+<td>The parent model class</td>
+</tr>
+<tr class="even">
+<td><code>by</code></td>
+<td><code>dict[str, str]</code></td>
+<td>Mapping of <code>{child_field: parent_field}</code></td>
+</tr>
+</tbody>
+</table>
+<section id="requirements" class="level3">
+<h3 class="anchored" data-anchor-id="requirements">Requirements</h3>
 <ul>
-<li>Parent indices are built from finalized instances per table.</li>
-<li>Missing parents aggregate clear errors (optional raise).</li>
-<li>No mutation of domain objects during key computation (keys stored in sidecar map).</li>
+<li>Must be called after <code>map_to()</code> (links the most recent emission)</li>
+<li>Both child and parent fields can be <code>Field</code> or <code>TempField</code> names</li>
+<li>Parent table must be emitted somewhere in the pipeline</li>
 </ul>
-<p>For a complete SQLAlchemy integration example with automatic flushing, see <a href="../docs/loading-data-into-a-database.html">Database upserts</a>.</p>
 </section>
-<section id="see-also" class="level3">
-<h3 class="anchored" data-anchor-id="see-also">See also</h3>
+<section id="error-handling" class="level3">
+<h3 class="anchored" data-anchor-id="error-handling">Error Handling</h3>
 <ul>
-<li><a href="../docs/loading-data-into-a-database.html">Database upserts</a> - Full integration with SQLAlchemy/SQLModel ORM</li>
-<li><a href="../docs/emissions.html">Emissions</a> - Creating the instances that relationships link</li>
+<li>Missing parents: By default, <code>link_to()</code> does not fail if a parent is not found</li>
+<li>The relationship attribute will be <code>None</code> for unmatched children</li>
+<li>Use error handling modes to change this behavior</li>
+</ul>
+</section>
+</section>
+<section id="best-practices" class="level2">
+<h2 class="anchored" data-anchor-id="best-practices">Best Practices</h2>
+<section id="use-tempfield-for-foreign-keys" class="level3">
+<h3 class="anchored" data-anchor-id="use-tempfield-for-foreign-keys">Use TempField for Foreign Keys</h3>
+<p>Foreign key values should be in <code>TempField</code>, not <code>Field</code>, unless you also need them in output:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Good: Foreign key is TempField (not in output, just for linking)</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>TempField(<span class="st">"user_id"</span>, get_from_parent(<span class="st">"id"</span>))</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a><span class="co"># If you need user_id in output: use Field (it's also available for linking)</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>Field(<span class="st">"user_id"</span>, get_from_parent(<span class="st">"id"</span>))</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Note: Don't use both Field and TempField with the same name</span></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a><span class="co"># The TempField will shadow the Field and prevent it from being persisted</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="order-matters" class="level3">
+<h3 class="anchored" data-anchor-id="order-matters">Order Matters</h3>
+<p>Emit parent tables before child tables that link to them:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Good: Users emitted before posts</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>.map_to(table<span class="op">=</span>User, fields<span class="op">=</span>[...])</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>.goto(<span class="st">"posts"</span>).each()</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>.map_to(table<span class="op">=</span>Post, fields<span class="op">=</span>[...])</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>.link_to(User, by<span class="op">=</span>{<span class="st">"user_id"</span>: <span class="st">"id"</span>})</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Also works: Order within same run() is handled correctly</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="match-key-types" class="level3">
+<h3 class="anchored" data-anchor-id="match-key-types">Match Key Types</h3>
+<p>Ensure child and parent key values are the same type:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># If parent key is string "u1"</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>TempField(<span class="st">"id"</span>, get(<span class="st">"id"</span>))  <span class="co"># Returns "u1"</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Child key must also be string</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>TempField(<span class="st">"user_id"</span>, get(<span class="st">"user_id"</span>))  <span class="co"># Must return "u1", not 1</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+</section>
+<section id="see-also" class="level2">
+<h2 class="anchored" data-anchor-id="see-also">See also</h2>
+<ul>
+<li><a href="../docs/mapping.html">Mapping Tables</a> - Defining the tables that relationships link</li>
+<li><a href="../docs/database-loading.html">Database Loading</a> - Persisting linked records to database</li>
+<li><a href="../docs/navigation.html">Navigation</a> - Nested traversal for parent-child data</li>
 </ul>
 
 
