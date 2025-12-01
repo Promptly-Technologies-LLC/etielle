@@ -368,6 +368,44 @@ result = (
 print(json.dumps(list(result.tables["users"].values()), indent=2))
 ```
 
+### `apply(func, inner)` - Apply a function
+
+Applies any callable to the result of another transform. Useful for type coercion, string methods, and custom transformations.
+
+``` {python}
+from etielle import etl, Field, TempField, get, apply
+import json
+
+data = {"products": [
+    {"id": "p1", "name": "  Widget  ", "price": "19.99", "quantity": "5"}
+]}
+
+result = (
+    etl(data)
+    .goto("products").each()
+    .map_to(table="products", fields=[
+        Field("id", get("id")),
+        Field("name", apply(str.strip, get("name"))),       # String method
+        Field("price", apply(float, get("price"))),         # Type coercion
+        Field("quantity", apply(int, get("quantity"))),     # Type coercion
+        TempField("id", get("id"))
+    ])
+    .run()
+)
+
+print(json.dumps(list(result.tables["products"].values()), indent=2))
+```
+
+You can use any callable—built-in types, string methods, or custom functions:
+
+```python
+apply(int, get("count"))              # Convert to int
+apply(float, get("price"))            # Convert to float
+apply(str.upper, get("code"))         # Uppercase
+apply(str.strip, get("name"))         # Trim whitespace
+apply(lambda x: x * 100, get("rate")) # Custom transformation
+```
+
 ## Transform Reference
 
 | Transform | Purpose | Example |
@@ -384,6 +422,7 @@ print(json.dumps(list(result.tables["users"].values()), indent=2))
 | `concat(*parts)` | Join strings | `concat(get("a"), get("b"))` |
 | `format_id(*parts, sep="_")` | Join with separator | `format_id(get("type"), get("id"))` |
 | `coalesce(*transforms)` | First non-None | `coalesce(get("nick"), get("name"))` |
+| `apply(func, inner)` | Apply function to result | `apply(int, get("count"))` |
 | `len_of(inner)` | Length of list/dict/string | `len_of(get("tags"))` |
 
 ## Custom Transforms

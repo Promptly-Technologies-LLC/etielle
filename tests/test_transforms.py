@@ -1,5 +1,8 @@
 from etielle.core import Context
+import pytest
+
 from etielle.transforms import (
+    apply,
     concat,
     coalesce,
     format_id,
@@ -98,3 +101,43 @@ def test_concat_format_coalesce_len_of():
     # bytes should not report length
     ctx_bytes = make_ctx(root={}, node={"b": b"abc"})
     assert len_of(get("b"))(ctx_bytes) is None
+
+
+# --- apply transform tests ---
+
+
+def test_apply_int_coercion():
+    ctx = make_ctx(root={}, node={"age": "42"})
+    assert apply(int, get("age"))(ctx) == 42
+
+
+def test_apply_float_coercion():
+    ctx = make_ctx(root={}, node={"price": "19.99"})
+    assert apply(float, get("price"))(ctx) == 19.99
+
+
+def test_apply_bool_coercion():
+    ctx = make_ctx(root={}, node={"count": 1})
+    assert apply(bool, get("count"))(ctx) is True
+
+
+def test_apply_string_method():
+    ctx = make_ctx(root={}, node={"name": "  alice  "})
+    assert apply(str.strip, get("name"))(ctx) == "alice"
+
+
+def test_apply_propagates_exceptions():
+    ctx = make_ctx(root={}, node={"age": "not a number"})
+    with pytest.raises(ValueError):
+        apply(int, get("age"))(ctx)
+
+
+def test_apply_none_input_raises():
+    ctx = make_ctx(root={}, node={"age": None})
+    with pytest.raises(TypeError):
+        apply(int, get("age"))(ctx)
+
+
+def test_apply_custom_callable():
+    ctx = make_ctx(root={}, node={"val": "5"})
+    assert apply(lambda x: int(x) * 2, get("val"))(ctx) == 10

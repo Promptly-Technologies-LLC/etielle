@@ -1,4 +1,4 @@
-from typing import Any, List, Optional, Sequence, Union, cast, TypeVar, Iterable, Tuple
+from typing import Any, Callable, List, Optional, Sequence, Union, cast, TypeVar, Iterable, Tuple
 from .core import Context, Transform
 from collections.abc import Mapping
 
@@ -49,6 +49,7 @@ def _iter_nodes(root: Any, path: Sequence[str]) -> Iterable[Tuple[Context, Any]]
 
 
 U = TypeVar("U")
+V = TypeVar("V")
 
 
 def _ensure_transform(value: Union[Transform[U], U]) -> Transform[U]:
@@ -198,5 +199,14 @@ def coalesce(*inners: Transform[Any]) -> Transform[Any]:
             if v is not None:
                 return v
         return None
+
+    return _t
+
+
+def apply(func: Callable[[U], V], inner: Transform[U]) -> Transform[V]:
+    """Apply a function to the result of another transform."""
+
+    def _t(ctx: Context) -> V:
+        return func(inner(ctx))
 
     return _t
