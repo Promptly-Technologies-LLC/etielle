@@ -2,6 +2,19 @@
 
 <!-- version list -->
 
+## v2.5.0 (2025-12-01)
+
+### Documentation
+
+- Add apply transform to documentation
+  ([`487db7a`](https://github.com/Promptly-Technologies-LLC/etielle/commit/487db7afc47774cb8383a448d2905b6e42424846))
+
+### Features
+
+- Add apply transform for type coercion and function application
+  ([`136badf`](https://github.com/Promptly-Technologies-LLC/etielle/commit/136badf2d470abf48eebb79c589f6415b53f99be))
+
+
 ## v2.4.0 (2025-12-01)
 
 ### Bug Fixes
