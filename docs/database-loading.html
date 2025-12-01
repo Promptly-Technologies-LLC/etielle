@@ -353,7 +353,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h2 class="anchored" data-anchor-id="basic-database-persistence">Basic Database Persistence</h2>
 <section id="sqlmodel-example" class="level3">
 <h3 class="anchored" data-anchor-id="sqlmodel-example">SQLModel Example</h3>
-<div id="5b76e102" class="cell" data-execution_count="1">
+<div id="df0338cc" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sqlmodel <span class="im">import</span> SQLModel, Field <span class="im">as</span> SQLField, Session, create_engine</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -401,7 +401,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="sqlalchemy-example" class="level3">
 <h3 class="anchored" data-anchor-id="sqlalchemy-example">SQLAlchemy Example</h3>
-<div id="6e763698" class="cell" data-execution_count="2">
+<div id="eb8ba796" class="cell" data-execution_count="2">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sqlalchemy <span class="im">import</span> Column, String, create_engine</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sqlalchemy.orm <span class="im">import</span> declarative_base, Session</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get</span>
@@ -480,7 +480,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="relationships-and-database-loading" class="level2">
 <h2 class="anchored" data-anchor-id="relationships-and-database-loading">Relationships and Database Loading</h2>
 <p>When using <code>link_to()</code> with ORM models, relationships are bound before flushing:</p>
-<div id="bdb02378" class="cell" data-execution_count="3">
+<div id="d42afa59" class="cell" data-execution_count="3">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sqlmodel <span class="im">import</span> SQLModel, Field <span class="im">as</span> SQLField, Relationship, Session, create_engine</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get, get_from_parent</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
