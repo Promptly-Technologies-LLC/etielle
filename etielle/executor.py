@@ -69,15 +69,17 @@ def _iter_traversal_nodes(root: Any, spec: TraversalSpec) -> Iterable[Context]:
                     )
                 return
             # Non-iterable in auto mode: treat as single
-            yield Context(
-                root=root,
-                node=container,
-                path=parent_ctx.path,
-                parent=parent_ctx,
-                key=None,
-                index=None,
-                slots={},
-            )
+            # BUT: None means "no data" - don't iterate at all
+            if container is not None:
+                yield Context(
+                    root=root,
+                    node=container,
+                    path=parent_ctx.path,
+                    parent=parent_ctx,
+                    key=None,
+                    index=None,
+                    slots={},
+                )
 
         # If no inner path, iterate outer container directly
         if not spec.inner_path:

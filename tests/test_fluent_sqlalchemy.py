@@ -344,6 +344,62 @@ class TestJoinOnFieldPersistence:
         assert names == {"Q1", "Q2"}, f"Expected names Q1, Q2 but got {names}"
 
 
+class TestNullCollectionIteration:
+    """Tests that null/None collections produce zero iterations.
+
+    Bug: When iterating over a null field with .goto("field").each(),
+    the executor creates one spurious iteration instead of zero.
+    This causes extra instances with null/incorrect values.
+    """
+
+    def test_null_field_produces_zero_iterations(self, session):
+        """Iterating over null field should produce zero instances, not one.
+
+        Regression test: .goto("subQuestions").each() on null collection
+        was creating one spurious row with node=None.
+        """
+        data = {
+            "questions": {
+                "Q1": {
+                    "text": "Question with subquestions",
+                    "subQuestions": {
+                        "SQ1": {"text": "Sub 1"},
+                        "SQ2": {"text": "Sub 2"}
+                    }
+                },
+                "Q2": {
+                    "text": "Question without subquestions",
+                    "subQuestions": None  # <-- null collection
+                },
+                "Q3": {
+                    "text": "Question with empty subquestions",
+                    "subQuestions": {}  # <-- empty dict (should also be 0)
+                }
+            }
+        }
+
+        result = (
+            etl(data)
+            .goto("questions").each()
+            .goto("subQuestions").each()  # Nested iteration
+            .map_to(table=User, fields=[
+                Field("name", get("text")),
+                TempField("sq_id", key()),
+            ])
+            .load(session)
+            .run()
+        )
+
+        session.commit()
+
+        # Should only have 2 subquestions from Q1
+        # Q2 (null) and Q3 (empty) should produce 0 rows
+        users = session.query(User).all()
+        assert len(users) == 2, f"Expected 2 subquestions, got {len(users)}: {[u.name for u in users]}"
+        names = {u.name for u in users}
+        assert names == {"Sub 1", "Sub 2"}
+
+
 class TestSingletonMapping:
     """Tests for mapping a single root object (no iteration).
 
