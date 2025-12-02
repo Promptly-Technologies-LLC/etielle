@@ -267,9 +267,9 @@ result = (
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `parent` | `type \| str` | The parent model class or table name |
+| `parent` | `type | str` | The parent model class or table name |
 | `by` | `dict[str, str]` | Mapping of `{child_field: parent_field}` |
-| `fk` | `dict[str, str] \| None` | (Supabase only) Mapping of `{child_column: parent_column}` for DB-generated IDs |
+| `fk` | `dict[str, str] | None` | (Supabase only) Mapping of `{child_column: parent_column}` for DB-generated IDs |
 
 ### The `fk` Parameter (Supabase)
 
