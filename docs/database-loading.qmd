@@ -521,6 +521,68 @@ Control batch size for large datasets:
 .load(client, batch_size=500)  # Default is 1000
 ```
 
+### DB-Generated IDs (Two-Phase Insert)
+
+When your database generates primary keys (e.g., UUID or auto-increment), use the `fk` parameter on `link_to()` to automatically populate child foreign keys after parent insertion:
+
+``` {python}
+#| eval: false
+from supabase import create_client
+from etielle import etl, Field, TempField, get, get_from_parent
+
+client = create_client("https://your-project.supabase.co", "your-anon-key")
+
+# Data without IDs - database will generate them
+data = {
+    "orgs": [
+        {
+            "name": "Acme Corp",
+            "members": [
+                {"name": "Alice"},
+                {"name": "Bob"},
+            ],
+        },
+    ],
+}
+
+result = (
+    etl(data)
+    .goto("orgs").each()
+    .map_to(table="orgs", fields=[
+        Field("name", get("name")),
+        TempField("_key", get("name")),  # Business key for matching
+    ])
+
+    .goto("members").each()
+    .map_to(table="members", fields=[
+        Field("name", get("name")),
+        TempField("_parent_key", get_from_parent("name")),
+    ])
+    # fk={"org_id": "id"} means: set child's org_id to parent's generated id
+    .link_to("orgs", by={"_parent_key": "_key"}, fk={"org_id": "id"})
+    .load(client)
+    .run()
+)
+```
+
+**How it works:**
+
+1. Parents ("orgs") are inserted first
+2. Supabase returns rows with generated IDs
+3. Child FK columns ("org_id") are populated with parent IDs
+4. Children ("members") are inserted with correct FK values
+
+**Parameters:**
+
+- `by`: Matches children to parents using TempField values (business keys)
+- `fk`: Maps `{child_column: parent_column}` to populate after parent insert
+
+**Requirements:**
+
+- Parent table must have a TempField that uniquely identifies each row (business key)
+- Child table must have a TempField that references the parent's business key
+- Supabase must return rows in insertion order (default behavior)
+
 ### Supabase vs SQLAlchemy
 
 | Feature | SQLAlchemy/SQLModel | Supabase |
@@ -535,7 +597,7 @@ Control batch size for large datasets:
 ### Limitations
 
 - **No transactions across tables**: Each table insert is a separate HTTP call
-- **Caller-provided IDs required**: DB-generated IDs require multiple round-trips (not yet supported)
+- **No automatic rollback**: If a child insert fails after parent insert, parent data remains
 
 ## See also
 

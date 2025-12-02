@@ -270,6 +270,138 @@ class TestSupabaseFlush:
         # Should have called insert 3 times (2 + 2 + 1)
         assert mock_supabase_client.table.return_value.insert.call_count == 3
 
+    def test_two_phase_insert_with_fk_parameter(self, mock_supabase_client):
+        """Should populate child FK columns with DB-generated parent IDs."""
+        # Parent has no ID in JSON - will be DB-generated
+        data = {
+            "users": [
+                {"name": "Alice"},
+                {"name": "Bob"},
+            ],
+        }
+
+        # Track insert calls and simulate DB-generated IDs
+        insert_calls = {}
+
+        def track_table(table_name):
+            mock_table = MagicMock()
+
+            def track_insert(rows):
+                insert_calls[table_name] = insert_calls.get(table_name, [])
+                insert_calls[table_name].append(rows)
+
+                # Simulate DB-generated UUIDs for users
+                if table_name == "users":
+                    returned = [
+                        {**row, "id": f"generated-uuid-{i}"}
+                        for i, row in enumerate(rows)
+                    ]
+                else:
+                    returned = rows
+
+                mock_response = MagicMock()
+                mock_response.execute.return_value.data = returned
+                return mock_response
+
+            mock_table.insert.side_effect = track_insert
+            return mock_table
+
+        mock_supabase_client.table.side_effect = track_table
+
+        result = (
+            etl(data)
+            .goto("users").each()
+            .map_to(table="users", fields=[
+                Field("name", get("name")),
+                TempField("_key", get("name")),  # Business key for matching
+            ])
+            .goto("posts").each()
+            .map_to(table="posts", fields=[
+                Field("title", get("title")),
+                TempField("_parent_key", get_from_parent("name")),
+            ])
+            .link_to("users", by={"_parent_key": "_key"}, fk={"user_id": "id"})
+            .load(mock_supabase_client)
+            .run()
+        )
+
+        # Verify users were inserted first
+        assert "users" in insert_calls
+        assert len(insert_calls["users"]) == 1
+        users_inserted = insert_calls["users"][0]
+        assert len(users_inserted) == 2
+        assert users_inserted[0]["name"] == "Alice"
+        assert users_inserted[1]["name"] == "Bob"
+
+    def test_two_phase_insert_populates_child_fk(self, mock_supabase_client):
+        """Should populate child FK columns with DB-generated parent IDs."""
+        # Nested data - users with posts
+        data = {
+            "users": [
+                {"name": "Alice", "posts": [{"title": "Hello"}, {"title": "World"}]},
+                {"name": "Bob", "posts": [{"title": "Goodbye"}]},
+            ],
+        }
+
+        # Track insert calls and simulate DB-generated IDs
+        insert_calls = {}
+
+        def track_table(table_name):
+            mock_table = MagicMock()
+
+            def track_insert(rows):
+                insert_calls[table_name] = insert_calls.get(table_name, [])
+                insert_calls[table_name].append(list(rows))  # Copy the rows
+
+                # Simulate DB-generated UUIDs for users
+                if table_name == "users":
+                    returned = [
+                        {**row, "id": f"generated-uuid-{i}"}
+                        for i, row in enumerate(rows)
+                    ]
+                else:
+                    returned = rows
+
+                mock_response = MagicMock()
+                mock_response.execute.return_value.data = returned
+                return mock_response
+
+            mock_table.insert.side_effect = track_insert
+            return mock_table
+
+        mock_supabase_client.table.side_effect = track_table
+
+        result = (
+            etl(data)
+            .goto("users").each()
+            .map_to(table="users", fields=[
+                Field("name", get("name")),
+                TempField("_key", get("name")),
+            ])
+            .goto("posts").each()
+            .map_to(table="posts", fields=[
+                Field("title", get("title")),
+                TempField("_parent_key", get_from_parent("name")),
+            ])
+            .link_to("users", by={"_parent_key": "_key"}, fk={"user_id": "id"})
+            .load(mock_supabase_client)
+            .run()
+        )
+
+        # Verify posts were inserted with correct user_id FK
+        assert "posts" in insert_calls
+        posts_inserted = insert_calls["posts"][0]
+
+        # Alice's posts should have user_id = generated-uuid-0
+        alice_posts = [p for p in posts_inserted if p.get("user_id") == "generated-uuid-0"]
+        assert len(alice_posts) == 2
+        assert {p["title"] for p in alice_posts} == {"Hello", "World"}
+
+        # Bob's posts should have user_id = generated-uuid-1
+        bob_posts = [p for p in posts_inserted if p.get("user_id") == "generated-uuid-1"]
+        assert len(bob_posts) == 1
+        assert bob_posts[0]["title"] == "Goodbye"
+
 
 @requires_supabase
 class TestSupabaseIntegration:
@@ -413,3 +545,102 @@ class TestSupabaseIntegration:
             supabase_client.table("test_users_email").delete().neq("id", "").execute()
         except Exception:
             pass
+
+    def test_two_phase_insert_with_db_generated_ids(self, supabase_client):
+        """Test two-phase insert with DB-generated UUIDs.
+
+        This test requires tables with UUID primary keys:
+
+        CREATE TABLE test_orgs (
+            id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+            name TEXT NOT NULL UNIQUE
+        );
+
+        CREATE TABLE test_members (
+            id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+            name TEXT NOT NULL,
+            org_id UUID REFERENCES test_orgs(id)
+        );
+        """
+        # Clean up test tables (in reverse FK order)
+        try:
+            supabase_client.table("test_members").delete().neq("id", "").execute()
+        except Exception:
+            pass
+        try:
+            supabase_client.table("test_orgs").delete().neq("id", "").execute()
+        except Exception:
+            pass
+
+        # Data with nested structure - no IDs provided
+        data = {
+            "orgs": [
+                {
+                    "name": "Acme Corp",
+                    "members": [
+                        {"name": "Alice"},
+                        {"name": "Bob"},
+                    ],
+                },
+                {
+                    "name": "Globex Inc",
+                    "members": [
+                        {"name": "Charlie"},
+                    ],
+                },
+            ],
+        }
+
+        try:
+            result = (
+                etl(data)
+                .goto("orgs").each()
+                .map_to(table="test_orgs", fields=[
+                    Field("name", get("name")),
+                    TempField("_key", get("name")),  # Business key for matching
+                ])
+                .goto("members").each()
+                .map_to(table="test_members", fields=[
+                    Field("name", get("name")),
+                    TempField("_parent_key", get_from_parent("name")),
+                ])
+                .link_to("test_orgs", by={"_parent_key": "_key"}, fk={"org_id": "id"})
+                .load(supabase_client)
+                .run()
+            )
+
+            # Verify orgs were inserted with DB-generated UUIDs
+            orgs_response = supabase_client.table("test_orgs").select("*").execute()
+            assert len(orgs_response.data) == 2
+            orgs_by_name = {o["name"]: o for o in orgs_response.data}
+            assert "Acme Corp" in orgs_by_name
+            assert "Globex Inc" in orgs_by_name
+            # UUIDs should be proper UUID format (36 chars with hyphens)
+            assert len(orgs_by_name["Acme Corp"]["id"]) == 36
+
+            # Verify members were inserted with correct org_id FKs
+            members_response = supabase_client.table("test_members").select("*").execute()
+            assert len(members_response.data) == 3
+
+            # Check FK relationships
+            acme_id = orgs_by_name["Acme Corp"]["id"]
+            globex_id = orgs_by_name["Globex Inc"]["id"]
+
+            acme_members = [m for m in members_response.data if m["org_id"] == acme_id]
+            assert len(acme_members) == 2
+            assert {m["name"] for m in acme_members} == {"Alice", "Bob"}
+
+            globex_members = [m for m in members_response.data if m["org_id"] == globex_id]
+            assert len(globex_members) == 1
+            assert globex_members[0]["name"] == "Charlie"
+
+        finally:
+            # Cleanup (in reverse FK order)
+            try:
+                supabase_client.table("test_members").delete().neq("id", "").execute()
+            except Exception:
+                pass
+            try:
+                supabase_client.table("test_orgs").delete().neq("id", "").execute()
+            except Exception:
+                pass

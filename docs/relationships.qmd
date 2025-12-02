@@ -267,8 +267,21 @@ result = (
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `parent` | `type` | The parent model class |
+| `parent` | `type | str` | The parent model class or table name |
 | `by` | `dict[str, str]` | Mapping of `{child_field: parent_field}` |
+| `fk` | `dict[str, str] | None` | (Supabase only) Mapping of `{child_column: parent_column}` for DB-generated IDs |
+
+### The `fk` Parameter (Supabase)
+
+When using Supabase with DB-generated primary keys (UUID, auto-increment), use `fk` to populate child foreign keys after parent insertion:
+
+```python
+.link_to("users", by={"_parent_key": "_key"}, fk={"user_id": "id"})
+```
+
+This tells etielle: "After inserting users, set each child's `user_id` column to the parent's generated `id`."
+
+See [Database Loading](database-loading.qmd#db-generated-ids-two-phase-insert) for a complete example.
 
 ### Requirements
 

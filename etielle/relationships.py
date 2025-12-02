@@ -205,27 +205,46 @@ def compute_child_lookup_values(
     emissions: Sequence[dict[str, Any]],
 ) -> Dict[str, Dict[KeyTuple, Dict[str, Any]]]:
     """
-    Compute TempField/Field values for children that will be used in relationship binding.
+    Compute TempField/Field values for children and parents used in relationship binding.
 
-    Returns dict: {child_table: {child_key: {field_name: value}}}
+    Returns dict: {table_name: {row_key: {field_name: value}}}
+
+    This computes lookup values for:
+    - Child tables: fields in the 'by' mapping (child_field -> parent_field)
+    - Parent tables: fields in the 'by' mapping values (for FK population)
     """
     from .instances import InstanceEmit
+    from .core import TableEmit
 
-    # Map child_table -> emission index -> field transforms
-    # We need to find which emissions have relationships and what field values to compute
-    child_field_transforms: Dict[str, Dict[str, Any]] = {}  # {child_table: {field_name: transform}}
+    # Map table -> {field_name: transform} for fields we need to compute
+    field_transforms: Dict[str, Dict[str, Any]] = {}
+
+    # Build map from emissions for quick lookup
+    emission_by_table: Dict[str, dict[str, Any]] = {}
+    for emission in emissions:
+        emission_by_table[emission["table"]] = emission
 
     for rel in relationships:
         child_table = rel["child_table"]
+        parent_table = rel["parent_table"]
         emission_idx = rel["emission_index"]
-        emission = emissions[emission_idx]
+        child_emission = emissions[emission_idx]
 
-        # Get transforms for the fields used in link_to
+        # Get transforms for child fields used in link_to
         for child_field in rel["by"].keys():
-            for f in emission["fields"]:
+            for f in child_emission["fields"]:
                 if f.name == child_field:
-                    child_field_transforms.setdefault(child_table, {})[child_field] = f.transform
+                    field_transforms.setdefault(child_table, {})[child_field] = f.transform
                     break
+
+        # Get transforms for parent fields used in link_to (for FK population)
+        parent_emission = emission_by_table.get(parent_table)
+        if parent_emission:
+            for parent_field in rel["by"].values():
+                for f in parent_emission["fields"]:
+                    if f.name == parent_field:
+                        field_transforms.setdefault(parent_table, {})[parent_field] = f.transform
+                        break
 
     # Auto-generated key counters (must match executor)
     auto_key_counters: Dict[str, int] = {}
@@ -235,31 +254,32 @@ def compute_child_lookup_values(
     for trav in traversals:
         for ctx in _iter_traversal_nodes(root, trav):
             for emit in trav.emits:
-                if not isinstance(emit, InstanceEmit):
+                # Handle both InstanceEmit and TableEmit
+                if not isinstance(emit, (InstanceEmit, TableEmit)):
                     continue
 
                 # Check if this table has relationship fields to compute
-                field_transforms = child_field_transforms.get(emit.table)
-                if not field_transforms:
+                transforms = field_transforms.get(emit.table)
+                if not transforms:
                     continue
 
-                # Compute child's key (must match executor logic)
+                # Compute row's key (must match executor logic)
                 if emit.join_keys:
                     key_parts = [tr(ctx) for tr in emit.join_keys]
                     if any(part is None or part == "" for part in key_parts):
                         continue
-                    child_key: KeyTuple = tuple(key_parts)
+                    row_key: KeyTuple = tuple(key_parts)
                 else:
                     counter = auto_key_counters.get(emit.table, 0)
-                    child_key = (f"__auto_{counter}__",)
+                    row_key = (f"__auto_{counter}__",)
                     auto_key_counters[emit.table] = counter + 1
 
                 # Compute field values
                 field_values: Dict[str, Any] = {}
-                for field_name, transform in field_transforms.items():
+                for field_name, transform in transforms.items():
                     field_values[field_name] = transform(ctx)
 
-                out.setdefault(emit.table, {})[child_key] = field_values
+                out.setdefault(emit.table, {})[row_key] = field_values
 
     return out
 

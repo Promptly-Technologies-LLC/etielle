@@ -94,6 +94,18 @@ The Supabase adapter has integration tests that require a running Supabase insta
        title TEXT NOT NULL,
        user_id TEXT REFERENCES test_users(id)
    );
+
+   -- Tables with UUID PKs for two-phase insert tests
+   CREATE TABLE IF NOT EXISTS test_orgs (
+       id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+       name TEXT NOT NULL UNIQUE
+   );
+
+   CREATE TABLE IF NOT EXISTS test_members (
+       id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+       name TEXT NOT NULL,
+       org_id UUID REFERENCES test_orgs(id)
+   );
    "
    ```
 
