@@ -2,50 +2,46 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://Promptly-Technologies-LLC.github.io/etielle/docs/navigation.html</loc>
-    <lastmod>2025-12-02T15:18:55.886Z</lastmod>
-  </url>
-  <url>
-    <loc>https://Promptly-Technologies-LLC.github.io/etielle/docs/migration.html</loc>
-    <lastmod>2025-12-02T15:18:55.886Z</lastmod>
-  </url>
-  <url>
-    <loc>https://Promptly-Technologies-LLC.github.io/etielle/docs/error-handling.html</loc>
-    <lastmod>2025-12-02T15:18:55.886Z</lastmod>
-  </url>
-  <url>
-    <loc>https://Promptly-Technologies-LLC.github.io/etielle/docs/mapping.html</loc>
-    <lastmod>2025-12-02T15:18:55.886Z</lastmod>
-  </url>
-  <url>
-    <loc>https://Promptly-Technologies-LLC.github.io/etielle/docs/custom-transforms.html</loc>
-    <lastmod>2025-12-02T15:18:55.885Z</lastmod>
-  </url>
-  <url>
-    <loc>https://Promptly-Technologies-LLC.github.io/etielle/CONTRIBUTING.html</loc>
-    <lastmod>2025-12-02T15:18:55.885Z</lastmod>
-  </url>
-  <url>
-    <loc>https://Promptly-Technologies-LLC.github.io/etielle/CHANGELOG.html</loc>
-    <lastmod>2025-12-02T15:18:55.885Z</lastmod>
-  </url>
-  <url>
-    <loc>https://Promptly-Technologies-LLC.github.io/etielle/index.html</loc>
-    <lastmod>2025-12-02T15:18:55.887Z</lastmod>
-  </url>
-  <url>
-    <loc>https://Promptly-Technologies-LLC.github.io/etielle/docs/relationships.html</loc>
-    <lastmod>2025-12-02T15:18:55.886Z</lastmod>
-  </url>
-  <url>
-    <loc>https://Promptly-Technologies-LLC.github.io/etielle/docs/transforms.html</loc>
-    <lastmod>2025-12-02T15:18:55.886Z</lastmod>
+    <lastmod>2025-12-02T15:22:21.964Z</lastmod>
   </url>
   <url>
     <loc>https://Promptly-Technologies-LLC.github.io/etielle/docs/database-loading.html</loc>
-    <lastmod>2025-12-02T15:18:55.886Z</lastmod>
+    <lastmod>2025-12-02T15:22:21.964Z</lastmod>
+  </url>
+  <url>
+    <loc>https://Promptly-Technologies-LLC.github.io/etielle/docs/transforms.html</loc>
+    <lastmod>2025-12-02T15:22:21.965Z</lastmod>
+  </url>
+  <url>
+    <loc>https://Promptly-Technologies-LLC.github.io/etielle/docs/relationships.html</loc>
+    <lastmod>2025-12-02T15:22:21.964Z</lastmod>
+  </url>
+  <url>
+    <loc>https://Promptly-Technologies-LLC.github.io/etielle/index.html</loc>
+    <lastmod>2025-12-02T15:22:21.966Z</lastmod>
+  </url>
+  <url>
+    <loc>https://Promptly-Technologies-LLC.github.io/etielle/CHANGELOG.html</loc>
+    <lastmod>2025-12-02T15:22:21.964Z</lastmod>
+  </url>
+  <url>
+    <loc>https://Promptly-Technologies-LLC.github.io/etielle/CONTRIBUTING.html</loc>
+    <lastmod>2025-12-02T15:22:21.964Z</lastmod>
+  </url>
+  <url>
+    <loc>https://Promptly-Technologies-LLC.github.io/etielle/docs/custom-transforms.html</loc>
+    <lastmod>2025-12-02T15:22:21.964Z</lastmod>
+  </url>
+  <url>
+    <loc>https://Promptly-Technologies-LLC.github.io/etielle/docs/mapping.html</loc>
+    <lastmod>2025-12-02T15:22:21.964Z</lastmod>
+  </url>
+  <url>
+    <loc>https://Promptly-Technologies-LLC.github.io/etielle/docs/error-handling.html</loc>
+    <lastmod>2025-12-02T15:22:21.964Z</lastmod>
   </url>
   <url>
     <loc>https://Promptly-Technologies-LLC.github.io/etielle/docs/introduction-to-etl.html</loc>
-    <lastmod>2025-12-02T15:18:55.886Z</lastmod>
+    <lastmod>2025-12-02T15:22:21.964Z</lastmod>
   </url>
 </urlset>

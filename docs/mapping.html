@@ -239,23 +239,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
       </ul>
   </li>
-        <li class="sidebar-item sidebar-item-section">
-      <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" role="navigation" aria-expanded="true">
- <span class="menu-text">Reference</span></a>
-          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" role="navigation" aria-expanded="true" aria-label="Toggle section">
-            <i class="bi bi-chevron-right ms-2"></i>
-          </a> 
-      </div>
-      <ul id="quarto-sidebar-section-4" class="collapse list-unstyled sidebar-section depth1 show">  
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../docs/migration.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Migration from v2</span></a>
-  </div>
-</li>
-      </ul>
-  </li>
     </ul>
     </div>
 </nav>
@@ -377,7 +360,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h2 class="anchored" data-anchor-id="basic-mapping">Basic Mapping</h2>
 <section id="simple-table-emission" class="level3">
 <h3 class="anchored" data-anchor-id="simple-table-emission">Simple Table Emission</h3>
-<div id="189202b3" class="cell" data-execution_count="1">
+<div id="9e79b855" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -409,7 +392,7 @@ Key: ('__auto_1__',), Row: {'name': 'Bob', 'email': 'bob@example.com', 'id': '__
 <section id="typed-output-with-model-classes" class="level3">
 <h3 class="anchored" data-anchor-id="typed-output-with-model-classes">Typed Output with Model Classes</h3>
 <p>Pass a model class instead of a string to get typed output:</p>
-<div id="74b4637e" class="cell" data-execution_count="2">
+<div id="6614ac86" class="cell" data-execution_count="2">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pydantic <span class="im">import</span> BaseModel</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -505,7 +488,7 @@ Key: ('__auto_1__',), Row: {'name': 'Bob', 'email': 'bob@example.com', 'id': '__
 </section>
 <section id="complete-merge-example" class="level3">
 <h3 class="anchored" data-anchor-id="complete-merge-example">Complete Merge Example</h3>
-<div id="0058b764" class="cell" data-execution_count="3">
+<div id="ee2b54d3" class="cell" data-execution_count="3">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -592,7 +575,7 @@ Key: ('__auto_1__',), Row: {'name': 'Bob', 'email': 'bob@example.com', 'id': '__
 </table>
 <section id="using-merge-policies" class="level3">
 <h3 class="anchored" data-anchor-id="using-merge-policies">Using Merge Policies</h3>
-<div id="746f96fb" class="cell" data-execution_count="4">
+<div id="2f5f0e2a" class="cell" data-execution_count="4">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get, literal</span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> AddPolicy</span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
@@ -627,7 +610,7 @@ User ('__auto_2__',): {'total': 75, 'count': 1}</code></pre>
 </section>
 <section id="collecting-values-with-appendpolicy" class="level3">
 <h3 class="anchored" data-anchor-id="collecting-values-with-appendpolicy">Collecting Values with AppendPolicy</h3>
-<div id="75ec9ab9" class="cell" data-execution_count="5">
+<div id="cecaa193" class="cell" data-execution_count="5">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get</span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> AppendPolicy</span>
 <span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
