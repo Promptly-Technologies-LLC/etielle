@@ -1,6 +1,6 @@
 [project]
 name = "etielle"
-version = "2.5.0"
+version = "2.6.0"
 description = "A declarative, type-safe Python DSL for mapping complex nested JSON to relational database schemas"
 readme = "README.md"
 requires-python = ">=3.13"

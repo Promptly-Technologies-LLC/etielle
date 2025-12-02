@@ -2,6 +2,24 @@
 
 <!-- version list -->
 
+## v2.6.0 (2025-12-02)
+
+### Chores
+
+- Add supabase/ to .gitignore
+  ([`15a76fc`](https://github.com/Promptly-Technologies-LLC/etielle/commit/15a76fc4917f595057afb531561a4c7e36ca82b7))
+
+### Documentation
+
+- Add CONTRIBUTING.md with dev setup and Supabase test instructions
+  ([`3d6525a`](https://github.com/Promptly-Technologies-LLC/etielle/commit/3d6525a97a963dfc2ab680453f1ef6b6be28b2ce))
+
+### Features
+
+- **adapter**: Add Supabase adapter
+  ([`8c62339`](https://github.com/Promptly-Technologies-LLC/etielle/commit/8c623391788249245c2dbb8efb36dae1944fbe71))
+
+
 ## v2.5.0 (2025-12-01)
 
 ### Documentation
