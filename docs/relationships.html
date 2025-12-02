@@ -326,7 +326,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="one-to-many-users---posts" class="level3">
 <h3 class="anchored" data-anchor-id="one-to-many-users---posts">One-to-Many (Users -&gt; Posts)</h3>
 <p>The most common pattern: users have many posts.</p>
-<div id="c13d1d44" class="cell" data-execution_count="1">
+<div id="bc9e3e22" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pydantic <span class="im">import</span> BaseModel</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get, get_from_parent</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -419,7 +419,7 @@ World by Alice</code></pre>
 <section id="multiple-relationships" class="level2">
 <h2 class="anchored" data-anchor-id="multiple-relationships">Multiple Relationships</h2>
 <p>A child table can link to multiple parent tables:</p>
-<div id="90d238ac" class="cell" data-execution_count="2">
+<div id="c05d0410" class="cell" data-execution_count="2">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pydantic <span class="im">import</span> BaseModel</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get, get_from_parent</span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -487,7 +487,7 @@ On: Hello</code></pre>
 <section id="nested-data-relationships" class="level2">
 <h2 class="anchored" data-anchor-id="nested-data-relationships">Nested Data Relationships</h2>
 <p>When data is nested, use <code>get_from_parent()</code> to extract the foreign key:</p>
-<div id="eb0f78f1" class="cell" data-execution_count="3">
+<div id="a68519cc" class="cell" data-execution_count="3">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pydantic <span class="im">import</span> BaseModel</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get, get_from_parent</span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -549,7 +549,7 @@ Gadget - Order: o1</code></pre>
 <section id="junction-tables-reverse-lookups" class="level2">
 <h2 class="anchored" data-anchor-id="junction-tables-reverse-lookups">Junction Tables (Reverse Lookups)</h2>
 <p>Handle junction tables where the relationship is defined outside the child:</p>
-<div id="e5c8d283" class="cell" data-execution_count="4">
+<div id="72eeddb1" class="cell" data-execution_count="4">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Data: {"userPosts": {"u1": [101, 102], "u2": [103]}}</span></span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="co"># This maps user_id -&gt; list of post_ids</span></span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a></span>
