@@ -265,6 +265,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#junction-tables-reverse-lookups" id="toc-junction-tables-reverse-lookups" class="nav-link" data-scroll-target="#junction-tables-reverse-lookups">Junction Tables (Reverse Lookups)</a></li>
   <li><a href="#link_to-reference" id="toc-link_to-reference" class="nav-link" data-scroll-target="#link_to-reference"><code>link_to()</code> Reference</a>
   <ul class="collapse">
+  <li><a href="#the-fk-parameter-supabase" id="toc-the-fk-parameter-supabase" class="nav-link" data-scroll-target="#the-fk-parameter-supabase">The <code>fk</code> Parameter (Supabase)</a></li>
   <li><a href="#requirements" id="toc-requirements" class="nav-link" data-scroll-target="#requirements">Requirements</a></li>
   <li><a href="#error-handling" id="toc-error-handling" class="nav-link" data-scroll-target="#error-handling">Error Handling</a></li>
   </ul></li>
@@ -326,7 +327,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="one-to-many-users---posts" class="level3">
 <h3 class="anchored" data-anchor-id="one-to-many-users---posts">One-to-Many (Users -&gt; Posts)</h3>
 <p>The most common pattern: users have many posts.</p>
-<div id="bc9e3e22" class="cell" data-execution_count="1">
+<div id="85f44b35" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pydantic <span class="im">import</span> BaseModel</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get, get_from_parent</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -419,7 +420,7 @@ World by Alice</code></pre>
 <section id="multiple-relationships" class="level2">
 <h2 class="anchored" data-anchor-id="multiple-relationships">Multiple Relationships</h2>
 <p>A child table can link to multiple parent tables:</p>
-<div id="c05d0410" class="cell" data-execution_count="2">
+<div id="8f8b26c2" class="cell" data-execution_count="2">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pydantic <span class="im">import</span> BaseModel</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get, get_from_parent</span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -487,7 +488,7 @@ On: Hello</code></pre>
 <section id="nested-data-relationships" class="level2">
 <h2 class="anchored" data-anchor-id="nested-data-relationships">Nested Data Relationships</h2>
 <p>When data is nested, use <code>get_from_parent()</code> to extract the foreign key:</p>
-<div id="a68519cc" class="cell" data-execution_count="3">
+<div id="4e8cd0b2" class="cell" data-execution_count="3">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pydantic <span class="im">import</span> BaseModel</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get, get_from_parent</span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -549,7 +550,7 @@ Gadget - Order: o1</code></pre>
 <section id="junction-tables-reverse-lookups" class="level2">
 <h2 class="anchored" data-anchor-id="junction-tables-reverse-lookups">Junction Tables (Reverse Lookups)</h2>
 <p>Handle junction tables where the relationship is defined outside the child:</p>
-<div id="72eeddb1" class="cell" data-execution_count="4">
+<div id="38c920d5" class="cell" data-execution_count="4">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Data: {"userPosts": {"u1": [101, 102], "u2": [103]}}</span></span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="co"># This maps user_id -&gt; list of post_ids</span></span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -577,6 +578,11 @@ Gadget - Order: o1</code></pre>
 <section id="link_to-reference" class="level2">
 <h2 class="anchored" data-anchor-id="link_to-reference"><code>link_to()</code> Reference</h2>
 <table class="caption-top table">
+<colgroup>
+<col style="width: 36%">
+<col style="width: 20%">
+<col style="width: 43%">
+</colgroup>
 <thead>
 <tr class="header">
 <th>Parameter</th>
@@ -587,16 +593,28 @@ Gadget - Order: o1</code></pre>
 <tbody>
 <tr class="odd">
 <td><code>parent</code></td>
-<td><code>type</code></td>
-<td>The parent model class</td>
+<td><code>type | str</code></td>
+<td>The parent model class or table name</td>
 </tr>
 <tr class="even">
 <td><code>by</code></td>
 <td><code>dict[str, str]</code></td>
 <td>Mapping of <code>{child_field: parent_field}</code></td>
 </tr>
+<tr class="odd">
+<td><code>fk</code></td>
+<td><code>dict[str, str] | None</code></td>
+<td>(Supabase only) Mapping of <code>{child_column: parent_column}</code> for DB-generated IDs</td>
+</tr>
 </tbody>
 </table>
+<section id="the-fk-parameter-supabase" class="level3">
+<h3 class="anchored" data-anchor-id="the-fk-parameter-supabase">The <code>fk</code> Parameter (Supabase)</h3>
+<p>When using Supabase with DB-generated primary keys (UUID, auto-increment), use <code>fk</code> to populate child foreign keys after parent insertion:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>.link_to(<span class="st">"users"</span>, by<span class="op">=</span>{<span class="st">"_parent_key"</span>: <span class="st">"_key"</span>}, fk<span class="op">=</span>{<span class="st">"user_id"</span>: <span class="st">"id"</span>})</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>This tells etielle: “After inserting users, set each child’s <code>user_id</code> column to the parent’s generated <code>id</code>.”</p>
+<p>See <a href="../docs/database-loading.html#db-generated-ids-two-phase-insert">Database Loading</a> for a complete example.</p>
+</section>
 <section id="requirements" class="level3">
 <h3 class="anchored" data-anchor-id="requirements">Requirements</h3>
 <ul>
@@ -619,34 +637,34 @@ Gadget - Order: o1</code></pre>
 <section id="use-tempfield-for-foreign-keys" class="level3">
 <h3 class="anchored" data-anchor-id="use-tempfield-for-foreign-keys">Use TempField for Foreign Keys</h3>
 <p>Foreign key values should be in <code>TempField</code>, not <code>Field</code>, unless you also need them in output:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Good: Foreign key is TempField (not in output, just for linking)</span></span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>TempField(<span class="st">"user_id"</span>, get_from_parent(<span class="st">"id"</span>))</span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a><span class="co"># If you need user_id in output: use Field (it's also available for linking)</span></span>
-<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>Field(<span class="st">"user_id"</span>, get_from_parent(<span class="st">"id"</span>))</span>
-<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Note: Don't use both Field and TempField with the same name</span></span>
-<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a><span class="co"># The TempField will shadow the Field and prevent it from being persisted</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Good: Foreign key is TempField (not in output, just for linking)</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>TempField(<span class="st">"user_id"</span>, get_from_parent(<span class="st">"id"</span>))</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="co"># If you need user_id in output: use Field (it's also available for linking)</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>Field(<span class="st">"user_id"</span>, get_from_parent(<span class="st">"id"</span>))</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Note: Don't use both Field and TempField with the same name</span></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a><span class="co"># The TempField will shadow the Field and prevent it from being persisted</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
 <section id="order-matters" class="level3">
 <h3 class="anchored" data-anchor-id="order-matters">Order Matters</h3>
 <p>Emit parent tables before child tables that link to them:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Good: Users emitted before posts</span></span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>.map_to(table<span class="op">=</span>User, fields<span class="op">=</span>[...])</span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>.goto(<span class="st">"posts"</span>).each()</span>
-<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>.map_to(table<span class="op">=</span>Post, fields<span class="op">=</span>[...])</span>
-<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>.link_to(User, by<span class="op">=</span>{<span class="st">"user_id"</span>: <span class="st">"id"</span>})</span>
-<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Also works: Order within same run() is handled correctly</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Good: Users emitted before posts</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>.map_to(table<span class="op">=</span>User, fields<span class="op">=</span>[...])</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>.goto(<span class="st">"posts"</span>).each()</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>.map_to(table<span class="op">=</span>Post, fields<span class="op">=</span>[...])</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>.link_to(User, by<span class="op">=</span>{<span class="st">"user_id"</span>: <span class="st">"id"</span>})</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Also works: Order within same run() is handled correctly</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
 <section id="match-key-types" class="level3">
 <h3 class="anchored" data-anchor-id="match-key-types">Match Key Types</h3>
 <p>Ensure child and parent key values are the same type:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># If parent key is string "u1"</span></span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>TempField(<span class="st">"id"</span>, get(<span class="st">"id"</span>))  <span class="co"># Returns "u1"</span></span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Child key must also be string</span></span>
-<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>TempField(<span class="st">"user_id"</span>, get(<span class="st">"user_id"</span>))  <span class="co"># Must return "u1", not 1</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># If parent key is string "u1"</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>TempField(<span class="st">"id"</span>, get(<span class="st">"id"</span>))  <span class="co"># Returns "u1"</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Child key must also be string</span></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>TempField(<span class="st">"user_id"</span>, get(<span class="st">"user_id"</span>))  <span class="co"># Must return "u1", not 1</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
 </section>
 <section id="see-also" class="level2">

@@ -321,7 +321,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="getpath---extract-from-current-node" class="level3">
 <h3 class="anchored" data-anchor-id="getpath---extract-from-current-node"><code>get(path)</code> - Extract from current node</h3>
 <p>The most common transform. Extracts a value from the current JSON node.</p>
-<div id="cfa79166" class="cell" data-execution_count="1">
+<div id="8f878b9a" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -343,9 +343,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="cell-output cell-output-stdout">
 <pre><code>[
   {
+    "id": "u1",
     "name": "Alice",
-    "age": 30,
-    "id": "__auto_0__"
+    "age": 30
   }
 ]</code></pre>
 </div>
@@ -354,7 +354,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="get_from_parentpath-depth1---extract-from-ancestor" class="level3">
 <h3 class="anchored" data-anchor-id="get_from_parentpath-depth1---extract-from-ancestor"><code>get_from_parent(path, depth=1)</code> - Extract from ancestor</h3>
 <p>Gets a value from a parent context. Essential for linking child records to parents.</p>
-<div id="c60401c7" class="cell" data-execution_count="2">
+<div id="11018fb5" class="cell" data-execution_count="2">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get, get_from_parent</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -390,10 +390,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="cell-output cell-output-stdout">
 <pre><code>[
   {
+    "id": "p1",
     "title": "Hello",
     "user_id": "u1",
-    "user_name": "Alice",
-    "id": "__auto_0__"
+    "user_name": "Alice"
   }
 ]</code></pre>
 </div>
@@ -409,7 +409,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="get_from_rootpath---extract-from-json-root" class="level3">
 <h3 class="anchored" data-anchor-id="get_from_rootpath---extract-from-json-root"><code>get_from_root(path)</code> - Extract from JSON root</h3>
 <p>Gets a value from the top-level JSON object, regardless of current position.</p>
-<div id="6b5fcc42" class="cell" data-execution_count="3">
+<div id="e0d0728f" class="cell" data-execution_count="3">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get, get_from_root</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -434,9 +434,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="cell-output cell-output-stdout">
 <pre><code>[
   {
+    "id": "u1",
     "name": "Alice",
-    "api_version": "2.0",
-    "id": "__auto_0__"
+    "api_version": "2.0"
   }
 ]</code></pre>
 </div>
@@ -445,7 +445,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="literalvalue---constant-value" class="level3">
 <h3 class="anchored" data-anchor-id="literalvalue---constant-value"><code>literal(value)</code> - Constant value</h3>
 <p>Returns a constant value, useful for defaults or computed fields.</p>
-<div id="47e07ae1" class="cell" data-execution_count="4">
+<div id="09e24405" class="cell" data-execution_count="4">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get, literal</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -468,10 +468,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="cell-output cell-output-stdout">
 <pre><code>[
   {
+    "id": "u1",
     "name": "Alice",
     "status": "active",
-    "count": 0,
-    "id": "__auto_0__"
+    "count": 0
   }
 ]</code></pre>
 </div>
@@ -483,7 +483,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="key---current-dict-key" class="level3">
 <h3 class="anchored" data-anchor-id="key---current-dict-key"><code>key()</code> - Current dict key</h3>
 <p>When iterating over a dict with <code>each()</code>, returns the current key.</p>
-<div id="b6dac17a" class="cell" data-execution_count="5">
+<div id="b017f427" class="cell" data-execution_count="5">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get, key</span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
 <span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -510,16 +510,16 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="cell-output cell-output-stdout">
 <pre><code>[
   {
-    "score": 95,
-    "id": "__auto_0__"
+    "player": "alice",
+    "score": 95
   },
   {
-    "score": 87,
-    "id": "__auto_1__"
+    "player": "bob",
+    "score": 87
   },
   {
-    "score": 92,
-    "id": "__auto_2__"
+    "player": "carol",
+    "score": 92
   }
 ]</code></pre>
 </div>
@@ -528,7 +528,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="index---current-list-index" class="level3">
 <h3 class="anchored" data-anchor-id="index---current-list-index"><code>index()</code> - Current list index</h3>
 <p>When iterating over a list with <code>each()</code>, returns the current index.</p>
-<div id="a60ba06a" class="cell" data-execution_count="6">
+<div id="2aee1872" class="cell" data-execution_count="6">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get, index</span>
 <span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
 <span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -549,16 +549,16 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="cell-output cell-output-stdout">
 <pre><code>[
   {
-    "name": "apple",
-    "id": "__auto_0__"
+    "position": 0,
+    "name": "apple"
   },
   {
-    "name": "banana",
-    "id": "__auto_1__"
+    "position": 1,
+    "name": "banana"
   },
   {
-    "name": "cherry",
-    "id": "__auto_2__"
+    "position": 2,
+    "name": "cherry"
   }
 ]</code></pre>
 </div>
@@ -567,7 +567,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="parent_keydepth1---parents-dict-key" class="level3">
 <h3 class="anchored" data-anchor-id="parent_keydepth1---parents-dict-key"><code>parent_key(depth=1)</code> - Parent’s dict key</h3>
 <p>Gets the dict key from a parent iteration.</p>
-<div id="8b362d1e" class="cell" data-execution_count="7">
+<div id="9d0c1abb" class="cell" data-execution_count="7">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get, parent_key</span>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
 <span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -598,16 +598,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     "name": [
       "apple",
       "banana"
-    ],
-    "id": "__auto_0__"
+    ]
   },
   {
     "category": null,
     "name": [
       "carrot",
       "broccoli"
-    ],
-    "id": "__auto_1__"
+    ]
   }
 ]</code></pre>
 </div>
@@ -616,7 +614,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="parent_indexdepth1---parents-list-index" class="level3">
 <h3 class="anchored" data-anchor-id="parent_indexdepth1---parents-list-index"><code>parent_index(depth=1)</code> - Parent’s list index</h3>
 <p>Gets the list index from a parent iteration.</p>
-<div id="46e3cf68" class="cell" data-execution_count="8">
+<div id="a1160a4d" class="cell" data-execution_count="8">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get, parent_index, index, concat, literal</span>
 <span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
 <span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -650,8 +648,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       "a",
       "b",
       "c"
-    ],
-    "id": "__auto_0__"
+    ]
   },
   {
     "row": null,
@@ -660,8 +657,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       "d",
       "e",
       "f"
-    ],
-    "id": "__auto_1__"
+    ]
   }
 ]</code></pre>
 </div>
@@ -670,7 +666,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="node---current-node-value" class="level3">
 <h3 class="anchored" data-anchor-id="node---current-node-value"><code>node()</code> - Current node value</h3>
 <p>Returns the entire current node. Useful when iterating over scalar values.</p>
-<div id="a0282fbd" class="cell" data-execution_count="9">
+<div id="70965ace" class="cell" data-execution_count="9">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, node</span>
 <span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
 <span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -690,13 +686,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="cell-output cell-output-stdout">
 <pre><code>[
   {
-    "id": "__auto_0__"
+    "id": 101
   },
   {
-    "id": "__auto_1__"
+    "id": 102
   },
   {
-    "id": "__auto_2__"
+    "id": 103
   }
 ]</code></pre>
 </div>
@@ -708,7 +704,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="concatparts---join-strings" class="level3">
 <h3 class="anchored" data-anchor-id="concatparts---join-strings"><code>concat(*parts)</code> - Join strings</h3>
 <p>Concatenates multiple transforms into a single string.</p>
-<div id="e9d42cea" class="cell" data-execution_count="10">
+<div id="9b6b24a8" class="cell" data-execution_count="10">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get, literal, concat</span>
 <span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
 <span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -730,8 +726,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <pre><code>[
   {
     "full_name": "Alice Smith",
-    "user_key": "user_u1",
-    "id": "__auto_0__"
+    "user_key": "user_u1"
   }
 ]</code></pre>
 </div>
@@ -740,7 +735,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="format_idparts-sep_---join-with-separator" class="level3">
 <h3 class="anchored" data-anchor-id="format_idparts-sep_---join-with-separator"><code>format_id(*parts, sep="_")</code> - Join with separator</h3>
 <p>Joins non-empty parts with a separator. Skips <code>None</code> values.</p>
-<div id="c02f33f2" class="cell" data-execution_count="11">
+<div id="5ffb657b" class="cell" data-execution_count="11">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get, format_id</span>
 <span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
 <span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -760,8 +755,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="cell-output cell-output-stdout">
 <pre><code>[
   {
-    "key": "post_123",
-    "id": "__auto_0__"
+    "key": "post_123"
   }
 ]</code></pre>
 </div>
@@ -770,7 +764,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="coalescetransforms---first-non-none-value" class="level3">
 <h3 class="anchored" data-anchor-id="coalescetransforms---first-non-none-value"><code>coalesce(*transforms)</code> - First non-None value</h3>
 <p>Returns the first non-<code>None</code> result from the given transforms.</p>
-<div id="051e853e" class="cell" data-execution_count="12">
+<div id="c22574f5" class="cell" data-execution_count="12">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get, literal, coalesce</span>
 <span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
 <span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -793,12 +787,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="cell-output cell-output-stdout">
 <pre><code>[
   {
-    "display_name": "Ali",
-    "id": "__auto_0__"
+    "display_name": "Ali"
   },
   {
-    "display_name": "Bob",
-    "id": "__auto_1__"
+    "display_name": "Bob"
   }
 ]</code></pre>
 </div>
@@ -807,7 +799,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="applyfunc-inner---apply-a-function" class="level3">
 <h3 class="anchored" data-anchor-id="applyfunc-inner---apply-a-function"><code>apply(func, inner)</code> - Apply a function</h3>
 <p>Applies any callable to the result of another transform. Useful for type coercion, string methods, and custom transformations.</p>
-<div id="2fb20210" class="cell" data-execution_count="13">
+<div id="ba2c8e66" class="cell" data-execution_count="13">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb27"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get, <span class="bu">apply</span></span>
 <span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
 <span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -832,10 +824,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="cell-output cell-output-stdout">
 <pre><code>[
   {
+    "id": "p1",
     "name": "Widget",
     "price": 19.99,
-    "quantity": 5,
-    "id": "__auto_0__"
+    "quantity": 5
   }
 ]</code></pre>
 </div>

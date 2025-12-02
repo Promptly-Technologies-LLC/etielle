@@ -322,7 +322,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h2 class="anchored" data-anchor-id="basic-custom-transforms">Basic Custom Transforms</h2>
 <section id="simple-field-transformation" class="level3">
 <h3 class="anchored" data-anchor-id="simple-field-transformation">Simple Field Transformation</h3>
-<div id="15fc1364" class="cell" data-execution_count="1">
+<div id="413c203b" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get, transform</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.core <span class="im">import</span> Context</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
@@ -353,12 +353,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="cell-output cell-output-stdout">
 <pre><code>[
   {
-    "initials": "AS",
-    "id": "__auto_0__"
+    "initials": "AS"
   },
   {
-    "initials": "BJ",
-    "id": "__auto_1__"
+    "initials": "BJ"
   }
 ]</code></pre>
 </div>
@@ -366,7 +364,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="transform-with-default-arguments" class="level3">
 <h3 class="anchored" data-anchor-id="transform-with-default-arguments">Transform with Default Arguments</h3>
-<div id="2879396b" class="cell" data-execution_count="2">
+<div id="01f83af0" class="cell" data-execution_count="2">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get, transform</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.core <span class="im">import</span> Context</span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
@@ -398,12 +396,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="cell-output cell-output-stdout">
 <pre><code>[
   {
-    "title": "Short title",
-    "id": "__auto_0__"
+    "title": "Short title"
   },
   {
-    "title": "This is a very long ...",
-    "id": "__auto_1__"
+    "title": "This is a very long ..."
   }
 ]</code></pre>
 </div>
@@ -461,7 +457,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </table>
 <section id="accessing-parent-context" class="level3">
 <h3 class="anchored" data-anchor-id="accessing-parent-context">Accessing Parent Context</h3>
-<div id="08a85527" class="cell" data-execution_count="3">
+<div id="3a4a4396" class="cell" data-execution_count="3">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get, transform</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.core <span class="im">import</span> Context</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
@@ -501,12 +497,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="cell-output cell-output-stdout">
 <pre><code>[
   {
-    "path": "Electronics/Phone",
-    "id": "__auto_0__"
+    "path": "Electronics/Phone"
   },
   {
-    "path": "Electronics/Laptop",
-    "id": "__auto_1__"
+    "path": "Electronics/Laptop"
   }
 ]</code></pre>
 </div>
@@ -514,7 +508,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="using-root-context" class="level3">
 <h3 class="anchored" data-anchor-id="using-root-context">Using Root Context</h3>
-<div id="27ea0455" class="cell" data-execution_count="4">
+<div id="43c0a949" class="cell" data-execution_count="4">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get, transform</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.core <span class="im">import</span> Context</span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
@@ -549,12 +543,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="cell-output cell-output-stdout">
 <pre><code>[
   {
-    "value": "true",
-    "id": "__auto_0__"
+    "key": "APP_debug",
+    "value": "true"
   },
   {
-    "value": "30",
-    "id": "__auto_1__"
+    "key": "APP_timeout",
+    "value": "30"
   }
 ]</code></pre>
 </div>
@@ -566,7 +560,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="lookup-transform" class="level3">
 <h3 class="anchored" data-anchor-id="lookup-transform">Lookup Transform</h3>
 <p>Use closures to create transforms that reference external data:</p>
-<div id="d95a625a" class="cell" data-execution_count="5">
+<div id="ba025196" class="cell" data-execution_count="5">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get, transform</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.core <span class="im">import</span> Context</span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
@@ -608,18 +602,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <pre><code>[
   {
     "name": "Phone",
-    "category": "Electronics",
-    "id": "__auto_0__"
+    "category": "Electronics"
   },
   {
     "name": "Shirt",
-    "category": "Clothing",
-    "id": "__auto_1__"
+    "category": "Clothing"
   },
   {
     "name": "Novel",
-    "category": "Books",
-    "id": "__auto_2__"
+    "category": "Books"
   }
 ]</code></pre>
 </div>
@@ -627,7 +618,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="validation-transform" class="level3">
 <h3 class="anchored" data-anchor-id="validation-transform">Validation Transform</h3>
-<div id="c90fdeb5" class="cell" data-execution_count="6">
+<div id="d2c4ca76" class="cell" data-execution_count="6">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get, transform</span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.core <span class="im">import</span> Context</span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> re</span>
@@ -667,16 +658,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="cell-output cell-output-stdout">
 <pre><code>[
   {
-    "email": "alice@example.com",
-    "id": "__auto_0__"
+    "email": "alice@example.com"
   },
   {
-    "email": null,
-    "id": "__auto_1__"
+    "email": null
   },
   {
-    "email": "bob@test.org",
-    "id": "__auto_2__"
+    "email": "bob@test.org"
   }
 ]</code></pre>
 </div>
@@ -684,7 +672,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="computed-key-transform" class="level3">
 <h3 class="anchored" data-anchor-id="computed-key-transform">Computed Key Transform</h3>
-<div id="9de6cd26" class="cell" data-execution_count="7">
+<div id="dc7065ab" class="cell" data-execution_count="7">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get, transform</span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.core <span class="im">import</span> Context</span>
 <span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> hashlib</span>
@@ -722,14 +710,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   {
     "date": "2024-01-15",
     "type": "login",
-    "user": "alice",
-    "id": "__auto_0__"
+    "user": "alice"
   },
   {
     "date": "2024-01-15",
     "type": "logout",
-    "user": "alice",
-    "id": "__auto_1__"
+    "user": "alice"
   }
 ]</code></pre>
 </div>
@@ -739,7 +725,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="no-argument-transforms" class="level2">
 <h2 class="anchored" data-anchor-id="no-argument-transforms">No-Argument Transforms</h2>
 <p>For transforms that don’t need parameters, the decorator still works:</p>
-<div id="74225528" class="cell" data-execution_count="8">
+<div id="e683c935" class="cell" data-execution_count="8">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, transform</span>
 <span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.core <span class="im">import</span> Context</span>
 <span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
@@ -772,18 +758,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <pre><code>[
   {
     "path": "items.0",
-    "is_first": true,
-    "id": "__auto_0__"
+    "is_first": true
   },
   {
     "path": "items.1",
-    "is_first": false,
-    "id": "__auto_1__"
+    "is_first": false
   },
   {
     "path": "items.2",
-    "is_first": false,
-    "id": "__auto_2__"
+    "is_first": false
   }
 ]</code></pre>
 </div>

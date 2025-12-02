@@ -360,7 +360,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h2 class="anchored" data-anchor-id="basic-mapping">Basic Mapping</h2>
 <section id="simple-table-emission" class="level3">
 <h3 class="anchored" data-anchor-id="simple-table-emission">Simple Table Emission</h3>
-<div id="f1dbdbef" class="cell" data-execution_count="1">
+<div id="e57197df" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -384,15 +384,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> key, row <span class="kw">in</span> result.tables[<span class="st">"users"</span>].items():</span>
 <span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Key: </span><span class="sc">{</span>key<span class="sc">}</span><span class="ss">, Row: </span><span class="sc">{</span>row<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>Key: ('__auto_0__',), Row: {'name': 'Alice', 'email': 'alice@example.com', 'id': '__auto_0__'}
-Key: ('__auto_1__',), Row: {'name': 'Bob', 'email': 'bob@example.com', 'id': '__auto_1__'}</code></pre>
+<pre><code>Key: ('__auto_0__',), Row: {'name': 'Alice', 'email': 'alice@example.com'}
+Key: ('__auto_1__',), Row: {'name': 'Bob', 'email': 'bob@example.com'}</code></pre>
 </div>
 </div>
 </section>
 <section id="typed-output-with-model-classes" class="level3">
 <h3 class="anchored" data-anchor-id="typed-output-with-model-classes">Typed Output with Model Classes</h3>
 <p>Pass a model class instead of a string to get typed output:</p>
-<div id="d0637150" class="cell" data-execution_count="2">
+<div id="bda107d9" class="cell" data-execution_count="2">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pydantic <span class="im">import</span> BaseModel</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -488,7 +488,7 @@ Key: ('__auto_1__',), Row: {'name': 'Bob', 'email': 'bob@example.com', 'id': '__
 </section>
 <section id="complete-merge-example" class="level3">
 <h3 class="anchored" data-anchor-id="complete-merge-example">Complete Merge Example</h3>
-<div id="901b4ab9" class="cell" data-execution_count="3">
+<div id="7ba347b3" class="cell" data-execution_count="3">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -522,8 +522,8 @@ Key: ('__auto_1__',), Row: {'name': 'Bob', 'email': 'bob@example.com', 'id': '__
 <span id="cb10-31"><a href="#cb10-31" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(json.dumps(user, indent<span class="op">=</span><span class="dv">2</span>))  <span class="co"># Has id, name, email, AND bio</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>{
-  "name": "Alice",
-  "id": "__auto_0__"
+  "id": "u1",
+  "name": "Alice"
 }</code></pre>
 </div>
 </div>
@@ -575,7 +575,7 @@ Key: ('__auto_1__',), Row: {'name': 'Bob', 'email': 'bob@example.com', 'id': '__
 </table>
 <section id="using-merge-policies" class="level3">
 <h3 class="anchored" data-anchor-id="using-merge-policies">Using Merge Policies</h3>
-<div id="88181f81" class="cell" data-execution_count="4">
+<div id="d585d8a8" class="cell" data-execution_count="4">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get, literal</span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> AddPolicy</span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
@@ -610,7 +610,7 @@ User ('__auto_2__',): {'total': 75, 'count': 1}</code></pre>
 </section>
 <section id="collecting-values-with-appendpolicy" class="level3">
 <h3 class="anchored" data-anchor-id="collecting-values-with-appendpolicy">Collecting Values with AppendPolicy</h3>
-<div id="418a18e5" class="cell" data-execution_count="5">
+<div id="533fe6a1" class="cell" data-execution_count="5">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get</span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> AppendPolicy</span>
 <span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
