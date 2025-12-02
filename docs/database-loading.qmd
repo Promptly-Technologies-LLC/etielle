@@ -388,6 +388,125 @@ with Session(engine) as session:
     session.commit()
 ```
 
+## Supabase
+
+etielle also supports loading data directly to Supabase using the same `.load().run()` pattern.
+
+### Basic Supabase Example
+
+``` {python}
+#| eval: false
+from supabase import create_client
+from etielle import etl, Field, TempField, get
+
+# Create Supabase client
+client = create_client("https://your-project.supabase.co", "your-anon-key")
+
+data = {
+    "users": [
+        {"id": "u1", "name": "Alice"},
+        {"id": "u2", "name": "Bob"}
+    ]
+}
+
+# Load directly to Supabase
+result = (
+    etl(data)
+    .goto("users").each()
+    .map_to(table="users", fields=[
+        Field("id", get("id")),
+        Field("name", get("name")),
+        TempField("id", get("id"))
+    ])
+    .load(client)  # Supabase client auto-detected
+    .run()
+)
+```
+
+### Supabase with Relationships
+
+``` {python}
+#| eval: false
+from supabase import create_client
+from etielle import etl, Field, TempField, get, get_from_parent
+
+client = create_client("https://your-project.supabase.co", "your-anon-key")
+
+data = {
+    "users": [{
+        "id": "u1",
+        "name": "Alice",
+        "posts": [
+            {"id": "p1", "title": "Hello"},
+            {"id": "p2", "title": "World"}
+        ]
+    }]
+}
+
+result = (
+    etl(data)
+    .goto("users").each()
+    .map_to(table="users", fields=[
+        Field("id", get("id")),
+        Field("name", get("name")),
+        TempField("id", get("id"))
+    ])
+
+    .goto("posts").each()
+    .map_to(table="posts", fields=[
+        Field("id", get("id")),
+        Field("title", get("title")),
+        Field("user_id", get_from_parent("id")),  # FK set via transform
+        TempField("id", get("id")),
+        TempField("user_id", get_from_parent("id"))
+    ])
+    .link_to("users", by={"user_id": "id"})  # Defines insert order
+    .load(client)
+    .run()
+)
+```
+
+Tables are inserted in dependency order (parents before children) based on `link_to()` declarations.
+
+### Upsert Mode
+
+Use `upsert=True` for idempotent loads:
+
+```python
+result = (
+    etl(data)
+    .goto("users").each()
+    .map_to(table="users", fields=[...])
+    .load(client, upsert=True)  # Upsert on "id" column
+    .run()
+)
+```
+
+### Batching
+
+Control batch size for large datasets:
+
+```python
+.load(client, batch_size=500)  # Default is 1000
+```
+
+### Supabase vs SQLAlchemy
+
+| Feature | SQLAlchemy/SQLModel | Supabase |
+|---------|---------------------|----------|
+| Transaction | Session-based | Per-table HTTP calls |
+| Relationships | ORM object references | FK columns via transforms |
+| Commit | Manual `session.commit()` | Automatic on insert |
+| Upsert | ORM merge | `upsert=True` option |
+
+**Key difference:** With Supabase, foreign key values must be set via transforms (like `get_from_parent()`) since there's no ORM session to resolve relationships.
+
+### Limitations
+
+- **No transactions across tables**: Each table insert is a separate HTTP call
+- **Caller-provided IDs required**: DB-generated IDs require multiple round-trips (not yet supported)
+- **Conflict column**: Upsert uses "id" column by default
+
 ## See also
 
 - [Mapping Tables](mapping.qmd) - Defining output structure

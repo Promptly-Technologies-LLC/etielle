@@ -295,6 +295,9 @@ class PipelineBuilder:
         self._relationships: list[dict[str, Any]] = []
         # Session for loading
         self._session: Any | None = None
+        # Supabase-specific options
+        self._upsert: bool = False
+        self._batch_size: int = 1000
 
     def goto_root(self, index: int = 0) -> PipelineBuilder:
         """Navigate to a specific JSON root.
@@ -413,7 +416,7 @@ class PipelineBuilder:
 
     def link_to(
         self,
-        parent: type,
+        parent: type | str,
         by: dict[str, str]
     ) -> PipelineBuilder:
         """Define a relationship from the current table to a parent table.
@@ -422,7 +425,7 @@ class PipelineBuilder:
         Both Field and TempField names can be used.
 
         Args:
-            parent: The parent model class.
+            parent: The parent model class or table name string.
             by: Mapping of {child_field: parent_field}.
 
         Returns:
@@ -436,39 +439,60 @@ class PipelineBuilder:
                 TempField("user_id", get("author_id"))
             ])
             .link_to(User, by={"user_id": "id"})
+
+            # Or with table names:
+            .map_to(table="posts", fields=[...])
+            .link_to("users", by={"user_id": "id"})
         """
         if not self._emissions:
             raise ValueError("link_to() must follow a map_to() call")
 
         last_emission = self._emissions[-1]
+
+        # Handle both class and string for parent
+        if isinstance(parent, str):
+            parent_table = parent
+            parent_class = None
+        else:
+            parent_table = getattr(parent, "__tablename__", parent.__name__.lower())
+            parent_class = parent
+
         relationship = {
             "child_table": last_emission["table"],
-            "parent_class": parent,
-            "parent_table": getattr(parent, "__tablename__", parent.__name__.lower()),
+            "parent_class": parent_class,
+            "parent_table": parent_table,
             "by": dict(by),
             "emission_index": len(self._emissions) - 1,
         }
         self._relationships.append(relationship)
         return self
 
-    def load(self, session: Any) -> PipelineBuilder:
-        """Configure database session for persistence.
+    def load(
+        self,
+        session: Any,
+        *,
+        upsert: bool = False,
+        batch_size: int = 1000,
+    ) -> PipelineBuilder:
+        """Configure database session or client for persistence.
 
         When load() is called before run(), the pipeline will:
         1. Build all instances in memory
         2. Bind relationships
-        3. Add instances to the session
-        4. Flush (but not commit)
+        3. Add instances to the session (SQLAlchemy) or insert to database (Supabase)
+        4. Flush (but not commit for SQLAlchemy)
 
-        The caller controls the transaction (commit/rollback).
+        The caller controls the transaction (commit/rollback) for SQLAlchemy.
 
         Args:
-            session: SQLAlchemy/SQLModel session.
+            session: SQLAlchemy/SQLModel session or Supabase client.
+            upsert: If True, use upsert instead of insert (Supabase only).
+            batch_size: Maximum rows per insert batch (Supabase only).
 
         Returns:
             Self for method chaining.
 
-        Example:
+        Example (SQLAlchemy):
             result = (
                 etl(data)
                 .goto("users").each()
@@ -477,9 +501,55 @@ class PipelineBuilder:
                 .run()
             )
             session.commit()  # Caller controls transaction
+
+        Example (Supabase):
+            result = (
+                etl(data)
+                .goto("users").each()
+                .map_to(table="users", fields=[...])
+                .load(supabase_client, upsert=True)
+                .run()
+            )
         """
         self._session = session
+        self._upsert = upsert
+        self._batch_size = batch_size
         return self
+
+    def _is_supabase_client(self, obj: Any) -> bool:
+        """Check if the object is a Supabase client."""
+        module = type(obj).__module__
+        return module.startswith("supabase") or module.startswith("postgrest")
+
+    def _flush_to_supabase(
+        self,
+        tables: dict[str, dict[tuple[Any, ...], Any]],
+        flush_order: list[str],
+    ) -> None:
+        """Flush tables to Supabase in dependency order.
+
+        Args:
+            tables: Dict mapping table names to {key: row_dict}.
+            flush_order: Tables in topological order (parents first).
+        """
+        from etielle.adapters.supabase_adapter import insert_batches
+
+        for table_name in flush_order:
+            if table_name not in tables:
+                continue
+
+            # Convert {key: row} dict to list of rows
+            rows = list(tables[table_name].values())
+            if not rows:
+                continue
+
+            insert_batches(
+                self._session,
+                table_name,
+                rows,
+                upsert=self._upsert,
+                batch_size=self._batch_size,
+            )
 
     def _build_traversal_specs(self) -> list[TraversalSpec]:
         """Convert accumulated emissions to TraversalSpec objects."""
@@ -803,7 +873,7 @@ class PipelineBuilder:
                     error_msg = f"Validation failed for table '{table_name}' key {key}:\n" + "\n".join(msgs)
                     raise ValueError(error_msg)
 
-        # If session provided, flush in dependency order
+        # If session/client provided, flush in dependency order
         if self._session is not None:
             from etielle.utils import topological_sort
 
@@ -812,63 +882,68 @@ class PipelineBuilder:
             all_tables = set(tables.keys())
             flush_order = topological_sort(dep_graph, all_tables)
 
-            # Build pending bindings index: {child_table: [(rel_spec_idx, parent_table)]}
-            # This tracks which relationships need to be bound when processing each child
-            pending_bindings: dict[str, list[tuple[int, str]]] = {}
-            for idx, spec in enumerate(rel_specs):
-                pending_bindings.setdefault(spec.child_table, []).append(
-                    (idx, spec.parent_table)
-                )
+            # Check if this is a Supabase client
+            if self._is_supabase_client(self._session):
+                self._flush_to_supabase(tables, flush_order)
+            else:
+                # SQLAlchemy/SQLModel path
+                # Build pending bindings index: {child_table: [(rel_spec_idx, parent_table)]}
+                # This tracks which relationships need to be bound when processing each child
+                pending_bindings: dict[str, list[tuple[int, str]]] = {}
+                for idx, spec in enumerate(rel_specs):
+                    pending_bindings.setdefault(spec.child_table, []).append(
+                        (idx, spec.parent_table)
+                    )
 
-            # Process tables in dependency order (parents before children):
-            # 1. Add this table's instances to session
-            # 2. Bind relationships where this table is the CHILD (parents already flushed)
-            # 3. Flush this table
-            for table_name in flush_order:
-                if table_name not in tables:
-                    continue
-
-                # Add this table's instances to session
-                for key, instance in tables[table_name].items():
-                    if not isinstance(instance, dict):
-                        self._session.add(instance)
-
-                # Bind pending parent relationships for this table using secondary indices
-                # At this point, all parents have been flushed and have IDs
-                for idx, parent_table in pending_bindings.get(table_name, []):
-                    if parent_table not in raw_results:
+                # Process tables in dependency order (parents before children):
+                # 1. Add this table's instances to session
+                # 2. Bind relationships where this table is the CHILD (parents already flushed)
+                # 3. Flush this table
+                for table_name in flush_order:
+                    if table_name not in tables:
                         continue
 
-                    # Find the relationship spec for this binding
-                    rel = self._relationships[idx]
-                    parent_result = raw_results[parent_table]
-                    child_result = raw_results[table_name]
+                    # Add this table's instances to session
+                    for key, instance in tables[table_name].items():
+                        if not isinstance(instance, dict):
+                            self._session.add(instance)
 
-                    # Infer attr name from parent table name (singular)
-                    attr_name = parent_table.rstrip("s") if parent_table.endswith("s") else parent_table
-
-                    # Get pre-computed child lookup values
-                    lookup_values = child_lookup_values.get(table_name, {})
-
-                    # Bind each child to its parent using secondary indices
-                    for child_key, child_obj in child_result.instances.items():
-                        if isinstance(child_obj, dict):
+                    # Bind pending parent relationships for this table using secondary indices
+                    # At this point, all parents have been flushed and have IDs
+                    for idx, parent_table in pending_bindings.get(table_name, []):
+                        if parent_table not in raw_results:
                             continue
-                        child_values = lookup_values.get(child_key, {})
 
-                        for child_field, parent_field in rel["by"].items():
-                            lookup_value = child_values.get(child_field)
-                            if lookup_value is None:
+                        # Find the relationship spec for this binding
+                        rel = self._relationships[idx]
+                        parent_result = raw_results[parent_table]
+                        child_result = raw_results[table_name]
+
+                        # Infer attr name from parent table name (singular)
+                        attr_name = parent_table.rstrip("s") if parent_table.endswith("s") else parent_table
+
+                        # Get pre-computed child lookup values
+                        lookup_values = child_lookup_values.get(table_name, {})
+
+                        # Bind each child to its parent using secondary indices
+                        for child_key, child_obj in child_result.instances.items():
+                            if isinstance(child_obj, dict):
                                 continue
+                            child_values = lookup_values.get(child_key, {})
 
-                            parent_index = parent_result.indices.get(parent_field, {})
-                            parent_obj = parent_index.get(lookup_value)
+                            for child_field, parent_field in rel["by"].items():
+                                lookup_value = child_values.get(child_field)
+                                if lookup_value is None:
+                                    continue
 
-                            if parent_obj is not None:
-                                setattr(child_obj, attr_name, parent_obj)
+                                parent_index = parent_result.indices.get(parent_field, {})
+                                parent_obj = parent_index.get(lookup_value)
 
-                # Flush this table - relationships are bound, FKs will be set
-                self._session.flush()
+                                if parent_obj is not None:
+                                    setattr(child_obj, attr_name, parent_obj)
+
+                    # Flush this table - relationships are bound, FKs will be set
+                    self._session.flush()
 
         return PipelineResult(
             tables=tables,
