@@ -2,6 +2,22 @@
 
 <!-- version list -->
 
+## v3.2.0 (2025-12-02)
+
+### Documentation
+
+- Document fk parameter for DB-generated IDs
+  ([`399bc10`](https://github.com/Promptly-Technologies-LLC/etielle/commit/399bc106c88a51f5dd26e206bde99d3a8b8bd7dd))
+
+- Fix pipe escaping in table
+  ([`0f54422`](https://github.com/Promptly-Technologies-LLC/etielle/commit/0f54422211abe9080533cefd1a8b78eb20aab4ba))
+
+### Features
+
+- Support Supabase-generated PKs
+  ([`6d4c76c`](https://github.com/Promptly-Technologies-LLC/etielle/commit/6d4c76ca95e47784593daac42adfb254ccf68f42))
+
+
 ## v3.1.0 (2025-12-02)
 
 ### Documentation
