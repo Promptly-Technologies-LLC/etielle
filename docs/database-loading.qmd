@@ -470,17 +470,48 @@ Tables are inserted in dependency order (parents before children) based on `link
 
 ### Upsert Mode
 
-Use `upsert=True` for idempotent loads:
+Use `upsert=True` for idempotent loads. By default, Supabase uses the table's primary key for conflict detection:
 
 ```python
 result = (
     etl(data)
     .goto("users").each()
     .map_to(table="users", fields=[...])
-    .load(client, upsert=True)  # Upsert on "id" column
+    .load(client, upsert=True)  # Uses table's primary key
     .run()
 )
 ```
+
+### Custom Conflict Columns
+
+Use `upsert_on` to specify which columns to use for conflict detection per table. This is useful when you want to upsert on a unique constraint other than the primary key:
+
+```python
+result = (
+    etl(data)
+    .goto("users").each()
+    .map_to(table="users", fields=[
+        Field("id", get("id")),
+        Field("email", get("email")),
+        Field("name", get("name")),
+    ])
+    .goto_root()
+    .goto("posts").each()
+    .map_to(table="posts", fields=[
+        Field("id", get("id")),
+        Field("user_id", get("user_id")),
+        Field("slug", get("slug")),
+        Field("title", get("title")),
+    ])
+    .load(client, upsert=True, upsert_on={
+        "users": "email",              # Upsert on email column
+        "posts": ["user_id", "slug"],  # Composite unique constraint
+    })
+    .run()
+)
+```
+
+Tables not in `upsert_on` use the default (table's primary key).
 
 ### Batching
 
@@ -505,7 +536,6 @@ Control batch size for large datasets:
 
 - **No transactions across tables**: Each table insert is a separate HTTP call
 - **Caller-provided IDs required**: DB-generated IDs require multiple round-trips (not yet supported)
-- **Conflict column**: Upsert uses "id" column by default
 
 ## See also
 
