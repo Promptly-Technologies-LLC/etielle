@@ -297,6 +297,7 @@ class PipelineBuilder:
         self._session: Any | None = None
         # Supabase-specific options
         self._upsert: bool = False
+        self._upsert_on: dict[str, str | list[str]] | None = None
         self._batch_size: int = 1000
 
     def goto_root(self, index: int = 0) -> PipelineBuilder:
@@ -472,6 +473,7 @@ class PipelineBuilder:
         session: Any,
         *,
         upsert: bool = False,
+        upsert_on: dict[str, str | list[str]] | None = None,
         batch_size: int = 1000,
     ) -> PipelineBuilder:
         """Configure database session or client for persistence.
@@ -487,6 +489,11 @@ class PipelineBuilder:
         Args:
             session: SQLAlchemy/SQLModel session or Supabase client.
             upsert: If True, use upsert instead of insert (Supabase only).
+                Uses the table's primary key for conflict detection by default.
+            upsert_on: Override conflict columns per table (Supabase only).
+                Only used when upsert=True. Maps table names to conflict columns:
+                - Single column: {"users": "email"}
+                - Composite key: {"posts": ["user_id", "slug"]}
             batch_size: Maximum rows per insert batch (Supabase only).
 
         Returns:
@@ -502,7 +509,7 @@ class PipelineBuilder:
             )
             session.commit()  # Caller controls transaction
 
-        Example (Supabase):
+        Example (Supabase with default conflict):
             result = (
                 etl(data)
                 .goto("users").each()
@@ -510,9 +517,22 @@ class PipelineBuilder:
                 .load(supabase_client, upsert=True)
                 .run()
             )
+
+        Example (Supabase with custom conflict columns):
+            result = (
+                etl(data)
+                .goto("users").each()
+                .map_to(table="users", fields=[...])
+                .load(supabase_client, upsert=True, upsert_on={
+                    "users": "email",
+                    "posts": ["user_id", "slug"],
+                })
+                .run()
+            )
         """
         self._session = session
         self._upsert = upsert
+        self._upsert_on = upsert_on
         self._batch_size = batch_size
         return self
 
@@ -543,11 +563,23 @@ class PipelineBuilder:
             if not rows:
                 continue
 
+            # Determine on_conflict for this table
+            on_conflict: str | None = None
+            if self._upsert and self._upsert_on:
+                conflict_spec = self._upsert_on.get(table_name)
+                if conflict_spec is not None:
+                    # Convert list to comma-separated string
+                    if isinstance(conflict_spec, list):
+                        on_conflict = ",".join(conflict_spec)
+                    else:
+                        on_conflict = conflict_spec
+
             insert_batches(
                 self._session,
                 table_name,
                 rows,
                 upsert=self._upsert,
+                on_conflict=on_conflict,
                 batch_size=self._batch_size,
             )
 

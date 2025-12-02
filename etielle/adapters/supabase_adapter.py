@@ -14,6 +14,7 @@ def insert_batches(
     rows: Sequence[dict[str, Any]],
     *,
     upsert: bool = False,
+    on_conflict: str | None = None,
     batch_size: int = 1000,
 ) -> list[dict[str, Any]]:
     """Insert rows to a Supabase table in batches.
@@ -23,6 +24,8 @@ def insert_batches(
         table_name: Name of the table to insert into.
         rows: List of row dicts to insert.
         upsert: If True, use upsert instead of insert.
+        on_conflict: Column(s) to use for conflict detection in upsert.
+            For composite keys, use comma-separated string (e.g., "user_id,slug").
         batch_size: Maximum rows per batch.
 
     Returns:
@@ -43,7 +46,7 @@ def insert_batches(
         table = client.table(table_name)
 
         if upsert:
-            response = table.upsert(batch).execute()
+            response = table.upsert(batch, on_conflict=on_conflict).execute()
         else:
             response = table.insert(batch).execute()
 
