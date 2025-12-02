@@ -2,6 +2,24 @@
 
 <!-- version list -->
 
+## v3.0.0 (2025-12-02)
+
+### Refactoring
+
+- Remove legacy SQLAlchemy/SQLModel adapters
+  ([`33fd86c`](https://github.com/Promptly-Technologies-LLC/etielle/commit/33fd86c328aea3498bc9338384454f93108aa668))
+
+### Testing
+
+- Add comprehensive test coverage for documented behaviors
+  ([`1b5e138`](https://github.com/Promptly-Technologies-LLC/etielle/commit/1b5e13849b04451fe791bb510d3909d0c04c4d46))
+
+### Breaking Changes
+
+- The legacy bind_and_flush adapters have been removed. Use the fluent API (.load(session).run())
+  instead.
+
+
 ## v2.6.0 (2025-12-02)
 
 ### Chores
