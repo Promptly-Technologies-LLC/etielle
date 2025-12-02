@@ -238,10 +238,13 @@ def run_mapping(
 
     # 1) Classic row tables
     for table, index in table_to_index.items():
-        # Inject id for single-key tables
+        # Inject id for single-key tables, but only if key is user-provided
+        # (not auto-generated like "__auto_0__")
         for key_tuple, data in index.items():
             if len(key_tuple) == 1 and "id" not in data:
-                data["id"] = key_tuple[0]
+                key_value = key_tuple[0]
+                if not (isinstance(key_value, str) and key_value.startswith("__auto_")):
+                    data["id"] = key_value
         # Deterministic order by traversal arrival order
         ordered_keys = table_row_order.get(table, list(index.keys()))
         ordered_instances: Dict[Tuple[Any, ...], Dict[str, Any]] = {}

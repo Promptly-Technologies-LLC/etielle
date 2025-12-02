@@ -418,7 +418,8 @@ class PipelineBuilder:
     def link_to(
         self,
         parent: type | str,
-        by: dict[str, str]
+        by: dict[str, str],
+        fk: dict[str, str] | None = None,
     ) -> PipelineBuilder:
         """Define a relationship from the current table to a parent table.
 
@@ -428,6 +429,9 @@ class PipelineBuilder:
         Args:
             parent: The parent model class or table name string.
             by: Mapping of {child_field: parent_field}.
+            fk: Mapping of {child_column: parent_column} for FK population
+                (Supabase only). After inserting parents, child's FK column
+                is populated with parent's generated ID.
 
         Returns:
             Self for method chaining.
@@ -444,6 +448,12 @@ class PipelineBuilder:
             # Or with table names:
             .map_to(table="posts", fields=[...])
             .link_to("users", by={"user_id": "id"})
+
+            # With DB-generated parent IDs (Supabase):
+            .map_to(table="posts", fields=[
+                TempField("_parent_key", get_from_parent("name"))
+            ])
+            .link_to("users", by={"_parent_key": "_key"}, fk={"user_id": "id"})
         """
         if not self._emissions:
             raise ValueError("link_to() must follow a map_to() call")
@@ -463,6 +473,7 @@ class PipelineBuilder:
             "parent_class": parent_class,
             "parent_table": parent_table,
             "by": dict(by),
+            "fk": dict(fk) if fk else None,
             "emission_index": len(self._emissions) - 1,
         }
         self._relationships.append(relationship)
@@ -545,21 +556,40 @@ class PipelineBuilder:
         self,
         tables: dict[str, dict[tuple[Any, ...], Any]],
         flush_order: list[str],
+        child_lookup_values: dict[str, dict[tuple[Any, ...], dict[str, Any]]],
     ) -> None:
-        """Flush tables to Supabase in dependency order.
+        """Flush tables to Supabase in dependency order with two-phase insert.
+
+        For tables with children that have `fk` relationships, this method:
+        1. Inserts parent rows and captures returned rows (with generated IDs)
+        2. Updates original rows with generated IDs
+        3. Populates child FK columns before inserting children
 
         Args:
             tables: Dict mapping table names to {key: row_dict}.
             flush_order: Tables in topological order (parents first).
+            child_lookup_values: Pre-computed {child_table: {child_key: {field: value}}}.
         """
         from etielle.adapters.supabase_adapter import insert_batches
+
+        # Build mapping of parent tables to their fk relationships
+        # {parent_table: [(relationship, child_table), ...]}
+        fk_children: dict[str, list[tuple[dict[str, Any], str]]] = {}
+        for rel in self._relationships:
+            if rel.get("fk"):
+                parent_table = rel["parent_table"]
+                child_table = rel["child_table"]
+                fk_children.setdefault(parent_table, []).append((rel, child_table))
 
         for table_name in flush_order:
             if table_name not in tables:
                 continue
 
-            # Convert {key: row} dict to list of rows
-            rows = list(tables[table_name].values())
+            # Get rows preserving key order for matching with returned rows
+            table_data = tables[table_name]
+            keys = list(table_data.keys())
+            rows = [table_data[k] for k in keys]
+
             if not rows:
                 continue
 
@@ -574,7 +604,8 @@ class PipelineBuilder:
                     else:
                         on_conflict = conflict_spec
 
-            insert_batches(
+            # Insert rows and capture returned data
+            returned = insert_batches(
                 self._session,
                 table_name,
                 rows,
@@ -582,6 +613,63 @@ class PipelineBuilder:
                 on_conflict=on_conflict,
                 batch_size=self._batch_size,
             )
+
+            # Two-phase: if this table has children with fk, update originals with generated IDs
+            if table_name in fk_children:
+                if len(returned) != len(rows):
+                    raise ValueError(
+                        f"Row count mismatch for table '{table_name}': "
+                        f"sent {len(rows)}, received {len(returned)}"
+                    )
+
+                # Copy generated columns from returned rows to originals
+                # Overwrite all columns to capture DB-generated values (like UUIDs)
+                for original, returned_row in zip(rows, returned):
+                    for col, value in returned_row.items():
+                        original[col] = value
+
+                # For each child table with fk relationship, populate FK columns
+                for rel, child_table in fk_children[table_name]:
+                    if child_table not in tables:
+                        continue
+
+                    by_mapping = rel["by"]  # {child_field: parent_field}
+                    fk_mapping = rel["fk"]  # {child_col: parent_col}
+
+                    child_data = tables[child_table]
+                    child_lookup = child_lookup_values.get(child_table, {})
+                    parent_lookup = child_lookup_values.get(table_name, {})
+
+                    # Build parent index using computed TempField values
+                    # For each by mapping (typically one), build index and populate
+                    for child_field, parent_field in by_mapping.items():
+                        # Build parent index: {parent_key_value: parent_row}
+                        # Use parent_lookup to get TempField values that aren't in rows
+                        parent_index: dict[Any, dict[str, Any]] = {}
+                        for parent_key, parent_row in table_data.items():
+                            # Get the parent's TempField value from parent_lookup
+                            parent_values = parent_lookup.get(parent_key, {})
+                            parent_key_value = parent_values.get(parent_field)
+                            if parent_key_value is not None:
+                                parent_index[parent_key_value] = parent_row
+
+                        # Populate FK columns in child rows
+                        for child_key, child_row in child_data.items():
+                            child_values = child_lookup.get(child_key, {})
+                            lookup_value = child_values.get(child_field)
+
+                            if lookup_value is None:
+                                continue
+
+                            parent_row = parent_index.get(lookup_value)
+                            if parent_row is None:
+                                continue
+
+                            # Set the FK column(s) on the child row
+                            for child_col, parent_col in fk_mapping.items():
+                                generated_value = parent_row.get(parent_col)
+                                if generated_value is not None:
+                                    child_row[child_col] = generated_value
 
     def _build_traversal_specs(self) -> list[TraversalSpec]:
         """Convert accumulated emissions to TraversalSpec objects."""
@@ -595,10 +683,11 @@ class PipelineBuilder:
             iteration_points: list[list[str]] = emission["iteration_points"]
 
             # Build fields and join_keys from Field/TempField
-            fields = []
-            join_keys = []
-            merge_policies = {}
-            temp_field_names: set[str] = set()  # Track TempFields
+            fields: list[CoreField] = []
+            temp_fields_list: list[CoreField] = []  # Track actual TempField CoreFields
+            join_keys: list[Any] = []
+            merge_policies: dict[str, Any] = {}
+            temp_field_names: set[str] = set()  # Track TempField names (for InstanceEmit)
             field_map = {f.name: f.transform for f in emission["fields"]}
 
             # If join_on specified, use those field names to build join_keys
@@ -608,9 +697,11 @@ class PipelineBuilder:
                         join_keys.append(field_map[key_name])
                 # Add ALL fields to output (both Field and TempField)
                 for f in emission["fields"]:
-                    fields.append(CoreField(f.name, f.transform))
+                    core_field = CoreField(f.name, f.transform)
+                    fields.append(core_field)
                     if isinstance(f, TempField):
                         temp_field_names.add(f.name)
+                        temp_fields_list.append(core_field)
                     elif f.merge is not None:
                         merge_policies[f.name] = f.merge
             else:
@@ -618,9 +709,11 @@ class PipelineBuilder:
                 # Each iteration creates a distinct instance (auto-generated key)
                 # ALL fields go to output (both Field and TempField)
                 for f in emission["fields"]:
-                    fields.append(CoreField(f.name, f.transform))
+                    core_field = CoreField(f.name, f.transform)
+                    fields.append(core_field)
                     if isinstance(f, TempField):
                         temp_field_names.add(f.name)
+                        temp_fields_list.append(core_field)
                     elif f.merge is not None:
                         merge_policies[f.name] = f.merge
 
@@ -700,7 +793,9 @@ class PipelineBuilder:
                 default_join_key = ()
 
                 # For TableEmit, exclude TempFields from output (they're not persisted)
-                non_temp_fields = [f for f in fields if f.name not in temp_field_names]
+                # Use object identity to handle case where Field and TempField share the same name
+                temp_field_set = set(temp_fields_list)
+                non_temp_fields = [f for f in fields if f not in temp_field_set]
 
                 table_emit = TableEmit(
                     table=emission["table"],
@@ -818,6 +913,7 @@ class PipelineBuilder:
 
         # Handle relationship binding and staged flushing
         rel_specs: list[Any] = []
+        child_lookup_values: dict[str, dict[tuple[Any, ...], dict[str, Any]]] = {}
 
         if self._relationships:
             from etielle.relationships import ManyToOneSpec, bind_relationships_via_index, compute_child_lookup_values
@@ -916,9 +1012,20 @@ class PipelineBuilder:
 
             # Check if this is a Supabase client
             if self._is_supabase_client(self._session):
-                self._flush_to_supabase(tables, flush_order)
+                self._flush_to_supabase(tables, flush_order, child_lookup_values)
             else:
                 # SQLAlchemy/SQLModel path
+                # Warn if any relationships use fk (Supabase-only feature)
+                for rel in self._relationships:
+                    if rel.get("fk"):
+                        import warnings
+                        warnings.warn(
+                            f"fk parameter on link_to() is only supported for Supabase. "
+                            f"Ignoring fk={rel['fk']} for {rel['child_table']} -> {rel['parent_table']}.",
+                            UserWarning,
+                            stacklevel=2,
+                        )
+
                 # Build pending bindings index: {child_table: [(rel_spec_idx, parent_table)]}
                 # This tracks which relationships need to be bound when processing each child
                 pending_bindings: dict[str, list[tuple[int, str]]] = {}
