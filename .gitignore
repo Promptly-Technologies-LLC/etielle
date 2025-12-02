@@ -16,3 +16,6 @@ _docs/
 # Since this is a library, we omit the lockfile
 uv.lock
 **/*.quarto_ipynb
+
+# Local Supabase
+supabase/
