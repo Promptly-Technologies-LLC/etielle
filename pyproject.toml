@@ -13,6 +13,9 @@ sqlalchemy = [
 sqlmodel = [
     "sqlmodel>=0.0.27",
 ]
+supabase = [
+    "supabase>=2.0.0",
+]
 
 [build-system]
 requires = ["hatchling>=1.25"]
@@ -30,6 +33,9 @@ dev = [
     "python-semantic-release>=10.4.1",
     "quarto>=0.1.0",
     "ruff>=0.14.3",
+    "sqlalchemy>=2.0.0",
+    "sqlmodel>=0.0.27",
+    "supabase>=2.0.0",
     "ty>=0.0.1a29",
 ]
 

@@ -1,0 +1,307 @@
+"""Integration tests for Supabase adapter.
+
+These tests require a running Supabase instance. Set environment variables:
+- SUPABASE_URL: Your Supabase project URL
+- SUPABASE_KEY: Your Supabase anon/service key
+
+To run locally:
+    supabase start
+    export SUPABASE_URL=http://localhost:54321
+    export SUPABASE_KEY=<your-anon-key>
+    pytest tests/test_supabase_adapter.py -v
+"""
+
+import os
+import pytest
+from unittest.mock import Mock, MagicMock
+
+from etielle import etl, Field, TempField, get, get_from_parent
+
+
+# Skip all tests if Supabase env vars not set
+SUPABASE_URL = os.environ.get("SUPABASE_URL")
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
+
+requires_supabase = pytest.mark.skipif(
+    not (SUPABASE_URL and SUPABASE_KEY),
+    reason="SUPABASE_URL and SUPABASE_KEY environment variables not set"
+)
+
+
+@pytest.fixture
+def supabase_client():
+    """Create a Supabase client for testing."""
+    from supabase import create_client
+    return create_client(SUPABASE_URL, SUPABASE_KEY)
+
+
+@pytest.fixture
+def mock_supabase_client():
+    """Create a mock Supabase client for unit tests."""
+    mock = MagicMock()
+    # Make it look like a Supabase client for type detection
+    mock.__class__.__module__ = "supabase._sync.client"
+    mock.__class__.__name__ = "SyncClient"
+    return mock
+
+
+class TestSupabaseTypeDetection:
+    """Test that .load() correctly detects Supabase clients."""
+
+    def test_detects_supabase_client(self, mock_supabase_client):
+        """Should detect mock Supabase client and use Supabase flush logic."""
+        data = {"users": [{"id": "u1", "name": "Alice"}]}
+
+        # This should detect the Supabase client and attempt to flush
+        # For now, it will fail because _flush_to_supabase doesn't exist
+        pipeline = (
+            etl(data)
+            .goto("users").each()
+            .map_to(table="users", fields=[
+                Field("id", get("id")),
+                Field("name", get("name")),
+                TempField("id", get("id")),
+            ])
+            .load(mock_supabase_client)
+        )
+
+        # Check that the client was stored
+        assert pipeline._session is mock_supabase_client
+
+    def test_detects_supabase_client_with_options(self, mock_supabase_client):
+        """Should store upsert and batch_size options."""
+        data = {"users": [{"id": "u1", "name": "Alice"}]}
+
+        pipeline = (
+            etl(data)
+            .goto("users").each()
+            .map_to(table="users", fields=[
+                Field("id", get("id")),
+                Field("name", get("name")),
+                TempField("id", get("id")),
+            ])
+            .load(mock_supabase_client, upsert=True, batch_size=500)
+        )
+
+        assert pipeline._session is mock_supabase_client
+        assert pipeline._upsert is True
+        assert pipeline._batch_size == 500
+
+
+class TestSupabaseFlush:
+    """Test that .run() correctly flushes to Supabase."""
+
+    def test_single_table_insert(self, mock_supabase_client):
+        """Should insert single table data to Supabase."""
+        data = {"users": [
+            {"id": "u1", "name": "Alice"},
+            {"id": "u2", "name": "Bob"},
+        ]}
+
+        # Configure mock to return success
+        mock_supabase_client.table.return_value.insert.return_value.execute.return_value.data = [
+            {"id": "u1", "name": "Alice"},
+            {"id": "u2", "name": "Bob"},
+        ]
+
+        result = (
+            etl(data)
+            .goto("users").each()
+            .map_to(table="users", fields=[
+                Field("id", get("id")),
+                Field("name", get("name")),
+                TempField("id", get("id")),
+            ])
+            .load(mock_supabase_client)
+            .run()
+        )
+
+        # Verify the mock was called correctly
+        mock_supabase_client.table.assert_called_with("users")
+        mock_supabase_client.table.return_value.insert.assert_called_once()
+
+        # Check that we got results back
+        assert "users" in result.tables
+        assert len(result.tables["users"]) == 2
+
+    def test_multi_table_insert_with_dependency_order(self, mock_supabase_client):
+        """Should insert parent tables before child tables."""
+        # Nested data structure - posts under users
+        data = {
+            "users": [{
+                "id": "u1",
+                "name": "Alice",
+                "posts": [{"id": "p1", "title": "Hello"}]
+            }],
+        }
+
+        # Track call order
+        call_order = []
+
+        def track_table(table_name):
+            call_order.append(table_name)
+            mock_table = MagicMock()
+            mock_table.insert.return_value.execute.return_value.data = []
+            return mock_table
+
+        mock_supabase_client.table.side_effect = track_table
+
+        result = (
+            etl(data)
+            .goto("users").each()
+            .map_to(table="users", fields=[
+                Field("id", get("id")),
+                Field("name", get("name")),
+                TempField("id", get("id")),
+            ])
+            .goto("posts").each()
+            .map_to(table="posts", fields=[
+                Field("id", get("id")),
+                Field("title", get("title")),
+                Field("user_id", get_from_parent("id")),
+                TempField("id", get("id")),
+                TempField("user_id", get_from_parent("id")),
+            ])
+            .link_to("users", by={"user_id": "id"})
+            .load(mock_supabase_client)
+            .run()
+        )
+
+        # Users should be inserted before posts
+        assert call_order.index("users") < call_order.index("posts")
+
+    def test_upsert_mode(self, mock_supabase_client):
+        """Should use upsert when upsert=True."""
+        data = {"users": [{"id": "u1", "name": "Alice"}]}
+
+        mock_supabase_client.table.return_value.upsert.return_value.execute.return_value.data = [
+            {"id": "u1", "name": "Alice"},
+        ]
+
+        result = (
+            etl(data)
+            .goto("users").each()
+            .map_to(table="users", fields=[
+                Field("id", get("id")),
+                Field("name", get("name")),
+                TempField("id", get("id")),
+            ])
+            .load(mock_supabase_client, upsert=True)
+            .run()
+        )
+
+        # Should call upsert, not insert
+        mock_supabase_client.table.return_value.upsert.assert_called_once()
+        mock_supabase_client.table.return_value.insert.assert_not_called()
+
+    def test_batching(self, mock_supabase_client):
+        """Should batch inserts according to batch_size."""
+        # Create 5 users, batch size 2 = 3 batches
+        data = {"users": [{"id": f"u{i}", "name": f"User{i}"} for i in range(5)]}
+
+        mock_supabase_client.table.return_value.insert.return_value.execute.return_value.data = []
+
+        result = (
+            etl(data)
+            .goto("users").each()
+            .map_to(table="users", fields=[
+                Field("id", get("id")),
+                Field("name", get("name")),
+                TempField("id", get("id")),
+            ])
+            .load(mock_supabase_client, batch_size=2)
+            .run()
+        )
+
+        # Should have called insert 3 times (2 + 2 + 1)
+        assert mock_supabase_client.table.return_value.insert.call_count == 3
+
+
+@requires_supabase
+class TestSupabaseIntegration:
+    """Integration tests against a real Supabase instance."""
+
+    @pytest.fixture(autouse=True)
+    def setup_tables(self, supabase_client):
+        """Clean up test tables before each test."""
+        # Delete any existing test data
+        try:
+            supabase_client.table("test_posts").delete().neq("id", "").execute()
+        except Exception:
+            pass
+        try:
+            supabase_client.table("test_users").delete().neq("id", "").execute()
+        except Exception:
+            pass
+        yield
+        # Cleanup after test
+        try:
+            supabase_client.table("test_posts").delete().neq("id", "").execute()
+        except Exception:
+            pass
+        try:
+            supabase_client.table("test_users").delete().neq("id", "").execute()
+        except Exception:
+            pass
+
+    def test_real_insert(self, supabase_client):
+        """Test actual insert to Supabase."""
+        data = {"users": [
+            {"id": "test_u1", "name": "Alice"},
+            {"id": "test_u2", "name": "Bob"},
+        ]}
+
+        result = (
+            etl(data)
+            .goto("users").each()
+            .map_to(table="test_users", fields=[
+                Field("id", get("id")),
+                Field("name", get("name")),
+                TempField("id", get("id")),
+            ])
+            .load(supabase_client)
+            .run()
+        )
+
+        # Verify data was inserted
+        response = supabase_client.table("test_users").select("*").execute()
+        assert len(response.data) == 2
+        names = {r["name"] for r in response.data}
+        assert names == {"Alice", "Bob"}
+
+    def test_real_upsert(self, supabase_client):
+        """Test actual upsert to Supabase."""
+        # First insert
+        data1 = {"users": [{"id": "test_u1", "name": "Alice"}]}
+
+        (
+            etl(data1)
+            .goto("users").each()
+            .map_to(table="test_users", fields=[
+                Field("id", get("id")),
+                Field("name", get("name")),
+                TempField("id", get("id")),
+            ])
+            .load(supabase_client)
+            .run()
+        )
+
+        # Upsert with updated name
+        data2 = {"users": [{"id": "test_u1", "name": "Alice Updated"}]}
+
+        (
+            etl(data2)
+            .goto("users").each()
+            .map_to(table="test_users", fields=[
+                Field("id", get("id")),
+                Field("name", get("name")),
+                TempField("id", get("id")),
+            ])
+            .load(supabase_client, upsert=True)
+            .run()
+        )
+
+        # Verify upsert worked
+        response = supabase_client.table("test_users").select("*").execute()
+        assert len(response.data) == 1
+        assert response.data[0]["name"] == "Alice Updated"
