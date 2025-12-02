@@ -29,7 +29,7 @@ parsing. `etielle` helps by:
 - **Emitting to arbitrary formats**: Emit data to Pydantic models,
   TypedDicts, or ORM objects directly.
 - **Optionally loading data into a database**: Load data into a database
-  using SQLAlchemy, SQLModel, or Supabase.
+  using SQLAlchemy or SQLModel.
 
 ## Learning Path
 
@@ -58,14 +58,15 @@ uv add etielle
 pip install etielle
 ```
 
-### Optional: Install with database adapters
+### Optional: Install with ORM adapters
 
-If you plan to load data to a database, install with the optional extra:
+If you plan to bind relationships and flush to your database via
+SQLAlchemy or SQLModel, install with the optional extra for your ORM:
 
 ``` bash
-uv add "etielle[sqlalchemy]"  # For SQLAlchemy
-uv add "etielle[sqlmodel]"    # For SQLModel
-uv add "etielle[supabase]"    # For Supabase
+uv add "etielle[sqlalchemy]"
+# or
+uv add "etielle[sqlmodel]"
 ```
 
 ## Quick Start: Your First Mapping
