@@ -31,10 +31,6 @@ website:
             text: Custom Transforms
           - href: docs/error-handling.qmd
             text: Error Handling
-      - section: "Reference"
-        contents:
-          - href: docs/migration.qmd
-            text: "Migration from v2"
   navbar:
     right:
       - icon: github
