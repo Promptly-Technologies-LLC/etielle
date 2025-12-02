@@ -194,6 +194,60 @@ class TestSupabaseFlush:
         mock_supabase_client.table.return_value.upsert.assert_called_once()
         mock_supabase_client.table.return_value.insert.assert_not_called()
 
+    def test_upsert_with_per_table_conflict_columns(self, mock_supabase_client):
+        """Should pass on_conflict parameter when upsert is a dict."""
+        data = {
+            "users": [{"id": "u1", "email": "alice@example.com", "name": "Alice"}],
+            "posts": [{"id": "p1", "user_id": "u1", "slug": "hello", "title": "Hello"}],
+        }
+
+        # Track upsert calls with their on_conflict arguments
+        upsert_calls = {}
+
+        def track_table(table_name):
+            mock_table = MagicMock()
+
+            def track_upsert(rows, on_conflict=None):
+                upsert_calls[table_name] = {"rows": rows, "on_conflict": on_conflict}
+                mock_response = MagicMock()
+                mock_response.execute.return_value.data = rows
+                return mock_response
+
+            mock_table.upsert.side_effect = track_upsert
+            return mock_table
+
+        mock_supabase_client.table.side_effect = track_table
+
+        result = (
+            etl(data)
+            .goto("users").each()
+            .map_to(table="users", fields=[
+                Field("id", get("id")),
+                Field("email", get("email")),
+                Field("name", get("name")),
+            ])
+            .goto_root()
+            .goto("posts").each()
+            .map_to(table="posts", fields=[
+                Field("id", get("id")),
+                Field("user_id", get("user_id")),
+                Field("slug", get("slug")),
+                Field("title", get("title")),
+            ])
+            .load(mock_supabase_client, upsert=True, upsert_on={
+                "users": "email",
+                "posts": ["user_id", "slug"],
+            })
+            .run()
+        )
+
+        # Verify on_conflict was passed correctly
+        assert "users" in upsert_calls
+        assert upsert_calls["users"]["on_conflict"] == "email"
+
+        assert "posts" in upsert_calls
+        assert upsert_calls["posts"]["on_conflict"] == "user_id,slug"
+
     def test_batching(self, mock_supabase_client):
         """Should batch inserts according to batch_size."""
         # Create 5 users, batch size 2 = 3 batches
@@ -305,3 +359,57 @@ class TestSupabaseIntegration:
         response = supabase_client.table("test_users").select("*").execute()
         assert len(response.data) == 1
         assert response.data[0]["name"] == "Alice Updated"
+
+    def test_real_upsert_with_custom_conflict_column(self, supabase_client):
+        """Test upsert with custom on_conflict column against real Supabase."""
+        # Clean up test_users_email table
+        try:
+            supabase_client.table("test_users_email").delete().neq("id", "").execute()
+        except Exception:
+            pass
+
+        # First insert
+        data1 = {"users": [
+            {"id": "test_u1", "email": "alice@example.com", "name": "Alice"},
+        ]}
+
+        (
+            etl(data1)
+            .goto("users").each()
+            .map_to(table="test_users_email", fields=[
+                Field("id", get("id")),
+                Field("email", get("email")),
+                Field("name", get("name")),
+            ])
+            .load(supabase_client)
+            .run()
+        )
+
+        # Upsert with DIFFERENT id but SAME email - should update based on email
+        data2 = {"users": [
+            {"id": "test_u2", "email": "alice@example.com", "name": "Alice Updated"},
+        ]}
+
+        (
+            etl(data2)
+            .goto("users").each()
+            .map_to(table="test_users_email", fields=[
+                Field("id", get("id")),
+                Field("email", get("email")),
+                Field("name", get("name")),
+            ])
+            .load(supabase_client, upsert=True, upsert_on={"test_users_email": "email"})
+            .run()
+        )
+
+        # Verify upsert worked - should still be 1 row, updated name
+        response = supabase_client.table("test_users_email").select("*").execute()
+        assert len(response.data) == 1
+        assert response.data[0]["name"] == "Alice Updated"
+        assert response.data[0]["email"] == "alice@example.com"
+
+        # Cleanup
+        try:
+            supabase_client.table("test_users_email").delete().neq("id", "").execute()
+        except Exception:
+            pass
