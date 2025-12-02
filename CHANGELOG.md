@@ -2,6 +2,19 @@
 
 <!-- version list -->
 
+## v3.1.0 (2025-12-02)
+
+### Documentation
+
+- Add upsert_on parameter and Supabase to README
+  ([`4d23be0`](https://github.com/Promptly-Technologies-LLC/etielle/commit/4d23be037d8fe49d36a69921a93e24c2451b4eaf))
+
+### Features
+
+- **supabase**: Support per-table upsert conflict columns
+  ([`ab11f85`](https://github.com/Promptly-Technologies-LLC/etielle/commit/ab11f855f4f70e2c933aad52a6142b80e5167f62))
+
+
 ## v3.0.0 (2025-12-02)
 
 ### Refactoring
