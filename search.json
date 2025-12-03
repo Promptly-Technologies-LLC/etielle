@@ -1015,100 +1015,111 @@
   {
     "objectID": "docs/error-handling.html",
     "href": "docs/error-handling.html",
-    "title": "Error Handling: Managing Validation Errors",
+    "title": "Errors and Monitoring",
     "section": "",
-    "text": "What you’ll learn: How to handle validation errors in etielle pipelines, including error modes and accessing error details.\nETL context: Error handling ensures data quality during the Transform step by catching and reporting validation issues.",
+    "text": "What you’ll learn: How to handle validation errors, track pipeline statistics, and monitor execution with telemetry events.\nETL context: Error handling ensures data quality during the Transform step. Monitoring provides visibility into pipeline execution during Transform and Load steps.",
     "crumbs": [
       "Advanced Topics",
-      "Error Handling"
+      "Errors and Monitoring"
     ]
   },
   {
     "objectID": "docs/error-handling.html#error-modes",
     "href": "docs/error-handling.html#error-modes",
-    "title": "Error Handling: Managing Validation Errors",
+    "title": "Errors and Monitoring",
     "section": "Error Modes",
     "text": "Error Modes\netielle supports two error handling modes:\n\n\n\nMode\nBehavior\n\n\n\n\n\"collect\" (default)\nCollect all errors and continue processing\n\n\n\"fail_fast\"\nRaise immediately on first error\n\n\n\n\nCollect Mode (Default)\nCollect all errors and inspect them after run():\n\nfrom etielle import etl, Field, TempField, get\nimport json\n\ndata = {\n    \"users\": [\n        {\"id\": \"u1\", \"name\": \"Alice\"},\n        {\"id\": None, \"name\": \"Bob\"},  # Invalid: null ID\n        {\"id\": \"u3\", \"name\": \"Carol\"}\n    ]\n}\n\nresult = (\n    etl(data, errors=\"collect\")  # Default mode\n    .goto(\"users\").each()\n    .map_to(table=\"users\", fields=[\n        Field(\"name\", get(\"name\")),\n        TempField(\"id\", get(\"id\"))  # Will have None for Bob\n    ])\n    .run()\n)\n\nprint(f\"Rows extracted: {len(result.tables['users'])}\")\nprint(f\"Has errors: {bool(result.errors)}\")\n\nRows extracted: 3\nHas errors: False\n\n\n\n\nFail Fast Mode\nStop processing immediately on first error:\n\nfrom etielle import etl, Field, TempField, get\n\ndata = {\"users\": [{\"id\": None, \"name\": \"Bob\"}]}\n\ntry:\n    result = (\n        etl(data, errors=\"fail_fast\")\n        .goto(\"users\").each()\n        .map_to(table=\"users\", fields=[\n            Field(\"name\", get(\"name\")),\n            TempField(\"id\", get(\"id\"))\n        ])\n        .run()\n    )\nexcept ValueError as e:\n    print(f\"Pipeline failed: {e}\")",
     "crumbs": [
       "Advanced Topics",
-      "Error Handling"
+      "Errors and Monitoring"
     ]
   },
   {
     "objectID": "docs/error-handling.html#accessing-errors",
     "href": "docs/error-handling.html#accessing-errors",
-    "title": "Error Handling: Managing Validation Errors",
+    "title": "Errors and Monitoring",
     "section": "Accessing Errors",
     "text": "Accessing Errors\n\nError Structure\nErrors are keyed by table name, then by row key:\nresult.errors = {\n    \"table_name\": {\n        (\"row\", \"key\"): [\"error message 1\", \"error message 2\"],\n        (\"another\", \"key\"): [\"error message\"]\n    }\n}\n\n\nInspecting Errors\n\nfrom etielle import etl, Field, TempField, get\nfrom pydantic import BaseModel, field_validator\n\nclass User(BaseModel):\n    name: str\n\n    @field_validator(\"name\")\n    @classmethod\n    def name_not_empty(cls, v):\n        if not v or not v.strip():\n            raise ValueError(\"Name cannot be empty\")\n        return v\n\ndata = {\n    \"users\": [\n        {\"id\": \"u1\", \"name\": \"Alice\"},\n        {\"id\": \"u2\", \"name\": \"\"},      # Invalid: empty name\n        {\"id\": \"u3\", \"name\": \"Carol\"}\n    ]\n}\n\nresult = (\n    etl(data)\n    .goto(\"users\").each()\n    .map_to(table=User, fields=[\n        Field(\"name\", get(\"name\")),\n        TempField(\"id\", get(\"id\"))\n    ])\n    .run()\n)\n\n# Check for errors\nif result.errors:\n    for table_name, table_errors in result.errors.items():\n        for row_key, messages in table_errors.items():\n            print(f\"{table_name}[{row_key}]: {messages}\")\n\nuser[('__auto_1__',)]: [\"table=user key=('__auto_1__',) 1 validation error for User\\nname\\n  Value error, Name cannot be empty [type=value_error, input_value='', input_type=str]\\n    For further information visit https://errors.pydantic.dev/2.12/v/value_error\"]",
     "crumbs": [
       "Advanced Topics",
-      "Error Handling"
+      "Errors and Monitoring"
     ]
   },
   {
     "objectID": "docs/error-handling.html#per-table-error-mode",
     "href": "docs/error-handling.html#per-table-error-mode",
-    "title": "Error Handling: Managing Validation Errors",
+    "title": "Errors and Monitoring",
     "section": "Per-Table Error Mode",
     "text": "Per-Table Error Mode\nOverride the pipeline-level error mode for specific tables:\nresult = (\n    etl(data, errors=\"collect\")  # Default for pipeline\n\n    .goto(\"critical_data\").each()\n    .map_to(table=CriticalModel, errors=\"fail_fast\", fields=[...])  # Override\n\n    .goto_root()\n    .goto(\"optional_data\").each()\n    .map_to(table=OptionalModel, errors=\"collect\", fields=[...])  # Explicit collect\n\n    .run()\n)",
     "crumbs": [
       "Advanced Topics",
-      "Error Handling"
+      "Errors and Monitoring"
     ]
   },
   {
     "objectID": "docs/error-handling.html#common-error-scenarios",
     "href": "docs/error-handling.html#common-error-scenarios",
-    "title": "Error Handling: Managing Validation Errors",
+    "title": "Errors and Monitoring",
     "section": "Common Error Scenarios",
     "text": "Common Error Scenarios\n\nMissing Required Fields\nfrom pydantic import BaseModel\n\nclass User(BaseModel):\n    id: str      # Required\n    name: str    # Required\n    email: str | None = None  # Optional\n\n# If data is missing \"name\", Pydantic will raise ValidationError\n# In collect mode: error is recorded, row is skipped\n# In fail_fast mode: pipeline raises immediately\n\n\nType Validation Errors\nclass Product(BaseModel):\n    id: str\n    price: float  # Expects a number\n\n# If JSON has \"price\": \"not a number\", validation fails\n\n\nTransform Errors\n@transform\ndef parse_date(ctx: Context, field: str) -&gt; str:\n    value = ctx.node.get(field)\n    # If this raises an exception, it becomes an error\n    return datetime.strptime(value, \"%Y-%m-%d\").isoformat()",
     "crumbs": [
       "Advanced Topics",
-      "Error Handling"
+      "Errors and Monitoring"
     ]
   },
   {
     "objectID": "docs/error-handling.html#error-handling-patterns",
     "href": "docs/error-handling.html#error-handling-patterns",
-    "title": "Error Handling: Managing Validation Errors",
+    "title": "Errors and Monitoring",
     "section": "Error Handling Patterns",
     "text": "Error Handling Patterns\n\nContinue on Error\nProcess what you can, report what failed:\nresult = etl(data, errors=\"collect\").goto(...).map_to(...).run()\n\n# Process successful rows\nfor key, row in result.tables[\"users\"].items():\n    save_to_database(row)\n\n# Report failed rows\nif result.errors:\n    log_errors(result.errors)\n    send_alert(f\"Failed to process {len(result.errors['users'])} users\")\n\n\nAll-or-Nothing\nFail the entire batch if any row fails:\nresult = etl(data, errors=\"collect\").goto(...).map_to(...).run()\n\nif result.errors:\n    raise ValueError(f\"Batch failed with {sum(len(e) for e in result.errors.values())} errors\")\n\n# Only proceed if no errors\nwith Session(engine) as session:\n    for row in result.tables[\"users\"].values():\n        session.add(row)\n    session.commit()\n\n\nPartial Success with Reporting\nresult = etl(data).goto(...).map_to(...).run()\n\nsuccessful = list(result.tables[\"users\"].values())\nfailed_keys = list(result.errors.get(\"users\", {}).keys()) if result.errors else []\n\nprint(f\"Processed: {len(successful)} successful, {len(failed_keys)} failed\")\n\n# Save successful rows\nfor row in successful:\n    save(row)\n\n# Queue failed rows for retry\nfor key in failed_keys:\n    queue_for_retry(key)\n\n\nValidation Before Database\nwith Session(engine) as session:\n    result = (\n        etl(data)\n        .goto(\"users\").each()\n        .map_to(table=User, fields=[...])\n        .load(session)\n        .run()\n    )\n\n    if result.errors:\n        # Don't commit if there are errors\n        session.rollback()\n        raise ValueError(\"Validation errors occurred\")\n\n    session.commit()",
     "crumbs": [
       "Advanced Topics",
-      "Error Handling"
+      "Errors and Monitoring"
     ]
   },
   {
     "objectID": "docs/error-handling.html#error-types",
     "href": "docs/error-handling.html#error-types",
-    "title": "Error Handling: Managing Validation Errors",
+    "title": "Errors and Monitoring",
     "section": "Error Types",
     "text": "Error Types\n\nUpdate Errors\nErrors that occur during field extraction or transformation:\n\nTransform returns an invalid value\nRequired field is missing\nType coercion fails\n\n\n\nFinalize Errors\nErrors that occur when building the final instance:\n\nPydantic validation fails\nModel constructor raises\nMissing required fields after all emissions",
     "crumbs": [
       "Advanced Topics",
-      "Error Handling"
+      "Errors and Monitoring"
     ]
   },
   {
     "objectID": "docs/error-handling.html#best-practices",
     "href": "docs/error-handling.html#best-practices",
-    "title": "Error Handling: Managing Validation Errors",
+    "title": "Errors and Monitoring",
     "section": "Best Practices",
     "text": "Best Practices\n\nAlways Check for Errors\nresult = pipeline.run()\n\n# Don't assume success\nif result.errors:\n    handle_errors(result.errors)\n\n\nLog Error Details\nimport logging\n\nif result.errors:\n    for table, errors in result.errors.items():\n        for key, messages in errors.items():\n            logging.error(f\"Validation failed for {table}[{key}]\", extra={\n                \"table\": table,\n                \"key\": key,\n                \"errors\": messages\n            })\n\n\nUse Fail Fast for Critical Data\n# Critical configuration - fail immediately\nconfig_result = etl(config_data, errors=\"fail_fast\")...run()\n\n# User content - collect and report\ncontent_result = etl(user_data, errors=\"collect\")...run()\n\n\nGraceful Degradation\nresult = etl(data).goto(...).map_to(...).run()\n\nif result.errors:\n    # Use partial results\n    users = result.tables.get(\"users\", {})\n    logging.warning(f\"Partial load: {len(users)} users, {len(result.errors.get('users', {}))} errors\")\nelse:\n    users = result.tables[\"users\"]",
     "crumbs": [
       "Advanced Topics",
-      "Error Handling"
+      "Errors and Monitoring"
+    ]
+  },
+  {
+    "objectID": "docs/error-handling.html#monitoring-pipeline-execution",
+    "href": "docs/error-handling.html#monitoring-pipeline-execution",
+    "title": "Errors and Monitoring",
+    "section": "Monitoring Pipeline Execution",
+    "text": "Monitoring Pipeline Execution\nBeyond error handling, etielle provides tools for monitoring pipeline execution: statistics for post-run summaries and telemetry events for real-time progress tracking.\n\nPipeline Statistics\nAfter run() completes, access per-table statistics via result.stats:\n\nfrom etielle import etl, Field, get\n\ndata = {\n    \"users\": [\n        {\"name\": \"Alice\"},\n        {\"name\": \"Bob\"},\n        {\"name\": \"Carol\"}\n    ]\n}\n\nresult = (\n    etl(data)\n    .goto(\"users\").each()\n    .map_to(table=\"users\", fields=[Field(\"name\", get(\"name\"))])\n    .run()\n)\n\n# Access statistics\nfor table_name, stats in result.stats.items():\n    print(f\"{table_name}:\")\n    print(f\"  Mapped: {stats.mapped}\")\n    print(f\"  Errors: {stats.errors}\")\n    print(f\"  Inserted: {stats.inserted}\")\n    print(f\"  Failed: {stats.failed}\")\n\nusers:\n  Mapped: 3\n  Errors: 0\n  Inserted: 0\n  Failed: 0\n\n\nThe TableStats object contains:\n\n\n\nField\nDescription\n\n\n\n\nmapped\nInstances created during mapping phase\n\n\nerrors\nValidation/transform errors during mapping\n\n\ninserted\nRows successfully written to database\n\n\nfailed\nRows that failed during database flush\n\n\n\n\n\n\n\n\n\nNote\n\n\n\nWhen no database session is provided, inserted will be 0 since no flush occurs.\n\n\n\n\nTelemetry Events\nFor real-time monitoring during pipeline execution, pass an on_event callback to run():\n\nfrom etielle import etl, Field, get, MapStarted, MapCompleted\n\ndata = {\"users\": [{\"name\": \"Alice\"}, {\"name\": \"Bob\"}]}\n\nevents = []\n\nresult = (\n    etl(data)\n    .goto(\"users\").each()\n    .map_to(table=\"users\", fields=[Field(\"name\", get(\"name\"))])\n    .run(on_event=events.append)\n)\n\n# Inspect collected events\nfor event in events:\n    print(f\"{type(event).__name__}: {event}\")\n\nMapStarted: MapStarted(table='users')\nMapCompleted: MapCompleted(table='users', count=2, error_count=0)\n\n\n\n\nEvent Types\netielle emits different events during mapping and database flush phases:\nMapping Phase:\n\n\n\n\n\n\n\n\nEvent\nFields\nDescription\n\n\n\n\nMapStarted\ntable\nEmitted when mapping begins for a table\n\n\nMapCompleted\ntable, count, error_count\nEmitted when mapping completes\n\n\n\nFlush Phase (with database session):\n\n\n\n\n\n\n\n\nEvent\nFields\nDescription\n\n\n\n\nFlushStarted\ntable, count\nEmitted when flush begins for a table\n\n\nFlushCompleted\ntable, inserted, failed, batch_num, batch_total, upsert\nEmitted per batch\n\n\nFlushFailed\ntable, error, affected_count\nEmitted when flush fails\n\n\n\n\n\nLogging Example\nLog pipeline progress to standard logging:\nimport logging\nfrom etielle import etl, Field, get, MapCompleted, FlushCompleted, FlushFailed\n\nlogging.basicConfig(level=logging.INFO)\nlog = logging.getLogger(\"etl\")\n\ndef log_event(event):\n    if isinstance(event, MapCompleted):\n        log.info(f\"Mapped {event.count} rows to {event.table} ({event.error_count} errors)\")\n    elif isinstance(event, FlushCompleted):\n        log.info(f\"Flushed {event.inserted} rows to {event.table} (batch {event.batch_num}/{event.batch_total})\")\n    elif isinstance(event, FlushFailed):\n        log.error(f\"Flush failed for {event.table}: {event.error}\")\n\nresult = pipeline.run(on_event=log_event)\n\n\nProgress Bar Example\nIntegrate with tqdm for visual progress tracking:\nfrom tqdm import tqdm\nfrom etielle import FlushCompleted\n\n# Create progress bar with expected total\npbar = tqdm(total=expected_row_count, desc=\"Loading\")\n\ndef update_progress(event):\n    if isinstance(event, FlushCompleted):\n        pbar.update(event.inserted)\n\nresult = pipeline.load(session).run(on_event=update_progress)\npbar.close()\n\n\nPost-Run Summary Pattern\nCombine statistics with error checking for comprehensive reporting:\nresult = pipeline.run(on_event=log_event)\n\n# Summary report\nprint(\"\\n=== Pipeline Summary ===\")\nfor table, stats in result.stats.items():\n    status = \"✓\" if stats.errors == 0 and stats.failed == 0 else \"✗\"\n    print(f\"{status} {table}: {stats.inserted}/{stats.mapped} inserted\")\n    if stats.errors &gt; 0:\n        print(f\"    {stats.errors} validation errors\")\n    if stats.failed &gt; 0:\n        print(f\"    {stats.failed} flush failures\")\n\n# Detailed errors if any\nif result.errors:\n    print(\"\\n=== Error Details ===\")\n    for table, errors in result.errors.items():\n        for key, messages in errors.items():\n            print(f\"{table}[{key}]: {messages}\")",
+    "crumbs": [
+      "Advanced Topics",
+      "Errors and Monitoring"
     ]
   },
   {
     "objectID": "docs/error-handling.html#see-also",
     "href": "docs/error-handling.html#see-also",
-    "title": "Error Handling: Managing Validation Errors",
+    "title": "Errors and Monitoring",
     "section": "See also",
     "text": "See also\n\nMapping Tables - Where validation occurs\nDatabase Loading - Error handling during persistence\nCustom Transforms - Error handling in transforms",
     "crumbs": [
       "Advanced Topics",
-      "Error Handling"
+      "Errors and Monitoring"
     ]
   },
   {

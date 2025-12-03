@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Error Handling: Managing Validation Errors – etielle: Declarative JSON-to-Relational Mapping in Python</title>
+<title>Errors and Monitoring – etielle: Declarative JSON-to-Relational Mapping in Python</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -140,7 +140,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
         <i class="bi bi-layout-text-sidebar-reverse"></i>
       </button>
-        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../docs/database-loading.html">Advanced Topics</a></li><li class="breadcrumb-item"><a href="../docs/error-handling.html">Error Handling</a></li></ol></nav>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../docs/database-loading.html">Advanced Topics</a></li><li class="breadcrumb-item"><a href="../docs/error-handling.html">Errors and Monitoring</a></li></ol></nav>
         <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
         </a>
     </div>
@@ -234,7 +234,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../docs/error-handling.html" class="sidebar-item-text sidebar-link active">
- <span class="menu-text">Error Handling</span></a>
+ <span class="menu-text">Errors and Monitoring</span></a>
   </div>
 </li>
       </ul>
@@ -285,6 +285,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#use-fail-fast-for-critical-data" id="toc-use-fail-fast-for-critical-data" class="nav-link" data-scroll-target="#use-fail-fast-for-critical-data">Use Fail Fast for Critical Data</a></li>
   <li><a href="#graceful-degradation" id="toc-graceful-degradation" class="nav-link" data-scroll-target="#graceful-degradation">Graceful Degradation</a></li>
   </ul></li>
+  <li><a href="#monitoring-pipeline-execution" id="toc-monitoring-pipeline-execution" class="nav-link" data-scroll-target="#monitoring-pipeline-execution">Monitoring Pipeline Execution</a>
+  <ul class="collapse">
+  <li><a href="#pipeline-statistics" id="toc-pipeline-statistics" class="nav-link" data-scroll-target="#pipeline-statistics">Pipeline Statistics</a></li>
+  <li><a href="#telemetry-events" id="toc-telemetry-events" class="nav-link" data-scroll-target="#telemetry-events">Telemetry Events</a></li>
+  <li><a href="#event-types" id="toc-event-types" class="nav-link" data-scroll-target="#event-types">Event Types</a></li>
+  <li><a href="#logging-example" id="toc-logging-example" class="nav-link" data-scroll-target="#logging-example">Logging Example</a></li>
+  <li><a href="#progress-bar-example" id="toc-progress-bar-example" class="nav-link" data-scroll-target="#progress-bar-example">Progress Bar Example</a></li>
+  <li><a href="#post-run-summary-pattern" id="toc-post-run-summary-pattern" class="nav-link" data-scroll-target="#post-run-summary-pattern">Post-Run Summary Pattern</a></li>
+  </ul></li>
   <li><a href="#see-also" id="toc-see-also" class="nav-link" data-scroll-target="#see-also">See also</a></li>
   </ul>
 </nav>
@@ -292,9 +301,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <!-- main -->
 <main class="content" id="quarto-document-content">
 
-<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../docs/database-loading.html">Advanced Topics</a></li><li class="breadcrumb-item"><a href="../docs/error-handling.html">Error Handling</a></li></ol></nav>
+<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../docs/database-loading.html">Advanced Topics</a></li><li class="breadcrumb-item"><a href="../docs/error-handling.html">Errors and Monitoring</a></li></ol></nav>
 <div class="quarto-title">
-<h1 class="title">Error Handling: Managing Validation Errors</h1>
+<h1 class="title">Errors and Monitoring</h1>
 </div>
 
 
@@ -311,8 +320,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<p><strong>What you’ll learn</strong>: How to handle validation errors in etielle pipelines, including error modes and accessing error details.</p>
-<p><strong>ETL context</strong>: Error handling ensures data quality during the <strong>Transform</strong> step by catching and reporting validation issues.</p>
+<p><strong>What you’ll learn</strong>: How to handle validation errors, track pipeline statistics, and monitor execution with telemetry events.</p>
+<p><strong>ETL context</strong>: Error handling ensures data quality during the <strong>Transform</strong> step. Monitoring provides visibility into pipeline execution during <strong>Transform</strong> and <strong>Load</strong> steps.</p>
 <section id="error-modes" class="level2">
 <h2 class="anchored" data-anchor-id="error-modes">Error Modes</h2>
 <p>etielle supports two error handling modes:</p>
@@ -337,7 +346,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="collect-mode-default" class="level3">
 <h3 class="anchored" data-anchor-id="collect-mode-default">Collect Mode (Default)</h3>
 <p>Collect all errors and inspect them after <code>run()</code>:</p>
-<div id="b1517d29" class="cell" data-execution_count="1">
+<div id="e2c4d317" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -370,7 +379,7 @@ Has errors: False</code></pre>
 <section id="fail-fast-mode" class="level3">
 <h3 class="anchored" data-anchor-id="fail-fast-mode">Fail Fast Mode</h3>
 <p>Stop processing immediately on first error:</p>
-<div id="c98848cf" class="cell" data-execution_count="2">
+<div id="1517cede" class="cell" data-execution_count="2">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> {<span class="st">"users"</span>: [{<span class="st">"id"</span>: <span class="va">None</span>, <span class="st">"name"</span>: <span class="st">"Bob"</span>}]}</span>
@@ -404,7 +413,7 @@ Has errors: False</code></pre>
 </section>
 <section id="inspecting-errors" class="level3">
 <h3 class="anchored" data-anchor-id="inspecting-errors">Inspecting Errors</h3>
-<div id="a9f33f5e" class="cell" data-execution_count="3">
+<div id="975ea4b1" class="cell" data-execution_count="3">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pydantic <span class="im">import</span> BaseModel, field_validator</span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -623,6 +632,233 @@ Has errors: False</code></pre>
 <span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>    logging.warning(<span class="ss">f"Partial load: </span><span class="sc">{</span><span class="bu">len</span>(users)<span class="sc">}</span><span class="ss"> users, </span><span class="sc">{</span><span class="bu">len</span>(result.errors.get(<span class="st">'users'</span>, {}))<span class="sc">}</span><span class="ss"> errors"</span>)</span>
 <span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a><span class="cf">else</span>:</span>
 <span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>    users <span class="op">=</span> result.tables[<span class="st">"users"</span>]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+</section>
+<section id="monitoring-pipeline-execution" class="level2">
+<h2 class="anchored" data-anchor-id="monitoring-pipeline-execution">Monitoring Pipeline Execution</h2>
+<p>Beyond error handling, etielle provides tools for monitoring pipeline execution: statistics for post-run summaries and telemetry events for real-time progress tracking.</p>
+<section id="pipeline-statistics" class="level3">
+<h3 class="anchored" data-anchor-id="pipeline-statistics">Pipeline Statistics</h3>
+<p>After <code>run()</code> completes, access per-table statistics via <code>result.stats</code>:</p>
+<div id="a67c3e28" class="cell" data-execution_count="4">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, get</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> {</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">"users"</span>: [</span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>        {<span class="st">"name"</span>: <span class="st">"Alice"</span>},</span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>        {<span class="st">"name"</span>: <span class="st">"Bob"</span>},</span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>        {<span class="st">"name"</span>: <span class="st">"Carol"</span>}</span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>    ]</span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> (</span>
+<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a>    etl(data)</span>
+<span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a>    .goto(<span class="st">"users"</span>).each()</span>
+<span id="cb19-14"><a href="#cb19-14" aria-hidden="true" tabindex="-1"></a>    .map_to(table<span class="op">=</span><span class="st">"users"</span>, fields<span class="op">=</span>[Field(<span class="st">"name"</span>, get(<span class="st">"name"</span>))])</span>
+<span id="cb19-15"><a href="#cb19-15" aria-hidden="true" tabindex="-1"></a>    .run()</span>
+<span id="cb19-16"><a href="#cb19-16" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb19-17"><a href="#cb19-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-18"><a href="#cb19-18" aria-hidden="true" tabindex="-1"></a><span class="co"># Access statistics</span></span>
+<span id="cb19-19"><a href="#cb19-19" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> table_name, stats <span class="kw">in</span> result.stats.items():</span>
+<span id="cb19-20"><a href="#cb19-20" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>table_name<span class="sc">}</span><span class="ss">:"</span>)</span>
+<span id="cb19-21"><a href="#cb19-21" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  Mapped: </span><span class="sc">{</span>stats<span class="sc">.</span>mapped<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb19-22"><a href="#cb19-22" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  Errors: </span><span class="sc">{</span>stats<span class="sc">.</span>errors<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb19-23"><a href="#cb19-23" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  Inserted: </span><span class="sc">{</span>stats<span class="sc">.</span>inserted<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb19-24"><a href="#cb19-24" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  Failed: </span><span class="sc">{</span>stats<span class="sc">.</span>failed<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>users:
+  Mapped: 3
+  Errors: 0
+  Inserted: 0
+  Failed: 0</code></pre>
+</div>
+</div>
+<p>The <code>TableStats</code> object contains:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>mapped</code></td>
+<td>Instances created during mapping phase</td>
+</tr>
+<tr class="even">
+<td><code>errors</code></td>
+<td>Validation/transform errors during mapping</td>
+</tr>
+<tr class="odd">
+<td><code>inserted</code></td>
+<td>Rows successfully written to database</td>
+</tr>
+<tr class="even">
+<td><code>failed</code></td>
+<td>Rows that failed during database flush</td>
+</tr>
+</tbody>
+</table>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>When no database session is provided, <code>inserted</code> will be 0 since no flush occurs.</p>
+</div>
+</div>
+</section>
+<section id="telemetry-events" class="level3">
+<h3 class="anchored" data-anchor-id="telemetry-events">Telemetry Events</h3>
+<p>For real-time monitoring during pipeline execution, pass an <code>on_event</code> callback to <code>run()</code>:</p>
+<div id="6a910502" class="cell" data-execution_count="5">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, get, MapStarted, MapCompleted</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> {<span class="st">"users"</span>: [{<span class="st">"name"</span>: <span class="st">"Alice"</span>}, {<span class="st">"name"</span>: <span class="st">"Bob"</span>}]}</span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>events <span class="op">=</span> []</span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> (</span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>    etl(data)</span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a>    .goto(<span class="st">"users"</span>).each()</span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a>    .map_to(table<span class="op">=</span><span class="st">"users"</span>, fields<span class="op">=</span>[Field(<span class="st">"name"</span>, get(<span class="st">"name"</span>))])</span>
+<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a>    .run(on_event<span class="op">=</span>events.append)</span>
+<span id="cb21-12"><a href="#cb21-12" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb21-13"><a href="#cb21-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-14"><a href="#cb21-14" aria-hidden="true" tabindex="-1"></a><span class="co"># Inspect collected events</span></span>
+<span id="cb21-15"><a href="#cb21-15" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> event <span class="kw">in</span> events:</span>
+<span id="cb21-16"><a href="#cb21-16" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="bu">type</span>(event)<span class="sc">.</span><span class="va">__name__</span><span class="sc">}</span><span class="ss">: </span><span class="sc">{</span>event<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>MapStarted: MapStarted(table='users')
+MapCompleted: MapCompleted(table='users', count=2, error_count=0)</code></pre>
+</div>
+</div>
+</section>
+<section id="event-types" class="level3">
+<h3 class="anchored" data-anchor-id="event-types">Event Types</h3>
+<p>etielle emits different events during mapping and database flush phases:</p>
+<p><strong>Mapping Phase:</strong></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 28%">
+<col style="width: 46%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Event</th>
+<th>Fields</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>MapStarted</code></td>
+<td><code>table</code></td>
+<td>Emitted when mapping begins for a table</td>
+</tr>
+<tr class="even">
+<td><code>MapCompleted</code></td>
+<td><code>table</code>, <code>count</code>, <code>error_count</code></td>
+<td>Emitted when mapping completes</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Flush Phase (with database session):</strong></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 28%">
+<col style="width: 46%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Event</th>
+<th>Fields</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>FlushStarted</code></td>
+<td><code>table</code>, <code>count</code></td>
+<td>Emitted when flush begins for a table</td>
+</tr>
+<tr class="even">
+<td><code>FlushCompleted</code></td>
+<td><code>table</code>, <code>inserted</code>, <code>failed</code>, <code>batch_num</code>, <code>batch_total</code>, <code>upsert</code></td>
+<td>Emitted per batch</td>
+</tr>
+<tr class="odd">
+<td><code>FlushFailed</code></td>
+<td><code>table</code>, <code>error</code>, <code>affected_count</code></td>
+<td>Emitted when flush fails</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="logging-example" class="level3">
+<h3 class="anchored" data-anchor-id="logging-example">Logging Example</h3>
+<p>Log pipeline progress to standard logging:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> logging</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, get, MapCompleted, FlushCompleted, FlushFailed</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>logging.basicConfig(level<span class="op">=</span>logging.INFO)</span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>log <span class="op">=</span> logging.getLogger(<span class="st">"etl"</span>)</span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> log_event(event):</span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="bu">isinstance</span>(event, MapCompleted):</span>
+<span id="cb23-9"><a href="#cb23-9" aria-hidden="true" tabindex="-1"></a>        log.info(<span class="ss">f"Mapped </span><span class="sc">{</span>event<span class="sc">.</span>count<span class="sc">}</span><span class="ss"> rows to </span><span class="sc">{</span>event<span class="sc">.</span>table<span class="sc">}</span><span class="ss"> (</span><span class="sc">{</span>event<span class="sc">.</span>error_count<span class="sc">}</span><span class="ss"> errors)"</span>)</span>
+<span id="cb23-10"><a href="#cb23-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">elif</span> <span class="bu">isinstance</span>(event, FlushCompleted):</span>
+<span id="cb23-11"><a href="#cb23-11" aria-hidden="true" tabindex="-1"></a>        log.info(<span class="ss">f"Flushed </span><span class="sc">{</span>event<span class="sc">.</span>inserted<span class="sc">}</span><span class="ss"> rows to </span><span class="sc">{</span>event<span class="sc">.</span>table<span class="sc">}</span><span class="ss"> (batch </span><span class="sc">{</span>event<span class="sc">.</span>batch_num<span class="sc">}</span><span class="ss">/</span><span class="sc">{</span>event<span class="sc">.</span>batch_total<span class="sc">}</span><span class="ss">)"</span>)</span>
+<span id="cb23-12"><a href="#cb23-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">elif</span> <span class="bu">isinstance</span>(event, FlushFailed):</span>
+<span id="cb23-13"><a href="#cb23-13" aria-hidden="true" tabindex="-1"></a>        log.error(<span class="ss">f"Flush failed for </span><span class="sc">{</span>event<span class="sc">.</span>table<span class="sc">}</span><span class="ss">: </span><span class="sc">{</span>event<span class="sc">.</span>error<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb23-14"><a href="#cb23-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-15"><a href="#cb23-15" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> pipeline.run(on_event<span class="op">=</span>log_event)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="progress-bar-example" class="level3">
+<h3 class="anchored" data-anchor-id="progress-bar-example">Progress Bar Example</h3>
+<p>Integrate with <code>tqdm</code> for visual progress tracking:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb24"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tqdm <span class="im">import</span> tqdm</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> FlushCompleted</span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Create progress bar with expected total</span></span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>pbar <span class="op">=</span> tqdm(total<span class="op">=</span>expected_row_count, desc<span class="op">=</span><span class="st">"Loading"</span>)</span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> update_progress(event):</span>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="bu">isinstance</span>(event, FlushCompleted):</span>
+<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a>        pbar.update(event.inserted)</span>
+<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-11"><a href="#cb24-11" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> pipeline.load(session).run(on_event<span class="op">=</span>update_progress)</span>
+<span id="cb24-12"><a href="#cb24-12" aria-hidden="true" tabindex="-1"></a>pbar.close()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="post-run-summary-pattern" class="level3">
+<h3 class="anchored" data-anchor-id="post-run-summary-pattern">Post-Run Summary Pattern</h3>
+<p>Combine statistics with error checking for comprehensive reporting:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> pipeline.run(on_event<span class="op">=</span>log_event)</span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Summary report</span></span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">=== Pipeline Summary ==="</span>)</span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> table, stats <span class="kw">in</span> result.stats.items():</span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>    status <span class="op">=</span> <span class="st">"✓"</span> <span class="cf">if</span> stats.errors <span class="op">==</span> <span class="dv">0</span> <span class="kw">and</span> stats.failed <span class="op">==</span> <span class="dv">0</span> <span class="cf">else</span> <span class="st">"✗"</span></span>
+<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>status<span class="sc">}</span><span class="ss"> </span><span class="sc">{</span>table<span class="sc">}</span><span class="ss">: </span><span class="sc">{</span>stats<span class="sc">.</span>inserted<span class="sc">}</span><span class="ss">/</span><span class="sc">{</span>stats<span class="sc">.</span>mapped<span class="sc">}</span><span class="ss"> inserted"</span>)</span>
+<span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> stats.errors <span class="op">&gt;</span> <span class="dv">0</span>:</span>
+<span id="cb25-9"><a href="#cb25-9" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"    </span><span class="sc">{</span>stats<span class="sc">.</span>errors<span class="sc">}</span><span class="ss"> validation errors"</span>)</span>
+<span id="cb25-10"><a href="#cb25-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> stats.failed <span class="op">&gt;</span> <span class="dv">0</span>:</span>
+<span id="cb25-11"><a href="#cb25-11" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"    </span><span class="sc">{</span>stats<span class="sc">.</span>failed<span class="sc">}</span><span class="ss"> flush failures"</span>)</span>
+<span id="cb25-12"><a href="#cb25-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-13"><a href="#cb25-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Detailed errors if any</span></span>
+<span id="cb25-14"><a href="#cb25-14" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> result.errors:</span>
+<span id="cb25-15"><a href="#cb25-15" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">=== Error Details ==="</span>)</span>
+<span id="cb25-16"><a href="#cb25-16" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> table, errors <span class="kw">in</span> result.errors.items():</span>
+<span id="cb25-17"><a href="#cb25-17" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> key, messages <span class="kw">in</span> errors.items():</span>
+<span id="cb25-18"><a href="#cb25-18" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>table<span class="sc">}</span><span class="ss">[</span><span class="sc">{</span>key<span class="sc">}</span><span class="ss">]: </span><span class="sc">{</span>messages<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
 </section>
 <section id="see-also" class="level2">
