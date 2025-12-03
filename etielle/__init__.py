@@ -35,6 +35,19 @@ from .fluent import (
     parent_index,
     PipelineResult,
     PipelineBuilder,
+    TableStats,
+)
+
+# Telemetry
+from .telemetry import (
+    TelemetryEvent,
+    TelemetryEventTypes,
+    TelemetryCallback,
+    MapStarted,
+    MapCompleted,
+    FlushStarted,
+    FlushCompleted,
+    FlushFailed,
 )
 
 # Re-export transforms for fluent API
@@ -84,6 +97,16 @@ __all__ = [
     "transform",
     "PipelineResult",
     "PipelineBuilder",
+    "TableStats",
+    # Telemetry
+    "TelemetryEvent",
+    "TelemetryEventTypes",
+    "TelemetryCallback",
+    "MapStarted",
+    "MapCompleted",
+    "FlushStarted",
+    "FlushCompleted",
+    "FlushFailed",
     # Transforms
     "apply",
     "get",
