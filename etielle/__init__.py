@@ -67,6 +67,7 @@ from .transforms import (
     index,
     parent_key,
     len_of,
+    lookup,
 )
 
 __all__ = [
@@ -128,6 +129,7 @@ __all__ = [
     "parent_index",
     "node",
     "len_of",
+    "lookup",
 ]
 
 # relationships (core)

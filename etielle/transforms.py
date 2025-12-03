@@ -210,3 +210,39 @@ def apply(func: Callable[[U], V], inner: Transform[U]) -> Transform[V]:
         return func(inner(ctx))
 
     return _t
+
+
+def lookup(
+    index_name: str,
+    key_transform: Transform[Any],
+    *,
+    default: Any = None,
+) -> Transform[Any]:
+    """
+    Look up a value in a named index.
+
+    Args:
+        index_name: Name of the index to query
+        key_transform: Transform that computes the lookup key
+        default: Value to return if key not found (default: None)
+
+    Returns:
+        Transform that returns the looked-up value
+
+    Raises:
+        ValueError: If the index doesn't exist
+    """
+
+    def _lookup(ctx: Context) -> Any:
+        indices = ctx.slots.get("__indices__", {})
+        if index_name not in indices:
+            available = list(indices.keys())
+            raise ValueError(
+                f"Index '{index_name}' not found. Available indices: {available}"
+            )
+
+        key = key_transform(ctx)
+        index = indices[index_name]
+        return index.get(key, default)
+
+    return _lookup

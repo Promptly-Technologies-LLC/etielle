@@ -414,3 +414,77 @@ def test_len_of_with_none_input():
 
     assert len_of(get("value"))(ctx) is None
     assert len_of(get("missing"))(ctx) is None
+
+
+class TestLookup:
+    """Tests for lookup() transform."""
+
+    def test_lookup_finds_key(self):
+        """lookup() returns value when key exists in index."""
+        from etielle.transforms import lookup, get
+
+        # Create context with indices in slots
+        ctx = Context(
+            root={},
+            node={"id": "Q1"},
+            path=(),
+            parent=None,
+            key=None,
+            index=None,
+            slots={"__indices__": {"my_index": {"Q1": 42, "Q2": 43}}},
+        )
+
+        t = lookup("my_index", get("id"))
+        assert t(ctx) == 42
+
+    def test_lookup_returns_none_for_missing_key(self):
+        """lookup() returns None when key not in index."""
+        from etielle.transforms import lookup, get
+
+        ctx = Context(
+            root={},
+            node={"id": "Q99"},
+            path=(),
+            parent=None,
+            key=None,
+            index=None,
+            slots={"__indices__": {"my_index": {"Q1": 42}}},
+        )
+
+        t = lookup("my_index", get("id"))
+        assert t(ctx) is None
+
+    def test_lookup_returns_default_for_missing_key(self):
+        """lookup() returns default when key not found."""
+        from etielle.transforms import lookup, get
+
+        ctx = Context(
+            root={},
+            node={"id": "Q99"},
+            path=(),
+            parent=None,
+            key=None,
+            index=None,
+            slots={"__indices__": {"my_index": {"Q1": 42}}},
+        )
+
+        t = lookup("my_index", get("id"), default=0)
+        assert t(ctx) == 0
+
+    def test_lookup_raises_for_missing_index(self):
+        """lookup() raises ValueError when index doesn't exist."""
+        from etielle.transforms import lookup, get
+
+        ctx = Context(
+            root={},
+            node={"id": "Q1"},
+            path=(),
+            parent=None,
+            key=None,
+            index=None,
+            slots={"__indices__": {}},
+        )
+
+        t = lookup("nonexistent", get("id"))
+        with pytest.raises(ValueError, match="Index 'nonexistent' not found"):
+            t(ctx)

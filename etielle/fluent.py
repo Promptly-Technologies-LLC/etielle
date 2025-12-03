@@ -334,10 +334,15 @@ class PipelineBuilder:
     def __init__(
         self,
         roots: tuple[Any, ...],
-        error_mode: ErrorMode = "collect"
+        error_mode: ErrorMode = "collect",
+        indices: dict[str, dict[Any, Any]] | None = None,
     ) -> None:
         self._roots = roots
         self._error_mode = error_mode
+        # Index registry for lookup transforms
+        self._indices: dict[str, dict[Any, Any]] = {
+            k: dict(v) for k, v in (indices or {}).items()
+        }
         # Navigation state
         self._current_root_index: int = 0
         self._current_path: list[str] = []
@@ -346,6 +351,7 @@ class PipelineBuilder:
         # Accumulated specs
         self._emissions: list[dict[str, Any]] = []
         self._relationships: list[dict[str, Any]] = []
+        self._index_builds: list[dict[str, Any]] = []
         # Session for loading
         self._session: Any | None = None
         # Supabase-specific options
@@ -419,6 +425,56 @@ class PipelineBuilder:
         self._iteration_depth += 1
         # Record where this iteration occurs
         self._iteration_points.append(list(self._current_path))
+        return self
+
+    def build_index(
+        self,
+        name: str,
+        *,
+        from_dict: dict[Any, Any] | None = None,
+        key: Transform[Any] | None = None,
+        value: Transform[Any] | None = None,
+    ) -> PipelineBuilder:
+        """Build or seed a lookup index.
+
+        Two modes:
+        1. from_dict: Seed index from an external dictionary
+        2. key + value: Build index from current traversal (must call after .each())
+
+        Args:
+            name: Name for the index (used in lookup() calls)
+            from_dict: External dictionary to use as the index
+            key: Transform to compute index keys (traversal mode)
+            value: Transform to compute index values (traversal mode)
+
+        Returns:
+            Self for method chaining.
+
+        Example (external dict):
+            .build_index("db_ids", from_dict={"Q1": 42, "Q2": 43})
+
+        Example (traversal):
+            .goto("questions").each()
+            .goto("choice_ids").each()
+            .build_index("parent_by_child", key=node(), value=get_from_parent("id"))
+        """
+        if from_dict is not None:
+            self._indices[name] = dict(from_dict)
+        elif key is not None and value is not None:
+            # Traversal-based index building - to be implemented in Task 5
+            self._index_builds.append({
+                "name": name,
+                "key": key,
+                "value": value,
+                "path": list(self._current_path),
+                "iteration_depth": self._iteration_depth,
+                "iteration_points": [list(p) for p in self._iteration_points],
+                "root_index": self._current_root_index,
+            })
+        else:
+            raise ValueError(
+                "build_index() requires either from_dict or both key and value"
+            )
         return self
 
     def map_to(
@@ -968,8 +1024,56 @@ class PipelineBuilder:
         Returns:
             PipelineResult with tables, errors, and stats.
         """
-        from etielle.core import MappingSpec
-        from etielle.executor import run_mapping
+        from etielle.core import MappingSpec, TraversalSpec
+        from etielle.executor import run_mapping, _iter_traversal_nodes
+
+        # Build indices from traversal specs before main execution
+        for build in self._index_builds:
+            index_name = build["name"]
+            key_transform = build["key"]
+            value_transform = build["value"]
+
+            # Determine the traversal path from iteration points
+            # iteration_points contains the path at each .each() call
+            iteration_points = build["iteration_points"]
+
+            if not iteration_points:
+                # No iterations - skip this build
+                continue
+
+            # For nested iterations, outer path is first iteration point
+            # inner path is relative from there to the final path
+            outer_path = iteration_points[0]
+
+            inner_path = None
+            if len(iteration_points) > 1:
+                # Multiple iterations - compute inner path
+                # Inner path is relative to outer path
+                inner_start = len(outer_path)
+                full_path = build["path"]
+                if inner_start < len(full_path):
+                    inner_path = full_path[inner_start:]
+
+            # Create traversal spec for index building
+            temp_spec = TraversalSpec(
+                path=tuple(outer_path),
+                mode="auto",
+                inner_path=tuple(inner_path) if inner_path else None,
+                inner_mode="auto",
+                emits=(),  # No emissions, just traversing
+            )
+
+            root = self._roots[build["root_index"]]
+            index_data: dict[Any, Any] = {}
+
+            # Traverse and populate index
+            for ctx in _iter_traversal_nodes(root, temp_spec):
+                k = key_transform(ctx)
+                v = value_transform(ctx)
+                if k is not None:
+                    index_data[k] = v
+
+            self._indices[index_name] = index_data
 
         # Extract linkable fields from link_to declarations
         linkable_fields = self._get_linkable_fields()
@@ -999,7 +1103,12 @@ class PipelineBuilder:
                 specs.extend(emission_specs)
 
             mapping_spec = MappingSpec(traversals=tuple(specs))
-            raw_results = run_mapping(root, mapping_spec, linkable_fields=linkable_fields)
+            raw_results = run_mapping(
+                root,
+                mapping_spec,
+                linkable_fields=linkable_fields,
+                context_slots={"__indices__": self._indices},
+            )
 
             # Merge into combined results
             for table_name, mapping_result in raw_results.items():
@@ -1276,12 +1385,13 @@ class PipelineBuilder:
         )
 
 
-def etl(*roots: Any, errors: ErrorMode = "collect") -> PipelineBuilder:
+def etl(*roots: Any, errors: ErrorMode = "collect", indices: dict[str, dict[Any, Any]] | None = None) -> PipelineBuilder:
     """Entry point for fluent E→T→L pipelines.
 
     Args:
         *roots: One or more JSON objects to process.
         errors: Error handling mode - "collect" (default) or "fail_fast".
+        indices: Pre-built lookup indices for use with lookup() transform.
 
     Returns:
         A PipelineBuilder for chaining navigation and mapping calls.
@@ -1296,4 +1406,4 @@ def etl(*roots: Any, errors: ErrorMode = "collect") -> PipelineBuilder:
             .run()
         )
     """
-    return PipelineBuilder(roots, errors)
+    return PipelineBuilder(roots, errors, indices)
