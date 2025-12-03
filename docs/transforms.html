@@ -272,6 +272,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#coalescetransforms---first-non-none-value" id="toc-coalescetransforms---first-non-none-value" class="nav-link" data-scroll-target="#coalescetransforms---first-non-none-value"><code>coalesce(*transforms)</code> - First non-None value</a></li>
   <li><a href="#applyfunc-inner---apply-a-function" id="toc-applyfunc-inner---apply-a-function" class="nav-link" data-scroll-target="#applyfunc-inner---apply-a-function"><code>apply(func, inner)</code> - Apply a function</a></li>
   </ul></li>
+  <li><a href="#lookup-transforms" id="toc-lookup-transforms" class="nav-link" data-scroll-target="#lookup-transforms">Lookup Transforms</a>
+  <ul class="collapse">
+  <li><a href="#lookupindex_name-key_transform---query-a-named-index" id="toc-lookupindex_name-key_transform---query-a-named-index" class="nav-link" data-scroll-target="#lookupindex_name-key_transform---query-a-named-index"><code>lookup(index_name, key_transform)</code> - Query a named index</a></li>
+  </ul></li>
   <li><a href="#transform-reference" id="toc-transform-reference" class="nav-link" data-scroll-target="#transform-reference">Transform Reference</a></li>
   <li><a href="#custom-transforms" id="toc-custom-transforms" class="nav-link" data-scroll-target="#custom-transforms">Custom Transforms</a></li>
   <li><a href="#see-also" id="toc-see-also" class="nav-link" data-scroll-target="#see-also">See also</a></li>
@@ -321,7 +325,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="getpath---extract-from-current-node" class="level3">
 <h3 class="anchored" data-anchor-id="getpath---extract-from-current-node"><code>get(path)</code> - Extract from current node</h3>
 <p>The most common transform. Extracts a value from the current JSON node.</p>
-<div id="f6149363" class="cell" data-execution_count="1">
+<div id="790f6343" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -354,7 +358,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="get_from_parentpath-depth1---extract-from-ancestor" class="level3">
 <h3 class="anchored" data-anchor-id="get_from_parentpath-depth1---extract-from-ancestor"><code>get_from_parent(path, depth=1)</code> - Extract from ancestor</h3>
 <p>Gets a value from a parent context. Essential for linking child records to parents.</p>
-<div id="a924ddb3" class="cell" data-execution_count="2">
+<div id="bd64c3c7" class="cell" data-execution_count="2">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get, get_from_parent</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -409,7 +413,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="get_from_rootpath---extract-from-json-root" class="level3">
 <h3 class="anchored" data-anchor-id="get_from_rootpath---extract-from-json-root"><code>get_from_root(path)</code> - Extract from JSON root</h3>
 <p>Gets a value from the top-level JSON object, regardless of current position.</p>
-<div id="7c812ae7" class="cell" data-execution_count="3">
+<div id="c766b43c" class="cell" data-execution_count="3">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get, get_from_root</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -445,7 +449,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="literalvalue---constant-value" class="level3">
 <h3 class="anchored" data-anchor-id="literalvalue---constant-value"><code>literal(value)</code> - Constant value</h3>
 <p>Returns a constant value, useful for defaults or computed fields.</p>
-<div id="43553d63" class="cell" data-execution_count="4">
+<div id="cdd1acb7" class="cell" data-execution_count="4">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get, literal</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -483,7 +487,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="key---current-dict-key" class="level3">
 <h3 class="anchored" data-anchor-id="key---current-dict-key"><code>key()</code> - Current dict key</h3>
 <p>When iterating over a dict with <code>each()</code>, returns the current key.</p>
-<div id="83250ee1" class="cell" data-execution_count="5">
+<div id="1f4ac0dd" class="cell" data-execution_count="5">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get, key</span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
 <span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -528,7 +532,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="index---current-list-index" class="level3">
 <h3 class="anchored" data-anchor-id="index---current-list-index"><code>index()</code> - Current list index</h3>
 <p>When iterating over a list with <code>each()</code>, returns the current index.</p>
-<div id="6c2bee78" class="cell" data-execution_count="6">
+<div id="ff368769" class="cell" data-execution_count="6">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get, index</span>
 <span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
 <span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -567,7 +571,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="parent_keydepth1---parents-dict-key" class="level3">
 <h3 class="anchored" data-anchor-id="parent_keydepth1---parents-dict-key"><code>parent_key(depth=1)</code> - Parent’s dict key</h3>
 <p>Gets the dict key from a parent iteration.</p>
-<div id="58472687" class="cell" data-execution_count="7">
+<div id="5c5174db" class="cell" data-execution_count="7">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get, parent_key</span>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
 <span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -614,7 +618,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="parent_indexdepth1---parents-list-index" class="level3">
 <h3 class="anchored" data-anchor-id="parent_indexdepth1---parents-list-index"><code>parent_index(depth=1)</code> - Parent’s list index</h3>
 <p>Gets the list index from a parent iteration.</p>
-<div id="f6ae582b" class="cell" data-execution_count="8">
+<div id="ff71788f" class="cell" data-execution_count="8">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get, parent_index, index, concat, literal</span>
 <span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
 <span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -666,7 +670,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="node---current-node-value" class="level3">
 <h3 class="anchored" data-anchor-id="node---current-node-value"><code>node()</code> - Current node value</h3>
 <p>Returns the entire current node. Useful when iterating over scalar values.</p>
-<div id="cb3641aa" class="cell" data-execution_count="9">
+<div id="11010377" class="cell" data-execution_count="9">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, node</span>
 <span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
 <span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -704,7 +708,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="concatparts---join-strings" class="level3">
 <h3 class="anchored" data-anchor-id="concatparts---join-strings"><code>concat(*parts)</code> - Join strings</h3>
 <p>Concatenates multiple transforms into a single string.</p>
-<div id="00d2ac0d" class="cell" data-execution_count="10">
+<div id="fd9dea93" class="cell" data-execution_count="10">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get, literal, concat</span>
 <span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
 <span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -735,7 +739,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="format_idparts-sep_---join-with-separator" class="level3">
 <h3 class="anchored" data-anchor-id="format_idparts-sep_---join-with-separator"><code>format_id(*parts, sep="_")</code> - Join with separator</h3>
 <p>Joins non-empty parts with a separator. Skips <code>None</code> values.</p>
-<div id="870f20e5" class="cell" data-execution_count="11">
+<div id="61f62957" class="cell" data-execution_count="11">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get, format_id</span>
 <span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
 <span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -764,7 +768,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="coalescetransforms---first-non-none-value" class="level3">
 <h3 class="anchored" data-anchor-id="coalescetransforms---first-non-none-value"><code>coalesce(*transforms)</code> - First non-None value</h3>
 <p>Returns the first non-<code>None</code> result from the given transforms.</p>
-<div id="47bc2e19" class="cell" data-execution_count="12">
+<div id="d6d3e549" class="cell" data-execution_count="12">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get, literal, coalesce</span>
 <span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
 <span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -799,7 +803,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="applyfunc-inner---apply-a-function" class="level3">
 <h3 class="anchored" data-anchor-id="applyfunc-inner---apply-a-function"><code>apply(func, inner)</code> - Apply a function</h3>
 <p>Applies any callable to the result of another transform. Useful for type coercion, string methods, and custom transformations.</p>
-<div id="bce5df71" class="cell" data-execution_count="13">
+<div id="d0bf0e57" class="cell" data-execution_count="13">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb27"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get, <span class="bu">apply</span></span>
 <span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
 <span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -838,6 +842,136 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a><span class="bu">apply</span>(<span class="bu">str</span>.upper, get(<span class="st">"code"</span>))         <span class="co"># Uppercase</span></span>
 <span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a><span class="bu">apply</span>(<span class="bu">str</span>.strip, get(<span class="st">"name"</span>))         <span class="co"># Trim whitespace</span></span>
 <span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a><span class="bu">apply</span>(<span class="kw">lambda</span> x: x <span class="op">*</span> <span class="dv">100</span>, get(<span class="st">"rate"</span>)) <span class="co"># Custom transformation</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+</section>
+<section id="lookup-transforms" class="level2">
+<h2 class="anchored" data-anchor-id="lookup-transforms">Lookup Transforms</h2>
+<section id="lookupindex_name-key_transform---query-a-named-index" class="level3">
+<h3 class="anchored" data-anchor-id="lookupindex_name-key_transform---query-a-named-index"><code>lookup(index_name, key_transform)</code> - Query a named index</h3>
+<p>Looks up a value from a pre-built index. This is powerful for reverse-lookup scenarios where a parent has a list of child IDs, or when resolving external IDs to database primary keys.</p>
+<p><strong>Two ways to provide indices:</strong></p>
+<section id="external-dictionary-via-etl" class="level4">
+<h4 class="anchored" data-anchor-id="external-dictionary-via-etl">1. External dictionary via <code>etl()</code></h4>
+<p>Pass pre-built lookup dictionaries directly:</p>
+<div id="a0326adf" class="cell" data-execution_count="14">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb30"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get, lookup</span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a><span class="co"># External lookup dict (e.g., from database query)</span></span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>db_ids <span class="op">=</span> {<span class="st">"Q1"</span>: <span class="dv">100</span>, <span class="st">"Q2"</span>: <span class="dv">200</span>, <span class="st">"Q3"</span>: <span class="dv">300</span>}</span>
+<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> {<span class="st">"responses"</span>: [</span>
+<span id="cb30-8"><a href="#cb30-8" aria-hidden="true" tabindex="-1"></a>    {<span class="st">"question_ref"</span>: <span class="st">"Q1"</span>, <span class="st">"value"</span>: <span class="st">"yes"</span>},</span>
+<span id="cb30-9"><a href="#cb30-9" aria-hidden="true" tabindex="-1"></a>    {<span class="st">"question_ref"</span>: <span class="st">"Q2"</span>, <span class="st">"value"</span>: <span class="st">"no"</span>}</span>
+<span id="cb30-10"><a href="#cb30-10" aria-hidden="true" tabindex="-1"></a>]}</span>
+<span id="cb30-11"><a href="#cb30-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-12"><a href="#cb30-12" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> (</span>
+<span id="cb30-13"><a href="#cb30-13" aria-hidden="true" tabindex="-1"></a>    etl(data, indices<span class="op">=</span>{<span class="st">"questions"</span>: db_ids})</span>
+<span id="cb30-14"><a href="#cb30-14" aria-hidden="true" tabindex="-1"></a>    .goto(<span class="st">"responses"</span>).each()</span>
+<span id="cb30-15"><a href="#cb30-15" aria-hidden="true" tabindex="-1"></a>    .map_to(table<span class="op">=</span><span class="st">"responses"</span>, fields<span class="op">=</span>[</span>
+<span id="cb30-16"><a href="#cb30-16" aria-hidden="true" tabindex="-1"></a>        Field(<span class="st">"question_id"</span>, lookup(<span class="st">"questions"</span>, get(<span class="st">"question_ref"</span>))),</span>
+<span id="cb30-17"><a href="#cb30-17" aria-hidden="true" tabindex="-1"></a>        Field(<span class="st">"value"</span>, get(<span class="st">"value"</span>)),</span>
+<span id="cb30-18"><a href="#cb30-18" aria-hidden="true" tabindex="-1"></a>        TempField(<span class="st">"ref"</span>, get(<span class="st">"question_ref"</span>))</span>
+<span id="cb30-19"><a href="#cb30-19" aria-hidden="true" tabindex="-1"></a>    ])</span>
+<span id="cb30-20"><a href="#cb30-20" aria-hidden="true" tabindex="-1"></a>    .run()</span>
+<span id="cb30-21"><a href="#cb30-21" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb30-22"><a href="#cb30-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-23"><a href="#cb30-23" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(json.dumps(<span class="bu">list</span>(result.tables[<span class="st">"responses"</span>].values()), indent<span class="op">=</span><span class="dv">2</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[
+  {
+    "question_id": 100,
+    "value": "yes"
+  },
+  {
+    "question_id": 200,
+    "value": "no"
+  }
+]</code></pre>
+</div>
+</div>
+</section>
+<section id="build-index-from-json-traversal" class="level4">
+<h4 class="anchored" data-anchor-id="build-index-from-json-traversal">2. Build index from JSON traversal</h4>
+<p>Build a reverse-lookup index by traversing the data structure:</p>
+<div id="a5710dfe" class="cell" data-execution_count="15">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb32"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get, get_from_parent, node, lookup</span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> {</span>
+<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">"questions"</span>: [</span>
+<span id="cb32-6"><a href="#cb32-6" aria-hidden="true" tabindex="-1"></a>        {<span class="st">"id"</span>: <span class="st">"Q1"</span>, <span class="st">"text"</span>: <span class="st">"Favorite color?"</span>, <span class="st">"choice_ids"</span>: [<span class="st">"c1"</span>, <span class="st">"c2"</span>]},</span>
+<span id="cb32-7"><a href="#cb32-7" aria-hidden="true" tabindex="-1"></a>        {<span class="st">"id"</span>: <span class="st">"Q2"</span>, <span class="st">"text"</span>: <span class="st">"Favorite food?"</span>, <span class="st">"choice_ids"</span>: [<span class="st">"c3"</span>, <span class="st">"c4"</span>]}</span>
+<span id="cb32-8"><a href="#cb32-8" aria-hidden="true" tabindex="-1"></a>    ],</span>
+<span id="cb32-9"><a href="#cb32-9" aria-hidden="true" tabindex="-1"></a>    <span class="st">"choices"</span>: [</span>
+<span id="cb32-10"><a href="#cb32-10" aria-hidden="true" tabindex="-1"></a>        {<span class="st">"id"</span>: <span class="st">"c1"</span>, <span class="st">"text"</span>: <span class="st">"Red"</span>},</span>
+<span id="cb32-11"><a href="#cb32-11" aria-hidden="true" tabindex="-1"></a>        {<span class="st">"id"</span>: <span class="st">"c2"</span>, <span class="st">"text"</span>: <span class="st">"Blue"</span>},</span>
+<span id="cb32-12"><a href="#cb32-12" aria-hidden="true" tabindex="-1"></a>        {<span class="st">"id"</span>: <span class="st">"c3"</span>, <span class="st">"text"</span>: <span class="st">"Pizza"</span>},</span>
+<span id="cb32-13"><a href="#cb32-13" aria-hidden="true" tabindex="-1"></a>        {<span class="st">"id"</span>: <span class="st">"c4"</span>, <span class="st">"text"</span>: <span class="st">"Tacos"</span>}</span>
+<span id="cb32-14"><a href="#cb32-14" aria-hidden="true" tabindex="-1"></a>    ]</span>
+<span id="cb32-15"><a href="#cb32-15" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb32-16"><a href="#cb32-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-17"><a href="#cb32-17" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> (</span>
+<span id="cb32-18"><a href="#cb32-18" aria-hidden="true" tabindex="-1"></a>    etl(data)</span>
+<span id="cb32-19"><a href="#cb32-19" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Build reverse lookup: choice_id -&gt; question_id</span></span>
+<span id="cb32-20"><a href="#cb32-20" aria-hidden="true" tabindex="-1"></a>    .goto(<span class="st">"questions"</span>).each()</span>
+<span id="cb32-21"><a href="#cb32-21" aria-hidden="true" tabindex="-1"></a>    .goto(<span class="st">"choice_ids"</span>).each()</span>
+<span id="cb32-22"><a href="#cb32-22" aria-hidden="true" tabindex="-1"></a>    .build_index(<span class="st">"question_by_choice"</span>, key<span class="op">=</span>node(), value<span class="op">=</span>get_from_parent(<span class="st">"id"</span>))</span>
+<span id="cb32-23"><a href="#cb32-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-24"><a href="#cb32-24" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Now map choices with their parent question</span></span>
+<span id="cb32-25"><a href="#cb32-25" aria-hidden="true" tabindex="-1"></a>    .goto_root()</span>
+<span id="cb32-26"><a href="#cb32-26" aria-hidden="true" tabindex="-1"></a>    .goto(<span class="st">"choices"</span>).each()</span>
+<span id="cb32-27"><a href="#cb32-27" aria-hidden="true" tabindex="-1"></a>    .map_to(table<span class="op">=</span><span class="st">"choices"</span>, fields<span class="op">=</span>[</span>
+<span id="cb32-28"><a href="#cb32-28" aria-hidden="true" tabindex="-1"></a>        Field(<span class="st">"id"</span>, get(<span class="st">"id"</span>)),</span>
+<span id="cb32-29"><a href="#cb32-29" aria-hidden="true" tabindex="-1"></a>        Field(<span class="st">"text"</span>, get(<span class="st">"text"</span>)),</span>
+<span id="cb32-30"><a href="#cb32-30" aria-hidden="true" tabindex="-1"></a>        Field(<span class="st">"question_id"</span>, lookup(<span class="st">"question_by_choice"</span>, get(<span class="st">"id"</span>))),</span>
+<span id="cb32-31"><a href="#cb32-31" aria-hidden="true" tabindex="-1"></a>        TempField(<span class="st">"id"</span>, get(<span class="st">"id"</span>))</span>
+<span id="cb32-32"><a href="#cb32-32" aria-hidden="true" tabindex="-1"></a>    ])</span>
+<span id="cb32-33"><a href="#cb32-33" aria-hidden="true" tabindex="-1"></a>    .run()</span>
+<span id="cb32-34"><a href="#cb32-34" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb32-35"><a href="#cb32-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-36"><a href="#cb32-36" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(json.dumps(<span class="bu">list</span>(result.tables[<span class="st">"choices"</span>].values()), indent<span class="op">=</span><span class="dv">2</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[
+  {
+    "id": "c1",
+    "text": "Red",
+    "question_id": "Q1"
+  },
+  {
+    "id": "c2",
+    "text": "Blue",
+    "question_id": "Q1"
+  },
+  {
+    "id": "c3",
+    "text": "Pizza",
+    "question_id": "Q2"
+  },
+  {
+    "id": "c4",
+    "text": "Tacos",
+    "question_id": "Q2"
+  }
+]</code></pre>
+</div>
+</div>
+</section>
+<section id="default-values" class="level4">
+<h4 class="anchored" data-anchor-id="default-values">Default values</h4>
+<p>If a key isn’t found, <code>lookup()</code> returns <code>None</code> by default. You can specify a different default:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb34"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>Field(<span class="st">"question_id"</span>, lookup(<span class="st">"questions"</span>, get(<span class="st">"ref"</span>), default<span class="op">=-</span><span class="dv">1</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="mid-pipeline-index-seeding" class="level4">
+<h4 class="anchored" data-anchor-id="mid-pipeline-index-seeding">Mid-pipeline index seeding</h4>
+<p>You can also seed indices mid-pipeline with <code>build_index(from_dict=)</code>:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb35"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>etl(data)</span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>    .build_index(<span class="st">"categories"</span>, from_dict<span class="op">=</span>{<span class="st">"A"</span>: <span class="st">"Alpha"</span>, <span class="st">"B"</span>: <span class="st">"Beta"</span>})</span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a>    .goto(<span class="st">"items"</span>).each()</span>
+<span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a>    .map_to(table<span class="op">=</span><span class="st">"items"</span>, fields<span class="op">=</span>[</span>
+<span id="cb35-5"><a href="#cb35-5" aria-hidden="true" tabindex="-1"></a>        Field(<span class="st">"category_name"</span>, lookup(<span class="st">"categories"</span>, get(<span class="st">"category_code"</span>)))</span>
+<span id="cb35-6"><a href="#cb35-6" aria-hidden="true" tabindex="-1"></a>    ])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
 </section>
 </section>
 <section id="transform-reference" class="level2">
@@ -925,6 +1059,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td><code>len_of(inner)</code></td>
 <td>Length of list/dict/string</td>
 <td><code>len_of(get("tags"))</code></td>
+</tr>
+<tr class="odd">
+<td><code>lookup(index, key)</code></td>
+<td>Query a named index</td>
+<td><code>lookup("db_ids", get("ref"))</code></td>
 </tr>
 </tbody>
 </table>
