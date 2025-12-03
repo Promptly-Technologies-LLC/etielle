@@ -98,7 +98,7 @@ def transform(func: Callable[..., Any]) -> Callable[..., Transform[Any]]:
         raise ValueError(f"@transform function must have 'ctx' as first parameter, got: {func}")
 
     # Get extra params (everything after ctx)
-    extra_params = params[1:]
+    params[1:]
 
     @functools.wraps(func)
     def factory(*args: Any, **kwargs: Any) -> Transform[Any]:
