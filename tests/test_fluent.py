@@ -1646,6 +1646,33 @@ class TestGetLinkableFields:
         assert parents_result.indices["external_id"]["P2"].external_id == "P2"
 
 
+class TestEtlIndices:
+    """Tests for indices parameter on etl()."""
+
+    def test_etl_accepts_indices_parameter(self):
+        """etl() accepts indices dict parameter."""
+        from etielle.fluent import etl
+
+        result = etl({"items": []}, indices={"my_index": {"a": 1}})
+        assert result._indices == {"my_index": {"a": 1}}
+
+    def test_etl_indices_defaults_to_empty(self):
+        """etl() has empty indices by default."""
+        from etielle.fluent import etl
+
+        result = etl({"items": []})
+        assert result._indices == {}
+
+    def test_etl_indices_are_copied(self):
+        """etl() copies indices dict to prevent mutation."""
+        from etielle.fluent import etl
+
+        original = {"my_index": {"a": 1}}
+        result = etl({"items": []}, indices=original)
+        result._indices["my_index"]["a"] = 999
+        assert original["my_index"]["a"] == 1  # Original unchanged
+
+
 class TestNavigationEdgeCases:
     """Tests for navigation edge cases and boundary conditions."""
 

@@ -334,10 +334,15 @@ class PipelineBuilder:
     def __init__(
         self,
         roots: tuple[Any, ...],
-        error_mode: ErrorMode = "collect"
+        error_mode: ErrorMode = "collect",
+        indices: dict[str, dict[Any, Any]] | None = None,
     ) -> None:
         self._roots = roots
         self._error_mode = error_mode
+        # Index registry for lookup transforms
+        self._indices: dict[str, dict[Any, Any]] = {
+            k: dict(v) for k, v in (indices or {}).items()
+        }
         # Navigation state
         self._current_root_index: int = 0
         self._current_path: list[str] = []
@@ -1276,12 +1281,13 @@ class PipelineBuilder:
         )
 
 
-def etl(*roots: Any, errors: ErrorMode = "collect") -> PipelineBuilder:
+def etl(*roots: Any, errors: ErrorMode = "collect", indices: dict[str, dict[Any, Any]] | None = None) -> PipelineBuilder:
     """Entry point for fluent E→T→L pipelines.
 
     Args:
         *roots: One or more JSON objects to process.
         errors: Error handling mode - "collect" (default) or "fail_fast".
+        indices: Pre-built lookup indices for use with lookup() transform.
 
     Returns:
         A PipelineBuilder for chaining navigation and mapping calls.
@@ -1296,4 +1302,4 @@ def etl(*roots: Any, errors: ErrorMode = "collect") -> PipelineBuilder:
             .run()
         )
     """
-    return PipelineBuilder(roots, errors)
+    return PipelineBuilder(roots, errors, indices)
