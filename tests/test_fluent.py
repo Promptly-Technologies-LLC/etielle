@@ -1673,6 +1673,38 @@ class TestEtlIndices:
         assert original["my_index"]["a"] == 1  # Original unchanged
 
 
+class TestBuildIndex:
+    """Tests for build_index() method."""
+
+    def test_build_index_from_dict(self):
+        """build_index() seeds index from external dict."""
+        from etielle.fluent import etl
+
+        result = (
+            etl({"items": []})
+            .build_index("my_index", from_dict={"a": 1, "b": 2})
+        )
+        assert result._indices["my_index"] == {"a": 1, "b": 2}
+
+    def test_build_index_replaces_existing(self):
+        """build_index() replaces existing index of same name."""
+        from etielle.fluent import etl
+
+        result = (
+            etl({"items": []}, indices={"my_index": {"old": 0}})
+            .build_index("my_index", from_dict={"new": 1})
+        )
+        assert result._indices["my_index"] == {"new": 1}
+
+    def test_build_index_returns_self(self):
+        """build_index() returns self for chaining."""
+        from etielle.fluent import etl
+
+        builder = etl({"items": []})
+        result = builder.build_index("idx", from_dict={})
+        assert result is builder
+
+
 class TestNavigationEdgeCases:
     """Tests for navigation edge cases and boundary conditions."""
 

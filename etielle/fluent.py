@@ -351,6 +351,7 @@ class PipelineBuilder:
         # Accumulated specs
         self._emissions: list[dict[str, Any]] = []
         self._relationships: list[dict[str, Any]] = []
+        self._index_builds: list[dict[str, Any]] = []
         # Session for loading
         self._session: Any | None = None
         # Supabase-specific options
@@ -424,6 +425,56 @@ class PipelineBuilder:
         self._iteration_depth += 1
         # Record where this iteration occurs
         self._iteration_points.append(list(self._current_path))
+        return self
+
+    def build_index(
+        self,
+        name: str,
+        *,
+        from_dict: dict[Any, Any] | None = None,
+        key: Transform[Any] | None = None,
+        value: Transform[Any] | None = None,
+    ) -> PipelineBuilder:
+        """Build or seed a lookup index.
+
+        Two modes:
+        1. from_dict: Seed index from an external dictionary
+        2. key + value: Build index from current traversal (must call after .each())
+
+        Args:
+            name: Name for the index (used in lookup() calls)
+            from_dict: External dictionary to use as the index
+            key: Transform to compute index keys (traversal mode)
+            value: Transform to compute index values (traversal mode)
+
+        Returns:
+            Self for method chaining.
+
+        Example (external dict):
+            .build_index("db_ids", from_dict={"Q1": 42, "Q2": 43})
+
+        Example (traversal):
+            .goto("questions").each()
+            .goto("choice_ids").each()
+            .build_index("parent_by_child", key=node(), value=get_from_parent("id"))
+        """
+        if from_dict is not None:
+            self._indices[name] = dict(from_dict)
+        elif key is not None and value is not None:
+            # Traversal-based index building - to be implemented in Task 5
+            self._index_builds.append({
+                "name": name,
+                "key": key,
+                "value": value,
+                "path": list(self._current_path),
+                "iteration_depth": self._iteration_depth,
+                "iteration_points": [list(p) for p in self._iteration_points],
+                "root_index": self._current_root_index,
+            })
+        else:
+            raise ValueError(
+                "build_index() requires either from_dict or both key and value"
+            )
         return self
 
     def map_to(
