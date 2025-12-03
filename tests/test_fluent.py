@@ -2319,3 +2319,86 @@ class TestLookupIntegration:
 
         instances = list(result.tables["results"].values())
         assert instances[0]["db_id"] == 42
+
+
+class TestBuildIndexFromTraversal:
+    """Tests for building indices from JSON traversal."""
+
+    def test_build_index_from_traversal(self):
+        """build_index() builds reverse lookup from parent's child list."""
+        from etielle.fluent import etl, Field, node
+        from etielle.transforms import get, lookup, get_from_parent
+
+        data = {
+            "questions": [
+                {"id": "Q1", "choice_ids": ["c1", "c2"]},
+                {"id": "Q2", "choice_ids": ["c3"]},
+            ],
+            "choices": [
+                {"id": "c1", "text": "Option A"},
+                {"id": "c2", "text": "Option B"},
+                {"id": "c3", "text": "Option C"},
+            ],
+        }
+
+        result = (
+            etl(data)
+            # Build reverse lookup: choice_id -> question_id
+            .goto("questions").each()
+            .goto("choice_ids").each()
+            .build_index("q_by_choice", key=node(), value=get_from_parent("id"))
+            # Map choices with parent reference
+            .goto_root()
+            .goto("choices").each()
+            .map_to(
+                table="choices",
+                fields=[
+                    Field("id", get("id")),
+                    Field("text", get("text")),
+                    Field("question_id", lookup("q_by_choice", get("id"))),
+                ],
+            )
+            .run()
+        )
+
+        choices = list(result.tables["choices"].values())
+        assert len(choices) == 3
+
+        choice_map = {c["id"]: c for c in choices}
+        assert choice_map["c1"]["question_id"] == "Q1"
+        assert choice_map["c2"]["question_id"] == "Q1"
+        assert choice_map["c3"]["question_id"] == "Q2"
+
+    def test_build_index_last_write_wins(self):
+        """When same key appears multiple times, last value wins."""
+        from etielle.fluent import etl, Field, node
+        from etielle.transforms import get, lookup, get_from_parent
+
+        data = {
+            "groups": [
+                {"id": "G1", "item_ids": ["x"]},
+                {"id": "G2", "item_ids": ["x"]},  # Same item in two groups
+            ],
+            "items": [{"id": "x"}],
+        }
+
+        result = (
+            etl(data)
+            .goto("groups").each()
+            .goto("item_ids").each()
+            .build_index("group_by_item", key=node(), value=get_from_parent("id"))
+            .goto_root()
+            .goto("items").each()
+            .map_to(
+                table="items",
+                fields=[
+                    Field("id", get("id")),
+                    Field("group_id", lookup("group_by_item", get("id"))),
+                ],
+            )
+            .run()
+        )
+
+        items = list(result.tables["items"].values())
+        # G2 was processed last, so "x" maps to "G2"
+        assert items[0]["group_id"] == "G2"

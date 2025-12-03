@@ -1024,8 +1024,56 @@ class PipelineBuilder:
         Returns:
             PipelineResult with tables, errors, and stats.
         """
-        from etielle.core import MappingSpec
-        from etielle.executor import run_mapping
+        from etielle.core import MappingSpec, TraversalSpec
+        from etielle.executor import run_mapping, _iter_traversal_nodes
+
+        # Build indices from traversal specs before main execution
+        for build in self._index_builds:
+            index_name = build["name"]
+            key_transform = build["key"]
+            value_transform = build["value"]
+
+            # Determine the traversal path from iteration points
+            # iteration_points contains the path at each .each() call
+            iteration_points = build["iteration_points"]
+
+            if not iteration_points:
+                # No iterations - skip this build
+                continue
+
+            # For nested iterations, outer path is first iteration point
+            # inner path is relative from there to the final path
+            outer_path = iteration_points[0]
+
+            inner_path = None
+            if len(iteration_points) > 1:
+                # Multiple iterations - compute inner path
+                # Inner path is relative to outer path
+                inner_start = len(outer_path)
+                full_path = build["path"]
+                if inner_start < len(full_path):
+                    inner_path = full_path[inner_start:]
+
+            # Create traversal spec for index building
+            temp_spec = TraversalSpec(
+                path=tuple(outer_path),
+                mode="auto",
+                inner_path=tuple(inner_path) if inner_path else None,
+                inner_mode="auto",
+                emits=(),  # No emissions, just traversing
+            )
+
+            root = self._roots[build["root_index"]]
+            index_data: dict[Any, Any] = {}
+
+            # Traverse and populate index
+            for ctx in _iter_traversal_nodes(root, temp_spec):
+                k = key_transform(ctx)
+                v = value_transform(ctx)
+                if k is not None:
+                    index_data[k] = v
+
+            self._indices[index_name] = index_data
 
         # Extract linkable fields from link_to declarations
         linkable_fields = self._get_linkable_fields()
