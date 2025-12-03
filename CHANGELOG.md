@@ -2,6 +2,37 @@
 
 <!-- version list -->
 
+## v3.5.0 (2025-12-03)
+
+### Features
+
+- Add build_index() method for external dicts
+  ([`786445a`](https://github.com/Promptly-Technologies-LLC/etielle/commit/786445a76d951f4f0ca183a85a1c8c52b6d9f062))
+
+- Add indices parameter to etl()
+  ([`b938334`](https://github.com/Promptly-Technologies-LLC/etielle/commit/b9383342c7210e23f5581e09d217ce15b1c8a437))
+
+- Add lookup() transform for index queries
+  ([`ab1d9c2`](https://github.com/Promptly-Technologies-LLC/etielle/commit/ab1d9c21f3f4ad8b7e9331cb4369a39a1a5b1f7a))
+
+- Build indices from JSON traversal
+  ([`ef65bfe`](https://github.com/Promptly-Technologies-LLC/etielle/commit/ef65bfe79be59d73030e7ca0df917e4de6f1e7da))
+
+- Export lookup from package
+  ([`30bf7e2`](https://github.com/Promptly-Technologies-LLC/etielle/commit/30bf7e2e7b9af7f780e2c738243d0b24f6bed147))
+
+- Inject indices into context during pipeline execution
+  ([`98100b7`](https://github.com/Promptly-Technologies-LLC/etielle/commit/98100b74153cb82eb2d3fdb82ede6afe779258c7))
+
+
+## v3.4.0 (2025-12-03)
+
+### Features
+
+- Export missing public types for py.typed compliance
+  ([`5f2b017`](https://github.com/Promptly-Technologies-LLC/etielle/commit/5f2b017b9279d736afb2ca113283b42ba7780300))
+
+
 ## v3.3.0 (2025-12-03)
 
 ### Chores
