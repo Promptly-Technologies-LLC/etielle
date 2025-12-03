@@ -47,7 +47,7 @@ class TestFluentSQLAlchemy:
             ]
         }
 
-        result = (
+        (
             etl(data)
             .goto("users").each()
             .map_to(table=User, fields=[
@@ -75,7 +75,7 @@ class TestFluentSQLAlchemy:
             ]
         }
 
-        result = (
+        (
             etl(data)
             .goto("users").each()
             .map_to(table=User, fields=[
@@ -160,7 +160,7 @@ class TestNotNullFKFlushOrdering:
             ]
         }
 
-        result = (
+        (
             etl(data)
             .goto("parents").each()
             .map_to(table=Parent, fields=[
@@ -214,7 +214,7 @@ class TestDictIteration:
             }
         }
 
-        result = (
+        (
             etl(data)
             .goto("questions").each()
             .map_to(table=User, fields=[
@@ -248,7 +248,7 @@ class TestDictIteration:
             }
         }
 
-        result = (
+        (
             etl(data)
             .goto("questions").each()
             .map_to(table=User, fields=[
@@ -282,7 +282,7 @@ class TestDictIteration:
             ]
         }
 
-        result = (
+        (
             etl(data)
             .goto("items").each()
             .map_to(table=User, fields=[
@@ -325,7 +325,7 @@ class TestJoinOnFieldPersistence:
             }
         }
 
-        result = (
+        (
             etl(data)
             .goto("questions").each()
             .map_to(table=User, fields=[
@@ -378,7 +378,7 @@ class TestNullCollectionIteration:
             }
         }
 
-        result = (
+        (
             etl(data)
             .goto("questions").each()
             .goto("subQuestions").each()  # Nested iteration
@@ -414,7 +414,7 @@ class TestSingletonMapping:
             "email": "alice@example.com"
         }
 
-        result = (
+        (
             etl(data)
             .map_to(table=User, fields=[
                 Field("name", get("name")),
@@ -472,7 +472,7 @@ class TestSingletonMapping:
             ]
         }
 
-        result = (
+        (
             etl(data)
             # ROOT-LEVEL singleton user mapping - NO TempField!
             # This means it gets __singleton__ as join key
@@ -530,7 +530,7 @@ class TestDatabaseLoadingEdgeCases:
         # Use merge policy to combine duplicates
         from etielle.instances import AddPolicy
 
-        result = (
+        (
             etl(data)
             .goto("sales").each()
             .map_to(table=User, join_on=["product_name"], fields=[
@@ -569,7 +569,7 @@ class TestDatabaseLoadingEdgeCases:
             ]
         }
 
-        result = (
+        (
             etl(data)
             .goto("users").each()
             .map_to(table=User, fields=[
@@ -656,7 +656,7 @@ class TestDatabaseLoadingEdgeCases:
             ]
         }
 
-        result1 = (
+        (
             etl(data_batch1)
             .goto("users").each()
             .map_to(table=User, fields=[
@@ -677,7 +677,7 @@ class TestDatabaseLoadingEdgeCases:
             ]
         }
 
-        result2 = (
+        (
             etl(data_batch2)
             .goto("users").each()
             .map_to(table=User, fields=[
@@ -697,7 +697,7 @@ class TestDatabaseLoadingEdgeCases:
             ]
         }
 
-        result3 = (
+        (
             etl(data_batch3)
             .goto("users").each()
             .map_to(table=User, fields=[
@@ -734,7 +734,7 @@ class TestDatabaseLoadingEdgeCases:
         }
 
         # Note: User model doesn't have an 'amount' field, so we'll use 'id' to accumulate
-        result = (
+        (
             etl(data)
             .goto("sales").each()
             .map_to(table=User, join_on=["product_name"], fields=[

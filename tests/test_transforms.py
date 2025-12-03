@@ -16,7 +16,7 @@ from etielle.transforms import (
     parent_key,
 )
 
-from typing import TypedDict
+from typing import Any, TypedDict
 
 
 class _Grand(TypedDict):
@@ -174,7 +174,7 @@ def test_get_out_of_bounds_index_returns_none():
 
 def test_get_from_parent_depth_2_grandparent():
     """get_from_parent(field, depth=2) should access grandparent"""
-    root = {"id": "root", "child": {"id": "child", "grand": {"id": "grand"}}}
+    root: dict[str, Any] = {"id": "root", "child": {"id": "child", "grand": {"id": "grand"}}}
 
     # Build context chain: root -> child -> grand
     # Need to include root level in the chain
@@ -195,7 +195,7 @@ def test_get_from_parent_depth_2_grandparent():
 
 def test_get_from_parent_depth_3_great_grandparent():
     """get_from_parent(field, depth=3) should access great-grandparent"""
-    root = {
+    root: dict[str, Any] = {
         "id": "root",
         "child": {
             "id": "child",

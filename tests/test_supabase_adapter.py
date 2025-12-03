@@ -13,7 +13,7 @@ To run locally:
 
 import os
 import pytest
-from unittest.mock import Mock, MagicMock
+from unittest.mock import MagicMock
 
 from etielle import etl, Field, TempField, get, get_from_parent
 
@@ -32,6 +32,8 @@ requires_supabase = pytest.mark.skipif(
 def supabase_client():
     """Create a Supabase client for testing."""
     from supabase import create_client
+    assert SUPABASE_URL is not None
+    assert SUPABASE_KEY is not None
     return create_client(SUPABASE_URL, SUPABASE_KEY)
 
 
@@ -146,7 +148,7 @@ class TestSupabaseFlush:
 
         mock_supabase_client.table.side_effect = track_table
 
-        result = (
+        (
             etl(data)
             .goto("users").each()
             .map_to(table="users", fields=[
@@ -178,7 +180,7 @@ class TestSupabaseFlush:
             {"id": "u1", "name": "Alice"},
         ]
 
-        result = (
+        (
             etl(data)
             .goto("users").each()
             .map_to(table="users", fields=[
@@ -218,7 +220,7 @@ class TestSupabaseFlush:
 
         mock_supabase_client.table.side_effect = track_table
 
-        result = (
+        (
             etl(data)
             .goto("users").each()
             .map_to(table="users", fields=[
@@ -255,7 +257,7 @@ class TestSupabaseFlush:
 
         mock_supabase_client.table.return_value.insert.return_value.execute.return_value.data = []
 
-        result = (
+        (
             etl(data)
             .goto("users").each()
             .map_to(table="users", fields=[
@@ -308,7 +310,7 @@ class TestSupabaseFlush:
 
         mock_supabase_client.table.side_effect = track_table
 
-        result = (
+        (
             etl(data)
             .goto("users").each()
             .map_to(table="users", fields=[
@@ -371,7 +373,7 @@ class TestSupabaseFlush:
 
         mock_supabase_client.table.side_effect = track_table
 
-        result = (
+        (
             etl(data)
             .goto("users").each()
             .map_to(table="users", fields=[
@@ -437,7 +439,7 @@ class TestSupabaseIntegration:
             {"id": "test_u2", "name": "Bob"},
         ]}
 
-        result = (
+        (
             etl(data)
             .goto("users").each()
             .map_to(table="test_users", fields=[
@@ -592,7 +594,7 @@ class TestSupabaseIntegration:
         }
 
         try:
-            result = (
+            (
                 etl(data)
                 .goto("orgs").each()
                 .map_to(table="test_orgs", fields=[

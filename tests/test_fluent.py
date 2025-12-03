@@ -1602,19 +1602,17 @@ class TestGetLinkableFields:
         }
 
         class FakeParent:
+            __tablename__ = "parents"
             def __init__(self, external_id=None, name=None):
                 self.external_id = external_id
                 self.name = name
 
         class FakeChild:
+            __tablename__ = "children"
             def __init__(self, title=None, parent_ref=None):
                 self.title = title
                 self.parent_ref = parent_ref
                 self.parent = None
-
-        # Mock __tablename__ for detection
-        FakeParent.__tablename__ = "parents"
-        FakeChild.__tablename__ = "children"
 
         result = (
             etl(data)
@@ -1635,6 +1633,8 @@ class TestGetLinkableFields:
 
         # Check secondary index was built
         # Access the raw MappingResult which should have indices
+        assert result is not None
+        assert result._raw_results is not None
         parents_result = result._raw_results["parents"]
         assert parents_result.indices is not None
         assert "external_id" in parents_result.indices
@@ -1654,7 +1654,7 @@ class TestNavigationEdgeCases:
         from etielle.fluent import etl
 
         data = {"items": []}
-        result = (
+        (
             etl(data)
             .goto("items").each()
             .map_to(table="items", fields=[
@@ -1733,6 +1733,7 @@ class TestErrorHandlingEdgeCases:
 
         # Should have 1 error collected
         table_errors = result.errors.get("items") or result.errors.get("StrictModel")
+        assert table_errors is not None
         assert len(table_errors) == 1
 
     def test_multiple_errors_per_row_pydantic(self):
@@ -1793,6 +1794,7 @@ class TestErrorHandlingEdgeCases:
         # Should have errors for the invalid record
         assert "records" in result.errors or "StrictRecord" in result.errors
         table_errors = result.errors.get("records") or result.errors.get("StrictRecord")
+        assert table_errors is not None
         assert len(table_errors) == 1
 
         # The error for id=2 should contain validation messages
@@ -1859,6 +1861,8 @@ class TestErrorHandlingEdgeCases:
         # Each table should have 1 error
         user_errors = result.errors.get("users") or result.errors.get("User")
         post_errors = result.errors.get("posts") or result.errors.get("Post")
+        assert user_errors is not None
+        assert post_errors is not None
         assert len(user_errors) == 1
         assert len(post_errors) == 1
 
@@ -1908,6 +1912,7 @@ class TestErrorHandlingEdgeCases:
 
         # Verify failed rows are in errors
         table_errors = result.errors.get("transactions") or result.errors.get("Transaction")
+        assert table_errors is not None
         assert len(table_errors) == 2
 
         # Verify we can identify which IDs failed
@@ -2005,6 +2010,7 @@ class TestErrorHandlingEdgeCases:
 
         # Should have 2 errors
         table_errors = result.errors.get("users") or result.errors.get("RequiredFieldsModel")
+        assert table_errors is not None
         assert len(table_errors) == 2
 
     def test_type_coercion_errors(self):
@@ -2043,6 +2049,7 @@ class TestErrorHandlingEdgeCases:
 
         # Should have 3 errors
         table_errors = result.errors.get("items") or result.errors.get("TypedModel")
+        assert table_errors is not None
         assert len(table_errors) == 3
 
     def test_nested_validation_errors(self):
@@ -2096,6 +2103,7 @@ class TestErrorHandlingEdgeCases:
 
         # Should have 3 errors
         table_errors = result.errors.get("accounts") or result.errors.get("Account")
+        assert table_errors is not None
         assert len(table_errors) == 3
 
     def test_error_messages_are_lists(self):
@@ -2123,6 +2131,7 @@ class TestErrorHandlingEdgeCases:
 
         # Should have 1 error
         table_errors = result.errors.get("items") or result.errors.get("StrictModel")
+        assert table_errors is not None
         assert len(table_errors) == 1
 
         # Error messages should be a list
