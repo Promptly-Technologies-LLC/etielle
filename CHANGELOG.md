@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v3.4.0 (2025-12-03)
+
+### Features
+
+- Export missing public types for py.typed compliance
+  ([`5f2b017`](https://github.com/Promptly-Technologies-LLC/etielle/commit/5f2b017b9279d736afb2ca113283b42ba7780300))
+
+
 ## v3.3.0 (2025-12-03)
 
 ### Chores
