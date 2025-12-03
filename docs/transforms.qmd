@@ -406,6 +406,108 @@ apply(str.strip, get("name"))         # Trim whitespace
 apply(lambda x: x * 100, get("rate")) # Custom transformation
 ```
 
+## Lookup Transforms
+
+### `lookup(index_name, key_transform)` - Query a named index
+
+Looks up a value from a pre-built index. This is powerful for reverse-lookup scenarios where a parent has a list of child IDs, or when resolving external IDs to database primary keys.
+
+**Two ways to provide indices:**
+
+#### 1. External dictionary via `etl()`
+
+Pass pre-built lookup dictionaries directly:
+
+``` {python}
+from etielle import etl, Field, TempField, get, lookup
+import json
+
+# External lookup dict (e.g., from database query)
+db_ids = {"Q1": 100, "Q2": 200, "Q3": 300}
+
+data = {"responses": [
+    {"question_ref": "Q1", "value": "yes"},
+    {"question_ref": "Q2", "value": "no"}
+]}
+
+result = (
+    etl(data, indices={"questions": db_ids})
+    .goto("responses").each()
+    .map_to(table="responses", fields=[
+        Field("question_id", lookup("questions", get("question_ref"))),
+        Field("value", get("value")),
+        TempField("ref", get("question_ref"))
+    ])
+    .run()
+)
+
+print(json.dumps(list(result.tables["responses"].values()), indent=2))
+```
+
+#### 2. Build index from JSON traversal
+
+Build a reverse-lookup index by traversing the data structure:
+
+``` {python}
+from etielle import etl, Field, TempField, get, get_from_parent, node, lookup
+import json
+
+data = {
+    "questions": [
+        {"id": "Q1", "text": "Favorite color?", "choice_ids": ["c1", "c2"]},
+        {"id": "Q2", "text": "Favorite food?", "choice_ids": ["c3", "c4"]}
+    ],
+    "choices": [
+        {"id": "c1", "text": "Red"},
+        {"id": "c2", "text": "Blue"},
+        {"id": "c3", "text": "Pizza"},
+        {"id": "c4", "text": "Tacos"}
+    ]
+}
+
+result = (
+    etl(data)
+    # Build reverse lookup: choice_id -> question_id
+    .goto("questions").each()
+    .goto("choice_ids").each()
+    .build_index("question_by_choice", key=node(), value=get_from_parent("id"))
+
+    # Now map choices with their parent question
+    .goto_root()
+    .goto("choices").each()
+    .map_to(table="choices", fields=[
+        Field("id", get("id")),
+        Field("text", get("text")),
+        Field("question_id", lookup("question_by_choice", get("id"))),
+        TempField("id", get("id"))
+    ])
+    .run()
+)
+
+print(json.dumps(list(result.tables["choices"].values()), indent=2))
+```
+
+#### Default values
+
+If a key isn't found, `lookup()` returns `None` by default. You can specify a different default:
+
+```python
+Field("question_id", lookup("questions", get("ref"), default=-1))
+```
+
+#### Mid-pipeline index seeding
+
+You can also seed indices mid-pipeline with `build_index(from_dict=)`:
+
+```python
+etl(data)
+    .build_index("categories", from_dict={"A": "Alpha", "B": "Beta"})
+    .goto("items").each()
+    .map_to(table="items", fields=[
+        Field("category_name", lookup("categories", get("category_code")))
+    ])
+```
+
 ## Transform Reference
 
 | Transform | Purpose | Example |
@@ -424,6 +526,7 @@ apply(lambda x: x * 100, get("rate")) # Custom transformation
 | `coalesce(*transforms)` | First non-None | `coalesce(get("nick"), get("name"))` |
 | `apply(func, inner)` | Apply function to result | `apply(int, get("count"))` |
 | `len_of(inner)` | Length of list/dict/string | `len_of(get("tags"))` |
+| `lookup(index, key)` | Query a named index | `lookup("db_ids", get("ref"))` |
 
 ## Custom Transforms
 
