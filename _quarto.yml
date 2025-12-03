@@ -30,7 +30,7 @@ website:
           - href: docs/custom-transforms.qmd
             text: Custom Transforms
           - href: docs/error-handling.qmd
-            text: Error Handling
+            text: Errors and Monitoring
   navbar:
     right:
       - icon: github
