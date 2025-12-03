@@ -1,6 +1,7 @@
 from .core import (
     Context,
     Field as CoreField,  # Renamed to avoid conflict with fluent.Field
+    MappingResult,
     MappingSpec,
     TableEmit,
     Transform,
@@ -15,6 +16,7 @@ from .instances import (
     PydanticBuilder,
     PydanticPartialBuilder,
     TypedDictBuilder,
+    ConstructorBuilder,
     MergePolicy,
     AddPolicy,
     AppendPolicy,
@@ -27,6 +29,7 @@ from .instances import (
 # Fluent API (v3.0.0)
 from .fluent import (
     etl,
+    ErrorMode,
     Field,
     TempField,
     FieldUnion,
@@ -70,6 +73,7 @@ __all__ = [
     # core
     "Context",
     "CoreField",  # Legacy core Field
+    "MappingResult",
     "MappingSpec",
     "TableEmit",
     "Transform",
@@ -82,6 +86,7 @@ __all__ = [
     "PydanticBuilder",
     "PydanticPartialBuilder",
     "TypedDictBuilder",
+    "ConstructorBuilder",
     "MergePolicy",
     "AddPolicy",
     "AppendPolicy",
@@ -91,6 +96,7 @@ __all__ = [
     "FirstNonNullPolicy",
     # Fluent API (v3.0.0)
     "etl",
+    "ErrorMode",
     "Field",
     "TempField",
     "FieldUnion",
