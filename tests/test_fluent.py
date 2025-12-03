@@ -2402,3 +2402,9 @@ class TestBuildIndexFromTraversal:
         items = list(result.tables["items"].values())
         # G2 was processed last, so "x" maps to "G2"
         assert items[0]["group_id"] == "G2"
+
+
+def test_lookup_exported_from_package():
+    """lookup is importable from etielle package."""
+    from etielle import lookup
+    assert callable(lookup)
