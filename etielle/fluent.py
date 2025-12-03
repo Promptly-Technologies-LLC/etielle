@@ -24,6 +24,15 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal
 
 from etielle.core import Context
+from etielle.telemetry import (
+    FlushCompleted,
+    FlushFailed,
+    FlushStarted,
+    MapCompleted,
+    MapStarted,
+    TelemetryCallback,
+    _emit,
+)
 
 if TYPE_CHECKING:
     from etielle.core import Transform, TraversalSpec
@@ -152,6 +161,23 @@ def parent_index(ctx: Context, depth: int = 1) -> int | None:
     return current.index
 
 
+@dataclass
+class TableStats:
+    """Statistics for a single table after pipeline execution.
+
+    Attributes:
+        mapped: Number of instances created during the mapping phase.
+        errors: Number of validation/transform errors during mapping.
+        inserted: Number of rows successfully written to DB (0 if no session).
+        failed: Number of rows that failed during flush.
+    """
+
+    mapped: int
+    errors: int
+    inserted: int
+    failed: int
+
+
 class _TablesProxy:
     """Proxy for accessing tables by string name or model class."""
 
@@ -193,34 +219,61 @@ class _TablesProxy:
 
 @dataclass
 class PipelineResult:
-    """Result from running a pipeline without database loading.
+    """Result from running a pipeline.
 
     Attributes:
         tables: Access tables by string name or model class.
         errors: Validation/transform errors keyed by table then row key.
+        stats: Per-table statistics (mapped, errors, inserted, failed).
     """
 
     _tables: dict[str, dict[tuple[Any, ...], Any]]
     _errors: dict[str, dict[tuple[Any, ...], list[str]]]
     _table_class_map: dict[str, type] | None = None
     _raw_results: dict[str, Any] | None = None
+    _stats: dict[str, TableStats] | None = None
 
     def __init__(
         self,
         tables: dict[str, dict[tuple[Any, ...], Any]],
         errors: dict[str, dict[tuple[Any, ...], list[str]]],
         _table_class_map: dict[str, type] | None = None,
-        _raw_results: dict[str, Any] | None = None
+        _raw_results: dict[str, Any] | None = None,
+        _stats: dict[str, TableStats] | None = None,
     ) -> None:
         self._tables = tables
         self._errors = errors
         self._table_class_map = _table_class_map
         self._raw_results = _raw_results
+        self._stats = _stats
 
     @property
     def tables(self) -> _TablesProxy:
         """Access extracted tables by name or model class."""
         return _TablesProxy(self._tables, self._table_class_map)
+
+    @property
+    def stats(self) -> dict[str, TableStats]:
+        """Per-table statistics.
+
+        Returns a dict mapping table names to TableStats objects with:
+        - mapped: instances created during mapping
+        - errors: validation/transform errors
+        - inserted: rows successfully flushed to DB
+        - failed: rows that failed during flush
+        """
+        if self._stats is not None:
+            return self._stats
+        # Fallback: compute from existing data (no flush tracking)
+        return {
+            name: TableStats(
+                mapped=len(rows),
+                errors=len(self._errors.get(name, {})),
+                inserted=len(rows),  # Assume all succeeded if no explicit stats
+                failed=0,
+            )
+            for name, rows in self._tables.items()
+        }
 
     @property
     def errors(self) -> dict[str, dict[tuple[Any, ...], list[str]]]:
@@ -557,6 +610,8 @@ class PipelineBuilder:
         tables: dict[str, dict[tuple[Any, ...], Any]],
         flush_order: list[str],
         child_lookup_values: dict[str, dict[tuple[Any, ...], dict[str, Any]]],
+        stats: dict[str, TableStats],
+        on_event: TelemetryCallback | None,
     ) -> None:
         """Flush tables to Supabase in dependency order with two-phase insert.
 
@@ -569,6 +624,8 @@ class PipelineBuilder:
             tables: Dict mapping table names to {key: row_dict}.
             flush_order: Tables in topological order (parents first).
             child_lookup_values: Pre-computed {child_table: {child_key: {field: value}}}.
+            stats: Stats dict to update with inserted/failed counts.
+            on_event: Optional telemetry callback.
         """
         from etielle.adapters.supabase_adapter import insert_batches
 
@@ -604,15 +661,65 @@ class PipelineBuilder:
                     else:
                         on_conflict = conflict_spec
 
+            # Emit FlushStarted event
+            _emit(FlushStarted(table=table_name, count=len(rows)), on_event)
+
+            # Track inserted count for this table
+            table_inserted = 0
+            is_upsert = self._upsert
+
+            def on_batch(batch_num: int, batch_total: int, inserted: int) -> None:
+                nonlocal table_inserted
+                table_inserted += inserted
+                _emit(
+                    FlushCompleted(
+                        table=table_name,
+                        inserted=inserted,
+                        failed=0,
+                        batch_num=batch_num,
+                        batch_total=batch_total,
+                        upsert=is_upsert,
+                    ),
+                    on_event,
+                )
+
             # Insert rows and capture returned data
-            returned = insert_batches(
-                self._session,
-                table_name,
-                rows,
-                upsert=self._upsert,
-                on_conflict=on_conflict,
-                batch_size=self._batch_size,
-            )
+            try:
+                returned = insert_batches(
+                    self._session,
+                    table_name,
+                    rows,
+                    upsert=self._upsert,
+                    on_conflict=on_conflict,
+                    batch_size=self._batch_size,
+                    on_batch=on_batch,
+                )
+                # Update stats
+                if table_name in stats:
+                    stats[table_name] = TableStats(
+                        mapped=stats[table_name].mapped,
+                        errors=stats[table_name].errors,
+                        inserted=table_inserted,
+                        failed=len(rows) - table_inserted,
+                    )
+            except Exception as e:
+                _emit(
+                    FlushFailed(
+                        table=table_name,
+                        error=str(e),
+                        affected_count=len(rows),
+                    ),
+                    on_event,
+                )
+                # Update stats to show all rows failed
+                if table_name in stats:
+                    stats[table_name] = TableStats(
+                        mapped=stats[table_name].mapped,
+                        errors=stats[table_name].errors,
+                        inserted=0,
+                        failed=len(rows),
+                    )
+                raise
 
             # Two-phase: if this table has children with fk, update originals with generated IDs
             if table_name in fk_children:
@@ -844,13 +951,22 @@ class PipelineBuilder:
                 linkable.setdefault(parent_table, set()).add(parent_field)
         return linkable
 
-    def run(self) -> PipelineResult:
+    def run(
+        self,
+        *,
+        on_event: TelemetryCallback | None = None,
+    ) -> PipelineResult:
         """Execute the pipeline and return results.
 
         If load() was called, also persists to the database.
 
+        Args:
+            on_event: Optional callback for telemetry events. Called with
+                MapStarted, MapCompleted, FlushStarted, FlushCompleted, or
+                FlushFailed events during pipeline execution.
+
         Returns:
-            PipelineResult with tables and errors.
+            PipelineResult with tables, errors, and stats.
         """
         from etielle.core import MappingSpec
         from etielle.executor import run_mapping
@@ -910,6 +1026,30 @@ class PipelineBuilder:
                         existing.finalize_errors.setdefault(key, []).extend(msgs)
 
         raw_results = all_raw_results
+
+        # Emit mapping events and initialize stats
+        stats: dict[str, TableStats] = {}
+        for table_name, mapping_result in raw_results.items():
+            _emit(MapStarted(table=table_name), on_event)
+            error_count = (
+                len(mapping_result.update_errors) +
+                len(mapping_result.finalize_errors)
+            )
+            instance_count = len(mapping_result.instances)
+            _emit(
+                MapCompleted(
+                    table=table_name,
+                    count=instance_count,
+                    error_count=error_count,
+                ),
+                on_event,
+            )
+            stats[table_name] = TableStats(
+                mapped=instance_count,
+                errors=error_count,
+                inserted=0,  # Updated during flush
+                failed=0,
+            )
 
         # Handle relationship binding and staged flushing
         rel_specs: list[Any] = []
@@ -1012,7 +1152,9 @@ class PipelineBuilder:
 
             # Check if this is a Supabase client
             if self._is_supabase_client(self._session):
-                self._flush_to_supabase(tables, flush_order, child_lookup_values)
+                self._flush_to_supabase(
+                    tables, flush_order, child_lookup_values, stats, on_event
+                )
             else:
                 # SQLAlchemy/SQLModel path
                 # Warn if any relationships use fk (Supabase-only feature)
@@ -1041,6 +1183,9 @@ class PipelineBuilder:
                 for table_name in flush_order:
                     if table_name not in tables:
                         continue
+
+                    row_count = len(tables[table_name])
+                    _emit(FlushStarted(table=table_name, count=row_count), on_event)
 
                     # Add this table's instances to session
                     for key, instance in tables[table_name].items():
@@ -1082,13 +1227,52 @@ class PipelineBuilder:
                                     setattr(child_obj, attr_name, parent_obj)
 
                     # Flush this table - relationships are bound, FKs will be set
-                    self._session.flush()
+                    try:
+                        self._session.flush()
+                        _emit(
+                            FlushCompleted(
+                                table=table_name,
+                                inserted=row_count,
+                                failed=0,
+                                batch_num=1,
+                                batch_total=1,
+                                upsert=False,
+                            ),
+                            on_event,
+                        )
+                        # Update stats
+                        if table_name in stats:
+                            stats[table_name] = TableStats(
+                                mapped=stats[table_name].mapped,
+                                errors=stats[table_name].errors,
+                                inserted=row_count,
+                                failed=0,
+                            )
+                    except Exception as e:
+                        _emit(
+                            FlushFailed(
+                                table=table_name,
+                                error=str(e),
+                                affected_count=row_count,
+                            ),
+                            on_event,
+                        )
+                        # Update stats
+                        if table_name in stats:
+                            stats[table_name] = TableStats(
+                                mapped=stats[table_name].mapped,
+                                errors=stats[table_name].errors,
+                                inserted=0,
+                                failed=row_count,
+                            )
+                        raise
 
         return PipelineResult(
             tables=tables,
             errors=errors,
             _table_class_map=table_class_map,
-            _raw_results=raw_results
+            _raw_results=raw_results,
+            _stats=stats,
         )
 
 

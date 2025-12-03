@@ -1,10 +1,10 @@
 ---
-title: "Error Handling: Managing Validation Errors"
+title: "Errors and Monitoring"
 ---
 
-**What you'll learn**: How to handle validation errors in etielle pipelines, including error modes and accessing error details.
+**What you'll learn**: How to handle validation errors, track pipeline statistics, and monitor execution with telemetry events.
 
-**ETL context**: Error handling ensures data quality during the **Transform** step by catching and reporting validation issues.
+**ETL context**: Error handling ensures data quality during the **Transform** step. Monitoring provides visibility into pipeline execution during **Transform** and **Load** steps.
 
 ## Error Modes
 
@@ -322,6 +322,162 @@ if result.errors:
     logging.warning(f"Partial load: {len(users)} users, {len(result.errors.get('users', {}))} errors")
 else:
     users = result.tables["users"]
+```
+
+## Monitoring Pipeline Execution
+
+Beyond error handling, etielle provides tools for monitoring pipeline execution: statistics for post-run summaries and telemetry events for real-time progress tracking.
+
+### Pipeline Statistics
+
+After `run()` completes, access per-table statistics via `result.stats`:
+
+``` {python}
+from etielle import etl, Field, get
+
+data = {
+    "users": [
+        {"name": "Alice"},
+        {"name": "Bob"},
+        {"name": "Carol"}
+    ]
+}
+
+result = (
+    etl(data)
+    .goto("users").each()
+    .map_to(table="users", fields=[Field("name", get("name"))])
+    .run()
+)
+
+# Access statistics
+for table_name, stats in result.stats.items():
+    print(f"{table_name}:")
+    print(f"  Mapped: {stats.mapped}")
+    print(f"  Errors: {stats.errors}")
+    print(f"  Inserted: {stats.inserted}")
+    print(f"  Failed: {stats.failed}")
+```
+
+The `TableStats` object contains:
+
+| Field | Description |
+|-------|-------------|
+| `mapped` | Instances created during mapping phase |
+| `errors` | Validation/transform errors during mapping |
+| `inserted` | Rows successfully written to database |
+| `failed` | Rows that failed during database flush |
+
+::: {.callout-note}
+When no database session is provided, `inserted` will be 0 since no flush occurs.
+:::
+
+### Telemetry Events
+
+For real-time monitoring during pipeline execution, pass an `on_event` callback to `run()`:
+
+``` {python}
+from etielle import etl, Field, get, MapStarted, MapCompleted
+
+data = {"users": [{"name": "Alice"}, {"name": "Bob"}]}
+
+events = []
+
+result = (
+    etl(data)
+    .goto("users").each()
+    .map_to(table="users", fields=[Field("name", get("name"))])
+    .run(on_event=events.append)
+)
+
+# Inspect collected events
+for event in events:
+    print(f"{type(event).__name__}: {event}")
+```
+
+### Event Types
+
+etielle emits different events during mapping and database flush phases:
+
+**Mapping Phase:**
+
+| Event | Fields | Description |
+|-------|--------|-------------|
+| `MapStarted` | `table` | Emitted when mapping begins for a table |
+| `MapCompleted` | `table`, `count`, `error_count` | Emitted when mapping completes |
+
+**Flush Phase (with database session):**
+
+| Event | Fields | Description |
+|-------|--------|-------------|
+| `FlushStarted` | `table`, `count` | Emitted when flush begins for a table |
+| `FlushCompleted` | `table`, `inserted`, `failed`, `batch_num`, `batch_total`, `upsert` | Emitted per batch |
+| `FlushFailed` | `table`, `error`, `affected_count` | Emitted when flush fails |
+
+### Logging Example
+
+Log pipeline progress to standard logging:
+
+```python
+import logging
+from etielle import etl, Field, get, MapCompleted, FlushCompleted, FlushFailed
+
+logging.basicConfig(level=logging.INFO)
+log = logging.getLogger("etl")
+
+def log_event(event):
+    if isinstance(event, MapCompleted):
+        log.info(f"Mapped {event.count} rows to {event.table} ({event.error_count} errors)")
+    elif isinstance(event, FlushCompleted):
+        log.info(f"Flushed {event.inserted} rows to {event.table} (batch {event.batch_num}/{event.batch_total})")
+    elif isinstance(event, FlushFailed):
+        log.error(f"Flush failed for {event.table}: {event.error}")
+
+result = pipeline.run(on_event=log_event)
+```
+
+### Progress Bar Example
+
+Integrate with `tqdm` for visual progress tracking:
+
+```python
+from tqdm import tqdm
+from etielle import FlushCompleted
+
+# Create progress bar with expected total
+pbar = tqdm(total=expected_row_count, desc="Loading")
+
+def update_progress(event):
+    if isinstance(event, FlushCompleted):
+        pbar.update(event.inserted)
+
+result = pipeline.load(session).run(on_event=update_progress)
+pbar.close()
+```
+
+### Post-Run Summary Pattern
+
+Combine statistics with error checking for comprehensive reporting:
+
+```python
+result = pipeline.run(on_event=log_event)
+
+# Summary report
+print("\n=== Pipeline Summary ===")
+for table, stats in result.stats.items():
+    status = "✓" if stats.errors == 0 and stats.failed == 0 else "✗"
+    print(f"{status} {table}: {stats.inserted}/{stats.mapped} inserted")
+    if stats.errors > 0:
+        print(f"    {stats.errors} validation errors")
+    if stats.failed > 0:
+        print(f"    {stats.failed} flush failures")
+
+# Detailed errors if any
+if result.errors:
+    print("\n=== Error Details ===")
+    for table, errors in result.errors.items():
+        for key, messages in errors.items():
+            print(f"{table}[{key}]: {messages}")
 ```
 
 ## See also
