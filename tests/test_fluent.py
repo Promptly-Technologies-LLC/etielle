@@ -2266,3 +2266,56 @@ class TestErrorHandlingEdgeCases:
         # Calculate success rate
         success_rate = successful_count / total_count
         assert success_rate == 0.6
+
+
+class TestLookupIntegration:
+    """Integration tests for lookup() with etl pipeline."""
+
+    def test_lookup_with_external_index(self):
+        """lookup() works with index passed to etl()."""
+        from etielle.fluent import etl, Field
+        from etielle.transforms import get, lookup
+
+        data = {"items": [{"qid": "Q1"}, {"qid": "Q2"}]}
+        db_ids = {"Q1": 100, "Q2": 200}
+
+        result = (
+            etl(data, indices={"db": db_ids})
+            .goto("items").each()
+            .map_to(
+                table="results",
+                fields=[
+                    Field("qid", get("qid")),
+                    Field("db_id", lookup("db", get("qid"))),
+                ],
+            )
+            .run()
+        )
+
+        instances = list(result.tables["results"].values())
+        assert len(instances) == 2
+        assert instances[0]["db_id"] == 100
+        assert instances[1]["db_id"] == 200
+
+    def test_lookup_with_build_index_from_dict(self):
+        """lookup() works with build_index(from_dict=)."""
+        from etielle.fluent import etl, Field
+        from etielle.transforms import get, lookup
+
+        data = {"items": [{"qid": "Q1"}]}
+
+        result = (
+            etl(data)
+            .build_index("db", from_dict={"Q1": 42})
+            .goto("items").each()
+            .map_to(
+                table="results",
+                fields=[
+                    Field("db_id", lookup("db", get("qid"))),
+                ],
+            )
+            .run()
+        )
+
+        instances = list(result.tables["results"].values())
+        assert instances[0]["db_id"] == 42

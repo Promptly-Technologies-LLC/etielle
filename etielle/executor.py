@@ -10,7 +10,12 @@ from .instances import InstanceEmit, resolve_field_name_for_builder
 # -----------------------------
 
 
-def _iter_traversal_nodes(root: Any, spec: TraversalSpec) -> Iterable[Context]:
+def _iter_traversal_nodes(
+    root: Any,
+    spec: TraversalSpec,
+    context_slots: Dict[str, Any] | None = None,
+) -> Iterable[Context]:
+    slots = context_slots or {}
     for base_ctx, outer in _iter_nodes(root, spec.path):
 
         def yield_from_container(
@@ -27,7 +32,7 @@ def _iter_traversal_nodes(root: Any, spec: TraversalSpec) -> Iterable[Context]:
                             parent=parent_ctx,
                             key=str(k),
                             index=None,
-                            slots={},
+                            slots=slots,
                         )
                 return
             if mode == "single":
@@ -38,7 +43,7 @@ def _iter_traversal_nodes(root: Any, spec: TraversalSpec) -> Iterable[Context]:
                     parent=parent_ctx,
                     key=None,
                     index=None,
-                    slots={},
+                    slots=slots,
                 )
                 return
             # auto mode
@@ -51,7 +56,7 @@ def _iter_traversal_nodes(root: Any, spec: TraversalSpec) -> Iterable[Context]:
                         parent=parent_ctx,
                         key=str(k),
                         index=None,
-                        slots={},
+                        slots=slots,
                     )
                 return
             if isinstance(container, Sequence) and not isinstance(
@@ -65,7 +70,7 @@ def _iter_traversal_nodes(root: Any, spec: TraversalSpec) -> Iterable[Context]:
                         parent=parent_ctx,
                         key=None,
                         index=i,
-                        slots={},
+                        slots=slots,
                     )
                 return
             # Non-iterable in auto mode: treat as single
@@ -78,7 +83,7 @@ def _iter_traversal_nodes(root: Any, spec: TraversalSpec) -> Iterable[Context]:
                     parent=parent_ctx,
                     key=None,
                     index=None,
-                    slots={},
+                    slots=slots,
                 )
 
         # If no inner path, iterate outer container directly
@@ -99,7 +104,8 @@ def _iter_traversal_nodes(root: Any, spec: TraversalSpec) -> Iterable[Context]:
 def run_mapping(
     root: Any,
     spec: MappingSpec,
-    linkable_fields: Dict[str, set[str]] | None = None
+    linkable_fields: Dict[str, set[str]] | None = None,
+    context_slots: Dict[str, Any] | None = None,
 ) -> Dict[str, MappingResult[Any]]:
     """
     Execute mapping spec against root JSON, returning rows per table.
@@ -114,6 +120,7 @@ def run_mapping(
         root: The JSON data to process
         spec: The mapping specification
         linkable_fields: Dict mapping table name to set of field names used in link_to
+        context_slots: Optional dict to inject into context.slots (e.g., for indices)
     """
     if linkable_fields is None:
         linkable_fields = {}
@@ -128,7 +135,7 @@ def run_mapping(
     auto_key_counters: Dict[str, int] = {}
 
     for traversal in spec.traversals:
-        for ctx in _iter_traversal_nodes(root, traversal):
+        for ctx in _iter_traversal_nodes(root, traversal, context_slots):
             for emit in traversal.emits:
                 # Compute join key
                 if emit.join_keys:

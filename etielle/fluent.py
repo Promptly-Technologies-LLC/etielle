@@ -1055,7 +1055,12 @@ class PipelineBuilder:
                 specs.extend(emission_specs)
 
             mapping_spec = MappingSpec(traversals=tuple(specs))
-            raw_results = run_mapping(root, mapping_spec, linkable_fields=linkable_fields)
+            raw_results = run_mapping(
+                root,
+                mapping_spec,
+                linkable_fields=linkable_fields,
+                context_slots={"__indices__": self._indices},
+            )
 
             # Merge into combined results
             for table_name, mapping_result in raw_results.items():
