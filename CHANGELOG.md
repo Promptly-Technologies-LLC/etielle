@@ -2,6 +2,24 @@
 
 <!-- version list -->
 
+## v3.3.0 (2025-12-03)
+
+### Chores
+
+- Fix linting and type checking errors
+  ([`29b2d5c`](https://github.com/Promptly-Technologies-LLC/etielle/commit/29b2d5c038984b9bc2d3664f6b9709062c8a3c95))
+
+### Documentation
+
+- Add monitoring/telemetry section to error handling docs
+  ([`19236ec`](https://github.com/Promptly-Technologies-LLC/etielle/commit/19236ecc26aa971d61e1d9a1a107a2aeed29db2c))
+
+### Features
+
+- Add pipeline telemetry and stats tracking
+  ([`277def1`](https://github.com/Promptly-Technologies-LLC/etielle/commit/277def191c2a7819df884a629e5a23adc887045b))
+
+
 ## v3.2.0 (2025-12-02)
 
 ### Documentation
