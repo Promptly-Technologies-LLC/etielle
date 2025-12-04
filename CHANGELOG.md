@@ -2,6 +2,19 @@
 
 <!-- version list -->
 
+## v3.5.1 (2025-12-04)
+
+### Bug Fixes
+
+- Propagate context_slots to compute_child_lookup_values for lookup() support
+  ([`55e8808`](https://github.com/Promptly-Technologies-LLC/etielle/commit/55e8808e599101c468903832d1251ffffba91cf7))
+
+### Chores
+
+- Use app for protection bypass
+  ([`9684ee1`](https://github.com/Promptly-Technologies-LLC/etielle/commit/9684ee1daef441bc0604641afb1ba2aeaaad78be))
+
+
 ## v3.5.0 (2025-12-03)
 
 ### Features
