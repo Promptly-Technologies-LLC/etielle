@@ -203,6 +203,7 @@ def compute_child_lookup_values(
     traversals: Sequence[TraversalSpec],
     relationships: Sequence[dict[str, Any]],
     emissions: Sequence[dict[str, Any]],
+    context_slots: Dict[str, Any] | None = None,
 ) -> Dict[str, Dict[KeyTuple, Dict[str, Any]]]:
     """
     Compute TempField/Field values for children and parents used in relationship binding.
@@ -252,7 +253,7 @@ def compute_child_lookup_values(
     out: Dict[str, Dict[KeyTuple, Dict[str, Any]]] = {}
 
     for trav in traversals:
-        for ctx in _iter_traversal_nodes(root, trav):
+        for ctx in _iter_traversal_nodes(root, trav, context_slots):
             for emit in trav.emits:
                 # Handle both InstanceEmit and TableEmit
                 if not isinstance(emit, (InstanceEmit, TableEmit)):

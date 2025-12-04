@@ -2408,3 +2408,145 @@ def test_lookup_exported_from_package():
     """lookup is importable from etielle package."""
     from etielle import lookup
     assert callable(lookup)
+
+
+class TestLookupInLinkTo:
+    """Tests for lookup() used in TempField for link_to relationships."""
+
+    def test_lookup_in_tempfield_for_link_to(self):
+        """lookup() in TempField should work when used by link_to().
+
+        This is a regression test for a bug where indices were not propagated
+        to compute_child_lookup_values(), causing lookup() to fail with:
+        "Index 'X' not found. Available indices: []"
+        """
+        from dataclasses import dataclass
+        from etielle.fluent import etl, Field, TempField
+        from etielle.transforms import get, lookup, key
+
+        @dataclass
+        class Parent:
+            id: str
+
+        @dataclass
+        class Child:
+            id: str
+            parent: Parent | None = None
+
+        # External index: child_parent_ref -> parent_id
+        # In real usage, this might be computed from the schema
+        parent_refs = {"P1": "P1", "P2": "P2"}
+
+        data = {
+            "parents": {"P1": {"name": "Parent 1"}, "P2": {"name": "Parent 2"}},
+            "children": {"C1": {"parent_ref": "P1"}, "C2": {"parent_ref": "P2"}},
+        }
+
+        result = (
+            etl(data, indices={"parent_by_ref": parent_refs})
+            .goto("parents").each()
+            .map_to(
+                table=Parent,
+                fields=[
+                    Field("id", key()),
+                    TempField("_parent_id", key()),  # TempField with different name for link_to
+                ],
+                join_on=["id"],  # Use id as join key
+            )
+            .goto_root()
+            .goto("children").each()
+            .map_to(
+                table=Child,
+                fields=[
+                    Field("id", key()),
+                    # Use lookup in TempField - this is the key scenario
+                    TempField("parent_ref", lookup("parent_by_ref", get("parent_ref"))),
+                ],
+                join_on=["id"],  # Use id as join key
+            )
+            .link_to(Parent, by={"parent_ref": "_parent_id"})
+            .run()
+        )
+
+        children = result.tables[Child]
+        parents = result.tables[Parent]
+        child1 = children[("C1",)]
+        child2 = children[("C2",)]
+        parent1 = parents[("P1",)]
+        parent2 = parents[("P2",)]
+
+        assert child1.parent is parent1
+        assert child2.parent is parent2
+
+    def test_lookup_in_tempfield_with_build_index(self):
+        """lookup() with build_index should work in TempField for link_to()."""
+        from dataclasses import dataclass
+        from etielle.fluent import etl, Field, TempField, node
+        from etielle.transforms import get, lookup, key, get_from_parent, parent_key
+
+        @dataclass
+        class Block:
+            id: str
+
+        @dataclass
+        class Question:
+            id: str
+            block: Block | None = None
+
+        data = {
+            "blocks": {
+                "BLK1": {"elements": [{"questionId": "Q1"}, {"questionId": "Q2"}]},
+                "BLK2": {"elements": [{"questionId": "Q3"}]},
+            },
+            "questions": {
+                "Q1": {"text": "Question 1"},
+                "Q2": {"text": "Question 2"},
+                "Q3": {"text": "Question 3"},
+            },
+        }
+
+        result = (
+            etl(data)
+            # Build reverse lookup: questionId -> block key
+            # Use parent_key() because we're iterating elements (a list inside blocks)
+            .goto("blocks").each()
+            .goto("elements").each()
+            .build_index("question_to_block", key=get("questionId"), value=parent_key())
+            # Map blocks
+            .goto_root()
+            .goto("blocks").each()
+            .map_to(
+                table=Block,
+                fields=[
+                    Field("id", key()),
+                    TempField("_block_id", key()),  # TempField with different name for link_to
+                ],
+                join_on=["id"],  # Use id as join key
+            )
+            # Map questions with parent reference via lookup
+            .goto_root()
+            .goto("questions").each()
+            .map_to(
+                table=Question,
+                fields=[
+                    Field("id", key()),
+                    TempField("block_key", lookup("question_to_block", key())),
+                ],
+                join_on=["id"],  # Use id as join key
+            )
+            .link_to(Block, by={"block_key": "_block_id"})
+            .run()
+        )
+
+        questions = result.tables[Question]
+        blocks = result.tables[Block]
+
+        q1 = questions[("Q1",)]
+        q2 = questions[("Q2",)]
+        q3 = questions[("Q3",)]
+        blk1 = blocks[("BLK1",)]
+        blk2 = blocks[("BLK2",)]
+
+        assert q1.block is blk1
+        assert q2.block is blk1
+        assert q3.block is blk2
