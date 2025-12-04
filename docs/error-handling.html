@@ -346,7 +346,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="collect-mode-default" class="level3">
 <h3 class="anchored" data-anchor-id="collect-mode-default">Collect Mode (Default)</h3>
 <p>Collect all errors and inspect them after <code>run()</code>:</p>
-<div id="0b33e212" class="cell" data-execution_count="1">
+<div id="bb383444" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -379,7 +379,7 @@ Has errors: False</code></pre>
 <section id="fail-fast-mode" class="level3">
 <h3 class="anchored" data-anchor-id="fail-fast-mode">Fail Fast Mode</h3>
 <p>Stop processing immediately on first error:</p>
-<div id="57731527" class="cell" data-execution_count="2">
+<div id="9c093de5" class="cell" data-execution_count="2">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> {<span class="st">"users"</span>: [{<span class="st">"id"</span>: <span class="va">None</span>, <span class="st">"name"</span>: <span class="st">"Bob"</span>}]}</span>
@@ -413,7 +413,7 @@ Has errors: False</code></pre>
 </section>
 <section id="inspecting-errors" class="level3">
 <h3 class="anchored" data-anchor-id="inspecting-errors">Inspecting Errors</h3>
-<div id="3d5fd1b7" class="cell" data-execution_count="3">
+<div id="5b09f6ff" class="cell" data-execution_count="3">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pydantic <span class="im">import</span> BaseModel, field_validator</span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -640,7 +640,7 @@ Has errors: False</code></pre>
 <section id="pipeline-statistics" class="level3">
 <h3 class="anchored" data-anchor-id="pipeline-statistics">Pipeline Statistics</h3>
 <p>After <code>run()</code> completes, access per-table statistics via <code>result.stats</code>:</p>
-<div id="1ed0e79d" class="cell" data-execution_count="4">
+<div id="dfb65271" class="cell" data-execution_count="4">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, get</span>
 <span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> {</span>
@@ -717,7 +717,7 @@ Note
 <section id="telemetry-events" class="level3">
 <h3 class="anchored" data-anchor-id="telemetry-events">Telemetry Events</h3>
 <p>For real-time monitoring during pipeline execution, pass an <code>on_event</code> callback to <code>run()</code>:</p>
-<div id="7b55820b" class="cell" data-execution_count="5">
+<div id="2dc82312" class="cell" data-execution_count="5">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, get, MapStarted, MapCompleted</span>
 <span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> {<span class="st">"users"</span>: [{<span class="st">"name"</span>: <span class="st">"Alice"</span>}, {<span class="st">"name"</span>: <span class="st">"Bob"</span>}]}</span>
