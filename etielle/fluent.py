@@ -1210,8 +1210,10 @@ class PipelineBuilder:
             # Compute child lookup values (TempField values) by re-traversing
             first_root = self._roots[0] if self._roots else {}
             # This is needed for both session and non-session paths
+            # Pass context_slots with indices so lookup() transforms work
             child_lookup_values = compute_child_lookup_values(
-                first_root, all_specs, self._relationships, self._emissions
+                first_root, all_specs, self._relationships, self._emissions,
+                context_slots={"__indices__": self._indices},
             )
 
             # If no session, bind all relationships now (non-DB use case)
