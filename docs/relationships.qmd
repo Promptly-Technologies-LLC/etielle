@@ -233,35 +233,259 @@ For relationships with composite keys, include multiple entries in the `by` dict
 })
 ```
 
-## Junction Tables (Reverse Lookups)
+## Many-to-Many Junction Tables
 
-Handle junction tables where the relationship is defined outside the child:
+Many-to-many relationships require a **junction table** (also called link table or join table) to connect two entities. etielle supports creating junction table records through nested iteration.
+
+::: {.callout-important}
+## Explicit IDs Required
+
+Junction table patterns only work when entities have **explicit IDs in the source data**. They do not work with database-generated auto-increment IDs, because the junction records need to reference the parent IDs before database insertion.
+
+For DB-generated IDs, you'll need to:
+1. Insert parent entities first
+2. Query back the generated IDs
+3. Run a second pipeline to create junction records
+:::
+
+### Pattern 1: List of IDs on Parent
+
+The most common pattern: each parent has a list of related child IDs.
 
 ``` {python}
-#| eval: false
-# Data: {"userPosts": {"u1": [101, 102], "u2": [103]}}
-# This maps user_id -> list of post_ids
+from dataclasses import dataclass
+from etielle import etl, Field, get, get_from_parent, node
+
+@dataclass
+class Question:
+    __tablename__ = "questions"
+    id: str
+    text: str
+
+@dataclass
+class QuestionChoice:
+    """Junction table linking questions to choices."""
+    __tablename__ = "question_choices"
+    question_id: str
+    choice_id: str
+
+data = {
+    "questions": [
+        {"id": "Q1", "text": "Question 1", "choice_ids": ["c1", "c2"]},
+        {"id": "Q2", "text": "Question 2", "choice_ids": ["c2", "c3"]},
+    ]
+}
 
 result = (
     etl(data)
-    .goto("users").each()
-    .map_to(table=User, fields=[...])
-
-    .goto_root()
-    .goto("posts").each()
-    .map_to(table=Post, fields=[...])
-
-    .goto_root()
-    .goto("userPosts").each()    # key() = user_id
-    .each()                       # node() = post_id
-    .map_to(table=Post, join_on=["id"], fields=[
-        TempField("id", node()),
-        TempField("user_id", parent_key())
+    # Extract questions (first traversal)
+    .goto("questions").each()
+    .map_to(table=Question, fields=[
+        Field("id", get("id")),
+        Field("text", get("text")),
     ])
-    .link_to(User, by={"user_id": "id"})
+    # Create junction records (separate traversal)
+    .goto_root()
+    .goto("questions").each()
+    .goto("choice_ids").each()
+    .map_to(table=QuestionChoice, fields=[
+        Field("question_id", get_from_parent("id")),
+        Field("choice_id", node()),
+    ])
     .run()
 )
+
+# Verify junction records
+for key, junction in result.tables[QuestionChoice].items():
+    print(f"Question {junction.question_id} -> Choice {junction.choice_id}")
 ```
+
+### Pattern 2: Explicit Junction Array
+
+When junction records are provided as explicit objects:
+
+``` {python}
+from dataclasses import dataclass
+from etielle import etl, Field, get
+
+@dataclass
+class QuestionChoice:
+    __tablename__ = "question_choices"
+    question_id: str
+    choice_id: str
+
+data = {
+    "question_choices": [
+        {"question_id": "Q1", "choice_id": "c1"},
+        {"question_id": "Q1", "choice_id": "c2"},
+        {"question_id": "Q2", "choice_id": "c2"},
+    ]
+}
+
+result = (
+    etl(data)
+    .goto("question_choices").each()
+    .map_to(table=QuestionChoice, fields=[
+        Field("question_id", get("question_id")),
+        Field("choice_id", get("choice_id")),
+    ])
+    .run()
+)
+
+print(f"Created {len(result.tables[QuestionChoice])} junction records")
+```
+
+### Pattern 3: Wrapped Mapping Objects
+
+For dict-like mappings, wrap each entry in an object with an explicit field for the child IDs:
+
+``` {python}
+from dataclasses import dataclass
+from etielle import etl, Field, get, get_from_parent, node
+
+@dataclass
+class QuestionChoice:
+    __tablename__ = "question_choices"
+    question_id: str
+    choice_id: str
+
+# Wrap dict-of-lists as list of objects
+data = {
+    "question_choices": [
+        {"question_id": "Q1", "choices": ["c1", "c2"]},
+        {"question_id": "Q2", "choices": ["c2", "c3"]},
+    ]
+}
+
+result = (
+    etl(data)
+    .goto("question_choices").each()
+    .goto("choices").each()
+    .map_to(table=QuestionChoice, fields=[
+        Field("question_id", get_from_parent("question_id")),
+        Field("choice_id", node()),
+    ])
+    .run()
+)
+
+for key, junction in result.tables[QuestionChoice].items():
+    print(f"Question {junction.question_id} -> Choice {junction.choice_id}")
+```
+
+### Pattern 4: Inverse Relationship
+
+When child entities have lists of parent IDs:
+
+``` {python}
+from dataclasses import dataclass
+from etielle import etl, Field, get, get_from_parent, node
+
+@dataclass
+class Choice:
+    __tablename__ = "choices"
+    id: str
+    text: str
+
+@dataclass
+class QuestionChoice:
+    __tablename__ = "question_choices"
+    question_id: str
+    choice_id: str
+
+data = {
+    "choices": [
+        {"id": "c1", "text": "Choice 1", "question_ids": ["Q1"]},
+        {"id": "c2", "text": "Choice 2", "question_ids": ["Q1", "Q2"]},
+    ]
+}
+
+result = (
+    etl(data)
+    # Extract choices
+    .goto("choices").each()
+    .map_to(table=Choice, fields=[
+        Field("id", get("id")),
+        Field("text", get("text")),
+    ])
+    # Create junction records
+    .goto_root()
+    .goto("choices").each()
+    .goto("question_ids").each()
+    .map_to(table=QuestionChoice, fields=[
+        Field("question_id", node()),
+        Field("choice_id", get_from_parent("id")),
+    ])
+    .run()
+)
+
+print(f"Choices: {len(result.tables[Choice])}")
+print(f"Junctions: {len(result.tables[QuestionChoice])}")
+```
+
+### Using Lookups for ID Resolution
+
+When source data uses external identifiers (slugs, codes) that need to be resolved:
+
+``` {python}
+from dataclasses import dataclass
+from etielle import etl, Field, get, lookup
+
+@dataclass
+class Question:
+    __tablename__ = "questions"
+    id: str
+    text: str
+
+@dataclass
+class QuestionChoice:
+    __tablename__ = "question_choices"
+    question_id: str
+    choice_id: str
+
+data = {
+    "questions": [
+        {"slug": "q1", "text": "Question 1"},
+        {"slug": "q2", "text": "Question 2"},
+    ],
+    "mappings": [
+        {"question": "q1", "choice": "c1"},
+        {"question": "q1", "choice": "c2"},
+    ],
+}
+
+result = (
+    etl(data)
+    # Extract questions and build lookup index
+    .goto("questions").each()
+    .map_to(table=Question, fields=[
+        Field("id", get("slug")),
+        Field("text", get("text")),
+    ])
+    .build_index("question_by_slug", key=get("slug"), value=get("slug"))
+
+    # Create junctions using lookup
+    .goto_root()
+    .goto("mappings").each()
+    .map_to(table=QuestionChoice, fields=[
+        Field("question_id", lookup("question_by_slug", get("question"))),
+        Field("choice_id", get("choice")),
+    ])
+    .run()
+)
+
+for key, junction in result.tables[QuestionChoice].items():
+    print(f"Question {junction.question_id} -> Choice {junction.choice_id}")
+```
+
+### Best Practices for Junction Tables
+
+1. **Use separate traversals**: Extract parent entities first, then create junction records in a separate traversal starting with `.goto_root()`.
+
+2. **Use `Field` for junction columns**: Junction table columns (`question_id`, `choice_id`) should be `Field`, not `TempField`, since they're the actual data being stored.
+
+3. **Explicit IDs only**: Junction patterns require IDs to be present in the source data. Database-generated IDs require a two-pass approach.
+
+4. **Nesting requires `.goto()` between `.each()` calls**: You cannot use `.each().each()` directly—there must be a `.goto("field")` between iterations. For example, `.each().goto("choices").each()` works, but `.each().each()` on a dict-of-lists does not.
 
 ## `link_to()` Reference
 
