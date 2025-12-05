@@ -588,6 +588,80 @@ class PipelineBuilder:
         self._relationships.append(relationship)
         return self
 
+    def backlink(
+        self,
+        parent: type | str,
+        child: type | str,
+        attr: str,
+        by: dict[str, str],
+    ) -> PipelineBuilder:
+        """Define a many-to-many relationship where parent has a list of children.
+
+        This is used with ORMs like SQLModel/SQLAlchemy that handle junction
+        tables automatically. After running the pipeline, the parent objects
+        will have their list attribute populated with matching child objects.
+
+        Args:
+            parent: The parent model class or table name that will hold the list.
+            child: The child model class or table name.
+            attr: The attribute name on the parent that holds the list of children.
+            by: Mapping of {parent_field: child_field} where parent_field contains
+                a list of values that match child_field on the child objects.
+
+        Returns:
+            Self for method chaining.
+
+        Raises:
+            ValueError: If used with Supabase adapter (not supported).
+
+        Example:
+            # Parent has choice_ids list, child has id field
+            .map_to(table=Question, fields=[
+                Field("text", get("text")),
+                TempField("id", get("id")),
+                TempField("choice_ids", get("choice_ids")),  # list of child IDs
+            ])
+            .goto_root()
+            .goto("choices").each()
+            .map_to(table=Choice, fields=[
+                Field("text", get("text")),
+                TempField("id", get("id")),
+            ])
+            .backlink(
+                parent=Question,
+                child=Choice,
+                attr="choices",           # sets question.choices = [...]
+                by={"choice_ids": "id"},  # parent's choice_ids contains child's id
+            )
+        """
+        # Handle both class and string for parent
+        if isinstance(parent, str):
+            parent_table = parent
+            parent_class = None
+        else:
+            parent_table = getattr(parent, "__tablename__", parent.__name__.lower())
+            parent_class = parent
+
+        # Handle both class and string for child
+        if isinstance(child, str):
+            child_table = child
+            child_class = None
+        else:
+            child_table = getattr(child, "__tablename__", child.__name__.lower())
+            child_class = child
+
+        backlink_spec = {
+            "type": "backlink",
+            "parent_table": parent_table,
+            "parent_class": parent_class,
+            "child_table": child_table,
+            "child_class": child_class,
+            "attr": attr,
+            "by": dict(by),
+        }
+        self._relationships.append(backlink_spec)
+        return self
+
     def load(
         self,
         session: Any,
@@ -996,15 +1070,22 @@ class PipelineBuilder:
         """Extract fields that are used for relationship linking.
 
         Returns:
-            Dict mapping parent table name to set of field names used in link_to.
+            Dict mapping table name to set of field names that need to be indexed.
         """
         linkable: dict[str, set[str]] = {}
         for rel in self._relationships:
-            parent_table = rel["parent_table"]
-            # The 'by' dict maps child_field -> parent_field
-            # We need to index parent by the parent_field values
-            for parent_field in rel["by"].values():
-                linkable.setdefault(parent_table, set()).add(parent_field)
+            if rel.get("type") == "backlink":
+                # For backlinks: by={parent_field: child_field}
+                # We need to index child by the child_field values
+                child_table = rel["child_table"]
+                for child_field in rel["by"].values():
+                    linkable.setdefault(child_table, set()).add(child_field)
+            else:
+                # For link_to: by={child_field: parent_field}
+                # We need to index parent by the parent_field values
+                parent_table = rel["parent_table"]
+                for parent_field in rel["by"].values():
+                    linkable.setdefault(parent_table, set()).add(parent_field)
         return linkable
 
     def run(
@@ -1163,12 +1244,23 @@ class PipelineBuilder:
         # Handle relationship binding and staged flushing
         rel_specs: list[Any] = []
         child_lookup_values: dict[str, dict[tuple[Any, ...], dict[str, Any]]] = {}
+        backlink_lookup_values: dict[str, dict[tuple[Any, ...], dict[str, Any]]] = {}
+
+        # Separate link_to (many-to-one) from backlink (many-to-many) relationships
+        link_to_rels = [r for r in self._relationships if r.get("type") != "backlink"]
+        backlink_rels = [r for r in self._relationships if r.get("type") == "backlink"]
 
         if self._relationships:
-            from etielle.relationships import ManyToOneSpec, bind_relationships_via_index, compute_child_lookup_values
+            from etielle.relationships import (
+                ManyToOneSpec,
+                bind_relationships_via_index,
+                compute_child_lookup_values,
+                bind_backlinks,
+                compute_backlink_lookup_values,
+            )
 
-            # Build ManyToOneSpec objects from recorded relationships
-            for rel in self._relationships:
+            # Build ManyToOneSpec objects from link_to relationships (not backlinks)
+            for rel in link_to_rels:
                 # Find the child emission to get the transforms for parent key computation
                 child_emission = self._emissions[rel["emission_index"]]
 
@@ -1207,21 +1299,33 @@ class PipelineBuilder:
                     self._emissions = original_emissions
                     all_specs.extend(emission_specs)
 
-            # Compute child lookup values (TempField values) by re-traversing
             first_root = self._roots[0] if self._roots else {}
-            # This is needed for both session and non-session paths
-            # Pass context_slots with indices so lookup() transforms work
-            child_lookup_values = compute_child_lookup_values(
-                first_root, all_specs, self._relationships, self._emissions,
-                context_slots={"__indices__": self._indices},
-            )
+
+            # Compute child lookup values for link_to relationships
+            if link_to_rels:
+                child_lookup_values = compute_child_lookup_values(
+                    first_root, all_specs, link_to_rels, self._emissions,
+                    context_slots={"__indices__": self._indices},
+                )
+
+            # Compute backlink lookup values for parent tables
+            if backlink_rels:
+                backlink_lookup_values = compute_backlink_lookup_values(
+                    first_root, all_specs, backlink_rels, self._emissions,
+                    context_slots={"__indices__": self._indices},
+                )
 
             # If no session, bind all relationships now (non-DB use case)
             # Use secondary indices for binding instead of join key computation
             if self._session is None:
-                bind_relationships_via_index(
-                    raw_results, self._relationships, child_lookup_values, fail_on_missing=False
-                )
+                if link_to_rels:
+                    bind_relationships_via_index(
+                        raw_results, link_to_rels, child_lookup_values, fail_on_missing=False
+                    )
+                if backlink_rels:
+                    bind_backlinks(
+                        raw_results, backlink_rels, backlink_lookup_values, fail_on_missing=False
+                    )
 
         # Convert to PipelineResult format
         tables: dict[str, dict[tuple[Any, ...], Any]] = {}
@@ -1263,6 +1367,13 @@ class PipelineBuilder:
 
             # Check if this is a Supabase client
             if self._is_supabase_client(self._session):
+                # Error if backlinks are used with Supabase (not supported)
+                if backlink_rels:
+                    raise ValueError(
+                        "backlink() is not supported with Supabase. "
+                        "backlink() relies on ORM-native many-to-many handling "
+                        "which is only available with SQLAlchemy/SQLModel."
+                    )
                 self._flush_to_supabase(
                     tables, flush_order, child_lookup_values, stats, on_event
                 )
@@ -1377,6 +1488,16 @@ class PipelineBuilder:
                                 failed=row_count,
                             )
                         raise
+
+                # After all tables are flushed, bind backlinks
+                # This sets list attributes on parent objects
+                if backlink_rels:
+                    from etielle.relationships import bind_backlinks
+                    bind_backlinks(
+                        raw_results, backlink_rels, backlink_lookup_values, fail_on_missing=False
+                    )
+                    # Final flush to persist backlink relationships
+                    self._session.flush()
 
         return PipelineResult(
             tables=tables,

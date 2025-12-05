@@ -44,7 +44,7 @@ parsing. `etielle` helps by:
 5.  [**Mapping Tables**](docs/mapping.qmd): Outputting data with `Field`
     and `TempField`.
 6.  [**Relationships**](docs/relationships.qmd): Linking tables together
-    with `link_to()`.
+    with `link_to()` (many-to-one) and `backlink()` (many-to-many).
 7.  [**Database Loading**](docs/database-loading.qmd): Persisting data
     with `load()` and `run()`.
 
@@ -366,7 +366,7 @@ print(f"Type: {type(user).__name__}, name: {user.name}")
 - **[Mapping Tables](docs/mapping.qmd)** - `Field`, `TempField`, merge
   policies
 - **[Relationships](docs/relationships.qmd)** - Link tables with
-  `link_to()`
+  `link_to()` and `backlink()`
 - **[Database Loading](docs/database-loading.qmd)** - Persist with
   `load().run()`
 

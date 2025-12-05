@@ -560,6 +560,311 @@ class TestLinkTo:
             builder.link_to(User, by={"user_id": "id"})
 
 
+class TestBacklink:
+    """Tests for backlink() many-to-many relationship configuration."""
+
+    def test_backlink_returns_self(self):
+        """backlink() returns the builder for chaining."""
+        from etielle.fluent import etl
+
+        class Question:
+            __tablename__ = "questions"
+
+        class Choice:
+            __tablename__ = "choices"
+
+        builder = etl({})
+        builder.goto("questions").each().map_to(
+            table="questions",
+            fields=[TempField("id", get("id")), TempField("choice_ids", get("choice_ids"))]
+        )
+        result = builder.backlink(Question, Choice, attr="choices", by={"choice_ids": "id"})
+        assert result is builder
+
+    def test_backlink_records_relationship(self):
+        """backlink() records the relationship spec with correct type."""
+        from etielle.fluent import etl
+
+        class Question:
+            __tablename__ = "questions"
+
+        class Choice:
+            __tablename__ = "choices"
+
+        builder = etl({})
+        builder.goto("questions").each().map_to(
+            table="questions",
+            fields=[TempField("id", get("id")), TempField("choice_ids", get("choice_ids"))]
+        )
+        builder.backlink(Question, Choice, attr="choices", by={"choice_ids": "id"})
+
+        assert len(builder._relationships) == 1
+        rel = builder._relationships[0]
+        assert rel["type"] == "backlink"
+        assert rel["parent_class"] is Question
+        assert rel["child_class"] is Choice
+        assert rel["attr"] == "choices"
+        assert rel["by"] == {"choice_ids": "id"}
+
+    def test_backlink_with_table_names(self):
+        """backlink() works with string table names."""
+        from etielle.fluent import etl
+
+        builder = etl({})
+        builder.goto("questions").each().map_to(
+            table="questions",
+            fields=[TempField("id", get("id")), TempField("choice_ids", get("choice_ids"))]
+        )
+        builder.backlink("questions", "choices", attr="choices", by={"choice_ids": "id"})
+
+        rel = builder._relationships[0]
+        assert rel["parent_table"] == "questions"
+        assert rel["child_table"] == "choices"
+        assert rel["parent_class"] is None
+        assert rel["child_class"] is None
+
+    def test_backlink_sets_list_attribute(self):
+        """backlink() populates list attribute on parent with matching children."""
+        from dataclasses import dataclass as dc, field
+        from etielle.fluent import etl
+
+        @dc
+        class Question:
+            __tablename__ = "questions"
+            text: str
+            choices: list = field(default_factory=list)
+            id: int = 0
+            choice_ids: list = field(default_factory=list)
+
+        @dc
+        class Choice:
+            __tablename__ = "choices"
+            text: str
+            id: int = 0
+
+        data = {
+            "questions": [
+                {"id": 1, "text": "What is 2+2?", "choice_ids": [10, 11]},
+                {"id": 2, "text": "Capital of France?", "choice_ids": [12]},
+            ],
+            "choices": [
+                {"id": 10, "text": "3"},
+                {"id": 11, "text": "4"},
+                {"id": 12, "text": "Paris"},
+            ],
+        }
+
+        result = (
+            etl(data)
+            .goto("questions").each()
+            .map_to(table=Question, fields=[
+                Field("text", get("text")),
+                TempField("id", get("id")),
+                TempField("choice_ids", get("choice_ids")),
+            ])
+            .goto_root()
+            .goto("choices").each()
+            .map_to(table=Choice, fields=[
+                Field("text", get("text")),
+                TempField("id", get("id")),
+            ])
+            .backlink(
+                parent=Question,
+                child=Choice,
+                attr="choices",
+                by={"choice_ids": "id"},
+            )
+            .run()
+        )
+
+        questions = list(result.tables[Question].values())
+        assert len(questions) == 2
+
+        # Question 1 should have choices 10 and 11
+        q1 = next(q for q in questions if q.text == "What is 2+2?")
+        assert len(q1.choices) == 2
+        choice_texts = {c.text for c in q1.choices}
+        assert choice_texts == {"3", "4"}
+
+        # Question 2 should have choice 12
+        q2 = next(q for q in questions if q.text == "Capital of France?")
+        assert len(q2.choices) == 1
+        assert q2.choices[0].text == "Paris"
+
+    def test_backlink_handles_missing_children(self):
+        """backlink() gracefully handles missing children (no error by default)."""
+        from dataclasses import dataclass as dc, field
+        from etielle.fluent import etl
+
+        @dc
+        class Question:
+            __tablename__ = "questions"
+            text: str
+            choices: list = field(default_factory=list)
+            id: int = 0
+            choice_ids: list = field(default_factory=list)
+
+        @dc
+        class Choice:
+            __tablename__ = "choices"
+            text: str
+            id: int = 0
+
+        data = {
+            "questions": [
+                {"id": 1, "text": "Q1", "choice_ids": [10, 999]},  # 999 doesn't exist
+            ],
+            "choices": [
+                {"id": 10, "text": "Exists"},
+            ],
+        }
+
+        result = (
+            etl(data)
+            .goto("questions").each()
+            .map_to(table=Question, fields=[
+                Field("text", get("text")),
+                TempField("id", get("id")),
+                TempField("choice_ids", get("choice_ids")),
+            ])
+            .goto_root()
+            .goto("choices").each()
+            .map_to(table=Choice, fields=[
+                Field("text", get("text")),
+                TempField("id", get("id")),
+            ])
+            .backlink(
+                parent=Question,
+                child=Choice,
+                attr="choices",
+                by={"choice_ids": "id"},
+            )
+            .run()
+        )
+
+        questions = list(result.tables[Question].values())
+        q1 = questions[0]
+        # Should only have the one existing choice
+        assert len(q1.choices) == 1
+        assert q1.choices[0].text == "Exists"
+
+    def test_backlink_combined_with_link_to(self):
+        """backlink() can be used alongside link_to()."""
+        from dataclasses import dataclass as dc, field
+        from etielle.fluent import etl
+
+        @dc
+        class User:
+            __tablename__ = "users"
+            name: str
+            id: int = 0
+
+        @dc
+        class Question:
+            __tablename__ = "questions"
+            text: str
+            user: User | None = None
+            choices: list = field(default_factory=list)
+            id: int = 0
+            user_id: int = 0
+            choice_ids: list = field(default_factory=list)
+
+        @dc
+        class Choice:
+            __tablename__ = "choices"
+            text: str
+            id: int = 0
+
+        data = {
+            "users": [{"id": 1, "name": "Alice"}],
+            "questions": [
+                {"id": 1, "text": "Q1", "user_id": 1, "choice_ids": [10]},
+            ],
+            "choices": [{"id": 10, "text": "Option A"}],
+        }
+
+        result = (
+            etl(data)
+            .goto("users").each()
+            .map_to(table=User, fields=[
+                Field("name", get("name")),
+                TempField("id", get("id")),
+            ])
+            .goto_root()
+            .goto("questions").each()
+            .map_to(table=Question, fields=[
+                Field("text", get("text")),
+                TempField("id", get("id")),
+                TempField("user_id", get("user_id")),
+                TempField("choice_ids", get("choice_ids")),
+            ])
+            .link_to(User, by={"user_id": "id"})  # many-to-one
+            .goto_root()
+            .goto("choices").each()
+            .map_to(table=Choice, fields=[
+                Field("text", get("text")),
+                TempField("id", get("id")),
+            ])
+            .backlink(
+                parent=Question,
+                child=Choice,
+                attr="choices",
+                by={"choice_ids": "id"},
+            )  # many-to-many
+            .run()
+        )
+
+        questions = list(result.tables[Question].values())
+        q1 = questions[0]
+
+        # Check link_to worked
+        assert q1.user is not None
+        assert q1.user.name == "Alice"
+
+        # Check backlink worked
+        assert len(q1.choices) == 1
+        assert q1.choices[0].text == "Option A"
+
+    def test_backlink_with_supabase_raises_error(self):
+        """backlink() raises ValueError when used with Supabase client."""
+        from unittest.mock import MagicMock
+        from etielle.fluent import etl
+
+        # Create a mock Supabase client
+        mock_client = MagicMock()
+        mock_client.__class__.__module__ = "supabase"
+
+        data = {
+            "questions": [{"id": 1, "text": "Q1", "choice_ids": [10]}],
+            "choices": [{"id": 10, "text": "Option A"}],
+        }
+
+        with pytest.raises(ValueError, match="backlink.*not supported.*Supabase"):
+            (
+                etl(data)
+                .goto("questions").each()
+                .map_to(table="questions", fields=[
+                    Field("text", get("text")),
+                    TempField("id", get("id")),
+                    TempField("choice_ids", get("choice_ids")),
+                ])
+                .goto_root()
+                .goto("choices").each()
+                .map_to(table="choices", fields=[
+                    Field("text", get("text")),
+                    TempField("id", get("id")),
+                ])
+                .backlink(
+                    parent="questions",
+                    child="choices",
+                    attr="choices",
+                    by={"choice_ids": "id"},
+                )
+                .load(mock_client)
+                .run()
+            )
+
+
 class TestLoad:
     """Tests for load() session configuration."""
 
