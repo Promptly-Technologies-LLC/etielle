@@ -285,6 +285,179 @@ def compute_child_lookup_values(
     return out
 
 
+def compute_backlink_lookup_values(
+    root: Any,
+    traversals: Sequence[TraversalSpec],
+    backlinks: Sequence[dict[str, Any]],
+    emissions: Sequence[dict[str, Any]],
+    context_slots: Dict[str, Any] | None = None,
+) -> Dict[str, Dict[KeyTuple, Dict[str, Any]]]:
+    """
+    Compute TempField/Field values for parent tables used in backlink binding.
+
+    Returns dict: {table_name: {row_key: {field_name: value}}}
+
+    For backlinks, we need to compute the parent's list field (e.g., choice_ids)
+    so we can look up children by their IDs.
+    """
+    from .instances import InstanceEmit
+    from .core import TableEmit
+
+    # Map table -> {field_name: transform} for fields we need to compute
+    field_transforms: Dict[str, Dict[str, Any]] = {}
+
+    # Build map from emissions for quick lookup
+    emission_by_table: Dict[str, dict[str, Any]] = {}
+    for emission in emissions:
+        emission_by_table[emission["table"]] = emission
+
+    for backlink in backlinks:
+        if backlink.get("type") != "backlink":
+            continue
+
+        parent_table = backlink["parent_table"]
+        by_mapping = backlink["by"]  # {parent_field: child_field}
+
+        # Get transforms for parent fields (the list of child IDs)
+        parent_emission = emission_by_table.get(parent_table)
+        if parent_emission:
+            for parent_field in by_mapping.keys():
+                for f in parent_emission["fields"]:
+                    if f.name == parent_field:
+                        field_transforms.setdefault(parent_table, {})[parent_field] = f.transform
+                        break
+
+    # Auto-generated key counters (must match executor)
+    auto_key_counters: Dict[str, int] = {}
+
+    out: Dict[str, Dict[KeyTuple, Dict[str, Any]]] = {}
+
+    for trav in traversals:
+        for ctx in _iter_traversal_nodes(root, trav, context_slots):
+            for emit in trav.emits:
+                # Handle both InstanceEmit and TableEmit
+                if not isinstance(emit, (InstanceEmit, TableEmit)):
+                    continue
+
+                # Check if this table has backlink fields to compute
+                transforms = field_transforms.get(emit.table)
+                if not transforms:
+                    continue
+
+                # Compute row's key (must match executor logic)
+                if emit.join_keys:
+                    key_parts = [tr(ctx) for tr in emit.join_keys]
+                    if any(part is None or part == "" for part in key_parts):
+                        continue
+                    row_key: KeyTuple = tuple(key_parts)
+                else:
+                    counter = auto_key_counters.get(emit.table, 0)
+                    row_key = (f"__auto_{counter}__",)
+                    auto_key_counters[emit.table] = counter + 1
+
+                # Compute field values
+                field_values: Dict[str, Any] = {}
+                for field_name, transform in transforms.items():
+                    field_values[field_name] = transform(ctx)
+
+                out.setdefault(emit.table, {})[row_key] = field_values
+
+    return out
+
+
+def bind_backlinks(
+    raw_results: Mapping[str, MappingResult[Any]],
+    backlinks: Sequence[dict[str, Any]],
+    parent_lookup_values: Dict[str, Dict[KeyTuple, Dict[str, Any]]],
+    *,
+    fail_on_missing: bool = False,
+) -> list[str]:
+    """
+    Bind many-to-many relationships by setting list attributes on parent objects.
+
+    This handles the "backlink" relationship type where a parent has a list of
+    child objects. The parent stores a list of child IDs (e.g., choice_ids),
+    and this function populates the parent's list attribute with matching children.
+
+    Args:
+        raw_results: Dict mapping table name to MappingResult (with indices)
+        backlinks: List of backlink specs with type="backlink"
+                  Each has: parent_table, child_table, attr, by
+        parent_lookup_values: Pre-computed TempField values for parents
+                             {parent_table: {parent_key: {field_name: value}}}
+        fail_on_missing: If True, raise error on missing children; if False, return errors
+
+    Returns:
+        List of error messages (empty if all succeeded)
+    """
+    all_errors: list[str] = []
+
+    for backlink in backlinks:
+        if backlink.get("type") != "backlink":
+            continue
+
+        parent_table = backlink["parent_table"]
+        child_table = backlink["child_table"]
+        attr = backlink["attr"]
+        by_mapping = backlink["by"]  # {parent_field: child_field}
+
+        # Get parent and child results
+        parent_result = raw_results.get(parent_table)
+        child_result = raw_results.get(child_table)
+
+        if parent_result is None or child_result is None:
+            continue
+
+        # Get lookup values for parent table
+        lookup_values = parent_lookup_values.get(parent_table, {})
+
+        # For each parent, look up children and set list attribute
+        for parent_key, parent_obj in parent_result.instances.items():
+            parent_values = lookup_values.get(parent_key, {})
+
+            # Collect all matching children
+            children_list: list[Any] = []
+
+            for parent_field, child_field in by_mapping.items():
+                # Get the list of child IDs from parent
+                child_id_list = parent_values.get(parent_field)
+                if child_id_list is None:
+                    continue
+
+                # Ensure it's a list
+                if not isinstance(child_id_list, (list, tuple)):
+                    child_id_list = [child_id_list]
+
+                # Look up each child in the child's secondary index
+                child_index = child_result.indices.get(child_field, {})
+
+                for child_id in child_id_list:
+                    child_obj = child_index.get(child_id)
+                    if child_obj is not None:
+                        children_list.append(child_obj)
+                    elif fail_on_missing:
+                        all_errors.append(
+                            f"Child not found for {child_field}={child_id} "
+                            f"(parent {parent_table} key={parent_key})"
+                        )
+
+            # Set the list attribute on parent
+            try:
+                setattr(parent_obj, attr, children_list)
+            except Exception as e:  # pragma: no cover - defensive
+                all_errors.append(
+                    f"Failed to set attribute '{attr}' on parent "
+                    f"table={parent_table} key={parent_key}: {e}"
+                )
+
+    if all_errors and fail_on_missing:
+        raise RuntimeError(
+            "backlink binding failed:\n" + "\n".join(all_errors)
+        )
+
+    return all_errors
+
+
 def bind_relationships_via_index(
     raw_results: Mapping[str, MappingResult[Any]],
     relationships: Sequence[dict[str, Any]],
