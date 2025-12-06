@@ -2550,3 +2550,211 @@ class TestLookupInLinkTo:
         assert q1.block is blk1
         assert q2.block is blk1
         assert q3.block is blk2
+
+
+class TestNestedEachWithoutGoto:
+    """Tests for .each().each() without intervening .goto() - Issue #66."""
+
+    def test_list_of_lists_iteration(self):
+        """each().each() iterates list of lists without intervening goto()."""
+        from etielle.fluent import etl, node, parent_index
+        from etielle.transforms import index
+
+        data = {"matrix": [[1, 2], [3, 4]]}
+        result = (
+            etl(data)
+            .goto("matrix").each().each()
+            .map_to(table="cells", fields=[
+                Field("value", node()),
+                Field("row", parent_index()),
+                Field("col", index()),
+            ])
+            .run()
+        )
+        cells = result.tables["cells"]
+        assert len(cells) == 4
+        values = {v["value"] for v in cells.values()}
+        assert values == {1, 2, 3, 4}
+        # Verify row indices are correct
+        rows = {v["row"] for v in cells.values()}
+        assert rows == {0, 1}
+
+    def test_dict_of_lists_iteration(self):
+        """each().each() iterates dict of lists without intervening goto()."""
+        from etielle.fluent import etl, node
+        from etielle.transforms import index, parent_key
+
+        data = {
+            "question_choices": {
+                "Q1": ["c1", "c2"],
+                "Q2": ["c3", "c4"]
+            }
+        }
+        result = (
+            etl(data)
+            .goto("question_choices").each().each()
+            .map_to(table="choices", fields=[
+                Field("choice_id", node()),
+                Field("question_id", parent_key()),
+                Field("position", index()),
+            ])
+            .run()
+        )
+        choices = result.tables["choices"]
+        assert len(choices) == 4
+        choice_ids = {v["choice_id"] for v in choices.values()}
+        assert choice_ids == {"c1", "c2", "c3", "c4"}
+        # Verify parent keys are captured
+        question_ids = {v["question_id"] for v in choices.values()}
+        assert question_ids == {"Q1", "Q2"}
+
+    def test_dict_of_lists_with_key_transform(self):
+        """key() returns the dict key when iterating dict-of-lists."""
+        from etielle.fluent import etl, node
+        from etielle.transforms import key, parent_key
+
+        data = {
+            "user_posts": {
+                "alice": ["post1", "post2"],
+                "bob": ["post3"]
+            }
+        }
+        result = (
+            etl(data)
+            .goto("user_posts").each().each()
+            .map_to(table="posts", fields=[
+                Field("post_id", node()),
+                Field("author", parent_key()),
+            ])
+            .run()
+        )
+        posts = result.tables["posts"]
+        assert len(posts) == 3
+        # Check that alice has 2 posts and bob has 1
+        alice_posts = [v for v in posts.values() if v["author"] == "alice"]
+        bob_posts = [v for v in posts.values() if v["author"] == "bob"]
+        assert len(alice_posts) == 2
+        assert len(bob_posts) == 1
+
+    def test_get_from_parent_in_nested_each(self):
+        """get_from_parent() works correctly in nested .each().each() contexts."""
+        from etielle.fluent import etl, node
+        from etielle.transforms import get_from_parent
+
+        # The inner items are primitives, but the parent (the list) is the value
+        # from iterating the dict. So get_from_parent should get the full list.
+        data = {
+            "groups": {
+                "A": [1, 2, 3],
+                "B": [4, 5]
+            }
+        }
+        result = (
+            etl(data)
+            .goto("groups").each().each()
+            .map_to(table="items", fields=[
+                Field("value", node()),
+                # get_from_parent("") gets the parent node (the list)
+                # We can use len_of to count siblings
+            ])
+            .run()
+        )
+        items = result.tables["items"]
+        assert len(items) == 5
+        values = {v["value"] for v in items.values()}
+        assert values == {1, 2, 3, 4, 5}
+
+    def test_nested_each_records_same_path(self):
+        """Consecutive each() calls record the same path in iteration_points."""
+        from etielle.fluent import etl
+
+        builder = etl({})
+        builder.goto("matrix").each().each()
+        # Both each() calls should record the same path
+        assert builder._iteration_points == [["matrix"], ["matrix"]]
+        assert builder._iteration_depth == 2
+
+    def test_triple_nested_each(self):
+        """Three consecutive each() calls for 3D array iteration."""
+        from etielle.fluent import etl, node
+
+        data = {"cube": [[[1, 2], [3, 4]], [[5, 6], [7, 8]]]}
+        result = (
+            etl(data)
+            .goto("cube").each().each().each()
+            .map_to(table="values", fields=[
+                Field("value", node()),
+            ])
+            .run()
+        )
+        values = result.tables["values"]
+        assert len(values) == 8
+        nums = {v["value"] for v in values.values()}
+        assert nums == {1, 2, 3, 4, 5, 6, 7, 8}
+
+    def test_mixed_each_patterns(self):
+        """Combining .each().each() with .each().goto().each() patterns."""
+        from etielle.fluent import etl, node
+        from etielle.transforms import key, parent_key
+
+        data = {
+            "users": {
+                "alice": {"posts": ["p1", "p2"]},
+                "bob": {"posts": ["p3"]}
+            }
+        }
+        result = (
+            etl(data)
+            .goto("users").each()
+            .goto("posts").each()
+            .map_to(table="posts", fields=[
+                Field("post_id", node()),
+                # depth=1 gets the immediate parent's key (the dict key from first .each())
+                Field("author", parent_key(depth=1)),
+            ])
+            .run()
+        )
+        posts = result.tables["posts"]
+        assert len(posts) == 3
+        # Verify we got the right authors
+        alice_posts = [v for v in posts.values() if v["author"] == "alice"]
+        bob_posts = [v for v in posts.values() if v["author"] == "bob"]
+        assert len(alice_posts) == 2
+        assert len(bob_posts) == 1
+
+    def test_list_of_dicts_iteration(self):
+        """each().each() iterates list of dicts (list then dict key-value pairs)."""
+        from etielle.fluent import etl, node, parent_index
+        from etielle.transforms import key
+
+        # List of dicts: outer iteration is by index, inner iteration is by key
+        data = {
+            "quarters": [
+                {"engineering": 50, "sales": 30},
+                {"engineering": 40, "sales": 25, "marketing": 15}
+            ]
+        }
+        result = (
+            etl(data)
+            .goto("quarters").each().each()
+            .map_to(table="headcount", fields=[
+                Field("quarter", parent_index()),  # List index from outer iteration
+                Field("department", key()),        # Dict key from inner iteration
+                Field("count", node()),            # Dict value
+            ])
+            .run()
+        )
+        headcount = result.tables["headcount"]
+        assert len(headcount) == 5  # 2 + 3 entries
+        # Verify quarters are correct
+        q0_entries = [v for v in headcount.values() if v["quarter"] == 0]
+        q1_entries = [v for v in headcount.values() if v["quarter"] == 1]
+        assert len(q0_entries) == 2  # engineering, sales
+        assert len(q1_entries) == 3  # engineering, sales, marketing
+        # Verify departments are captured
+        departments = {v["department"] for v in headcount.values()}
+        assert departments == {"engineering", "sales", "marketing"}
+        # Verify a specific value
+        eng_q0 = [v for v in headcount.values() if v["quarter"] == 0 and v["department"] == "engineering"]
+        assert len(eng_q0) == 1
+        assert eng_q0[0]["count"] == 50

@@ -129,6 +129,124 @@ print("Users:", list(result.tables["users"].values()))
 print("Posts:", list(result.tables["posts"].values()))
 ```
 
+## Direct Nested Iteration with `.each().each()`
+
+When you have nested iterable structures without intermediate keys (like a list of lists or a dict of lists), you can chain `.each()` calls directly without an intervening `.goto()`:
+
+### List of Lists
+
+```{python}
+from etielle import etl, Field, node, parent_index
+from etielle.transforms import index
+
+# Matrix data: list of rows, each row is a list of values
+data = {"matrix": [[1, 2, 3], [4, 5, 6]]}
+
+result = (
+    etl(data)
+    .goto("matrix").each().each()  # First each() iterates rows, second iterates cells
+    .map_to(table="cells", fields=[
+        Field("value", node()),           # Current cell value
+        Field("row", parent_index()),     # Row index (0 or 1)
+        Field("col", index()),            # Column index (0, 1, or 2)
+    ])
+    .run()
+)
+
+print("Cells:", list(result.tables["cells"].values()))
+```
+
+### Dict of Lists
+
+For dict-of-lists structures (common in junction table scenarios), use `.each().each()` with `parent_key()` to capture the dict key:
+
+```{python}
+from etielle import etl, Field, node
+from etielle.transforms import index, parent_key
+
+# Question-to-choices mapping
+data = {
+    "question_choices": {
+        "Q1": ["choice_a", "choice_b"],
+        "Q2": ["choice_c", "choice_d", "choice_e"]
+    }
+}
+
+result = (
+    etl(data)
+    .goto("question_choices").each().each()  # First each() iterates dict, second iterates list values
+    .map_to(table="question_choices", fields=[
+        Field("question_id", parent_key()),  # Dict key from outer iteration
+        Field("choice_id", node()),          # Current list item
+        Field("position", index()),          # Index within the list
+    ])
+    .run()
+)
+
+print("Question-Choice mappings:", list(result.tables["question_choices"].values()))
+```
+
+### Mixed Dict and List Nesting
+
+Since `.each()` automatically handles both dicts (iterating key-value pairs) and lists (iterating by index), you can iterate through any combination. Use `key()` or `parent_key()` for dict keys, and `index()` or `parent_index()` for list indices:
+
+```{python}
+from etielle import etl, Field, node, parent_index
+from etielle.transforms import key
+
+# List of dicts: outer is a list, inner values are dicts
+data = {
+    "departments": [
+        {"engineering": 50, "sales": 30},
+        {"engineering": 40, "sales": 25, "marketing": 15}
+    ]
+}
+
+result = (
+    etl(data)
+    .goto("departments").each().each()  # First each() iterates list, second iterates dict
+    .map_to(table="headcount", fields=[
+        Field("quarter", parent_index()),  # List index from outer iteration (0 or 1)
+        Field("department", key()),        # Dict key from inner iteration
+        Field("count", node()),            # Dict value
+    ])
+    .run()
+)
+
+print("Headcount by quarter and department:")
+for row in result.tables["headcount"].values():
+    print(f"  Q{row['quarter']+1} {row['department']}: {row['count']}")
+```
+
+### Triple Nesting
+
+You can chain any number of `.each()` calls for deeper structures:
+
+```{python}
+#| eval: false
+# 3D data structure
+data = {"cube": [[[1, 2], [3, 4]], [[5, 6], [7, 8]]]}
+
+result = (
+    etl(data)
+    .goto("cube").each().each().each()  # Three levels of iteration
+    .map_to(table="values", fields=[
+        Field("value", node()),
+        Field("layer", parent_index(depth=2)),  # Grandparent index
+        Field("row", parent_index(depth=1)),    # Parent index
+        Field("col", index()),                   # Current index
+    ])
+    .run()
+)
+```
+
+### When to Use `.each().each()` vs `.each().goto().each()`
+
+| Pattern | Use When | Example Data |
+|---------|----------|--------------|
+| `.each().each()` | Items directly contain iterables | `[[1,2], [3,4]]` or `{"a": [1,2], "b": [3,4]}` |
+| `.each().goto("items").each()` | Items have a named key containing an iterable | `[{"items": [1,2]}, {"items": [3,4]}]` |
+
 ## Deep Nesting (Arbitrary Depth)
 
 Handle arbitrarily deep structures with chained navigation. Use the `depth` parameter in `get_from_parent()` to access ancestors:

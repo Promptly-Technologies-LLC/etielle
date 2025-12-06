@@ -86,9 +86,29 @@ def _iter_traversal_nodes(
                     slots=slots,
                 )
 
+        # Helper for recursive nested iteration
+        def yield_nested(
+            parent_ctx: Context, container: Any, mode: str, depth: int
+        ) -> Iterable[Context]:
+            """Recursively iterate nested containers up to specified depth."""
+            if depth == 0:
+                # Base case: yield from this container
+                yield from yield_from_container(parent_ctx, container, mode)
+            else:
+                # Recursive case: iterate this level, then recurse into each item
+                for ctx in yield_from_container(parent_ctx, container, mode):
+                    # The node from this level becomes the container for the next level
+                    yield from yield_nested(ctx, ctx.node, "auto", depth - 1)
+
         # If no inner path, iterate outer container directly
+        # Check for nested_depth for consecutive .each() calls at same path
+        nested_depth = getattr(spec, 'nested_depth', 0)
         if not spec.inner_path:
-            yield from yield_from_container(base_ctx, outer, spec.mode)
+            if nested_depth > 0:
+                # Handle .each().each() without intervening .goto()
+                yield from yield_nested(base_ctx, outer, spec.mode, nested_depth)
+            else:
+                yield from yield_from_container(base_ctx, outer, spec.mode)
             continue
 
         # Iterate outer container first, then inner container under each outer node

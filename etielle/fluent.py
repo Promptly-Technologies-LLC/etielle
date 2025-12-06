@@ -884,6 +884,7 @@ class PipelineBuilder:
             outer_mode: Literal["auto", "items", "single"] = "auto"
             inner_path: list[str] | None = None
             inner_mode: Literal["auto", "items", "single"] = "auto"
+            nested_depth: int = 0
 
             # Handle outer/inner path split based on iteration points
             if len(iteration_points) == 0:
@@ -909,6 +910,20 @@ class PipelineBuilder:
                 remaining_path = path[inner_start:]
                 inner_path = remaining_path if remaining_path else None
                 inner_mode = "auto"
+
+                # Detect consecutive .each() calls at the same path (e.g., .each().each())
+                # Count how many iteration points are identical to the first one
+                consecutive_same_path = 1
+                for i in range(1, len(iteration_points)):
+                    if iteration_points[i] == iteration_points[0]:
+                        consecutive_same_path += 1
+                    else:
+                        break
+
+                # If we have consecutive iterations at the same path without inner_path,
+                # we need nested iteration (nested_depth = additional levels beyond first)
+                if consecutive_same_path > 1 and inner_path is None:
+                    nested_depth = consecutive_same_path - 1
 
             # Choose emit type based on whether we have a model class or merge policies
             table_class = emission["table_class"]
@@ -971,6 +986,7 @@ class PipelineBuilder:
                 mode=outer_mode,
                 inner_path=tuple(inner_path) if inner_path else None,
                 inner_mode=inner_mode,
+                nested_depth=nested_depth,
                 emits=(table_emit,)
             )
             specs.append(spec)

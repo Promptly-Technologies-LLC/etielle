@@ -182,6 +182,7 @@ class TraversalSpec:
     - mode: how to iterate the outer container: "auto" (default), "items" (dict key/value), or "single" (treat as one node)
     - inner_path: optional path inside each outer node to reach an inner container (e.g., ["elements"]). If provided, iterate that container instead of the outer node
     - inner_mode: how to iterate the inner container when inner_path is provided: "auto" (default), "items", or "single"
+    - nested_depth: number of additional nesting levels to iterate when inner_path is None (e.g., for .each().each() at same path). Default 0 means single-level iteration.
     - emits: table emitters to run for each yielded node
     """
 
@@ -190,6 +191,7 @@ class TraversalSpec:
     mode: Literal["auto", "items", "single"] = "auto"
     inner_path: Optional[Sequence[str]] = None
     inner_mode: Literal["auto", "items", "single"] = "auto"
+    nested_depth: int = 0
 
 
 @dataclass(frozen=True)

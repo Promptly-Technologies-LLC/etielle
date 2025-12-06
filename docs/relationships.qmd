@@ -233,34 +233,38 @@ For relationships with composite keys, include multiple entries in the `by` dict
 })
 ```
 
-## Junction Tables (Reverse Lookups)
+## Junction Tables and Dict-of-Lists
 
-Handle junction tables where the relationship is defined outside the child:
+Handle junction table patterns where the relationship is defined as a dict-of-lists. The `.each().each()` pattern allows direct nested iteration without an intervening `.goto()`:
 
 ``` {python}
-#| eval: false
-# Data: {"userPosts": {"u1": [101, 102], "u2": [103]}}
-# This maps user_id -> list of post_ids
+from etielle import etl, Field, TempField, get, node
+from etielle.transforms import parent_key, index
+
+# Data has a dict-of-lists mapping questions to their choice IDs
+data = {
+    "question_choices": {
+        "Q1": ["c1", "c2"],
+        "Q2": ["c3", "c4", "c5"]
+    }
+}
 
 result = (
     etl(data)
-    .goto("users").each()
-    .map_to(table=User, fields=[...])
-
-    .goto_root()
-    .goto("posts").each()
-    .map_to(table=Post, fields=[...])
-
-    .goto_root()
-    .goto("userPosts").each()    # key() = user_id
-    .each()                       # node() = post_id
-    .map_to(table=Post, join_on=["id"], fields=[
-        TempField("id", node()),
-        TempField("user_id", parent_key())
+    # Use .each().each() to iterate the dict-of-lists
+    .goto("question_choices").each().each()  # First each() iterates dict keys, second iterates list items
+    .map_to(table="junction", fields=[
+        Field("question_id", parent_key()),  # Dict key from outer iteration
+        Field("choice_id", node()),          # List item from inner iteration
+        Field("position", index()),          # Position in the list
     ])
-    .link_to(User, by={"user_id": "id"})
     .run()
 )
+
+# Each combination is extracted
+print("Question-Choice mappings:")
+for row in result.tables["junction"].values():
+    print(f"  {row['question_id']} -> {row['choice_id']} (position {row['position']})")
 ```
 
 ## `link_to()` Reference
