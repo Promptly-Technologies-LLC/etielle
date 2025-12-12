@@ -2,6 +2,19 @@
 
 <!-- version list -->
 
+## v3.5.2 (2025-12-12)
+
+### Bug Fixes
+
+- Add PyPi environment to release job for secret access
+  ([`bb51c8e`](https://github.com/Promptly-Technologies-LLC/etielle/commit/bb51c8e8ca009c3f6e4ddb457c996ba384a1a788))
+
+### Documentation
+
+- Add comprehensive M2M junction table documentation
+  ([`5c67746`](https://github.com/Promptly-Technologies-LLC/etielle/commit/5c677463eff6a1f09aa8c94921bba8ec048ee3af))
+
+
 ## v3.5.1 (2025-12-04)
 
 ### Bug Fixes
