@@ -6,7 +6,7 @@ on:
 
 jobs:
   publish-documentation:
-    if: ${{ !startsWith(github.event.head_commit.message, 'Render README.md') }}
+    if: ${{ !startsWith(github.event.head_commit.message, 'docs: Render README.md') }}
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -49,6 +49,6 @@ jobs:
       - name: Commit README
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "Render README.md"
+          commit_message: "docs: Render README.md from index.qmd"
           branch: ${{ github.ref_name }}
           file_pattern: "README.md"
