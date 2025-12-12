@@ -262,7 +262,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#multiple-relationships" id="toc-multiple-relationships" class="nav-link" data-scroll-target="#multiple-relationships">Multiple Relationships</a></li>
   <li><a href="#nested-data-relationships" id="toc-nested-data-relationships" class="nav-link" data-scroll-target="#nested-data-relationships">Nested Data Relationships</a></li>
   <li><a href="#composite-keys" id="toc-composite-keys" class="nav-link" data-scroll-target="#composite-keys">Composite Keys</a></li>
-  <li><a href="#junction-tables-reverse-lookups" id="toc-junction-tables-reverse-lookups" class="nav-link" data-scroll-target="#junction-tables-reverse-lookups">Junction Tables (Reverse Lookups)</a></li>
+  <li><a href="#many-to-many-junction-tables" id="toc-many-to-many-junction-tables" class="nav-link" data-scroll-target="#many-to-many-junction-tables">Many-to-Many Junction Tables</a>
+  <ul class="collapse">
+  <li><a href="#pattern-1-list-of-ids-on-parent" id="toc-pattern-1-list-of-ids-on-parent" class="nav-link" data-scroll-target="#pattern-1-list-of-ids-on-parent">Pattern 1: List of IDs on Parent</a></li>
+  <li><a href="#pattern-2-explicit-junction-array" id="toc-pattern-2-explicit-junction-array" class="nav-link" data-scroll-target="#pattern-2-explicit-junction-array">Pattern 2: Explicit Junction Array</a></li>
+  <li><a href="#pattern-3-wrapped-mapping-objects" id="toc-pattern-3-wrapped-mapping-objects" class="nav-link" data-scroll-target="#pattern-3-wrapped-mapping-objects">Pattern 3: Wrapped Mapping Objects</a></li>
+  <li><a href="#pattern-4-inverse-relationship" id="toc-pattern-4-inverse-relationship" class="nav-link" data-scroll-target="#pattern-4-inverse-relationship">Pattern 4: Inverse Relationship</a></li>
+  <li><a href="#using-lookups-for-id-resolution" id="toc-using-lookups-for-id-resolution" class="nav-link" data-scroll-target="#using-lookups-for-id-resolution">Using Lookups for ID Resolution</a></li>
+  <li><a href="#best-practices-for-junction-tables" id="toc-best-practices-for-junction-tables" class="nav-link" data-scroll-target="#best-practices-for-junction-tables">Best Practices for Junction Tables</a></li>
+  </ul></li>
   <li><a href="#link_to-reference" id="toc-link_to-reference" class="nav-link" data-scroll-target="#link_to-reference"><code>link_to()</code> Reference</a>
   <ul class="collapse">
   <li><a href="#the-fk-parameter-supabase" id="toc-the-fk-parameter-supabase" class="nav-link" data-scroll-target="#the-fk-parameter-supabase">The <code>fk</code> Parameter (Supabase)</a></li>
@@ -327,7 +335,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="one-to-many-users---posts" class="level3">
 <h3 class="anchored" data-anchor-id="one-to-many-users---posts">One-to-Many (Users -&gt; Posts)</h3>
 <p>The most common pattern: users have many posts.</p>
-<div id="929271a5" class="cell" data-execution_count="1">
+<div id="623951bd" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pydantic <span class="im">import</span> BaseModel</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get, get_from_parent</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -420,7 +428,7 @@ World by Alice</code></pre>
 <section id="multiple-relationships" class="level2">
 <h2 class="anchored" data-anchor-id="multiple-relationships">Multiple Relationships</h2>
 <p>A child table can link to multiple parent tables:</p>
-<div id="4f677cb2" class="cell" data-execution_count="2">
+<div id="f7e225e9" class="cell" data-execution_count="2">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pydantic <span class="im">import</span> BaseModel</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get, get_from_parent</span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -488,7 +496,7 @@ On: Hello</code></pre>
 <section id="nested-data-relationships" class="level2">
 <h2 class="anchored" data-anchor-id="nested-data-relationships">Nested Data Relationships</h2>
 <p>When data is nested, use <code>get_from_parent()</code> to extract the foreign key:</p>
-<div id="4ca44d31" class="cell" data-execution_count="3">
+<div id="49e479ae" class="cell" data-execution_count="3">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pydantic <span class="im">import</span> BaseModel</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get, get_from_parent</span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -547,33 +555,279 @@ Gadget - Order: o1</code></pre>
 <span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">"store_id"</span>: <span class="st">"store_id"</span></span>
 <span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>})</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
-<section id="junction-tables-reverse-lookups" class="level2">
-<h2 class="anchored" data-anchor-id="junction-tables-reverse-lookups">Junction Tables (Reverse Lookups)</h2>
-<p>Handle junction tables where the relationship is defined outside the child:</p>
-<div id="4d1d4d79" class="cell" data-execution_count="4">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Data: {"userPosts": {"u1": [101, 102], "u2": [103]}}</span></span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="co"># This maps user_id -&gt; list of post_ids</span></span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> (</span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    etl(data)</span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>    .goto(<span class="st">"users"</span>).each()</span>
-<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>    .map_to(table<span class="op">=</span>User, fields<span class="op">=</span>[...])</span>
-<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>    .goto_root()</span>
-<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>    .goto(<span class="st">"posts"</span>).each()</span>
-<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>    .map_to(table<span class="op">=</span>Post, fields<span class="op">=</span>[...])</span>
-<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>    .goto_root()</span>
-<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>    .goto(<span class="st">"userPosts"</span>).each()    <span class="co"># key() = user_id</span></span>
-<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>    .each()                       <span class="co"># node() = post_id</span></span>
-<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>    .map_to(table<span class="op">=</span>Post, join_on<span class="op">=</span>[<span class="st">"id"</span>], fields<span class="op">=</span>[</span>
-<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a>        TempField(<span class="st">"id"</span>, node()),</span>
-<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a>        TempField(<span class="st">"user_id"</span>, parent_key())</span>
-<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a>    ])</span>
-<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a>    .link_to(User, by<span class="op">=</span>{<span class="st">"user_id"</span>: <span class="st">"id"</span>})</span>
-<span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a>    .run()</span>
-<span id="cb10-22"><a href="#cb10-22" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<section id="many-to-many-junction-tables" class="level2">
+<h2 class="anchored" data-anchor-id="many-to-many-junction-tables">Many-to-Many Junction Tables</h2>
+<p>Many-to-many relationships require a <strong>junction table</strong> (also called link table or join table) to connect two entities. etielle supports creating junction table records through nested iteration.</p>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
 </div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Important</span>Explicit IDs Required
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Junction table patterns only work when entities have <strong>explicit IDs in the source data</strong>. They do not work with database-generated auto-increment IDs, because the junction records need to reference the parent IDs before database insertion.</p>
+<p>For DB-generated IDs, you’ll need to: 1. Insert parent entities first 2. Query back the generated IDs 3. Run a second pipeline to create junction records</p>
+</div>
+</div>
+<section id="pattern-1-list-of-ids-on-parent" class="level3">
+<h3 class="anchored" data-anchor-id="pattern-1-list-of-ids-on-parent">Pattern 1: List of IDs on Parent</h3>
+<p>The most common pattern: each parent has a list of related child IDs.</p>
+<div id="00d71765" class="cell" data-execution_count="4">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> dataclasses <span class="im">import</span> dataclass</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, get, get_from_parent, node</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Question:</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>    __tablename__ <span class="op">=</span> <span class="st">"questions"</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>    <span class="bu">id</span>: <span class="bu">str</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>    text: <span class="bu">str</span></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> QuestionChoice:</span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Junction table linking questions to choices."""</span></span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>    __tablename__ <span class="op">=</span> <span class="st">"question_choices"</span></span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>    question_id: <span class="bu">str</span></span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>    choice_id: <span class="bu">str</span></span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> {</span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a>    <span class="st">"questions"</span>: [</span>
+<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a>        {<span class="st">"id"</span>: <span class="st">"Q1"</span>, <span class="st">"text"</span>: <span class="st">"Question 1"</span>, <span class="st">"choice_ids"</span>: [<span class="st">"c1"</span>, <span class="st">"c2"</span>]},</span>
+<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a>        {<span class="st">"id"</span>: <span class="st">"Q2"</span>, <span class="st">"text"</span>: <span class="st">"Question 2"</span>, <span class="st">"choice_ids"</span>: [<span class="st">"c2"</span>, <span class="st">"c3"</span>]},</span>
+<span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a>    ]</span>
+<span id="cb10-22"><a href="#cb10-22" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb10-23"><a href="#cb10-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-24"><a href="#cb10-24" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> (</span>
+<span id="cb10-25"><a href="#cb10-25" aria-hidden="true" tabindex="-1"></a>    etl(data)</span>
+<span id="cb10-26"><a href="#cb10-26" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Extract questions (first traversal)</span></span>
+<span id="cb10-27"><a href="#cb10-27" aria-hidden="true" tabindex="-1"></a>    .goto(<span class="st">"questions"</span>).each()</span>
+<span id="cb10-28"><a href="#cb10-28" aria-hidden="true" tabindex="-1"></a>    .map_to(table<span class="op">=</span>Question, fields<span class="op">=</span>[</span>
+<span id="cb10-29"><a href="#cb10-29" aria-hidden="true" tabindex="-1"></a>        Field(<span class="st">"id"</span>, get(<span class="st">"id"</span>)),</span>
+<span id="cb10-30"><a href="#cb10-30" aria-hidden="true" tabindex="-1"></a>        Field(<span class="st">"text"</span>, get(<span class="st">"text"</span>)),</span>
+<span id="cb10-31"><a href="#cb10-31" aria-hidden="true" tabindex="-1"></a>    ])</span>
+<span id="cb10-32"><a href="#cb10-32" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Create junction records (separate traversal)</span></span>
+<span id="cb10-33"><a href="#cb10-33" aria-hidden="true" tabindex="-1"></a>    .goto_root()</span>
+<span id="cb10-34"><a href="#cb10-34" aria-hidden="true" tabindex="-1"></a>    .goto(<span class="st">"questions"</span>).each()</span>
+<span id="cb10-35"><a href="#cb10-35" aria-hidden="true" tabindex="-1"></a>    .goto(<span class="st">"choice_ids"</span>).each()</span>
+<span id="cb10-36"><a href="#cb10-36" aria-hidden="true" tabindex="-1"></a>    .map_to(table<span class="op">=</span>QuestionChoice, fields<span class="op">=</span>[</span>
+<span id="cb10-37"><a href="#cb10-37" aria-hidden="true" tabindex="-1"></a>        Field(<span class="st">"question_id"</span>, get_from_parent(<span class="st">"id"</span>)),</span>
+<span id="cb10-38"><a href="#cb10-38" aria-hidden="true" tabindex="-1"></a>        Field(<span class="st">"choice_id"</span>, node()),</span>
+<span id="cb10-39"><a href="#cb10-39" aria-hidden="true" tabindex="-1"></a>    ])</span>
+<span id="cb10-40"><a href="#cb10-40" aria-hidden="true" tabindex="-1"></a>    .run()</span>
+<span id="cb10-41"><a href="#cb10-41" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb10-42"><a href="#cb10-42" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-43"><a href="#cb10-43" aria-hidden="true" tabindex="-1"></a><span class="co"># Verify junction records</span></span>
+<span id="cb10-44"><a href="#cb10-44" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> key, junction <span class="kw">in</span> result.tables[QuestionChoice].items():</span>
+<span id="cb10-45"><a href="#cb10-45" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Question </span><span class="sc">{</span>junction<span class="sc">.</span>question_id<span class="sc">}</span><span class="ss"> -&gt; Choice </span><span class="sc">{</span>junction<span class="sc">.</span>choice_id<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Question Q1 -&gt; Choice c1
+Question Q1 -&gt; Choice c2
+Question Q2 -&gt; Choice c2
+Question Q2 -&gt; Choice c3</code></pre>
+</div>
+</div>
+</section>
+<section id="pattern-2-explicit-junction-array" class="level3">
+<h3 class="anchored" data-anchor-id="pattern-2-explicit-junction-array">Pattern 2: Explicit Junction Array</h3>
+<p>When junction records are provided as explicit objects:</p>
+<div id="c857906b" class="cell" data-execution_count="5">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> dataclasses <span class="im">import</span> dataclass</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, get</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> QuestionChoice:</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>    __tablename__ <span class="op">=</span> <span class="st">"question_choices"</span></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>    question_id: <span class="bu">str</span></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>    choice_id: <span class="bu">str</span></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> {</span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>    <span class="st">"question_choices"</span>: [</span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>        {<span class="st">"question_id"</span>: <span class="st">"Q1"</span>, <span class="st">"choice_id"</span>: <span class="st">"c1"</span>},</span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>        {<span class="st">"question_id"</span>: <span class="st">"Q1"</span>, <span class="st">"choice_id"</span>: <span class="st">"c2"</span>},</span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>        {<span class="st">"question_id"</span>: <span class="st">"Q2"</span>, <span class="st">"choice_id"</span>: <span class="st">"c2"</span>},</span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>    ]</span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> (</span>
+<span id="cb12-19"><a href="#cb12-19" aria-hidden="true" tabindex="-1"></a>    etl(data)</span>
+<span id="cb12-20"><a href="#cb12-20" aria-hidden="true" tabindex="-1"></a>    .goto(<span class="st">"question_choices"</span>).each()</span>
+<span id="cb12-21"><a href="#cb12-21" aria-hidden="true" tabindex="-1"></a>    .map_to(table<span class="op">=</span>QuestionChoice, fields<span class="op">=</span>[</span>
+<span id="cb12-22"><a href="#cb12-22" aria-hidden="true" tabindex="-1"></a>        Field(<span class="st">"question_id"</span>, get(<span class="st">"question_id"</span>)),</span>
+<span id="cb12-23"><a href="#cb12-23" aria-hidden="true" tabindex="-1"></a>        Field(<span class="st">"choice_id"</span>, get(<span class="st">"choice_id"</span>)),</span>
+<span id="cb12-24"><a href="#cb12-24" aria-hidden="true" tabindex="-1"></a>    ])</span>
+<span id="cb12-25"><a href="#cb12-25" aria-hidden="true" tabindex="-1"></a>    .run()</span>
+<span id="cb12-26"><a href="#cb12-26" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb12-27"><a href="#cb12-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-28"><a href="#cb12-28" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Created </span><span class="sc">{</span><span class="bu">len</span>(result.tables[QuestionChoice])<span class="sc">}</span><span class="ss"> junction records"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Created 3 junction records</code></pre>
+</div>
+</div>
+</section>
+<section id="pattern-3-wrapped-mapping-objects" class="level3">
+<h3 class="anchored" data-anchor-id="pattern-3-wrapped-mapping-objects">Pattern 3: Wrapped Mapping Objects</h3>
+<p>For dict-like mappings, wrap each entry in an object with an explicit field for the child IDs:</p>
+<div id="af95a73a" class="cell" data-execution_count="6">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> dataclasses <span class="im">import</span> dataclass</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, get, get_from_parent, node</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> QuestionChoice:</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>    __tablename__ <span class="op">=</span> <span class="st">"question_choices"</span></span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>    question_id: <span class="bu">str</span></span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>    choice_id: <span class="bu">str</span></span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Wrap dict-of-lists as list of objects</span></span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> {</span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>    <span class="st">"question_choices"</span>: [</span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>        {<span class="st">"question_id"</span>: <span class="st">"Q1"</span>, <span class="st">"choices"</span>: [<span class="st">"c1"</span>, <span class="st">"c2"</span>]},</span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>        {<span class="st">"question_id"</span>: <span class="st">"Q2"</span>, <span class="st">"choices"</span>: [<span class="st">"c2"</span>, <span class="st">"c3"</span>]},</span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>    ]</span>
+<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-18"><a href="#cb14-18" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> (</span>
+<span id="cb14-19"><a href="#cb14-19" aria-hidden="true" tabindex="-1"></a>    etl(data)</span>
+<span id="cb14-20"><a href="#cb14-20" aria-hidden="true" tabindex="-1"></a>    .goto(<span class="st">"question_choices"</span>).each()</span>
+<span id="cb14-21"><a href="#cb14-21" aria-hidden="true" tabindex="-1"></a>    .goto(<span class="st">"choices"</span>).each()</span>
+<span id="cb14-22"><a href="#cb14-22" aria-hidden="true" tabindex="-1"></a>    .map_to(table<span class="op">=</span>QuestionChoice, fields<span class="op">=</span>[</span>
+<span id="cb14-23"><a href="#cb14-23" aria-hidden="true" tabindex="-1"></a>        Field(<span class="st">"question_id"</span>, get_from_parent(<span class="st">"question_id"</span>)),</span>
+<span id="cb14-24"><a href="#cb14-24" aria-hidden="true" tabindex="-1"></a>        Field(<span class="st">"choice_id"</span>, node()),</span>
+<span id="cb14-25"><a href="#cb14-25" aria-hidden="true" tabindex="-1"></a>    ])</span>
+<span id="cb14-26"><a href="#cb14-26" aria-hidden="true" tabindex="-1"></a>    .run()</span>
+<span id="cb14-27"><a href="#cb14-27" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb14-28"><a href="#cb14-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-29"><a href="#cb14-29" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> key, junction <span class="kw">in</span> result.tables[QuestionChoice].items():</span>
+<span id="cb14-30"><a href="#cb14-30" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Question </span><span class="sc">{</span>junction<span class="sc">.</span>question_id<span class="sc">}</span><span class="ss"> -&gt; Choice </span><span class="sc">{</span>junction<span class="sc">.</span>choice_id<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Question Q1 -&gt; Choice c1
+Question Q1 -&gt; Choice c2
+Question Q2 -&gt; Choice c2
+Question Q2 -&gt; Choice c3</code></pre>
+</div>
+</div>
+</section>
+<section id="pattern-4-inverse-relationship" class="level3">
+<h3 class="anchored" data-anchor-id="pattern-4-inverse-relationship">Pattern 4: Inverse Relationship</h3>
+<p>When child entities have lists of parent IDs:</p>
+<div id="c55603f4" class="cell" data-execution_count="7">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> dataclasses <span class="im">import</span> dataclass</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, get, get_from_parent, node</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Choice:</span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>    __tablename__ <span class="op">=</span> <span class="st">"choices"</span></span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>    <span class="bu">id</span>: <span class="bu">str</span></span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>    text: <span class="bu">str</span></span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> QuestionChoice:</span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>    __tablename__ <span class="op">=</span> <span class="st">"question_choices"</span></span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a>    question_id: <span class="bu">str</span></span>
+<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a>    choice_id: <span class="bu">str</span></span>
+<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-16"><a href="#cb16-16" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> {</span>
+<span id="cb16-17"><a href="#cb16-17" aria-hidden="true" tabindex="-1"></a>    <span class="st">"choices"</span>: [</span>
+<span id="cb16-18"><a href="#cb16-18" aria-hidden="true" tabindex="-1"></a>        {<span class="st">"id"</span>: <span class="st">"c1"</span>, <span class="st">"text"</span>: <span class="st">"Choice 1"</span>, <span class="st">"question_ids"</span>: [<span class="st">"Q1"</span>]},</span>
+<span id="cb16-19"><a href="#cb16-19" aria-hidden="true" tabindex="-1"></a>        {<span class="st">"id"</span>: <span class="st">"c2"</span>, <span class="st">"text"</span>: <span class="st">"Choice 2"</span>, <span class="st">"question_ids"</span>: [<span class="st">"Q1"</span>, <span class="st">"Q2"</span>]},</span>
+<span id="cb16-20"><a href="#cb16-20" aria-hidden="true" tabindex="-1"></a>    ]</span>
+<span id="cb16-21"><a href="#cb16-21" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb16-22"><a href="#cb16-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-23"><a href="#cb16-23" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> (</span>
+<span id="cb16-24"><a href="#cb16-24" aria-hidden="true" tabindex="-1"></a>    etl(data)</span>
+<span id="cb16-25"><a href="#cb16-25" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Extract choices</span></span>
+<span id="cb16-26"><a href="#cb16-26" aria-hidden="true" tabindex="-1"></a>    .goto(<span class="st">"choices"</span>).each()</span>
+<span id="cb16-27"><a href="#cb16-27" aria-hidden="true" tabindex="-1"></a>    .map_to(table<span class="op">=</span>Choice, fields<span class="op">=</span>[</span>
+<span id="cb16-28"><a href="#cb16-28" aria-hidden="true" tabindex="-1"></a>        Field(<span class="st">"id"</span>, get(<span class="st">"id"</span>)),</span>
+<span id="cb16-29"><a href="#cb16-29" aria-hidden="true" tabindex="-1"></a>        Field(<span class="st">"text"</span>, get(<span class="st">"text"</span>)),</span>
+<span id="cb16-30"><a href="#cb16-30" aria-hidden="true" tabindex="-1"></a>    ])</span>
+<span id="cb16-31"><a href="#cb16-31" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Create junction records</span></span>
+<span id="cb16-32"><a href="#cb16-32" aria-hidden="true" tabindex="-1"></a>    .goto_root()</span>
+<span id="cb16-33"><a href="#cb16-33" aria-hidden="true" tabindex="-1"></a>    .goto(<span class="st">"choices"</span>).each()</span>
+<span id="cb16-34"><a href="#cb16-34" aria-hidden="true" tabindex="-1"></a>    .goto(<span class="st">"question_ids"</span>).each()</span>
+<span id="cb16-35"><a href="#cb16-35" aria-hidden="true" tabindex="-1"></a>    .map_to(table<span class="op">=</span>QuestionChoice, fields<span class="op">=</span>[</span>
+<span id="cb16-36"><a href="#cb16-36" aria-hidden="true" tabindex="-1"></a>        Field(<span class="st">"question_id"</span>, node()),</span>
+<span id="cb16-37"><a href="#cb16-37" aria-hidden="true" tabindex="-1"></a>        Field(<span class="st">"choice_id"</span>, get_from_parent(<span class="st">"id"</span>)),</span>
+<span id="cb16-38"><a href="#cb16-38" aria-hidden="true" tabindex="-1"></a>    ])</span>
+<span id="cb16-39"><a href="#cb16-39" aria-hidden="true" tabindex="-1"></a>    .run()</span>
+<span id="cb16-40"><a href="#cb16-40" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb16-41"><a href="#cb16-41" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-42"><a href="#cb16-42" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Choices: </span><span class="sc">{</span><span class="bu">len</span>(result.tables[Choice])<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb16-43"><a href="#cb16-43" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Junctions: </span><span class="sc">{</span><span class="bu">len</span>(result.tables[QuestionChoice])<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Choices: 2
+Junctions: 3</code></pre>
+</div>
+</div>
+</section>
+<section id="using-lookups-for-id-resolution" class="level3">
+<h3 class="anchored" data-anchor-id="using-lookups-for-id-resolution">Using Lookups for ID Resolution</h3>
+<p>When source data uses external identifiers (slugs, codes) that need to be resolved:</p>
+<div id="d5fa9df8" class="cell" data-execution_count="8">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> dataclasses <span class="im">import</span> dataclass</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, get, lookup</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Question:</span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>    __tablename__ <span class="op">=</span> <span class="st">"questions"</span></span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>    <span class="bu">id</span>: <span class="bu">str</span></span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>    text: <span class="bu">str</span></span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> QuestionChoice:</span>
+<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a>    __tablename__ <span class="op">=</span> <span class="st">"question_choices"</span></span>
+<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a>    question_id: <span class="bu">str</span></span>
+<span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a>    choice_id: <span class="bu">str</span></span>
+<span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-16"><a href="#cb18-16" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> {</span>
+<span id="cb18-17"><a href="#cb18-17" aria-hidden="true" tabindex="-1"></a>    <span class="st">"questions"</span>: [</span>
+<span id="cb18-18"><a href="#cb18-18" aria-hidden="true" tabindex="-1"></a>        {<span class="st">"slug"</span>: <span class="st">"q1"</span>, <span class="st">"text"</span>: <span class="st">"Question 1"</span>},</span>
+<span id="cb18-19"><a href="#cb18-19" aria-hidden="true" tabindex="-1"></a>        {<span class="st">"slug"</span>: <span class="st">"q2"</span>, <span class="st">"text"</span>: <span class="st">"Question 2"</span>},</span>
+<span id="cb18-20"><a href="#cb18-20" aria-hidden="true" tabindex="-1"></a>    ],</span>
+<span id="cb18-21"><a href="#cb18-21" aria-hidden="true" tabindex="-1"></a>    <span class="st">"mappings"</span>: [</span>
+<span id="cb18-22"><a href="#cb18-22" aria-hidden="true" tabindex="-1"></a>        {<span class="st">"question"</span>: <span class="st">"q1"</span>, <span class="st">"choice"</span>: <span class="st">"c1"</span>},</span>
+<span id="cb18-23"><a href="#cb18-23" aria-hidden="true" tabindex="-1"></a>        {<span class="st">"question"</span>: <span class="st">"q1"</span>, <span class="st">"choice"</span>: <span class="st">"c2"</span>},</span>
+<span id="cb18-24"><a href="#cb18-24" aria-hidden="true" tabindex="-1"></a>    ],</span>
+<span id="cb18-25"><a href="#cb18-25" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb18-26"><a href="#cb18-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-27"><a href="#cb18-27" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> (</span>
+<span id="cb18-28"><a href="#cb18-28" aria-hidden="true" tabindex="-1"></a>    etl(data)</span>
+<span id="cb18-29"><a href="#cb18-29" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Extract questions and build lookup index</span></span>
+<span id="cb18-30"><a href="#cb18-30" aria-hidden="true" tabindex="-1"></a>    .goto(<span class="st">"questions"</span>).each()</span>
+<span id="cb18-31"><a href="#cb18-31" aria-hidden="true" tabindex="-1"></a>    .map_to(table<span class="op">=</span>Question, fields<span class="op">=</span>[</span>
+<span id="cb18-32"><a href="#cb18-32" aria-hidden="true" tabindex="-1"></a>        Field(<span class="st">"id"</span>, get(<span class="st">"slug"</span>)),</span>
+<span id="cb18-33"><a href="#cb18-33" aria-hidden="true" tabindex="-1"></a>        Field(<span class="st">"text"</span>, get(<span class="st">"text"</span>)),</span>
+<span id="cb18-34"><a href="#cb18-34" aria-hidden="true" tabindex="-1"></a>    ])</span>
+<span id="cb18-35"><a href="#cb18-35" aria-hidden="true" tabindex="-1"></a>    .build_index(<span class="st">"question_by_slug"</span>, key<span class="op">=</span>get(<span class="st">"slug"</span>), value<span class="op">=</span>get(<span class="st">"slug"</span>))</span>
+<span id="cb18-36"><a href="#cb18-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-37"><a href="#cb18-37" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Create junctions using lookup</span></span>
+<span id="cb18-38"><a href="#cb18-38" aria-hidden="true" tabindex="-1"></a>    .goto_root()</span>
+<span id="cb18-39"><a href="#cb18-39" aria-hidden="true" tabindex="-1"></a>    .goto(<span class="st">"mappings"</span>).each()</span>
+<span id="cb18-40"><a href="#cb18-40" aria-hidden="true" tabindex="-1"></a>    .map_to(table<span class="op">=</span>QuestionChoice, fields<span class="op">=</span>[</span>
+<span id="cb18-41"><a href="#cb18-41" aria-hidden="true" tabindex="-1"></a>        Field(<span class="st">"question_id"</span>, lookup(<span class="st">"question_by_slug"</span>, get(<span class="st">"question"</span>))),</span>
+<span id="cb18-42"><a href="#cb18-42" aria-hidden="true" tabindex="-1"></a>        Field(<span class="st">"choice_id"</span>, get(<span class="st">"choice"</span>)),</span>
+<span id="cb18-43"><a href="#cb18-43" aria-hidden="true" tabindex="-1"></a>    ])</span>
+<span id="cb18-44"><a href="#cb18-44" aria-hidden="true" tabindex="-1"></a>    .run()</span>
+<span id="cb18-45"><a href="#cb18-45" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb18-46"><a href="#cb18-46" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-47"><a href="#cb18-47" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> key, junction <span class="kw">in</span> result.tables[QuestionChoice].items():</span>
+<span id="cb18-48"><a href="#cb18-48" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Question </span><span class="sc">{</span>junction<span class="sc">.</span>question_id<span class="sc">}</span><span class="ss"> -&gt; Choice </span><span class="sc">{</span>junction<span class="sc">.</span>choice_id<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Question q1 -&gt; Choice c1
+Question q1 -&gt; Choice c2</code></pre>
+</div>
+</div>
+</section>
+<section id="best-practices-for-junction-tables" class="level3">
+<h3 class="anchored" data-anchor-id="best-practices-for-junction-tables">Best Practices for Junction Tables</h3>
+<ol type="1">
+<li><p><strong>Use separate traversals</strong>: Extract parent entities first, then create junction records in a separate traversal starting with <code>.goto_root()</code>.</p></li>
+<li><p><strong>Use <code>Field</code> for junction columns</strong>: Junction table columns (<code>question_id</code>, <code>choice_id</code>) should be <code>Field</code>, not <code>TempField</code>, since they’re the actual data being stored.</p></li>
+<li><p><strong>Explicit IDs only</strong>: Junction patterns require IDs to be present in the source data. Database-generated IDs require a two-pass approach.</p></li>
+<li><p><strong>Nesting requires <code>.goto()</code> between <code>.each()</code> calls</strong>: You cannot use <code>.each().each()</code> directly—there must be a <code>.goto("field")</code> between iterations. For example, <code>.each().goto("choices").each()</code> works, but <code>.each().each()</code> on a dict-of-lists does not.</p></li>
+</ol>
+</section>
 </section>
 <section id="link_to-reference" class="level2">
 <h2 class="anchored" data-anchor-id="link_to-reference"><code>link_to()</code> Reference</h2>
@@ -611,7 +865,7 @@ Gadget - Order: o1</code></pre>
 <section id="the-fk-parameter-supabase" class="level3">
 <h3 class="anchored" data-anchor-id="the-fk-parameter-supabase">The <code>fk</code> Parameter (Supabase)</h3>
 <p>When using Supabase with DB-generated primary keys (UUID, auto-increment), use <code>fk</code> to populate child foreign keys after parent insertion:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>.link_to(<span class="st">"users"</span>, by<span class="op">=</span>{<span class="st">"_parent_key"</span>: <span class="st">"_key"</span>}, fk<span class="op">=</span>{<span class="st">"user_id"</span>: <span class="st">"id"</span>})</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>.link_to(<span class="st">"users"</span>, by<span class="op">=</span>{<span class="st">"_parent_key"</span>: <span class="st">"_key"</span>}, fk<span class="op">=</span>{<span class="st">"user_id"</span>: <span class="st">"id"</span>})</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>This tells etielle: “After inserting users, set each child’s <code>user_id</code> column to the parent’s generated <code>id</code>.”</p>
 <p>See <a href="../docs/database-loading.html#db-generated-ids-two-phase-insert">Database Loading</a> for a complete example.</p>
 </section>
@@ -637,34 +891,34 @@ Gadget - Order: o1</code></pre>
 <section id="use-tempfield-for-foreign-keys" class="level3">
 <h3 class="anchored" data-anchor-id="use-tempfield-for-foreign-keys">Use TempField for Foreign Keys</h3>
 <p>Foreign key values should be in <code>TempField</code>, not <code>Field</code>, unless you also need them in output:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Good: Foreign key is TempField (not in output, just for linking)</span></span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>TempField(<span class="st">"user_id"</span>, get_from_parent(<span class="st">"id"</span>))</span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="co"># If you need user_id in output: use Field (it's also available for linking)</span></span>
-<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>Field(<span class="st">"user_id"</span>, get_from_parent(<span class="st">"id"</span>))</span>
-<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Note: Don't use both Field and TempField with the same name</span></span>
-<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a><span class="co"># The TempField will shadow the Field and prevent it from being persisted</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Good: Foreign key is TempField (not in output, just for linking)</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>TempField(<span class="st">"user_id"</span>, get_from_parent(<span class="st">"id"</span>))</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a><span class="co"># If you need user_id in output: use Field (it's also available for linking)</span></span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>Field(<span class="st">"user_id"</span>, get_from_parent(<span class="st">"id"</span>))</span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Note: Don't use both Field and TempField with the same name</span></span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a><span class="co"># The TempField will shadow the Field and prevent it from being persisted</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
 <section id="order-matters" class="level3">
 <h3 class="anchored" data-anchor-id="order-matters">Order Matters</h3>
 <p>Emit parent tables before child tables that link to them:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Good: Users emitted before posts</span></span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>.map_to(table<span class="op">=</span>User, fields<span class="op">=</span>[...])</span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>.goto(<span class="st">"posts"</span>).each()</span>
-<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>.map_to(table<span class="op">=</span>Post, fields<span class="op">=</span>[...])</span>
-<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>.link_to(User, by<span class="op">=</span>{<span class="st">"user_id"</span>: <span class="st">"id"</span>})</span>
-<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Also works: Order within same run() is handled correctly</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Good: Users emitted before posts</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>.map_to(table<span class="op">=</span>User, fields<span class="op">=</span>[...])</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>.goto(<span class="st">"posts"</span>).each()</span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>.map_to(table<span class="op">=</span>Post, fields<span class="op">=</span>[...])</span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>.link_to(User, by<span class="op">=</span>{<span class="st">"user_id"</span>: <span class="st">"id"</span>})</span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Also works: Order within same run() is handled correctly</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
 <section id="match-key-types" class="level3">
 <h3 class="anchored" data-anchor-id="match-key-types">Match Key Types</h3>
 <p>Ensure child and parent key values are the same type:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># If parent key is string "u1"</span></span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>TempField(<span class="st">"id"</span>, get(<span class="st">"id"</span>))  <span class="co"># Returns "u1"</span></span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Child key must also be string</span></span>
-<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>TempField(<span class="st">"user_id"</span>, get(<span class="st">"user_id"</span>))  <span class="co"># Must return "u1", not 1</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="co"># If parent key is string "u1"</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>TempField(<span class="st">"id"</span>, get(<span class="st">"id"</span>))  <span class="co"># Returns "u1"</span></span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Child key must also be string</span></span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>TempField(<span class="st">"user_id"</span>, get(<span class="st">"user_id"</span>))  <span class="co"># Must return "u1", not 1</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
 </section>
 <section id="see-also" class="level2">
