@@ -311,7 +311,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="path-navigation-with-goto" class="level2">
 <h2 class="anchored" data-anchor-id="path-navigation-with-goto">Path Navigation with <code>goto()</code></h2>
 <p>The <code>goto()</code> method navigates to nested locations in your JSON:</p>
-<div id="3a3fbec9" class="cell" data-execution_count="1">
+<div id="4b03065d" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Simple path: data["users"]</span></span>
@@ -368,7 +368,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li><strong>For lists</strong>: iterates by index (0, 1, 2, …)</li>
 <li><strong>For dicts</strong>: iterates key-value pairs</li>
 </ul>
-<div id="4331cebd" class="cell" data-execution_count="2">
+<div id="da426829" class="cell" data-execution_count="2">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get, key</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -414,7 +414,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="nested-iteration" class="level2">
 <h2 class="anchored" data-anchor-id="nested-iteration">Nested Iteration</h2>
 <p>For parent-child relationships (users -&gt; posts, orders -&gt; items), chain <code>goto()</code> and <code>each()</code>:</p>
-<div id="d6d4fd04" class="cell" data-execution_count="3">
+<div id="f6e137aa" class="cell" data-execution_count="3">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get, get_from_parent</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -465,7 +465,7 @@ Posts: [{'id': 'p1', 'user_id': 'u1', 'title': 'Hello'}, {'id': 'p2', 'user_id':
 <li><code>get_from_parent("id", depth=2)</code> -&gt; grandparent</li>
 <li><code>get_from_parent("id", depth=3)</code> -&gt; great-grandparent</li>
 </ul>
-<div id="13680354" class="cell" data-execution_count="4">
+<div id="2d22377c" class="cell" data-execution_count="4">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># servers -&gt; channels -&gt; messages -&gt; reactions (3 levels deep)</span></span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> (</span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    etl(data)</span>
@@ -507,7 +507,7 @@ Posts: [{'id': 'p1', 'user_id': 'u1', 'title': 'Hello'}, {'id': 'p2', 'user_id':
 <section id="multiple-json-roots-with-goto_root" class="level2">
 <h2 class="anchored" data-anchor-id="multiple-json-roots-with-goto_root">Multiple JSON Roots with <code>goto_root()</code></h2>
 <p>When processing multiple JSON objects, use <code>goto_root(index)</code> to switch between them:</p>
-<div id="d2e59d6b" class="cell" data-execution_count="5">
+<div id="e3508a4f" class="cell" data-execution_count="5">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>users_json <span class="op">=</span> {<span class="st">"users"</span>: [{<span class="st">"id"</span>: <span class="st">"u1"</span>, <span class="st">"name"</span>: <span class="st">"Alice"</span>}]}</span>
@@ -554,7 +554,7 @@ Posts: [{'id': 'p1', 'user_id': 'u1', 'title': 'Hello'}, {'id': 'p2', 'user_id':
 <section id="resetting-navigation-with-goto_root" class="level2">
 <h2 class="anchored" data-anchor-id="resetting-navigation-with-goto_root">Resetting Navigation with <code>goto_root()</code></h2>
 <p>Use <code>goto_root()</code> (without arguments) to return to the root of the current JSON and start a new navigation path:</p>
-<div id="2b9d097a" class="cell" data-execution_count="6">
+<div id="11d1819e" class="cell" data-execution_count="6">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> {</span>
@@ -594,7 +594,7 @@ Products: [{'id': 'prod1', 'name': 'Widget'}]</code></pre>
 <section id="row-merging-with-join_on" class="level2">
 <h2 class="anchored" data-anchor-id="row-merging-with-join_on">Row Merging with <code>join_on</code></h2>
 <p>When multiple <code>map_to()</code> calls emit to the same table, rows with matching keys are merged:</p>
-<div id="8c02801d" class="cell" data-execution_count="7">
+<div id="61817966" class="cell" data-execution_count="7">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get</span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> {</span>
