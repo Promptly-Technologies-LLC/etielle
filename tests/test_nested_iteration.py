@@ -570,3 +570,35 @@ class TestNestedIterationIntegration:
         junction_pairs = {(j.question_id, j.choice_id) for j in junctions.values()}
         expected_pairs = {("Q1", "c1"), ("Q1", "c2")}
         assert junction_pairs == expected_pairs
+
+    def test_trailing_goto_after_each_navigates_without_iterating(self):
+        """`.each().goto(...).map_to(...)` should map against the navigated node.
+
+        This is navigation without iteration: for each element yielded by `.each()`,
+        `.goto("child")` should select the child node as the mapping context.
+        """
+        data = {
+            "items": [
+                {"id": 1, "child": {"x": 10}},
+                {"id": 2, "child": {"x": 20}},
+            ]
+        }
+
+        result = (
+            etl(data)
+            .goto("items")
+            .each()
+            .goto("child")
+            .map_to(
+                table="children",
+                fields=[
+                    Field("id", get_from_parent("id")),
+                    Field("x", get("x")),
+                ],
+            )
+            .run()
+        )
+
+        rows = list(result.tables["children"].values())
+        assert len(rows) == 2
+        assert {(r["id"], r["x"]) for r in rows} == {(1, 10), (2, 20)}

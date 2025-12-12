@@ -995,10 +995,10 @@ class PipelineBuilder:
                 # (This handles cases like .goto("a").each().goto("b").map_to())
                 if len(path) > prev_path_len:
                     remaining = path[prev_path_len:]
-                    # The remaining path is navigation, not iteration
-                    # We handle this by extending the last level's path conceptually
-                    # but actually this scenario requires special handling
-                    # For now, we'll ignore trailing navigation (rare case)
+                    # The remaining path is navigation, not iteration. Model this as a
+                    # final non-iterating level so map_to() runs against the navigated
+                    # node (e.g. `.each().goto("child").map_to(...)`).
+                    levels.append(IterationLevel(path=tuple(remaining), mode="single"))
 
             # Choose emit type based on whether we have a model class or merge policies
             table_class = emission["table_class"]
