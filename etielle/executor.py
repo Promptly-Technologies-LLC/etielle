@@ -1,6 +1,6 @@
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, Generator
 from difflib import get_close_matches
-from .core import MappingSpec, Context, TraversalSpec, TableEmit, MappingResult
+from .core import MappingSpec, Context, TraversalSpec, TableEmit, MappingResult, IterationLevel
 from .transforms import _iter_nodes, _resolve_path
 from collections.abc import Mapping, Sequence, Iterable
 from .instances import InstanceEmit, resolve_field_name_for_builder
@@ -10,95 +10,160 @@ from .instances import InstanceEmit, resolve_field_name_for_builder
 # -----------------------------
 
 
+def _yield_from_container(
+    root: Any,
+    parent_ctx: Context,
+    container: Any,
+    mode: str,
+    slots: Dict[str, Any],
+) -> Generator[Context, None, None]:
+    """Yield contexts for each item in a container based on iteration mode.
+
+    Args:
+        root: The root data structure
+        parent_ctx: The parent context
+        container: The container to iterate
+        mode: Iteration mode - "auto", "items", or "single"
+        slots: Context slots to pass to child contexts
+    """
+    # Determine iteration behavior from mode
+    if mode == "items":
+        if isinstance(container, Mapping):
+            for k, v in container.items():
+                yield Context(
+                    root=root,
+                    node=v,
+                    path=parent_ctx.path + (str(k),),
+                    parent=parent_ctx,
+                    key=str(k),
+                    index=None,
+                    slots=slots,
+                )
+        return
+    if mode == "single":
+        yield Context(
+            root=root,
+            node=container,
+            path=parent_ctx.path,
+            parent=parent_ctx,
+            key=None,
+            index=None,
+            slots=slots,
+        )
+        return
+    # auto mode
+    if isinstance(container, Mapping):
+        for k, v in container.items():
+            yield Context(
+                root=root,
+                node=v,
+                path=parent_ctx.path + (str(k),),
+                parent=parent_ctx,
+                key=str(k),
+                index=None,
+                slots=slots,
+            )
+        return
+    if isinstance(container, Sequence) and not isinstance(
+        container, (str, bytes)
+    ):
+        for i, v in enumerate(container):
+            yield Context(
+                root=root,
+                node=v,
+                path=parent_ctx.path + (i,),
+                parent=parent_ctx,
+                key=None,
+                index=i,
+                slots=slots,
+            )
+        return
+    # Non-iterable in auto mode: treat as single
+    # BUT: None means "no data" - don't iterate at all
+    if container is not None:
+        yield Context(
+            root=root,
+            node=container,
+            path=parent_ctx.path,
+            parent=parent_ctx,
+            key=None,
+            index=None,
+            slots=slots,
+        )
+
+
+def _iter_levels_recursive(
+    root: Any,
+    parent_ctx: Context,
+    levels: Sequence[IterationLevel],
+    level_index: int,
+    slots: Dict[str, Any],
+) -> Generator[Context, None, None]:
+    """Recursively iterate through N levels of nested iteration.
+
+    Args:
+        root: The root data structure
+        parent_ctx: The context from the previous level
+        levels: All iteration levels
+        level_index: Current level index (0-based)
+        slots: Context slots
+    """
+    if level_index >= len(levels):
+        # No more levels - yield the current context
+        yield parent_ctx
+        return
+
+    level = levels[level_index]
+
+    # Navigate to the container for this level
+    if len(level.path) == 0:
+        # Empty path means iterate the current node directly
+        # This handles .each().each() on dict-of-lists and list-of-lists
+        container = parent_ctx.node
+    else:
+        container = _resolve_path(parent_ctx.node, level.path)
+
+    # Iterate this level
+    for ctx in _yield_from_container(root, parent_ctx, container, level.mode, slots):
+        # Recursively process remaining levels
+        yield from _iter_levels_recursive(root, ctx, levels, level_index + 1, slots)
+
+
 def _iter_traversal_nodes(
     root: Any,
     spec: TraversalSpec,
     context_slots: Dict[str, Any] | None = None,
 ) -> Iterable[Context]:
+    """Iterate through all nodes specified by a TraversalSpec.
+
+    Supports N-level nested iteration through the levels system.
+    """
     slots = context_slots or {}
-    for base_ctx, outer in _iter_nodes(root, spec.path):
+    levels = spec.get_levels()
 
-        def yield_from_container(
-            parent_ctx: Context, container: Any, mode: str
-        ) -> Iterable[Context]:
-            # Determine iteration behavior from mode
-            if mode == "items":
-                if isinstance(container, Mapping):
-                    for k, v in container.items():
-                        yield Context(
-                            root=root,
-                            node=v,
-                            path=parent_ctx.path + (str(k),),
-                            parent=parent_ctx,
-                            key=str(k),
-                            index=None,
-                            slots=slots,
-                        )
-                return
-            if mode == "single":
-                yield Context(
-                    root=root,
-                    node=container,
-                    path=parent_ctx.path,
-                    parent=parent_ctx,
-                    key=None,
-                    index=None,
-                    slots=slots,
-                )
-                return
-            # auto mode
-            if isinstance(container, Mapping):
-                for k, v in container.items():
-                    yield Context(
-                        root=root,
-                        node=v,
-                        path=parent_ctx.path + (str(k),),
-                        parent=parent_ctx,
-                        key=str(k),
-                        index=None,
-                        slots=slots,
-                    )
-                return
-            if isinstance(container, Sequence) and not isinstance(
-                container, (str, bytes)
-            ):
-                for i, v in enumerate(container):
-                    yield Context(
-                        root=root,
-                        node=v,
-                        path=parent_ctx.path + (i,),
-                        parent=parent_ctx,
-                        key=None,
-                        index=i,
-                        slots=slots,
-                    )
-                return
-            # Non-iterable in auto mode: treat as single
-            # BUT: None means "no data" - don't iterate at all
-            if container is not None:
-                yield Context(
-                    root=root,
-                    node=container,
-                    path=parent_ctx.path,
-                    parent=parent_ctx,
-                    key=None,
-                    index=None,
-                    slots=slots,
-                )
+    if not levels:
+        # No iteration - just yield the root context
+        yield Context(
+            root=root,
+            node=root,
+            path=(),
+            parent=None,
+            key=None,
+            index=None,
+            slots=slots,
+        )
+        return
 
-        # If no inner path, iterate outer container directly
-        if not spec.inner_path:
-            yield from yield_from_container(base_ctx, outer, spec.mode)
-            continue
-
-        # Iterate outer container first, then inner container under each outer node
-        for outer_ctx in yield_from_container(base_ctx, outer, spec.mode):
-            inner_container = _resolve_path(outer_ctx.node, spec.inner_path)
-            inner_mode = spec.inner_mode
-            for inner_ctx in yield_from_container(
-                outer_ctx, inner_container, inner_mode
-            ):
-                yield inner_ctx
+    # Get the first level's path to navigate to the initial container
+    first_level = levels[0]
+    for base_ctx, outer in _iter_nodes(root, first_level.path):
+        # Iterate first level
+        for ctx in _yield_from_container(root, base_ctx, outer, first_level.mode, slots):
+            # Process remaining levels recursively
+            if len(levels) > 1:
+                yield from _iter_levels_recursive(root, ctx, levels, 1, slots)
+            else:
+                yield ctx
 
 
 def run_mapping(

@@ -1,6 +1,7 @@
 from .core import (
     Context,
     Field as CoreField,  # Renamed to avoid conflict with fluent.Field
+    IterationLevel,
     MappingResult,
     MappingSpec,
     TableEmit,
@@ -74,6 +75,7 @@ __all__ = [
     # core
     "Context",
     "CoreField",  # Legacy core Field
+    "IterationLevel",
     "MappingResult",
     "MappingSpec",
     "TableEmit",

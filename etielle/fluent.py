@@ -413,14 +413,22 @@ class PipelineBuilder:
         For lists: iterates by index.
         For dicts: iterates key-value pairs.
 
-        Can be chained for nested iteration.
+        Can be chained for nested iteration:
+        - `.each().each()` on dict-of-lists: first iterates dict keys,
+          second iterates list values. Use `parent_key()` to get the dict key.
+        - `.each().each()` on list-of-lists: first iterates outer list,
+          second iterates inner lists. Use `parent_index()` to get outer index.
+        - `.each().goto("field").each()`: iterates outer container, then
+          navigates to a nested field before iterating.
 
         Returns:
             Self for method chaining.
 
         Example:
-            .goto("users").each()           # Iterate list
-            .goto("userPosts").each().each() # Dict of lists
+            .goto("users").each()                    # Iterate list
+            .goto("mapping").each().each()           # Dict of lists
+            .goto("grid").each().each()              # 2D array
+            .goto("items").each().goto("tags").each() # Nested objects
         """
         self._iteration_depth += 1
         # Record where this iteration occurs
@@ -910,7 +918,7 @@ class PipelineBuilder:
 
     def _build_traversal_specs(self) -> list[TraversalSpec]:
         """Convert accumulated emissions to TraversalSpec objects."""
-        from etielle.core import TraversalSpec, TableEmit, Field as CoreField
+        from etielle.core import TraversalSpec, TableEmit, Field as CoreField, IterationLevel
 
         specs = []
 
@@ -954,35 +962,43 @@ class PipelineBuilder:
                     elif f.merge is not None:
                         merge_policies[f.name] = f.merge
 
-            outer_path: list[str] = path
-            outer_mode: Literal["auto", "items", "single"] = "auto"
-            inner_path: list[str] | None = None
-            inner_mode: Literal["auto", "items", "single"] = "auto"
+            # Build iteration levels for N-level nested iteration
+            levels: list[IterationLevel] = []
 
-            # Handle outer/inner path split based on iteration points
             if len(iteration_points) == 0:
-                # No iteration
-                outer_path = path
-                outer_mode = "single"
-                inner_path = None
-                inner_mode = "auto"
-            elif len(iteration_points) == 1:
-                # Single iteration
-                outer_path = iteration_points[0]
-                outer_mode = "auto"
-                # Inner path is what comes after the iteration point
-                inner_start = len(iteration_points[0])
-                inner_path = path[inner_start:] if inner_start < len(path) else None
-                inner_mode = "auto"
+                # No iteration - single mode traversal
+                levels = [IterationLevel(path=tuple(path), mode="single")]
             else:
-                # Nested iteration - outer at first point, inner continues
-                outer_path = iteration_points[0]
-                outer_mode = "auto"
-                # Inner path starts after first iteration point
-                inner_start = len(iteration_points[0])
-                remaining_path = path[inner_start:]
-                inner_path = remaining_path if remaining_path else None
-                inner_mode = "auto"
+                # Build levels from iteration points
+                # Each iteration point becomes a level, with path being the
+                # difference from the previous iteration point
+                prev_path_len = 0
+                for i, iter_point in enumerate(iteration_points):
+                    if i == 0:
+                        # First level: path is the full path to first iteration point
+                        level_path = tuple(iter_point)
+                    else:
+                        # Subsequent levels: path is what changed since last iteration
+                        prev_point = iteration_points[i - 1]
+                        if iter_point == prev_point:
+                            # Consecutive .each().each() at same path - empty path
+                            # for direct value iteration
+                            level_path = ()
+                        else:
+                            # Path is the difference (new segments since last point)
+                            level_path = tuple(iter_point[len(prev_point):])
+                    levels.append(IterationLevel(path=level_path, mode="auto"))
+                    prev_path_len = len(iter_point)
+
+                # If there's remaining path after the last iteration point,
+                # we need to navigate to that path but not iterate
+                # (This handles cases like .goto("a").each().goto("b").map_to())
+                if len(path) > prev_path_len:
+                    remaining = path[prev_path_len:]
+                    # The remaining path is navigation, not iteration. Model this as a
+                    # final non-iterating level so map_to() runs against the navigated
+                    # node (e.g. `.each().goto("child").map_to(...)`).
+                    levels.append(IterationLevel(path=tuple(remaining), mode="single"))
 
             # Choose emit type based on whether we have a model class or merge policies
             table_class = emission["table_class"]
@@ -1040,11 +1056,17 @@ class PipelineBuilder:
                     fields=tuple(non_temp_fields)
                 )
 
+            # Create spec using the new levels-based architecture
+            # Still populate legacy fields for backward compatibility
+            first_level = levels[0] if levels else IterationLevel(path=(), mode="single")
             spec = TraversalSpec(
-                path=tuple(outer_path),
-                mode=outer_mode,
-                inner_path=tuple(inner_path) if inner_path else None,
-                inner_mode=inner_mode,
+                path=first_level.path,
+                mode=first_level.mode,
+                # Legacy inner_path/inner_mode for backward compatibility
+                inner_path=levels[1].path if len(levels) > 1 else None,
+                inner_mode=levels[1].mode if len(levels) > 1 else "auto",
+                # New levels field for N-level support
+                levels=tuple(levels) if len(levels) > 2 else None,
                 emits=(table_emit,)
             )
             specs.append(spec)

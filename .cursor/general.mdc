@@ -1,0 +1,4 @@
+---
+alwaysApply: true
+---
+Always use `uv add` or `uv remove` to manage dependencies, and always run Python code using `uv run`.

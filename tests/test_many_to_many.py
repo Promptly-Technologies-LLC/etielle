@@ -203,12 +203,11 @@ class TestListOfIdsOnParent:
 class TestLinkDictPattern:
     """Test M2M junction table creation from link dict.
 
-    NOTE: The dict-of-lists pattern `{"Q1": ["c1", "c2"]}` with double `.each().each()`
-    without an intervening `.goto()` is not fully supported in the current API.
-    Instead, we test the supported pattern of wrapping each mapping in an object
-    with explicit `choices` list.
+    This tests the wrapped mapping pattern where each entry is an object
+    with an explicit `choices` list. For direct dict-of-lists iteration
+    with `.each().each()`, see tests/test_nested_iteration.py.
 
-    Data pattern (supported):
+    Data pattern:
     {
         "question_choices": [
             {"question_id": "Q1", "choices": ["c1", "c2"]},

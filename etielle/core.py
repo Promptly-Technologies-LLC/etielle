@@ -174,14 +174,36 @@ class TableEmit:
 
 
 @dataclass(frozen=True)
+class IterationLevel:
+    """
+    Represents a single level of iteration in a traversal.
+
+    - path: path segments to navigate before iterating (can be empty for
+      consecutive .each() calls on the same container)
+    - mode: how to iterate: "auto" (detect list/dict), "items", or "single"
+    """
+
+    path: Sequence[str]
+    mode: Literal["auto", "items", "single"] = "auto"
+
+
+@dataclass(frozen=True)
 class TraversalSpec:
     """
     How to reach and iterate a collection of nodes under root.
+
+    Supports N-level nested iteration through the `levels` parameter:
+    - Each level represents one .each() call
+    - Levels can have paths (for .goto().each()) or empty paths (for .each().each())
+
+    Legacy parameters (path, mode, inner_path, inner_mode) are still supported
+    for backward compatibility and are converted to levels internally.
 
     - path: list of keys from root to the outer container (e.g., ["blocks"])
     - mode: how to iterate the outer container: "auto" (default), "items" (dict key/value), or "single" (treat as one node)
     - inner_path: optional path inside each outer node to reach an inner container (e.g., ["elements"]). If provided, iterate that container instead of the outer node
     - inner_mode: how to iterate the inner container when inner_path is provided: "auto" (default), "items", or "single"
+    - levels: list of IterationLevel for N-level nested iteration (overrides path/inner_path if provided)
     - emits: table emitters to run for each yielded node
     """
 
@@ -190,6 +212,18 @@ class TraversalSpec:
     mode: Literal["auto", "items", "single"] = "auto"
     inner_path: Optional[Sequence[str]] = None
     inner_mode: Literal["auto", "items", "single"] = "auto"
+    levels: Optional[Sequence[IterationLevel]] = None
+
+    def get_levels(self) -> Sequence[IterationLevel]:
+        """Get iteration levels, converting from legacy format if needed."""
+        if self.levels is not None:
+            return self.levels
+
+        # Convert legacy format to levels
+        result = [IterationLevel(path=self.path, mode=self.mode)]
+        if self.inner_path is not None:
+            result.append(IterationLevel(path=self.inner_path, mode=self.inner_mode))
+        return result
 
 
 @dataclass(frozen=True)

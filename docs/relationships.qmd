@@ -477,6 +477,131 @@ for key, junction in result.tables[QuestionChoice].items():
     print(f"Question {junction.question_id} -> Choice {junction.choice_id}")
 ```
 
+### Pattern 5: Direct Dict-of-Lists Iteration
+
+For dict-of-lists structures like `{"Q1": ["c1", "c2"], "Q2": ["c2", "c3"]}`, use `.each().each()` directly without `.goto()`:
+
+``` {python}
+from dataclasses import dataclass
+from etielle import etl, Field, node
+from etielle.transforms import parent_key
+
+@dataclass
+class QuestionChoice:
+    __tablename__ = "question_choices"
+    question_id: str
+    choice_id: str
+
+data = {
+    "question_choices": {
+        "Q1": ["c1", "c2"],
+        "Q2": ["c2", "c3"],
+    }
+}
+
+result = (
+    etl(data)
+    .goto("question_choices")
+    .each()  # Iterate dict keys: "Q1", "Q2"
+    .each()  # Iterate list values: "c1", "c2", "c2", "c3"
+    .map_to(table=QuestionChoice, fields=[
+        Field("question_id", parent_key()),  # Get dict key from parent context
+        Field("choice_id", node()),          # Get current list item
+    ])
+    .run()
+)
+
+for key, junction in result.tables[QuestionChoice].items():
+    print(f"Question {junction.question_id} -> Choice {junction.choice_id}")
+```
+
+### Pattern 6: List-of-Lists (2D Arrays)
+
+For 2D arrays, use `.each().each()` with `parent_index()` to track position:
+
+``` {python}
+from dataclasses import dataclass
+from etielle import etl, Field, node, parent_index
+from etielle.transforms import index
+
+@dataclass
+class Cell:
+    __tablename__ = "cells"
+    row: int
+    col: int
+    value: int
+
+data = {
+    "rows": [
+        [1, 2, 3],
+        [4, 5, 6],
+    ]
+}
+
+result = (
+    etl(data)
+    .goto("rows")
+    .each()  # Iterate outer list (rows)
+    .each()  # Iterate inner list (columns)
+    .map_to(table=Cell, fields=[
+        Field("row", parent_index()),  # Outer list index
+        Field("col", index()),          # Inner list index
+        Field("value", node()),         # Current value
+    ])
+    .run()
+)
+
+for key, cell in result.tables[Cell].items():
+    print(f"Cell[{cell.row},{cell.col}] = {cell.value}")
+```
+
+### Pattern 7: N-Level Deep Nesting
+
+For arbitrarily deep nested structures, chain multiple `.each()` calls:
+
+``` {python}
+from dataclasses import dataclass
+from etielle import etl, Field, node
+from etielle.transforms import parent_key
+
+@dataclass
+class Value:
+    __tablename__ = "values"
+    level: str
+    group: str
+    value: int
+
+# Dict-of-dict-of-lists structure
+data = {
+    "levels": {
+        "L1": {
+            "A": [1, 2],
+            "B": [3],
+        },
+        "L2": {
+            "C": [4, 5, 6],
+        },
+    }
+}
+
+result = (
+    etl(data)
+    .goto("levels")
+    .each()  # Iterate outer dict keys: "L1", "L2"
+    .each()  # Iterate inner dict keys: "A", "B", "C"
+    .each()  # Iterate list values: 1, 2, 3, 4, 5, 6
+    .map_to(table=Value, fields=[
+        Field("level", parent_key(depth=2)),  # Grandparent key
+        Field("group", parent_key(depth=1)),  # Parent key
+        Field("value", node()),                # Current value
+    ])
+    .run()
+)
+
+for key, val in result.tables[Value].items():
+    print(f"{val.level}/{val.group}: {val.value}")
+```
+
 ### Best Practices for Junction Tables
 
 1. **Use separate traversals**: Extract parent entities first, then create junction records in a separate traversal starting with `.goto_root()`.
@@ -485,7 +610,9 @@ for key, junction in result.tables[QuestionChoice].items():
 
 3. **Explicit IDs only**: Junction patterns require IDs to be present in the source data. Database-generated IDs require a two-pass approach.
 
-4. **Nesting requires `.goto()` between `.each()` calls**: You cannot use `.each().each()` directly—there must be a `.goto("field")` between iterations. For example, `.each().goto("choices").each()` works, but `.each().each()` on a dict-of-lists does not.
+4. **Direct `.each().each()` for dict-of-lists and list-of-lists**: Use `.each().each()` without `.goto()` between them when iterating dict values that are lists, or for 2D arrays. Use `parent_key()` to access the dict key and `parent_index()` to access the outer list index.
+
+5. **Use `.goto()` between `.each()` for nested objects**: When iterating objects with nested arrays (e.g., `{"items": [{"choices": [...]}]}`), use `.each().goto("choices").each()` pattern.
 
 ## `link_to()` Reference
 
