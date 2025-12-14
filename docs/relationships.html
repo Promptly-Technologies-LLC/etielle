@@ -269,6 +269,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#pattern-3-wrapped-mapping-objects" id="toc-pattern-3-wrapped-mapping-objects" class="nav-link" data-scroll-target="#pattern-3-wrapped-mapping-objects">Pattern 3: Wrapped Mapping Objects</a></li>
   <li><a href="#pattern-4-inverse-relationship" id="toc-pattern-4-inverse-relationship" class="nav-link" data-scroll-target="#pattern-4-inverse-relationship">Pattern 4: Inverse Relationship</a></li>
   <li><a href="#using-lookups-for-id-resolution" id="toc-using-lookups-for-id-resolution" class="nav-link" data-scroll-target="#using-lookups-for-id-resolution">Using Lookups for ID Resolution</a></li>
+  <li><a href="#pattern-5-direct-dict-of-lists-iteration" id="toc-pattern-5-direct-dict-of-lists-iteration" class="nav-link" data-scroll-target="#pattern-5-direct-dict-of-lists-iteration">Pattern 5: Direct Dict-of-Lists Iteration</a></li>
+  <li><a href="#pattern-6-list-of-lists-2d-arrays" id="toc-pattern-6-list-of-lists-2d-arrays" class="nav-link" data-scroll-target="#pattern-6-list-of-lists-2d-arrays">Pattern 6: List-of-Lists (2D Arrays)</a></li>
+  <li><a href="#pattern-7-n-level-deep-nesting" id="toc-pattern-7-n-level-deep-nesting" class="nav-link" data-scroll-target="#pattern-7-n-level-deep-nesting">Pattern 7: N-Level Deep Nesting</a></li>
   <li><a href="#best-practices-for-junction-tables" id="toc-best-practices-for-junction-tables" class="nav-link" data-scroll-target="#best-practices-for-junction-tables">Best Practices for Junction Tables</a></li>
   </ul></li>
   <li><a href="#link_to-reference" id="toc-link_to-reference" class="nav-link" data-scroll-target="#link_to-reference"><code>link_to()</code> Reference</a>
@@ -343,7 +346,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="one-to-many-users---posts" class="level3">
 <h3 class="anchored" data-anchor-id="one-to-many-users---posts">One-to-Many (Users -&gt; Posts)</h3>
 <p>The most common pattern: users have many posts.</p>
-<div id="aabab5c3" class="cell" data-execution_count="1">
+<div id="78236a23" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pydantic <span class="im">import</span> BaseModel</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get, get_from_parent</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -436,7 +439,7 @@ World by Alice</code></pre>
 <section id="multiple-relationships" class="level2">
 <h2 class="anchored" data-anchor-id="multiple-relationships">Multiple Relationships</h2>
 <p>A child table can link to multiple parent tables:</p>
-<div id="f283c753" class="cell" data-execution_count="2">
+<div id="a5013361" class="cell" data-execution_count="2">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pydantic <span class="im">import</span> BaseModel</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get, get_from_parent</span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -504,7 +507,7 @@ On: Hello</code></pre>
 <section id="nested-data-relationships" class="level2">
 <h2 class="anchored" data-anchor-id="nested-data-relationships">Nested Data Relationships</h2>
 <p>When data is nested, use <code>get_from_parent()</code> to extract the foreign key:</p>
-<div id="70810d41" class="cell" data-execution_count="3">
+<div id="db09dea1" class="cell" data-execution_count="3">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pydantic <span class="im">import</span> BaseModel</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get, get_from_parent</span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -583,7 +586,7 @@ Gadget - Order: o1</code></pre>
 <section id="pattern-1-list-of-ids-on-parent" class="level3">
 <h3 class="anchored" data-anchor-id="pattern-1-list-of-ids-on-parent">Pattern 1: List of IDs on Parent</h3>
 <p>The most common pattern: each parent has a list of related child IDs.</p>
-<div id="d4e9b0d3" class="cell" data-execution_count="4">
+<div id="58e8f0aa" class="cell" data-execution_count="4">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> dataclasses <span class="im">import</span> dataclass</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, get, get_from_parent, node</span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -640,7 +643,7 @@ Question Q2 -&gt; Choice c3</code></pre>
 <section id="pattern-2-explicit-junction-array" class="level3">
 <h3 class="anchored" data-anchor-id="pattern-2-explicit-junction-array">Pattern 2: Explicit Junction Array</h3>
 <p>When junction records are provided as explicit objects:</p>
-<div id="1b3100a0" class="cell" data-execution_count="5">
+<div id="1823fea6" class="cell" data-execution_count="5">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> dataclasses <span class="im">import</span> dataclass</span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, get</span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -677,7 +680,7 @@ Question Q2 -&gt; Choice c3</code></pre>
 <section id="pattern-3-wrapped-mapping-objects" class="level3">
 <h3 class="anchored" data-anchor-id="pattern-3-wrapped-mapping-objects">Pattern 3: Wrapped Mapping Objects</h3>
 <p>For dict-like mappings, wrap each entry in an object with an explicit field for the child IDs:</p>
-<div id="e0755d44" class="cell" data-execution_count="6">
+<div id="79b7860e" class="cell" data-execution_count="6">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> dataclasses <span class="im">import</span> dataclass</span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, get, get_from_parent, node</span>
 <span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -719,7 +722,7 @@ Question Q2 -&gt; Choice c3</code></pre>
 <section id="pattern-4-inverse-relationship" class="level3">
 <h3 class="anchored" data-anchor-id="pattern-4-inverse-relationship">Pattern 4: Inverse Relationship</h3>
 <p>When child entities have lists of parent IDs:</p>
-<div id="0209c911" class="cell" data-execution_count="7">
+<div id="8a12e930" class="cell" data-execution_count="7">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> dataclasses <span class="im">import</span> dataclass</span>
 <span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, get, get_from_parent, node</span>
 <span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -772,7 +775,7 @@ Junctions: 3</code></pre>
 <section id="using-lookups-for-id-resolution" class="level3">
 <h3 class="anchored" data-anchor-id="using-lookups-for-id-resolution">Using Lookups for ID Resolution</h3>
 <p>When source data uses external identifiers (slugs, codes) that need to be resolved:</p>
-<div id="7b5801fa" class="cell" data-execution_count="8">
+<div id="cc5f5716" class="cell" data-execution_count="8">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> dataclasses <span class="im">import</span> dataclass</span>
 <span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, get, lookup</span>
 <span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -827,13 +830,158 @@ Question q1 -&gt; Choice c2</code></pre>
 </div>
 </div>
 </section>
+<section id="pattern-5-direct-dict-of-lists-iteration" class="level3">
+<h3 class="anchored" data-anchor-id="pattern-5-direct-dict-of-lists-iteration">Pattern 5: Direct Dict-of-Lists Iteration</h3>
+<p>For dict-of-lists structures like <code>{"Q1": ["c1", "c2"], "Q2": ["c2", "c3"]}</code>, use <code>.each().each()</code> directly without <code>.goto()</code>:</p>
+<div id="8a4c1b40" class="cell" data-execution_count="9">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> dataclasses <span class="im">import</span> dataclass</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, node</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.transforms <span class="im">import</span> parent_key</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> QuestionChoice:</span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>    __tablename__ <span class="op">=</span> <span class="st">"question_choices"</span></span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a>    question_id: <span class="bu">str</span></span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a>    choice_id: <span class="bu">str</span></span>
+<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> {</span>
+<span id="cb20-12"><a href="#cb20-12" aria-hidden="true" tabindex="-1"></a>    <span class="st">"question_choices"</span>: {</span>
+<span id="cb20-13"><a href="#cb20-13" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Q1"</span>: [<span class="st">"c1"</span>, <span class="st">"c2"</span>],</span>
+<span id="cb20-14"><a href="#cb20-14" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Q2"</span>: [<span class="st">"c2"</span>, <span class="st">"c3"</span>],</span>
+<span id="cb20-15"><a href="#cb20-15" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb20-16"><a href="#cb20-16" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb20-17"><a href="#cb20-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-18"><a href="#cb20-18" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> (</span>
+<span id="cb20-19"><a href="#cb20-19" aria-hidden="true" tabindex="-1"></a>    etl(data)</span>
+<span id="cb20-20"><a href="#cb20-20" aria-hidden="true" tabindex="-1"></a>    .goto(<span class="st">"question_choices"</span>)</span>
+<span id="cb20-21"><a href="#cb20-21" aria-hidden="true" tabindex="-1"></a>    .each()  <span class="co"># Iterate dict keys: "Q1", "Q2"</span></span>
+<span id="cb20-22"><a href="#cb20-22" aria-hidden="true" tabindex="-1"></a>    .each()  <span class="co"># Iterate list values: "c1", "c2", "c2", "c3"</span></span>
+<span id="cb20-23"><a href="#cb20-23" aria-hidden="true" tabindex="-1"></a>    .map_to(table<span class="op">=</span>QuestionChoice, fields<span class="op">=</span>[</span>
+<span id="cb20-24"><a href="#cb20-24" aria-hidden="true" tabindex="-1"></a>        Field(<span class="st">"question_id"</span>, parent_key()),  <span class="co"># Get dict key from parent context</span></span>
+<span id="cb20-25"><a href="#cb20-25" aria-hidden="true" tabindex="-1"></a>        Field(<span class="st">"choice_id"</span>, node()),          <span class="co"># Get current list item</span></span>
+<span id="cb20-26"><a href="#cb20-26" aria-hidden="true" tabindex="-1"></a>    ])</span>
+<span id="cb20-27"><a href="#cb20-27" aria-hidden="true" tabindex="-1"></a>    .run()</span>
+<span id="cb20-28"><a href="#cb20-28" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb20-29"><a href="#cb20-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-30"><a href="#cb20-30" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> key, junction <span class="kw">in</span> result.tables[QuestionChoice].items():</span>
+<span id="cb20-31"><a href="#cb20-31" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Question </span><span class="sc">{</span>junction<span class="sc">.</span>question_id<span class="sc">}</span><span class="ss"> -&gt; Choice </span><span class="sc">{</span>junction<span class="sc">.</span>choice_id<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Question Q1 -&gt; Choice c1
+Question Q1 -&gt; Choice c2
+Question Q2 -&gt; Choice c2
+Question Q2 -&gt; Choice c3</code></pre>
+</div>
+</div>
+</section>
+<section id="pattern-6-list-of-lists-2d-arrays" class="level3">
+<h3 class="anchored" data-anchor-id="pattern-6-list-of-lists-2d-arrays">Pattern 6: List-of-Lists (2D Arrays)</h3>
+<p>For 2D arrays, use <code>.each().each()</code> with <code>parent_index()</code> to track position:</p>
+<div id="0a6c1363" class="cell" data-execution_count="10">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> dataclasses <span class="im">import</span> dataclass</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, node, parent_index</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.transforms <span class="im">import</span> index</span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Cell:</span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>    __tablename__ <span class="op">=</span> <span class="st">"cells"</span></span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>    row: <span class="bu">int</span></span>
+<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a>    col: <span class="bu">int</span></span>
+<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a>    value: <span class="bu">int</span></span>
+<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> {</span>
+<span id="cb22-13"><a href="#cb22-13" aria-hidden="true" tabindex="-1"></a>    <span class="st">"rows"</span>: [</span>
+<span id="cb22-14"><a href="#cb22-14" aria-hidden="true" tabindex="-1"></a>        [<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>],</span>
+<span id="cb22-15"><a href="#cb22-15" aria-hidden="true" tabindex="-1"></a>        [<span class="dv">4</span>, <span class="dv">5</span>, <span class="dv">6</span>],</span>
+<span id="cb22-16"><a href="#cb22-16" aria-hidden="true" tabindex="-1"></a>    ]</span>
+<span id="cb22-17"><a href="#cb22-17" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb22-18"><a href="#cb22-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-19"><a href="#cb22-19" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> (</span>
+<span id="cb22-20"><a href="#cb22-20" aria-hidden="true" tabindex="-1"></a>    etl(data)</span>
+<span id="cb22-21"><a href="#cb22-21" aria-hidden="true" tabindex="-1"></a>    .goto(<span class="st">"rows"</span>)</span>
+<span id="cb22-22"><a href="#cb22-22" aria-hidden="true" tabindex="-1"></a>    .each()  <span class="co"># Iterate outer list (rows)</span></span>
+<span id="cb22-23"><a href="#cb22-23" aria-hidden="true" tabindex="-1"></a>    .each()  <span class="co"># Iterate inner list (columns)</span></span>
+<span id="cb22-24"><a href="#cb22-24" aria-hidden="true" tabindex="-1"></a>    .map_to(table<span class="op">=</span>Cell, fields<span class="op">=</span>[</span>
+<span id="cb22-25"><a href="#cb22-25" aria-hidden="true" tabindex="-1"></a>        Field(<span class="st">"row"</span>, parent_index()),  <span class="co"># Outer list index</span></span>
+<span id="cb22-26"><a href="#cb22-26" aria-hidden="true" tabindex="-1"></a>        Field(<span class="st">"col"</span>, index()),          <span class="co"># Inner list index</span></span>
+<span id="cb22-27"><a href="#cb22-27" aria-hidden="true" tabindex="-1"></a>        Field(<span class="st">"value"</span>, node()),         <span class="co"># Current value</span></span>
+<span id="cb22-28"><a href="#cb22-28" aria-hidden="true" tabindex="-1"></a>    ])</span>
+<span id="cb22-29"><a href="#cb22-29" aria-hidden="true" tabindex="-1"></a>    .run()</span>
+<span id="cb22-30"><a href="#cb22-30" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb22-31"><a href="#cb22-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-32"><a href="#cb22-32" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> key, cell <span class="kw">in</span> result.tables[Cell].items():</span>
+<span id="cb22-33"><a href="#cb22-33" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Cell[</span><span class="sc">{</span>cell<span class="sc">.</span>row<span class="sc">}</span><span class="ss">,</span><span class="sc">{</span>cell<span class="sc">.</span>col<span class="sc">}</span><span class="ss">] = </span><span class="sc">{</span>cell<span class="sc">.</span>value<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Cell[0,0] = 1
+Cell[0,1] = 2
+Cell[0,2] = 3
+Cell[1,0] = 4
+Cell[1,1] = 5
+Cell[1,2] = 6</code></pre>
+</div>
+</div>
+</section>
+<section id="pattern-7-n-level-deep-nesting" class="level3">
+<h3 class="anchored" data-anchor-id="pattern-7-n-level-deep-nesting">Pattern 7: N-Level Deep Nesting</h3>
+<p>For arbitrarily deep nested structures, chain multiple <code>.each()</code> calls:</p>
+<div id="9eb02f72" class="cell" data-execution_count="11">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> dataclasses <span class="im">import</span> dataclass</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, node</span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.transforms <span class="im">import</span> parent_key</span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Value:</span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>    __tablename__ <span class="op">=</span> <span class="st">"values"</span></span>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a>    level: <span class="bu">str</span></span>
+<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a>    group: <span class="bu">str</span></span>
+<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a>    value: <span class="bu">int</span></span>
+<span id="cb24-11"><a href="#cb24-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-12"><a href="#cb24-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Dict-of-dict-of-lists structure</span></span>
+<span id="cb24-13"><a href="#cb24-13" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> {</span>
+<span id="cb24-14"><a href="#cb24-14" aria-hidden="true" tabindex="-1"></a>    <span class="st">"levels"</span>: {</span>
+<span id="cb24-15"><a href="#cb24-15" aria-hidden="true" tabindex="-1"></a>        <span class="st">"L1"</span>: {</span>
+<span id="cb24-16"><a href="#cb24-16" aria-hidden="true" tabindex="-1"></a>            <span class="st">"A"</span>: [<span class="dv">1</span>, <span class="dv">2</span>],</span>
+<span id="cb24-17"><a href="#cb24-17" aria-hidden="true" tabindex="-1"></a>            <span class="st">"B"</span>: [<span class="dv">3</span>],</span>
+<span id="cb24-18"><a href="#cb24-18" aria-hidden="true" tabindex="-1"></a>        },</span>
+<span id="cb24-19"><a href="#cb24-19" aria-hidden="true" tabindex="-1"></a>        <span class="st">"L2"</span>: {</span>
+<span id="cb24-20"><a href="#cb24-20" aria-hidden="true" tabindex="-1"></a>            <span class="st">"C"</span>: [<span class="dv">4</span>, <span class="dv">5</span>, <span class="dv">6</span>],</span>
+<span id="cb24-21"><a href="#cb24-21" aria-hidden="true" tabindex="-1"></a>        },</span>
+<span id="cb24-22"><a href="#cb24-22" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb24-23"><a href="#cb24-23" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb24-24"><a href="#cb24-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-25"><a href="#cb24-25" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> (</span>
+<span id="cb24-26"><a href="#cb24-26" aria-hidden="true" tabindex="-1"></a>    etl(data)</span>
+<span id="cb24-27"><a href="#cb24-27" aria-hidden="true" tabindex="-1"></a>    .goto(<span class="st">"levels"</span>)</span>
+<span id="cb24-28"><a href="#cb24-28" aria-hidden="true" tabindex="-1"></a>    .each()  <span class="co"># Iterate outer dict keys: "L1", "L2"</span></span>
+<span id="cb24-29"><a href="#cb24-29" aria-hidden="true" tabindex="-1"></a>    .each()  <span class="co"># Iterate inner dict keys: "A", "B", "C"</span></span>
+<span id="cb24-30"><a href="#cb24-30" aria-hidden="true" tabindex="-1"></a>    .each()  <span class="co"># Iterate list values: 1, 2, 3, 4, 5, 6</span></span>
+<span id="cb24-31"><a href="#cb24-31" aria-hidden="true" tabindex="-1"></a>    .map_to(table<span class="op">=</span>Value, fields<span class="op">=</span>[</span>
+<span id="cb24-32"><a href="#cb24-32" aria-hidden="true" tabindex="-1"></a>        Field(<span class="st">"level"</span>, parent_key(depth<span class="op">=</span><span class="dv">2</span>)),  <span class="co"># Grandparent key</span></span>
+<span id="cb24-33"><a href="#cb24-33" aria-hidden="true" tabindex="-1"></a>        Field(<span class="st">"group"</span>, parent_key(depth<span class="op">=</span><span class="dv">1</span>)),  <span class="co"># Parent key</span></span>
+<span id="cb24-34"><a href="#cb24-34" aria-hidden="true" tabindex="-1"></a>        Field(<span class="st">"value"</span>, node()),                <span class="co"># Current value</span></span>
+<span id="cb24-35"><a href="#cb24-35" aria-hidden="true" tabindex="-1"></a>    ])</span>
+<span id="cb24-36"><a href="#cb24-36" aria-hidden="true" tabindex="-1"></a>    .run()</span>
+<span id="cb24-37"><a href="#cb24-37" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb24-38"><a href="#cb24-38" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-39"><a href="#cb24-39" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> key, val <span class="kw">in</span> result.tables[Value].items():</span>
+<span id="cb24-40"><a href="#cb24-40" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>val<span class="sc">.</span>level<span class="sc">}</span><span class="ss">/</span><span class="sc">{</span>val<span class="sc">.</span>group<span class="sc">}</span><span class="ss">: </span><span class="sc">{</span>val<span class="sc">.</span>value<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>L1/A: 1
+L1/A: 2
+L1/B: 3
+L2/C: 4
+L2/C: 5
+L2/C: 6</code></pre>
+</div>
+</div>
+</section>
 <section id="best-practices-for-junction-tables" class="level3">
 <h3 class="anchored" data-anchor-id="best-practices-for-junction-tables">Best Practices for Junction Tables</h3>
 <ol type="1">
 <li><p><strong>Use separate traversals</strong>: Extract parent entities first, then create junction records in a separate traversal starting with <code>.goto_root()</code>.</p></li>
 <li><p><strong>Use <code>Field</code> for junction columns</strong>: Junction table columns (<code>question_id</code>, <code>choice_id</code>) should be <code>Field</code>, not <code>TempField</code>, since they’re the actual data being stored.</p></li>
 <li><p><strong>Explicit IDs only</strong>: Junction patterns require IDs to be present in the source data. Database-generated IDs require a two-pass approach.</p></li>
-<li><p><strong>Nesting requires <code>.goto()</code> between <code>.each()</code> calls</strong>: You cannot use <code>.each().each()</code> directly—there must be a <code>.goto("field")</code> between iterations. For example, <code>.each().goto("choices").each()</code> works, but <code>.each().each()</code> on a dict-of-lists does not.</p></li>
+<li><p><strong>Direct <code>.each().each()</code> for dict-of-lists and list-of-lists</strong>: Use <code>.each().each()</code> without <code>.goto()</code> between them when iterating dict values that are lists, or for 2D arrays. Use <code>parent_key()</code> to access the dict key and <code>parent_index()</code> to access the outer list index.</p></li>
+<li><p><strong>Use <code>.goto()</code> between <code>.each()</code> for nested objects</strong>: When iterating objects with nested arrays (e.g., <code>{"items": [{"choices": [...]}]}</code>), use <code>.each().goto("choices").each()</code> pattern.</p></li>
 </ol>
 </section>
 </section>
@@ -873,7 +1021,7 @@ Question q1 -&gt; Choice c2</code></pre>
 <section id="the-fk-parameter-supabase" class="level3">
 <h3 class="anchored" data-anchor-id="the-fk-parameter-supabase">The <code>fk</code> Parameter (Supabase)</h3>
 <p>When using Supabase with DB-generated primary keys (UUID, auto-increment), use <code>fk</code> to populate child foreign keys after parent insertion:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>.link_to(<span class="st">"users"</span>, by<span class="op">=</span>{<span class="st">"_parent_key"</span>: <span class="st">"_key"</span>}, fk<span class="op">=</span>{<span class="st">"user_id"</span>: <span class="st">"id"</span>})</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb26"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>.link_to(<span class="st">"users"</span>, by<span class="op">=</span>{<span class="st">"_parent_key"</span>: <span class="st">"_key"</span>}, fk<span class="op">=</span>{<span class="st">"user_id"</span>: <span class="st">"id"</span>})</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>This tells etielle: “After inserting users, set each child’s <code>user_id</code> column to the parent’s generated <code>id</code>.”</p>
 <p>See <a href="../docs/database-loading.html#db-generated-ids-two-phase-insert">Database Loading</a> for a complete example.</p>
 </section>
@@ -899,34 +1047,34 @@ Question q1 -&gt; Choice c2</code></pre>
 <section id="use-tempfield-for-foreign-keys" class="level3">
 <h3 class="anchored" data-anchor-id="use-tempfield-for-foreign-keys">Use TempField for Foreign Keys</h3>
 <p>Foreign key values should be in <code>TempField</code>, not <code>Field</code>, unless you also need them in output:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Good: Foreign key is TempField (not in output, just for linking)</span></span>
-<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>TempField(<span class="st">"user_id"</span>, get_from_parent(<span class="st">"id"</span>))</span>
-<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a><span class="co"># If you need user_id in output: use Field (it's also available for linking)</span></span>
-<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>Field(<span class="st">"user_id"</span>, get_from_parent(<span class="st">"id"</span>))</span>
-<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Note: Don't use both Field and TempField with the same name</span></span>
-<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a><span class="co"># The TempField will shadow the Field and prevent it from being persisted</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb27"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Good: Foreign key is TempField (not in output, just for linking)</span></span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>TempField(<span class="st">"user_id"</span>, get_from_parent(<span class="st">"id"</span>))</span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a><span class="co"># If you need user_id in output: use Field (it's also available for linking)</span></span>
+<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a>Field(<span class="st">"user_id"</span>, get_from_parent(<span class="st">"id"</span>))</span>
+<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-7"><a href="#cb27-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Note: Don't use both Field and TempField with the same name</span></span>
+<span id="cb27-8"><a href="#cb27-8" aria-hidden="true" tabindex="-1"></a><span class="co"># The TempField will shadow the Field and prevent it from being persisted</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
 <section id="order-matters" class="level3">
 <h3 class="anchored" data-anchor-id="order-matters">Order Matters</h3>
 <p>Emit parent tables before child tables that link to them:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Good: Users emitted before posts</span></span>
-<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>.map_to(table<span class="op">=</span>User, fields<span class="op">=</span>[...])</span>
-<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>.goto(<span class="st">"posts"</span>).each()</span>
-<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>.map_to(table<span class="op">=</span>Post, fields<span class="op">=</span>[...])</span>
-<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>.link_to(User, by<span class="op">=</span>{<span class="st">"user_id"</span>: <span class="st">"id"</span>})</span>
-<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Also works: Order within same run() is handled correctly</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb28"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Good: Users emitted before posts</span></span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>.map_to(table<span class="op">=</span>User, fields<span class="op">=</span>[...])</span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>.goto(<span class="st">"posts"</span>).each()</span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>.map_to(table<span class="op">=</span>Post, fields<span class="op">=</span>[...])</span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a>.link_to(User, by<span class="op">=</span>{<span class="st">"user_id"</span>: <span class="st">"id"</span>})</span>
+<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Also works: Order within same run() is handled correctly</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
 <section id="match-key-types" class="level3">
 <h3 class="anchored" data-anchor-id="match-key-types">Match Key Types</h3>
 <p>Ensure child and parent key values are the same type:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="co"># If parent key is string "u1"</span></span>
-<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>TempField(<span class="st">"id"</span>, get(<span class="st">"id"</span>))  <span class="co"># Returns "u1"</span></span>
-<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Child key must also be string</span></span>
-<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>TempField(<span class="st">"user_id"</span>, get(<span class="st">"user_id"</span>))  <span class="co"># Must return "u1", not 1</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb29"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="co"># If parent key is string "u1"</span></span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>TempField(<span class="st">"id"</span>, get(<span class="st">"id"</span>))  <span class="co"># Returns "u1"</span></span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Child key must also be string</span></span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a>TempField(<span class="st">"user_id"</span>, get(<span class="st">"user_id"</span>))  <span class="co"># Must return "u1", not 1</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
 </section>
 <section id="many-to-many-relationships-with-backlink" class="level2">
@@ -935,56 +1083,56 @@ Question q1 -&gt; Choice c2</code></pre>
 <section id="what-is-backlink" class="level3">
 <h3 class="anchored" data-anchor-id="what-is-backlink">What is <code>backlink()</code>?</h3>
 <p><code>backlink()</code> populates a list attribute on the parent object with matching child objects. This is useful for ORM-native many-to-many relationships where the ORM handles junction tables automatically (e.g., SQLModel, SQLAlchemy).</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb24"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> dataclasses <span class="im">import</span> dataclass, field</span>
-<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get</span>
-<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
-<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Question:</span>
-<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>    text: <span class="bu">str</span></span>
-<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>    choices: <span class="bu">list</span> <span class="op">=</span> field(default_factory<span class="op">=</span><span class="bu">list</span>)  <span class="co"># Will be populated by backlink()</span></span>
-<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
-<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Choice:</span>
-<span id="cb24-11"><a href="#cb24-11" aria-hidden="true" tabindex="-1"></a>    text: <span class="bu">str</span></span>
-<span id="cb24-12"><a href="#cb24-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb24-13"><a href="#cb24-13" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> {</span>
-<span id="cb24-14"><a href="#cb24-14" aria-hidden="true" tabindex="-1"></a>    <span class="st">"questions"</span>: [</span>
-<span id="cb24-15"><a href="#cb24-15" aria-hidden="true" tabindex="-1"></a>        {<span class="st">"id"</span>: <span class="dv">1</span>, <span class="st">"text"</span>: <span class="st">"What is 2+2?"</span>, <span class="st">"choice_ids"</span>: [<span class="dv">10</span>, <span class="dv">11</span>]},</span>
-<span id="cb24-16"><a href="#cb24-16" aria-hidden="true" tabindex="-1"></a>    ],</span>
-<span id="cb24-17"><a href="#cb24-17" aria-hidden="true" tabindex="-1"></a>    <span class="st">"choices"</span>: [</span>
-<span id="cb24-18"><a href="#cb24-18" aria-hidden="true" tabindex="-1"></a>        {<span class="st">"id"</span>: <span class="dv">10</span>, <span class="st">"text"</span>: <span class="st">"3"</span>},</span>
-<span id="cb24-19"><a href="#cb24-19" aria-hidden="true" tabindex="-1"></a>        {<span class="st">"id"</span>: <span class="dv">11</span>, <span class="st">"text"</span>: <span class="st">"4"</span>},</span>
-<span id="cb24-20"><a href="#cb24-20" aria-hidden="true" tabindex="-1"></a>    ],</span>
-<span id="cb24-21"><a href="#cb24-21" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb24-22"><a href="#cb24-22" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb24-23"><a href="#cb24-23" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> (</span>
-<span id="cb24-24"><a href="#cb24-24" aria-hidden="true" tabindex="-1"></a>    etl(data)</span>
-<span id="cb24-25"><a href="#cb24-25" aria-hidden="true" tabindex="-1"></a>    .goto(<span class="st">"questions"</span>).each()</span>
-<span id="cb24-26"><a href="#cb24-26" aria-hidden="true" tabindex="-1"></a>    .map_to(table<span class="op">=</span>Question, fields<span class="op">=</span>[</span>
-<span id="cb24-27"><a href="#cb24-27" aria-hidden="true" tabindex="-1"></a>        Field(<span class="st">"text"</span>, get(<span class="st">"text"</span>)),</span>
-<span id="cb24-28"><a href="#cb24-28" aria-hidden="true" tabindex="-1"></a>        TempField(<span class="st">"id"</span>, get(<span class="st">"id"</span>)),</span>
-<span id="cb24-29"><a href="#cb24-29" aria-hidden="true" tabindex="-1"></a>        TempField(<span class="st">"choice_ids"</span>, get(<span class="st">"choice_ids"</span>)),  <span class="co"># List of child IDs</span></span>
-<span id="cb24-30"><a href="#cb24-30" aria-hidden="true" tabindex="-1"></a>    ])</span>
-<span id="cb24-31"><a href="#cb24-31" aria-hidden="true" tabindex="-1"></a>    .goto_root()</span>
-<span id="cb24-32"><a href="#cb24-32" aria-hidden="true" tabindex="-1"></a>    .goto(<span class="st">"choices"</span>).each()</span>
-<span id="cb24-33"><a href="#cb24-33" aria-hidden="true" tabindex="-1"></a>    .map_to(table<span class="op">=</span>Choice, fields<span class="op">=</span>[</span>
-<span id="cb24-34"><a href="#cb24-34" aria-hidden="true" tabindex="-1"></a>        Field(<span class="st">"text"</span>, get(<span class="st">"text"</span>)),</span>
-<span id="cb24-35"><a href="#cb24-35" aria-hidden="true" tabindex="-1"></a>        TempField(<span class="st">"id"</span>, get(<span class="st">"id"</span>)),</span>
-<span id="cb24-36"><a href="#cb24-36" aria-hidden="true" tabindex="-1"></a>    ])</span>
-<span id="cb24-37"><a href="#cb24-37" aria-hidden="true" tabindex="-1"></a>    .backlink(</span>
-<span id="cb24-38"><a href="#cb24-38" aria-hidden="true" tabindex="-1"></a>        parent<span class="op">=</span>Question,</span>
-<span id="cb24-39"><a href="#cb24-39" aria-hidden="true" tabindex="-1"></a>        child<span class="op">=</span>Choice,</span>
-<span id="cb24-40"><a href="#cb24-40" aria-hidden="true" tabindex="-1"></a>        attr<span class="op">=</span><span class="st">"choices"</span>,               <span class="co"># Sets question.choices = [...]</span></span>
-<span id="cb24-41"><a href="#cb24-41" aria-hidden="true" tabindex="-1"></a>        by<span class="op">=</span>{<span class="st">"choice_ids"</span>: <span class="st">"id"</span>},      <span class="co"># Parent's choice_ids contains child's id</span></span>
-<span id="cb24-42"><a href="#cb24-42" aria-hidden="true" tabindex="-1"></a>    )</span>
-<span id="cb24-43"><a href="#cb24-43" aria-hidden="true" tabindex="-1"></a>    .run()</span>
-<span id="cb24-44"><a href="#cb24-44" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb24-45"><a href="#cb24-45" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb24-46"><a href="#cb24-46" aria-hidden="true" tabindex="-1"></a><span class="co"># Question now has its choices populated</span></span>
-<span id="cb24-47"><a href="#cb24-47" aria-hidden="true" tabindex="-1"></a>question <span class="op">=</span> <span class="bu">list</span>(result.tables[Question].values())[<span class="dv">0</span>]</span>
-<span id="cb24-48"><a href="#cb24-48" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Question: </span><span class="sc">{</span>question<span class="sc">.</span>text<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb24-49"><a href="#cb24-49" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> choice <span class="kw">in</span> question.choices:</span>
-<span id="cb24-50"><a href="#cb24-50" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  - </span><span class="sc">{</span>choice<span class="sc">.</span>text<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb30"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> dataclasses <span class="im">import</span> dataclass, field</span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get</span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Question:</span>
+<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a>    text: <span class="bu">str</span></span>
+<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a>    choices: <span class="bu">list</span> <span class="op">=</span> field(default_factory<span class="op">=</span><span class="bu">list</span>)  <span class="co"># Will be populated by backlink()</span></span>
+<span id="cb30-8"><a href="#cb30-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-9"><a href="#cb30-9" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
+<span id="cb30-10"><a href="#cb30-10" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Choice:</span>
+<span id="cb30-11"><a href="#cb30-11" aria-hidden="true" tabindex="-1"></a>    text: <span class="bu">str</span></span>
+<span id="cb30-12"><a href="#cb30-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-13"><a href="#cb30-13" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> {</span>
+<span id="cb30-14"><a href="#cb30-14" aria-hidden="true" tabindex="-1"></a>    <span class="st">"questions"</span>: [</span>
+<span id="cb30-15"><a href="#cb30-15" aria-hidden="true" tabindex="-1"></a>        {<span class="st">"id"</span>: <span class="dv">1</span>, <span class="st">"text"</span>: <span class="st">"What is 2+2?"</span>, <span class="st">"choice_ids"</span>: [<span class="dv">10</span>, <span class="dv">11</span>]},</span>
+<span id="cb30-16"><a href="#cb30-16" aria-hidden="true" tabindex="-1"></a>    ],</span>
+<span id="cb30-17"><a href="#cb30-17" aria-hidden="true" tabindex="-1"></a>    <span class="st">"choices"</span>: [</span>
+<span id="cb30-18"><a href="#cb30-18" aria-hidden="true" tabindex="-1"></a>        {<span class="st">"id"</span>: <span class="dv">10</span>, <span class="st">"text"</span>: <span class="st">"3"</span>},</span>
+<span id="cb30-19"><a href="#cb30-19" aria-hidden="true" tabindex="-1"></a>        {<span class="st">"id"</span>: <span class="dv">11</span>, <span class="st">"text"</span>: <span class="st">"4"</span>},</span>
+<span id="cb30-20"><a href="#cb30-20" aria-hidden="true" tabindex="-1"></a>    ],</span>
+<span id="cb30-21"><a href="#cb30-21" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb30-22"><a href="#cb30-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-23"><a href="#cb30-23" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> (</span>
+<span id="cb30-24"><a href="#cb30-24" aria-hidden="true" tabindex="-1"></a>    etl(data)</span>
+<span id="cb30-25"><a href="#cb30-25" aria-hidden="true" tabindex="-1"></a>    .goto(<span class="st">"questions"</span>).each()</span>
+<span id="cb30-26"><a href="#cb30-26" aria-hidden="true" tabindex="-1"></a>    .map_to(table<span class="op">=</span>Question, fields<span class="op">=</span>[</span>
+<span id="cb30-27"><a href="#cb30-27" aria-hidden="true" tabindex="-1"></a>        Field(<span class="st">"text"</span>, get(<span class="st">"text"</span>)),</span>
+<span id="cb30-28"><a href="#cb30-28" aria-hidden="true" tabindex="-1"></a>        TempField(<span class="st">"id"</span>, get(<span class="st">"id"</span>)),</span>
+<span id="cb30-29"><a href="#cb30-29" aria-hidden="true" tabindex="-1"></a>        TempField(<span class="st">"choice_ids"</span>, get(<span class="st">"choice_ids"</span>)),  <span class="co"># List of child IDs</span></span>
+<span id="cb30-30"><a href="#cb30-30" aria-hidden="true" tabindex="-1"></a>    ])</span>
+<span id="cb30-31"><a href="#cb30-31" aria-hidden="true" tabindex="-1"></a>    .goto_root()</span>
+<span id="cb30-32"><a href="#cb30-32" aria-hidden="true" tabindex="-1"></a>    .goto(<span class="st">"choices"</span>).each()</span>
+<span id="cb30-33"><a href="#cb30-33" aria-hidden="true" tabindex="-1"></a>    .map_to(table<span class="op">=</span>Choice, fields<span class="op">=</span>[</span>
+<span id="cb30-34"><a href="#cb30-34" aria-hidden="true" tabindex="-1"></a>        Field(<span class="st">"text"</span>, get(<span class="st">"text"</span>)),</span>
+<span id="cb30-35"><a href="#cb30-35" aria-hidden="true" tabindex="-1"></a>        TempField(<span class="st">"id"</span>, get(<span class="st">"id"</span>)),</span>
+<span id="cb30-36"><a href="#cb30-36" aria-hidden="true" tabindex="-1"></a>    ])</span>
+<span id="cb30-37"><a href="#cb30-37" aria-hidden="true" tabindex="-1"></a>    .backlink(</span>
+<span id="cb30-38"><a href="#cb30-38" aria-hidden="true" tabindex="-1"></a>        parent<span class="op">=</span>Question,</span>
+<span id="cb30-39"><a href="#cb30-39" aria-hidden="true" tabindex="-1"></a>        child<span class="op">=</span>Choice,</span>
+<span id="cb30-40"><a href="#cb30-40" aria-hidden="true" tabindex="-1"></a>        attr<span class="op">=</span><span class="st">"choices"</span>,               <span class="co"># Sets question.choices = [...]</span></span>
+<span id="cb30-41"><a href="#cb30-41" aria-hidden="true" tabindex="-1"></a>        by<span class="op">=</span>{<span class="st">"choice_ids"</span>: <span class="st">"id"</span>},      <span class="co"># Parent's choice_ids contains child's id</span></span>
+<span id="cb30-42"><a href="#cb30-42" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb30-43"><a href="#cb30-43" aria-hidden="true" tabindex="-1"></a>    .run()</span>
+<span id="cb30-44"><a href="#cb30-44" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb30-45"><a href="#cb30-45" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-46"><a href="#cb30-46" aria-hidden="true" tabindex="-1"></a><span class="co"># Question now has its choices populated</span></span>
+<span id="cb30-47"><a href="#cb30-47" aria-hidden="true" tabindex="-1"></a>question <span class="op">=</span> <span class="bu">list</span>(result.tables[Question].values())[<span class="dv">0</span>]</span>
+<span id="cb30-48"><a href="#cb30-48" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Question: </span><span class="sc">{</span>question<span class="sc">.</span>text<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb30-49"><a href="#cb30-49" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> choice <span class="kw">in</span> question.choices:</span>
+<span id="cb30-50"><a href="#cb30-50" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  - </span><span class="sc">{</span>choice<span class="sc">.</span>text<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
 <section id="how-backlink-works" class="level3">
 <h3 class="anchored" data-anchor-id="how-backlink-works">How <code>backlink()</code> Works</h3>
@@ -1068,31 +1216,31 @@ Question q1 -&gt; Choice c2</code></pre>
 <section id="combining-link_to-and-backlink" class="level3">
 <h3 class="anchored" data-anchor-id="combining-link_to-and-backlink">Combining <code>link_to()</code> and <code>backlink()</code></h3>
 <p>You can use both relationship types in the same pipeline:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> (</span>
-<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>    etl(data)</span>
-<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>    .goto(<span class="st">"users"</span>).each()</span>
-<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>    .map_to(table<span class="op">=</span>User, fields<span class="op">=</span>[...])</span>
-<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>    .goto_root()</span>
-<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a>    .goto(<span class="st">"questions"</span>).each()</span>
-<span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a>    .map_to(table<span class="op">=</span>Question, fields<span class="op">=</span>[</span>
-<span id="cb25-9"><a href="#cb25-9" aria-hidden="true" tabindex="-1"></a>        TempField(<span class="st">"user_id"</span>, get(<span class="st">"user_id"</span>)),</span>
-<span id="cb25-10"><a href="#cb25-10" aria-hidden="true" tabindex="-1"></a>        TempField(<span class="st">"choice_ids"</span>, get(<span class="st">"choice_ids"</span>)),</span>
-<span id="cb25-11"><a href="#cb25-11" aria-hidden="true" tabindex="-1"></a>        ...</span>
-<span id="cb25-12"><a href="#cb25-12" aria-hidden="true" tabindex="-1"></a>    ])</span>
-<span id="cb25-13"><a href="#cb25-13" aria-hidden="true" tabindex="-1"></a>    .link_to(User, by<span class="op">=</span>{<span class="st">"user_id"</span>: <span class="st">"id"</span>})  <span class="co"># Many-to-one: Question -&gt; User</span></span>
-<span id="cb25-14"><a href="#cb25-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb25-15"><a href="#cb25-15" aria-hidden="true" tabindex="-1"></a>    .goto_root()</span>
-<span id="cb25-16"><a href="#cb25-16" aria-hidden="true" tabindex="-1"></a>    .goto(<span class="st">"choices"</span>).each()</span>
-<span id="cb25-17"><a href="#cb25-17" aria-hidden="true" tabindex="-1"></a>    .map_to(table<span class="op">=</span>Choice, fields<span class="op">=</span>[...])</span>
-<span id="cb25-18"><a href="#cb25-18" aria-hidden="true" tabindex="-1"></a>    .backlink(</span>
-<span id="cb25-19"><a href="#cb25-19" aria-hidden="true" tabindex="-1"></a>        parent<span class="op">=</span>Question,</span>
-<span id="cb25-20"><a href="#cb25-20" aria-hidden="true" tabindex="-1"></a>        child<span class="op">=</span>Choice,</span>
-<span id="cb25-21"><a href="#cb25-21" aria-hidden="true" tabindex="-1"></a>        attr<span class="op">=</span><span class="st">"choices"</span>,</span>
-<span id="cb25-22"><a href="#cb25-22" aria-hidden="true" tabindex="-1"></a>        by<span class="op">=</span>{<span class="st">"choice_ids"</span>: <span class="st">"id"</span>},</span>
-<span id="cb25-23"><a href="#cb25-23" aria-hidden="true" tabindex="-1"></a>    )  <span class="co"># Many-to-many: Question.choices = [Choice, ...]</span></span>
-<span id="cb25-24"><a href="#cb25-24" aria-hidden="true" tabindex="-1"></a>    .run()</span>
-<span id="cb25-25"><a href="#cb25-25" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb31"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> (</span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>    etl(data)</span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>    .goto(<span class="st">"users"</span>).each()</span>
+<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a>    .map_to(table<span class="op">=</span>User, fields<span class="op">=</span>[...])</span>
+<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-6"><a href="#cb31-6" aria-hidden="true" tabindex="-1"></a>    .goto_root()</span>
+<span id="cb31-7"><a href="#cb31-7" aria-hidden="true" tabindex="-1"></a>    .goto(<span class="st">"questions"</span>).each()</span>
+<span id="cb31-8"><a href="#cb31-8" aria-hidden="true" tabindex="-1"></a>    .map_to(table<span class="op">=</span>Question, fields<span class="op">=</span>[</span>
+<span id="cb31-9"><a href="#cb31-9" aria-hidden="true" tabindex="-1"></a>        TempField(<span class="st">"user_id"</span>, get(<span class="st">"user_id"</span>)),</span>
+<span id="cb31-10"><a href="#cb31-10" aria-hidden="true" tabindex="-1"></a>        TempField(<span class="st">"choice_ids"</span>, get(<span class="st">"choice_ids"</span>)),</span>
+<span id="cb31-11"><a href="#cb31-11" aria-hidden="true" tabindex="-1"></a>        ...</span>
+<span id="cb31-12"><a href="#cb31-12" aria-hidden="true" tabindex="-1"></a>    ])</span>
+<span id="cb31-13"><a href="#cb31-13" aria-hidden="true" tabindex="-1"></a>    .link_to(User, by<span class="op">=</span>{<span class="st">"user_id"</span>: <span class="st">"id"</span>})  <span class="co"># Many-to-one: Question -&gt; User</span></span>
+<span id="cb31-14"><a href="#cb31-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-15"><a href="#cb31-15" aria-hidden="true" tabindex="-1"></a>    .goto_root()</span>
+<span id="cb31-16"><a href="#cb31-16" aria-hidden="true" tabindex="-1"></a>    .goto(<span class="st">"choices"</span>).each()</span>
+<span id="cb31-17"><a href="#cb31-17" aria-hidden="true" tabindex="-1"></a>    .map_to(table<span class="op">=</span>Choice, fields<span class="op">=</span>[...])</span>
+<span id="cb31-18"><a href="#cb31-18" aria-hidden="true" tabindex="-1"></a>    .backlink(</span>
+<span id="cb31-19"><a href="#cb31-19" aria-hidden="true" tabindex="-1"></a>        parent<span class="op">=</span>Question,</span>
+<span id="cb31-20"><a href="#cb31-20" aria-hidden="true" tabindex="-1"></a>        child<span class="op">=</span>Choice,</span>
+<span id="cb31-21"><a href="#cb31-21" aria-hidden="true" tabindex="-1"></a>        attr<span class="op">=</span><span class="st">"choices"</span>,</span>
+<span id="cb31-22"><a href="#cb31-22" aria-hidden="true" tabindex="-1"></a>        by<span class="op">=</span>{<span class="st">"choice_ids"</span>: <span class="st">"id"</span>},</span>
+<span id="cb31-23"><a href="#cb31-23" aria-hidden="true" tabindex="-1"></a>    )  <span class="co"># Many-to-many: Question.choices = [Choice, ...]</span></span>
+<span id="cb31-24"><a href="#cb31-24" aria-hidden="true" tabindex="-1"></a>    .run()</span>
+<span id="cb31-25"><a href="#cb31-25" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
 </section>
 <section id="see-also" class="level2">
