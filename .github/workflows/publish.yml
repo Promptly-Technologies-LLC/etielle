@@ -6,7 +6,7 @@ on:
 
 jobs:
   publish-documentation:
-    if: ${{ !startsWith(github.event.head_commit.message, 'docs: Render README.md') }}
+    if: "${{ !startsWith(github.event.head_commit.message, 'docs: Render README.md') }}"
     runs-on: ubuntu-latest
     permissions:
       id-token: write
