@@ -13,11 +13,19 @@ jobs:
       contents: write
 
     steps:
+      - name: Generate token for version incrementer app
+        id: create_token
+        uses: tibdex/github-app-token@v2
+        with:
+          app_id: ${{ secrets.APP_ID }}
+          private_key: ${{ secrets.PRIVATE_KEY }}
+
       - name: Check out repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           ref: ${{ github.ref_name }}
+          token: ${{ steps.create_token.outputs.token }}
 
       - name: Install uv
         uses: astral-sh/setup-uv@v5
