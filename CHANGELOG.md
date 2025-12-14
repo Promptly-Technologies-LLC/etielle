@@ -2,6 +2,33 @@
 
 <!-- version list -->
 
+## v3.6.0 (2025-12-14)
+
+### Bug Fixes
+
+- Add app token to publish workflow for branch protection bypass
+  ([`fb02213`](https://github.com/Promptly-Technologies-LLC/etielle/commit/fb02213cea7b4180da7e6969c11b6d15593730fd))
+
+- Quote if condition in publish workflow to fix YAML parsing
+  ([`0bb5612`](https://github.com/Promptly-Technologies-LLC/etielle/commit/0bb5612a7f3f0f461b6526cc64d7ba11481bfe1e))
+
+- Restore goto() functionality when chained with each()
+  ([`2b48153`](https://github.com/Promptly-Technologies-LLC/etielle/commit/2b4815326a313fd8d95086b95f2bb3cd67eba117))
+
+### Documentation
+
+- Render README.md from index.qmd
+  ([`9baf3c7`](https://github.com/Promptly-Technologies-LLC/etielle/commit/9baf3c7c0b08b81315bb271d0f15d500e35cf07b))
+
+### Features
+
+- Add backlink() for ORM-native many-to-many relationships
+  ([`f78726f`](https://github.com/Promptly-Technologies-LLC/etielle/commit/f78726fce5b841f10e4f3ac3aef6fcdfd0427c01))
+
+- Support N-level nested .each() iteration for complex data structures
+  ([`9cc7cd9`](https://github.com/Promptly-Technologies-LLC/etielle/commit/9cc7cd97437cfa1c0c8aee6777fcd659ae085aa4))
+
+
 ## v3.5.2 (2025-12-12)
 
 ### Bug Fixes
