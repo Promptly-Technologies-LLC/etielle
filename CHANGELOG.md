@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v3.6.1 (2025-12-14)
+
+### Bug Fixes
+
+- Create GitHub Release before uploading assets
+  ([`5549123`](https://github.com/Promptly-Technologies-LLC/etielle/commit/5549123a2222280dfb8c42422f410da5f1080bd0))
+
+
 ## v3.6.0 (2025-12-14)
 
 ### Bug Fixes
