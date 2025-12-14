@@ -346,7 +346,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="one-to-many-users---posts" class="level3">
 <h3 class="anchored" data-anchor-id="one-to-many-users---posts">One-to-Many (Users -&gt; Posts)</h3>
 <p>The most common pattern: users have many posts.</p>
-<div id="8a4f4aed" class="cell" data-execution_count="1">
+<div id="14662eae" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pydantic <span class="im">import</span> BaseModel</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get, get_from_parent</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -439,7 +439,7 @@ World by Alice</code></pre>
 <section id="multiple-relationships" class="level2">
 <h2 class="anchored" data-anchor-id="multiple-relationships">Multiple Relationships</h2>
 <p>A child table can link to multiple parent tables:</p>
-<div id="e3f9e2cb" class="cell" data-execution_count="2">
+<div id="8cd3b5f4" class="cell" data-execution_count="2">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pydantic <span class="im">import</span> BaseModel</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get, get_from_parent</span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -507,7 +507,7 @@ On: Hello</code></pre>
 <section id="nested-data-relationships" class="level2">
 <h2 class="anchored" data-anchor-id="nested-data-relationships">Nested Data Relationships</h2>
 <p>When data is nested, use <code>get_from_parent()</code> to extract the foreign key:</p>
-<div id="cce07674" class="cell" data-execution_count="3">
+<div id="683ad765" class="cell" data-execution_count="3">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pydantic <span class="im">import</span> BaseModel</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get, get_from_parent</span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -586,7 +586,7 @@ Gadget - Order: o1</code></pre>
 <section id="pattern-1-list-of-ids-on-parent" class="level3">
 <h3 class="anchored" data-anchor-id="pattern-1-list-of-ids-on-parent">Pattern 1: List of IDs on Parent</h3>
 <p>The most common pattern: each parent has a list of related child IDs.</p>
-<div id="89c42212" class="cell" data-execution_count="4">
+<div id="5cfaf138" class="cell" data-execution_count="4">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> dataclasses <span class="im">import</span> dataclass</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, get, get_from_parent, node</span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -643,7 +643,7 @@ Question Q2 -&gt; Choice c3</code></pre>
 <section id="pattern-2-explicit-junction-array" class="level3">
 <h3 class="anchored" data-anchor-id="pattern-2-explicit-junction-array">Pattern 2: Explicit Junction Array</h3>
 <p>When junction records are provided as explicit objects:</p>
-<div id="e961a8c5" class="cell" data-execution_count="5">
+<div id="27cfc25c" class="cell" data-execution_count="5">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> dataclasses <span class="im">import</span> dataclass</span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, get</span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -680,7 +680,7 @@ Question Q2 -&gt; Choice c3</code></pre>
 <section id="pattern-3-wrapped-mapping-objects" class="level3">
 <h3 class="anchored" data-anchor-id="pattern-3-wrapped-mapping-objects">Pattern 3: Wrapped Mapping Objects</h3>
 <p>For dict-like mappings, wrap each entry in an object with an explicit field for the child IDs:</p>
-<div id="b6d229ea" class="cell" data-execution_count="6">
+<div id="164acec9" class="cell" data-execution_count="6">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> dataclasses <span class="im">import</span> dataclass</span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, get, get_from_parent, node</span>
 <span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -722,7 +722,7 @@ Question Q2 -&gt; Choice c3</code></pre>
 <section id="pattern-4-inverse-relationship" class="level3">
 <h3 class="anchored" data-anchor-id="pattern-4-inverse-relationship">Pattern 4: Inverse Relationship</h3>
 <p>When child entities have lists of parent IDs:</p>
-<div id="287bbbf1" class="cell" data-execution_count="7">
+<div id="2c10965b" class="cell" data-execution_count="7">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> dataclasses <span class="im">import</span> dataclass</span>
 <span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, get, get_from_parent, node</span>
 <span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -775,7 +775,7 @@ Junctions: 3</code></pre>
 <section id="using-lookups-for-id-resolution" class="level3">
 <h3 class="anchored" data-anchor-id="using-lookups-for-id-resolution">Using Lookups for ID Resolution</h3>
 <p>When source data uses external identifiers (slugs, codes) that need to be resolved:</p>
-<div id="82802a6b" class="cell" data-execution_count="8">
+<div id="e80f36c2" class="cell" data-execution_count="8">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> dataclasses <span class="im">import</span> dataclass</span>
 <span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, get, lookup</span>
 <span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -833,7 +833,7 @@ Question q1 -&gt; Choice c2</code></pre>
 <section id="pattern-5-direct-dict-of-lists-iteration" class="level3">
 <h3 class="anchored" data-anchor-id="pattern-5-direct-dict-of-lists-iteration">Pattern 5: Direct Dict-of-Lists Iteration</h3>
 <p>For dict-of-lists structures like <code>{"Q1": ["c1", "c2"], "Q2": ["c2", "c3"]}</code>, use <code>.each().each()</code> directly without <code>.goto()</code>:</p>
-<div id="ccfdaffd" class="cell" data-execution_count="9">
+<div id="81e843dc" class="cell" data-execution_count="9">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> dataclasses <span class="im">import</span> dataclass</span>
 <span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, node</span>
 <span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.transforms <span class="im">import</span> parent_key</span>
@@ -876,7 +876,7 @@ Question Q2 -&gt; Choice c3</code></pre>
 <section id="pattern-6-list-of-lists-2d-arrays" class="level3">
 <h3 class="anchored" data-anchor-id="pattern-6-list-of-lists-2d-arrays">Pattern 6: List-of-Lists (2D Arrays)</h3>
 <p>For 2D arrays, use <code>.each().each()</code> with <code>parent_index()</code> to track position:</p>
-<div id="411df258" class="cell" data-execution_count="10">
+<div id="750ebf0d" class="cell" data-execution_count="10">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> dataclasses <span class="im">import</span> dataclass</span>
 <span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, node, parent_index</span>
 <span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.transforms <span class="im">import</span> index</span>
@@ -923,7 +923,7 @@ Cell[1,2] = 6</code></pre>
 <section id="pattern-7-n-level-deep-nesting" class="level3">
 <h3 class="anchored" data-anchor-id="pattern-7-n-level-deep-nesting">Pattern 7: N-Level Deep Nesting</h3>
 <p>For arbitrarily deep nested structures, chain multiple <code>.each()</code> calls:</p>
-<div id="ad6ef3ee" class="cell" data-execution_count="11">
+<div id="a8a2e0d8" class="cell" data-execution_count="11">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> dataclasses <span class="im">import</span> dataclass</span>
 <span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, node</span>
 <span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle.transforms <span class="im">import</span> parent_key</span>
