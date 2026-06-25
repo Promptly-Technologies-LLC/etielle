@@ -257,6 +257,43 @@ result = (
 
 `load_eager()` requires an explicit preceding `map_to()` for the same table.
 
+## Streaming and Chunked Execution
+
+For large or single-consumption inputs (paginated APIs, `ijson` streams), use `stream()` instead of `etl()`. Streaming mode processes **key-complete, relationship-complete** chunks: each chunk is mapped, validated, bound, flushed, and evicted before the next chunk begins.
+
+```python
+from etielle import stream, Field, TempField, get
+
+# One JSON root per chunk (default)
+result = (
+    stream(record_iter)
+    .goto("users").each()
+    .map_to(table=User, fields=[...])
+    .load(session)
+    .run()
+)
+session.commit()
+```
+
+**Requirements and restrictions:**
+
+- `load()` is required before `run()` in streaming mode.
+- Chunks must include all relationship endpoints (or use `load_eager()` for shared parents).
+- Cross-chunk scattered merge (e.g. merging `users` and `profiles` from different chunks) is not supported.
+- Traversal-based `build_index()` and composite `by` mappings on `link_to()` are rejected.
+
+Pass resident eager data via `eager_roots=` when dimension tables are not repeated in every chunk:
+
+```python
+stream(chunks, eager_roots=tags_snapshot)
+    .goto("tags").each()
+    .map_to(table=Tag, fields=[...])
+    .load_eager(Tag)
+    ...
+```
+
+For arbitrarily grouped input, see the chunking helpers in issue #76 (`ChunkSource` group-by and pre-segmented passthrough).
+
 ## Upsert Behavior
 
 etielle uses "upsert" semantics---if a row with the same key already exists, it's updated:

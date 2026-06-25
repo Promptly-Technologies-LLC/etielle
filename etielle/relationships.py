@@ -536,3 +536,75 @@ def bind_relationships_via_index(
         )
 
     return all_errors
+
+
+class RelationshipIncompleteError(RuntimeError):
+    """Raised when a chunk lacks a required relationship target."""
+
+
+def validate_relationship_completeness(
+    raw_results: Mapping[str, MappingResult[Any]],
+    relationships: Sequence[dict[str, Any]],
+    *,
+    chunk_tables: set[str],
+    eager_tables: set[str],
+) -> None:
+    """Ensure every child lookup in the chunk resolves within chunk or eager tables."""
+    errors: list[str] = []
+
+    for rel in relationships:
+        if rel.get("type") == "backlink":
+            continue
+
+        by_mapping = rel["by"]
+        if len(by_mapping) != 1:
+            errors.append(
+                "Streaming relationship validation currently requires single-field "
+                f"by mappings; got {by_mapping!r} on {rel['child_table']!r}"
+            )
+            continue
+
+        child_table = rel["child_table"]
+        parent_table = rel["parent_table"]
+        if child_table not in chunk_tables:
+            continue
+
+        child_result = raw_results.get(child_table)
+        parent_result = raw_results.get(parent_table)
+        if child_result is None:
+            continue
+
+        child_field, parent_field = next(iter(by_mapping.items()))
+        lookup_values = child_result.lookup_values
+
+        for child_key, _child_obj in child_result.instances.items():
+            child_values = lookup_values.get(child_key, {})
+            lookup_value = child_values.get(child_field)
+            if lookup_value is None:
+                continue
+
+            parent_obj = None
+            if parent_result is not None:
+                parent_index = parent_result.indices.get(parent_field, {})
+                parent_obj = parent_index.get(lookup_value)
+
+            if parent_obj is None:
+                hint = (
+                    f"Use a coarser chunk key or mark {parent_table!r} as load_eager()."
+                )
+                if parent_table not in chunk_tables and parent_table not in eager_tables:
+                    hint = (
+                        f"Parent table {parent_table!r} is not in this chunk or eager "
+                        f"tables {sorted(eager_tables)}. {hint}"
+                    )
+                errors.append(
+                    f"Child table {child_table!r} key={child_key} references parent "
+                    f"table {parent_table!r} via {child_field}={lookup_value!r}, "
+                    f"but no matching parent exists in this chunk or eager tables. "
+                    f"{hint}"
+                )
+
+    if errors:
+        raise RelationshipIncompleteError(
+            "Chunk is not relationship-complete:\n" + "\n".join(errors)
+        )

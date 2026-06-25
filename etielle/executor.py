@@ -1,4 +1,5 @@
 from typing import Any, Dict, List, Tuple, Generator
+from dataclasses import dataclass, field
 from difflib import get_close_matches
 from .core import MappingSpec, Context, TraversalSpec, TableEmit, MappingResult, IterationLevel
 from .transforms import _iter_nodes, _resolve_path
@@ -6,6 +7,14 @@ from collections.abc import Mapping, Sequence, Iterable
 from .instances import InstanceEmit, resolve_field_name_for_builder
 
 KeyTuple = Tuple[Any, ...]
+
+
+@dataclass
+class MappingRuntimeState:
+    """Shared mapping state across multiple roots in one chunk."""
+
+    auto_key_counters: Dict[str, int] = field(default_factory=dict)
+
 
 # -----------------------------
 # Executor
@@ -213,6 +222,7 @@ def run_mapping(
     field_captures: Dict[str, Dict[str, Any]] | None = None,
     *,
     table_filter: set[str] | None = None,
+    runtime_state: MappingRuntimeState | None = None,
 ) -> Dict[str, MappingResult[Any]]:
     """
     Execute mapping spec against root JSON, returning rows per table.
@@ -231,18 +241,16 @@ def run_mapping(
         field_captures: Optional dict mapping table -> {field_name: transform} to
             capture during mapping for relationship binding (single-pass).
         table_filter: If set, only emit to tables in this set.
+        runtime_state: Optional shared state for auto-key counters across roots.
     """
     if linkable_fields is None:
         linkable_fields = {}
-    # For classic table rows (index by composite key)
+    state = runtime_state or MappingRuntimeState()
+    auto_key_counters = state.auto_key_counters
+
     table_to_index: Dict[str, Dict[Tuple[Any, ...], Dict[str, Any]]] = {}
     table_row_order: Dict[str, List[Tuple[Any, ...]]] = {}
-
-    # For instance emission
     instance_tables: Dict[str, Dict[str, Any]] = {}
-
-    # Auto-generated key counter for instances without join_on
-    auto_key_counters: Dict[str, int] = {}
 
     # Per-table lookup values captured during mapping {table: {key: {field: value}}}
     lookup_stores: Dict[str, Dict[KeyTuple, Dict[str, Any]]] = {}
@@ -365,6 +373,15 @@ def run_mapping(
         ordered_instances: Dict[Tuple[Any, ...], Dict[str, Any]] = {}
         for key_tuple in ordered_keys:
             ordered_instances[key_tuple] = index[key_tuple]
+        indices: Dict[str, Dict[Any, Any]] = {}
+        for field_name in linkable_fields.get(table, set()):
+            field_index: Dict[Any, Any] = {}
+            for key_tuple, row in ordered_instances.items():
+                field_value = row.get(field_name)
+                if field_value is not None:
+                    field_index[field_value] = row
+            if field_index:
+                indices[field_name] = field_index
         outputs[table] = MappingResult(
             instances=ordered_instances,
             update_errors={},
@@ -374,6 +391,7 @@ def run_mapping(
                 "num_update_errors": 0,
                 "num_finalize_errors": 0,
             },
+            indices=indices,
             lookup_values=lookup_stores.get(table, {}),
         )
 

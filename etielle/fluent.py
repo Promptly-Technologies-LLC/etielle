@@ -336,9 +336,16 @@ class PipelineBuilder:
         roots: tuple[Any, ...],
         error_mode: ErrorMode = "collect",
         indices: dict[str, dict[Any, Any]] | None = None,
+        *,
+        chunk_source: Any | None = None,
+        flush_strategy: Any | None = None,
+        streaming: bool = False,
     ) -> None:
         self._roots = roots
         self._error_mode = error_mode
+        self._chunk_source = chunk_source
+        self._flush_strategy = flush_strategy
+        self._streaming = streaming
         # Index registry for lookup transforms
         self._indices: dict[str, dict[Any, Any]] = {
             k: dict(v) for k, v in (indices or {}).items()
@@ -360,6 +367,27 @@ class PipelineBuilder:
         self._upsert_on: dict[str, str | list[str]] | None = None
         self._batch_size: int = 1000
 
+    @staticmethod
+    def _accumulate_stats(
+        stats: dict[str, TableStats],
+        table: str,
+        *,
+        mapped: int = 0,
+        errors: int = 0,
+        inserted: int = 0,
+        failed: int = 0,
+    ) -> None:
+        """Additively update per-table stats (used across chunk boundaries)."""
+        if table not in stats:
+            stats[table] = TableStats(mapped=0, errors=0, inserted=0, failed=0)
+        prev = stats[table]
+        stats[table] = TableStats(
+            mapped=prev.mapped + mapped,
+            errors=prev.errors + errors,
+            inserted=prev.inserted + inserted,
+            failed=prev.failed + failed,
+        )
+
     def goto_root(self, index: int = 0) -> PipelineBuilder:
         """Navigate to a specific JSON root.
 
@@ -379,7 +407,9 @@ class PipelineBuilder:
             .goto_root(0).goto("users").each()  # Process users
             .goto_root(1).goto("posts").each()  # Process posts
         """
-        if index < 0 or index >= len(self._roots):
+        if index < 0:
+            raise IndexError(f"Root index {index} out of range")
+        if not self._streaming and index >= len(self._roots):
             raise IndexError(f"Root index {index} out of range (have {len(self._roots)} roots)")
         self._current_root_index = index
         self._current_path = []
@@ -866,9 +896,9 @@ class PipelineBuilder:
                 )
                 # Update stats
                 if table_name in stats:
-                    stats[table_name] = TableStats(
-                        mapped=stats[table_name].mapped,
-                        errors=stats[table_name].errors,
+                    self._accumulate_stats(
+                        stats,
+                        table_name,
                         inserted=table_inserted,
                         failed=len(rows) - table_inserted,
                     )
@@ -883,10 +913,9 @@ class PipelineBuilder:
                 )
                 # Update stats to show all rows failed
                 if table_name in stats:
-                    stats[table_name] = TableStats(
-                        mapped=stats[table_name].mapped,
-                        errors=stats[table_name].errors,
-                        inserted=0,
+                    self._accumulate_stats(
+                        stats,
+                        table_name,
                         failed=len(rows),
                     )
                 raise
@@ -1246,16 +1275,21 @@ class PipelineBuilder:
             existing.indices.setdefault(field_name, {}).update(index)
         existing.lookup_values.update(incoming.lookup_values)
 
-    def _map_tables(
+    def _map_roots(
         self,
+        roots: tuple[Any, ...],
         target_tables: set[str],
         linkable_fields: dict[str, set[str]],
         field_captures: dict[str, dict[Any, Any]],
+        *,
+        sequential: bool = False,
+        runtime_state: Any | None = None,
     ) -> dict[str, Any]:
-        """Run mapping for emissions targeting the given tables."""
+        """Run mapping for emissions targeting the given tables against roots."""
         from etielle.core import MappingSpec
-        from etielle.executor import run_mapping
+        from etielle.executor import MappingRuntimeState, run_mapping
 
+        state = runtime_state or MappingRuntimeState()
         emissions_by_root: dict[int, list[dict[str, Any]]] = {}
         for emission in self._emissions:
             if emission["table"] not in target_tables:
@@ -1263,27 +1297,95 @@ class PipelineBuilder:
             emissions_by_root.setdefault(emission["root_index"], []).append(emission)
 
         all_raw_results: dict[str, Any] = {}
-        for root_idx in sorted(emissions_by_root.keys()):
-            emissions = emissions_by_root[root_idx]
-            specs = self._build_specs_for_emissions(emissions)
-            mapping_spec = MappingSpec(traversals=tuple(specs))
-            root = self._roots[root_idx]
-            raw_results = run_mapping(
-                root,
-                mapping_spec,
-                linkable_fields=linkable_fields,
-                context_slots={"__indices__": self._indices},
-                field_captures=field_captures,
-                table_filter=target_tables,
-            )
-            for table_name, mapping_result in raw_results.items():
-                if table_name not in all_raw_results:
-                    all_raw_results[table_name] = mapping_result
-                else:
-                    self._merge_mapping_results(
-                        all_raw_results[table_name], mapping_result
+        root_indices = sorted(emissions_by_root.keys())
+        if sequential:
+            if not roots:
+                return all_raw_results
+            sequential_indices = [idx for idx in root_indices if idx == 0]
+            if not sequential_indices:
+                sequential_indices = [root_indices[0]]
+            specs_by_root = {
+                idx: self._build_specs_for_emissions(emissions_by_root[idx])
+                for idx in sequential_indices
+            }
+            for root in roots:
+                for root_idx in sequential_indices:
+                    specs = specs_by_root[root_idx]
+                    mapping_spec = MappingSpec(traversals=tuple(specs))
+                    raw_results = run_mapping(
+                        root,
+                        mapping_spec,
+                        linkable_fields=linkable_fields,
+                        context_slots={"__indices__": self._indices},
+                        field_captures=field_captures,
+                        table_filter=target_tables,
+                        runtime_state=state,
                     )
+                    for table_name, mapping_result in raw_results.items():
+                        if table_name not in all_raw_results:
+                            all_raw_results[table_name] = mapping_result
+                        else:
+                            self._merge_mapping_results(
+                                all_raw_results[table_name], mapping_result
+                            )
+        else:
+            for root_idx in root_indices:
+                if root_idx >= len(roots):
+                    continue
+                emissions = emissions_by_root[root_idx]
+                specs = self._build_specs_for_emissions(emissions)
+                mapping_spec = MappingSpec(traversals=tuple(specs))
+                root = roots[root_idx]
+                raw_results = run_mapping(
+                    root,
+                    mapping_spec,
+                    linkable_fields=linkable_fields,
+                    context_slots={"__indices__": self._indices},
+                    field_captures=field_captures,
+                    table_filter=target_tables,
+                    runtime_state=state,
+                )
+                for table_name, mapping_result in raw_results.items():
+                    if table_name not in all_raw_results:
+                        all_raw_results[table_name] = mapping_result
+                    else:
+                        self._merge_mapping_results(
+                            all_raw_results[table_name], mapping_result
+                        )
         return all_raw_results
+
+    def _map_tables(
+        self,
+        target_tables: set[str],
+        linkable_fields: dict[str, set[str]],
+        field_captures: dict[str, dict[Any, Any]],
+    ) -> dict[str, Any]:
+        """Run mapping for emissions targeting the given tables."""
+        return self._map_roots(
+            self._roots,
+            target_tables,
+            linkable_fields,
+            field_captures,
+        )
+
+    def _map_chunk(
+        self,
+        chunk: Any,
+        linkable_fields: dict[str, set[str]],
+        field_captures: dict[str, dict[Any, Any]],
+        emission_tables: set[str],
+    ) -> dict[str, Any]:
+        """Map all roots in a streaming chunk into one accumulator."""
+        from etielle.executor import MappingRuntimeState
+
+        return self._map_roots(
+            chunk.roots,
+            emission_tables,
+            linkable_fields,
+            field_captures,
+            sequential=chunk.sequential,
+            runtime_state=MappingRuntimeState(),
+        )
 
     def _record_mapping_stats(
         self,
@@ -1293,14 +1395,13 @@ class PipelineBuilder:
     ) -> None:
         """Emit mapping telemetry and update stats for mapped tables."""
         for table_name, mapping_result in raw_results.items():
-            if table_name in stats:
-                continue
-            _emit(MapStarted(table=table_name), on_event)
             error_count = (
                 len(mapping_result.update_errors)
                 + len(mapping_result.finalize_errors)
             )
             instance_count = len(mapping_result.instances)
+            if table_name not in stats:
+                _emit(MapStarted(table=table_name), on_event)
             _emit(
                 MapCompleted(
                     table=table_name,
@@ -1309,11 +1410,11 @@ class PipelineBuilder:
                 ),
                 on_event,
             )
-            stats[table_name] = TableStats(
+            self._accumulate_stats(
+                stats,
+                table_name,
                 mapped=instance_count,
                 errors=error_count,
-                inserted=0,
-                failed=0,
             )
 
     def _collect_errors(
@@ -1450,11 +1551,10 @@ class PipelineBuilder:
                     on_event,
                 )
                 if table_name in stats:
-                    stats[table_name] = TableStats(
-                        mapped=stats[table_name].mapped,
-                        errors=stats[table_name].errors,
+                    self._accumulate_stats(
+                        stats,
+                        table_name,
                         inserted=row_count,
-                        failed=0,
                     )
             except Exception as e:
                 _emit(
@@ -1466,10 +1566,9 @@ class PipelineBuilder:
                     on_event,
                 )
                 if table_name in stats:
-                    stats[table_name] = TableStats(
-                        mapped=stats[table_name].mapped,
-                        errors=stats[table_name].errors,
-                        inserted=0,
+                    self._accumulate_stats(
+                        stats,
+                        table_name,
                         failed=row_count,
                     )
                 raise
@@ -1494,30 +1593,11 @@ class PipelineBuilder:
             )
             self._session.flush()
 
-    def run(
-        self,
-        *,
-        on_event: TelemetryCallback | None = None,
-    ) -> PipelineResult:
-        """Execute the pipeline and return results.
-
-        If load() was called, also persists to the database.
-
-        Args:
-            on_event: Optional callback for telemetry events. Called with
-                MapStarted, MapCompleted, FlushStarted, FlushCompleted, or
-                FlushFailed events during pipeline execution.
-
-        Returns:
-            PipelineResult with tables, errors, and stats. When load() was
-            configured, flushed instances are not retained in result.tables
-            (stats and errors are always returned).
-        """
+    def _build_traversal_indices(self) -> None:
+        """Build traversal-based lookup indices before mapping."""
         from etielle.core import TraversalSpec
         from etielle.executor import _iter_traversal_nodes
-        from etielle.utils import partition_components, topological_sort
 
-        # Build indices from traversal specs before main execution
         for build in self._index_builds:
             index_name = build["name"]
             key_transform = build["key"]
@@ -1543,6 +1623,12 @@ class PipelineBuilder:
                 emits=(),
             )
 
+            if self._streaming:
+                raise ValueError(
+                    "Traversal-based build_index() is not supported in streaming mode; "
+                    "use build_index(name, from_dict=...) with a pre-built index instead."
+                )
+
             root = self._roots[build["root_index"]]
             index_data: dict[Any, Any] = {}
             for ctx in _iter_traversal_nodes(root, temp_spec):
@@ -1552,10 +1638,15 @@ class PipelineBuilder:
                     index_data[k] = v
             self._indices[index_name] = index_data
 
+    def _prepare_execution(self) -> dict[str, Any]:
+        """Compute shared execution metadata for resident and streaming runs."""
+        from etielle.utils import partition_components
+
+        self._build_traversal_indices()
+
         linkable_fields = self._get_linkable_fields()
         captured_fields = self._get_captured_fields()
         field_captures = self._build_field_captures(captured_fields)
-
         emission_tables = {e["table"] for e in self._emissions}
         eager_tables = set(self._eager_tables)
         dep_graph = self._build_dependency_graph()
@@ -1573,140 +1664,262 @@ class PipelineBuilder:
                 "which is only available with SQLAlchemy/SQLModel."
             )
 
-        stats: dict[str, TableStats] = {}
-        all_errors: dict[str, dict[tuple[Any, ...], list[str]]] = {}
-        result_tables: dict[str, dict[tuple[Any, ...], Any]] = {}
-        result_raw_results: dict[str, Any] | None = {} if self._session is None else None
-        retain_instances = self._session is None
-
-        # Resident eager tables kept for cross-component binding
-        resident_results: dict[str, Any] = {}
-
-        if eager_tables:
-            eager_results = self._map_tables(
-                eager_tables, linkable_fields, field_captures
-            )
-            self._record_mapping_stats(eager_results, stats, on_event)
-            resident_results.update(eager_results)
-
-            bind_scope = set(eager_results.keys())
-            self._bind_relationships_in_scope(
-                resident_results, link_to_rels, backlink_rels, bind_scope
-            )
-
-            if self._session is not None:
-                if self._is_supabase_client(self._session):
-                    if backlink_rels:
-                        raise ValueError(
-                            "backlink() is not supported with Supabase. "
-                            "backlink() relies on ORM-native many-to-many handling "
-                            "which is only available with SQLAlchemy/SQLModel."
-                        )
-                    child_lookup = {
-                        t: mr.lookup_values for t, mr in resident_results.items()
-                    }
-                    eager_tables_dict = {
-                        t: dict(mr.instances)
-                        for t, mr in resident_results.items()
-                    }
-                    eager_order = topological_sort(dep_graph, eager_tables)
-                    self._flush_to_supabase(
-                        eager_tables_dict,
-                        eager_order,
-                        child_lookup,
-                        stats,
-                        on_event,
-                    )
-                else:
-                    for rel in self._relationships:
-                        if rel.get("fk"):
-                            import warnings
-
-                            warnings.warn(
-                                f"fk parameter on link_to() is only supported for Supabase. "
-                                f"Ignoring fk={rel['fk']} for {rel['child_table']} -> {rel['parent_table']}.",
-                                UserWarning,
-                                stacklevel=2,
-                            )
-                    self._flush_sqlalchemy_scope(
-                        eager_tables,
-                        resident_results,
-                        dep_graph,
-                        link_to_rels,
-                        backlink_rels,
-                        stats,
-                        on_event,
-                    )
-            elif retain_instances:
-                for table_name, mapping_result in eager_results.items():
-                    result_tables[table_name] = dict(mapping_result.instances)
-                if result_raw_results is not None:
-                    result_raw_results.update(eager_results)
-
-            eager_errors = self._collect_errors(eager_results)
-            for table_name, table_errors in eager_errors.items():
-                all_errors.setdefault(table_name, {}).update(table_errors)
-
         components = partition_components(dep_graph, emission_tables, eager_tables)
 
-        for component in components:
+        return {
+            "linkable_fields": linkable_fields,
+            "field_captures": field_captures,
+            "emission_tables": emission_tables,
+            "eager_tables": eager_tables,
+            "dep_graph": dep_graph,
+            "link_to_rels": link_to_rels,
+            "backlink_rels": backlink_rels,
+            "components": components,
+        }
+
+    def _validate_streaming_pipeline(self, prepared: dict[str, Any]) -> None:
+        """Reject pipeline configurations incompatible with streaming."""
+        if not self._streaming:
+            return
+        if self._session is None:
+            raise ValueError(
+                "Streaming execution requires load(); collecting all streamed rows "
+                "would defeat streaming memory bounds."
+            )
+        for build in self._index_builds:
+            if build.get("key") is not None and build.get("value") is not None:
+                raise ValueError(
+                    "Traversal-based build_index() is not supported in streaming mode."
+                )
+        for rel in prepared["link_to_rels"]:
+            if len(rel["by"]) != 1:
+                raise ValueError(
+                    "Streaming execution currently requires single-field by mappings "
+                    f"on link_to(); got {rel['by']!r} for {rel['child_table']!r}."
+                )
+
+    def _run_eager_phase(
+        self,
+        prepared: dict[str, Any],
+        stats: dict[str, TableStats],
+        on_event: TelemetryCallback | None,
+        *,
+        retain_instances: bool,
+        result_tables: dict[str, dict[tuple[Any, ...], Any]],
+        result_raw_results: dict[str, Any] | None,
+        all_errors: dict[str, dict[tuple[Any, ...], list[str]]],
+    ) -> dict[str, Any]:
+        """Map, bind, and flush eager tables; return resident results."""
+        eager_tables = prepared["eager_tables"]
+        resident_results: dict[str, Any] = {}
+        if not eager_tables:
+            return resident_results
+
+        eager_results = self._map_tables(
+            eager_tables,
+            prepared["linkable_fields"],
+            prepared["field_captures"],
+        )
+        self._record_mapping_stats(eager_results, stats, on_event)
+        resident_results.update(eager_results)
+
+        bind_scope = set(eager_results.keys())
+        self._bind_relationships_in_scope(
+            resident_results,
+            prepared["link_to_rels"],
+            prepared["backlink_rels"],
+            bind_scope,
+        )
+
+        if self._session is not None:
+            strategy = self._flush_strategy
+            from etielle.chunking import FlushContext, KeyCompleteFlushStrategy
+
+            if strategy is None:
+                strategy = KeyCompleteFlushStrategy()
+            ctx = FlushContext(
+                scope_tables=eager_tables,
+                bind_context=resident_results,
+                local_results=eager_results,
+                dep_graph=prepared["dep_graph"],
+                link_to_rels=prepared["link_to_rels"],
+                backlink_rels=prepared["backlink_rels"],
+                stats=stats,
+                on_event=on_event,
+                builder=self,
+            )
+            if self._is_supabase_client(self._session):
+                if prepared["backlink_rels"]:
+                    raise ValueError(
+                        "backlink() is not supported with Supabase. "
+                        "backlink() relies on ORM-native many-to-many handling "
+                        "which is only available with SQLAlchemy/SQLModel."
+                    )
+            else:
+                for rel in self._relationships:
+                    if rel.get("fk"):
+                        import warnings
+
+                        warnings.warn(
+                            f"fk parameter on link_to() is only supported for Supabase. "
+                            f"Ignoring fk={rel['fk']} for {rel['child_table']} -> {rel['parent_table']}.",
+                            UserWarning,
+                            stacklevel=2,
+                        )
+            strategy.flush(ctx)
+        elif retain_instances:
+            for table_name, mapping_result in eager_results.items():
+                result_tables[table_name] = dict(mapping_result.instances)
+            if result_raw_results is not None:
+                result_raw_results.update(eager_results)
+
+        eager_errors = self._collect_errors(eager_results)
+        for table_name, table_errors in eager_errors.items():
+            all_errors.setdefault(table_name, {}).update(table_errors)
+
+        return resident_results
+
+    def _run_component_cycle(
+        self,
+        component: set[str],
+        bind_context: dict[str, Any],
+        local_results: dict[str, Any],
+        prepared: dict[str, Any],
+        stats: dict[str, TableStats],
+        on_event: TelemetryCallback | None,
+        *,
+        retain_instances: bool,
+        result_tables: dict[str, dict[tuple[Any, ...], Any]],
+        result_raw_results: dict[str, Any] | None,
+        all_errors: dict[str, dict[tuple[Any, ...], list[str]]],
+        map_first: bool = True,
+    ) -> None:
+        """Map (optional), bind, flush, and collect errors for one component."""
+        from etielle.chunking import FlushContext, KeyCompleteFlushStrategy
+
+        component_results = local_results
+        if map_first:
             component_results = self._map_tables(
-                component, linkable_fields, field_captures
+                component,
+                prepared["linkable_fields"],
+                prepared["field_captures"],
             )
             self._record_mapping_stats(component_results, stats, on_event)
+            bind_context = {**bind_context, **component_results}
 
-            bind_context = {**resident_results, **component_results}
-            self._bind_relationships_in_scope(
-                bind_context, link_to_rels, backlink_rels, component
+        self._bind_relationships_in_scope(
+            bind_context,
+            prepared["link_to_rels"],
+            prepared["backlink_rels"],
+            component,
+        )
+
+        if self._session is not None:
+            strategy = self._flush_strategy or KeyCompleteFlushStrategy()
+            ctx = FlushContext(
+                scope_tables=component,
+                bind_context=bind_context,
+                local_results=component_results,
+                dep_graph=prepared["dep_graph"],
+                link_to_rels=prepared["link_to_rels"],
+                backlink_rels=prepared["backlink_rels"],
+                stats=stats,
+                on_event=on_event,
+                builder=self,
             )
-
-            if self._session is not None:
-                if self._is_supabase_client(self._session):
-                    child_lookup = {
-                        t: mr.lookup_values for t, mr in bind_context.items()
-                    }
-                    component_tables_dict = {
-                        t: dict(component_results[t].instances)
-                        for t in component
-                        if t in component_results
-                    }
-                    component_order = topological_sort(dep_graph, component)
-                    self._flush_to_supabase(
-                        component_tables_dict,
-                        component_order,
-                        child_lookup,
-                        stats,
-                        on_event,
-                    )
-                else:
-                    self._flush_sqlalchemy_scope(
-                        component,
-                        bind_context,
-                        dep_graph,
-                        link_to_rels,
-                        backlink_rels,
-                        stats,
-                        on_event,
-                    )
-            elif retain_instances:
+            strategy.flush(ctx)
+        elif retain_instances:
+            for table_name, mapping_result in component_results.items():
+                result_tables[table_name] = dict(mapping_result.instances)
+            if result_raw_results is not None:
                 for table_name, mapping_result in component_results.items():
-                    result_tables[table_name] = dict(mapping_result.instances)
-                if result_raw_results is not None:
-                    for table_name, mapping_result in component_results.items():
-                        if table_name not in result_raw_results:
-                            result_raw_results[table_name] = mapping_result
-                        else:
-                            self._merge_mapping_results(
-                                result_raw_results[table_name], mapping_result
-                            )
+                    if table_name not in result_raw_results:
+                        result_raw_results[table_name] = mapping_result
+                    else:
+                        self._merge_mapping_results(
+                            result_raw_results[table_name], mapping_result
+                        )
 
-            component_errors = self._collect_errors(component_results)
-            for table_name, table_errors in component_errors.items():
-                all_errors.setdefault(table_name, {}).update(table_errors)
+        component_errors = self._collect_errors(component_results)
+        for table_name, table_errors in component_errors.items():
+            all_errors.setdefault(table_name, {}).update(table_errors)
 
-            # Evict component-local accumulators
+        if map_first:
             component_results.clear()
 
+    def _run_streaming(
+        self,
+        prepared: dict[str, Any],
+        on_event: TelemetryCallback | None,
+    ) -> PipelineResult:
+        """Execute a streaming/chunked pipeline."""
+        from etielle.relationships import validate_relationship_completeness
+
+        stats: dict[str, TableStats] = {}
+        all_errors: dict[str, dict[tuple[Any, ...], list[str]]] = {}
+
+        resident_results = self._run_eager_phase(
+            prepared,
+            stats,
+            on_event,
+            retain_instances=False,
+            result_tables={},
+            result_raw_results=None,
+            all_errors=all_errors,
+        )
+
+        non_eager_tables = prepared["emission_tables"] - prepared["eager_tables"]
+
+        for chunk in self._chunk_source.chunks():
+            chunk_results = self._map_chunk(
+                chunk,
+                prepared["linkable_fields"],
+                prepared["field_captures"],
+                non_eager_tables,
+            )
+            self._record_mapping_stats(chunk_results, stats, on_event)
+
+            bind_context = {**resident_results, **chunk_results}
+            validate_relationship_completeness(
+                bind_context,
+                prepared["link_to_rels"],
+                chunk_tables=set(chunk_results.keys()),
+                eager_tables=prepared["eager_tables"],
+            )
+
+            for component in prepared["components"]:
+                component_local = {
+                    t: chunk_results[t]
+                    for t in component
+                    if t in chunk_results
+                }
+                if not component_local:
+                    continue
+                self._run_component_cycle(
+                    component,
+                    bind_context,
+                    component_local,
+                    prepared,
+                    stats,
+                    on_event,
+                    retain_instances=False,
+                    result_tables={},
+                    result_raw_results=None,
+                    all_errors=all_errors,
+                    map_first=False,
+                )
+
+            chunk_results.clear()
+
+        return self._finalize_result(stats, all_errors, tables={})
+
+    def _finalize_result(
+        self,
+        stats: dict[str, TableStats],
+        all_errors: dict[str, dict[tuple[Any, ...], list[str]]],
+        tables: dict[str, dict[tuple[Any, ...], Any]],
+        result_raw_results: dict[str, Any] | None = None,
+    ) -> PipelineResult:
         table_class_map: dict[str, type] = {}
         for emission in self._emissions:
             if emission["table_class"]:
@@ -1722,11 +1935,75 @@ class PipelineBuilder:
                     raise ValueError(error_msg)
 
         return PipelineResult(
-            tables=result_tables,
+            tables=tables,
             errors=all_errors,
             _table_class_map=table_class_map,
             _raw_results=result_raw_results,
             _stats=stats,
+        )
+
+    def run(
+        self,
+        *,
+        on_event: TelemetryCallback | None = None,
+    ) -> PipelineResult:
+        """Execute the pipeline and return results.
+
+        If load() was called, also persists to the database.
+
+        Args:
+            on_event: Optional callback for telemetry events. Called with
+                MapStarted, MapCompleted, FlushStarted, FlushCompleted, or
+                FlushFailed events during pipeline execution.
+
+        Returns:
+            PipelineResult with tables, errors, and stats. When load() was
+            configured, flushed instances are not retained in result.tables
+            (stats and errors are always returned).
+        """
+        prepared = self._prepare_execution()
+        self._validate_streaming_pipeline(prepared)
+
+        if self._streaming:
+            return self._run_streaming(prepared, on_event)
+
+        stats: dict[str, TableStats] = {}
+        all_errors: dict[str, dict[tuple[Any, ...], list[str]]] = {}
+        result_tables: dict[str, dict[tuple[Any, ...], Any]] = {}
+        result_raw_results: dict[str, Any] | None = {} if self._session is None else None
+        retain_instances = self._session is None
+
+        resident_results = self._run_eager_phase(
+            prepared,
+            stats,
+            on_event,
+            retain_instances=retain_instances,
+            result_tables=result_tables,
+            result_raw_results=result_raw_results,
+            all_errors=all_errors,
+        )
+
+        for component in prepared["components"]:
+            component_results: dict[str, Any] = {}
+            self._run_component_cycle(
+                component,
+                {**resident_results},
+                component_results,
+                prepared,
+                stats,
+                on_event,
+                retain_instances=retain_instances,
+                result_tables=result_tables,
+                result_raw_results=result_raw_results,
+                all_errors=all_errors,
+                map_first=True,
+            )
+
+        return self._finalize_result(
+            stats,
+            all_errors,
+            result_tables,
+            result_raw_results,
         )
 
 
@@ -1752,3 +2029,50 @@ def etl(*roots: Any, errors: ErrorMode = "collect", indices: dict[str, dict[Any,
         )
     """
     return PipelineBuilder(roots, errors, indices)
+
+
+def stream(
+    source: Any,
+    *,
+    eager_roots: Any | tuple[Any, ...] | None = None,
+    flush_strategy: Any | None = None,
+    errors: ErrorMode = "collect",
+    indices: dict[str, dict[Any, Any]] | None = None,
+) -> PipelineBuilder:
+    """Entry point for streaming/chunked E→T→L pipelines.
+
+    Each chunk must be key-complete and relationship-complete. Streaming
+    execution requires ``load()`` before ``run()``.
+
+    Args:
+        source: A ``ChunkSource`` or iterable of JSON roots (one root per chunk).
+        eager_roots: Optional resident JSON root(s) for ``load_eager()`` tables.
+        flush_strategy: Optional flush strategy (defaults to ``KeyCompleteFlushStrategy``).
+        errors: Error handling mode - ``collect`` (default) or ``fail_fast``.
+        indices: Pre-built lookup indices for use with ``lookup()`` transform.
+
+    Returns:
+        A ``PipelineBuilder`` for chaining navigation and mapping calls.
+    """
+    from etielle.chunking import ChunkSource, KeyCompleteFlushStrategy, OneRecordPerChunkSource
+
+    chunk_source = source
+    if not isinstance(source, ChunkSource):
+        chunk_source = OneRecordPerChunkSource(source)
+
+    eager: tuple[Any, ...] = ()
+    if eager_roots is not None:
+        eager = eager_roots if isinstance(eager_roots, tuple) else (eager_roots,)
+
+    strategy = flush_strategy or KeyCompleteFlushStrategy()
+    return PipelineBuilder(
+        eager,
+        errors,
+        indices,
+        chunk_source=chunk_source,
+        flush_strategy=strategy,
+        streaming=True,
+    )
+
+
+etl.stream = stream

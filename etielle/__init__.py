@@ -39,6 +39,7 @@ from .instances import (
 # Fluent API (v3.0.0)
 from .fluent import (
     etl,
+    stream,
     ErrorMode,
     Field,
     TempField,
@@ -108,6 +109,7 @@ __all__ = [
     "FirstNonNullPolicy",
     # Fluent API (v3.0.0)
     "etl",
+    "stream",
     "ErrorMode",
     "Field",
     "TempField",
@@ -145,10 +147,32 @@ __all__ = [
 
 # relationships (core)
 from .relationships import ManyToOneSpec, compute_relationship_keys, bind_many_to_one
+from .relationships import RelationshipIncompleteError, validate_relationship_completeness
+from .executor import MappingRuntimeState
+from .chunking import (
+    Chunk,
+    ChunkSource,
+    FlushContext,
+    FlushStrategy,
+    KeyCompleteFlushStrategy,
+    OneRecordPerChunkSource,
+    CallableChunkSource,
+)
 
 __all__ += [
     # relationships
     "ManyToOneSpec",
     "compute_relationship_keys",
     "bind_many_to_one",
+    "RelationshipIncompleteError",
+    "validate_relationship_completeness",
+    # streaming/chunking
+    "Chunk",
+    "ChunkSource",
+    "FlushContext",
+    "FlushStrategy",
+    "KeyCompleteFlushStrategy",
+    "OneRecordPerChunkSource",
+    "CallableChunkSource",
+    "MappingRuntimeState",
 ]

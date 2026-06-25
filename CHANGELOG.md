@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v4.1.0 (Unreleased)
+
+### Features
+
+- Streaming/chunked execution via `stream()` with `ChunkSource` and `FlushStrategy` seams
+- `KeyCompleteFlushStrategy` as the default flush strategy for streaming
+- Relationship-completeness validation for incomplete chunks
+- Additive per-table stats across chunk boundaries
+
 ## v4.0.0 (2026-06-25)
 
 ### Features
