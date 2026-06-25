@@ -122,9 +122,11 @@ class TestSupabaseFlush:
         mock_supabase_client.table.assert_called_with("users")
         mock_supabase_client.table.return_value.insert.assert_called_once()
 
-        # Check that we got results back
-        assert "users" in result.tables
-        assert len(result.tables["users"]) == 2
+        # Check that we got stats back (instances are not retained after load)
+        assert "users" in result.stats
+        assert result.stats["users"].mapped == 2
+        assert result.stats["users"].inserted == 2
+        assert "users" not in result.tables
 
     def test_multi_table_insert_with_dependency_order(self, mock_supabase_client):
         """Should insert parent tables before child tables."""

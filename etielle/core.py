@@ -246,6 +246,7 @@ class MappingResult(Generic[T]):
     - finalize_errors: per-key errors recorded while finalizing/validating instances
     - stats: simple counters to aid diagnostics (keys: num_instances, num_update_errors, num_finalize_errors)
     - indices: secondary indices for relationship linking {field_name: {value: instance}}
+    - lookup_values: per-key field values captured during mapping for relationship binding
     """
 
     instances: Dict[Tuple[Any, ...], T]
@@ -253,3 +254,4 @@ class MappingResult(Generic[T]):
     finalize_errors: Dict[Tuple[Any, ...], List[str]]
     stats: Dict[str, int]
     indices: Dict[str, Dict[Any, T]] = field(default_factory=dict)
+    lookup_values: Dict[Tuple[Any, ...], Dict[str, Any]] = field(default_factory=dict)

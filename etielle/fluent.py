@@ -354,6 +354,7 @@ class PipelineBuilder:
         self._index_builds: list[dict[str, Any]] = []
         # Session for loading
         self._session: Any | None = None
+        self._eager_tables: set[str] = set()
         # Supabase-specific options
         self._upsert: bool = False
         self._upsert_on: dict[str, str | list[str]] | None = None
@@ -681,10 +682,10 @@ class PipelineBuilder:
         """Configure database session or client for persistence.
 
         When load() is called before run(), the pipeline will:
-        1. Build all instances in memory
-        2. Bind relationships
+        1. Map instances by relationship component
+        2. Bind relationships within each component
         3. Add instances to the session (SQLAlchemy) or insert to database (Supabase)
-        4. Flush (but not commit for SQLAlchemy)
+        4. Flush and evict each component (instances are not retained in PipelineResult)
 
         The caller controls the transaction (commit/rollback) for SQLAlchemy.
 
@@ -737,6 +738,37 @@ class PipelineBuilder:
         self._upsert_on = upsert_on
         self._batch_size = batch_size
         return self
+
+    def load_eager(self, table: str | type) -> PipelineBuilder:
+        """Mark a table as eagerly loaded and kept resident across components.
+
+        Shared dimension tables referenced by many independent subgraphs should
+        be loaded eagerly so component partitioning can proceed without collapsing
+        the entire graph into one component.
+
+        Args:
+            table: Model class or table name string declared via map_to().
+
+        Returns:
+            Self for method chaining.
+
+        Example:
+            etl(data)
+            .goto("tags").each()
+            .map_to(table=Tag, fields=[...])
+            .load_eager(Tag)
+            .goto_root()
+            ...
+        """
+        table_name = self._resolve_table_name(table)
+        self._eager_tables.add(table_name)
+        return self
+
+    @staticmethod
+    def _resolve_table_name(table: str | type) -> str:
+        if isinstance(table, str):
+            return table
+        return getattr(table, "__tablename__", table.__name__.lower())
 
     def _is_supabase_client(self, obj: Any) -> bool:
         """Check if the object is a Supabase client."""
@@ -1110,6 +1142,358 @@ class PipelineBuilder:
                     linkable.setdefault(parent_table, set()).add(parent_field)
         return linkable
 
+    def _get_captured_fields(self) -> dict[str, set[str]]:
+        """Fields whose values must be captured during mapping for relationship binding."""
+        captured: dict[str, set[str]] = {}
+        for rel in self._relationships:
+            if rel.get("type") == "backlink":
+                parent_table = rel["parent_table"]
+                child_table = rel["child_table"]
+                for parent_field in rel["by"].keys():
+                    captured.setdefault(parent_table, set()).add(parent_field)
+                for child_field in rel["by"].values():
+                    captured.setdefault(child_table, set()).add(child_field)
+            else:
+                child_table = rel["child_table"]
+                parent_table = rel["parent_table"]
+                for child_field in rel["by"].keys():
+                    captured.setdefault(child_table, set()).add(child_field)
+                for parent_field in rel["by"].values():
+                    captured.setdefault(parent_table, set()).add(parent_field)
+        return captured
+
+    def _build_field_captures(
+        self, captured_fields: dict[str, set[str]]
+    ) -> dict[str, dict[Any, Any]]:
+        """Map captured field names to transforms from emission definitions."""
+        if not captured_fields:
+            return {}
+        field_captures: dict[str, dict[Any, Any]] = {}
+        for emission in self._emissions:
+            table = emission["table"]
+            needed = captured_fields.get(table)
+            if not needed:
+                continue
+            for fld in emission["fields"]:
+                if fld.name in needed:
+                    field_captures.setdefault(table, {})[fld.name] = fld.transform
+        return field_captures
+
+    def _validate_eager_tables(
+        self,
+        eager_tables: set[str],
+        dep_graph: dict[str, set[str]],
+        emission_tables: set[str],
+    ) -> None:
+        """Validate load_eager configuration."""
+        for table in eager_tables:
+            if table not in emission_tables:
+                raise ValueError(
+                    f"load_eager({table!r}) requires a preceding map_to() for that table"
+                )
+
+        for rel in self._relationships:
+            if rel.get("type") != "backlink":
+                continue
+            parent = rel["parent_table"]
+            child = rel["child_table"]
+            parent_eager = parent in eager_tables
+            child_eager = child in eager_tables
+            if parent_eager != child_eager:
+                raise ValueError(
+                    "backlink() cannot cross eager/non-eager boundaries; "
+                    f"mark both {parent!r} and {child!r} as load_eager or neither"
+                )
+
+        for child, parents in dep_graph.items():
+            if child not in eager_tables:
+                continue
+            non_eager_parents = parents - eager_tables
+            if non_eager_parents:
+                raise ValueError(
+                    f"load_eager table {child!r} cannot depend on non-eager "
+                    f"parent(s): {sorted(non_eager_parents)}"
+                )
+
+    def _build_specs_for_emissions(
+        self, emissions: list[dict[str, Any]]
+    ) -> list[Any]:
+        """Build TraversalSpec list for a subset of emissions."""
+        original = self._emissions
+        self._emissions = emissions
+        try:
+            return self._build_traversal_specs()
+        finally:
+            self._emissions = original
+
+    def _merge_mapping_results(self, existing: Any, incoming: Any) -> None:
+        """Merge incoming MappingResult into existing in place."""
+        for key, row in incoming.instances.items():
+            if key in existing.instances:
+                if hasattr(existing.instances[key], "update"):
+                    existing.instances[key].update(row)
+                elif hasattr(existing.instances[key], "__dict__"):
+                    source = row.__dict__ if hasattr(row, "__dict__") else row
+                    for k, v in source.items():
+                        setattr(existing.instances[key], k, v)
+            else:
+                existing.instances[key] = row
+        for key, msgs in incoming.update_errors.items():
+            existing.update_errors.setdefault(key, []).extend(msgs)
+        for key, msgs in incoming.finalize_errors.items():
+            existing.finalize_errors.setdefault(key, []).extend(msgs)
+        for field_name, index in incoming.indices.items():
+            existing.indices.setdefault(field_name, {}).update(index)
+        existing.lookup_values.update(incoming.lookup_values)
+
+    def _map_tables(
+        self,
+        target_tables: set[str],
+        linkable_fields: dict[str, set[str]],
+        field_captures: dict[str, dict[Any, Any]],
+    ) -> dict[str, Any]:
+        """Run mapping for emissions targeting the given tables."""
+        from etielle.core import MappingSpec
+        from etielle.executor import run_mapping
+
+        emissions_by_root: dict[int, list[dict[str, Any]]] = {}
+        for emission in self._emissions:
+            if emission["table"] not in target_tables:
+                continue
+            emissions_by_root.setdefault(emission["root_index"], []).append(emission)
+
+        all_raw_results: dict[str, Any] = {}
+        for root_idx in sorted(emissions_by_root.keys()):
+            emissions = emissions_by_root[root_idx]
+            specs = self._build_specs_for_emissions(emissions)
+            mapping_spec = MappingSpec(traversals=tuple(specs))
+            root = self._roots[root_idx]
+            raw_results = run_mapping(
+                root,
+                mapping_spec,
+                linkable_fields=linkable_fields,
+                context_slots={"__indices__": self._indices},
+                field_captures=field_captures,
+                table_filter=target_tables,
+            )
+            for table_name, mapping_result in raw_results.items():
+                if table_name not in all_raw_results:
+                    all_raw_results[table_name] = mapping_result
+                else:
+                    self._merge_mapping_results(
+                        all_raw_results[table_name], mapping_result
+                    )
+        return all_raw_results
+
+    def _record_mapping_stats(
+        self,
+        raw_results: dict[str, Any],
+        stats: dict[str, TableStats],
+        on_event: TelemetryCallback | None,
+    ) -> None:
+        """Emit mapping telemetry and update stats for mapped tables."""
+        for table_name, mapping_result in raw_results.items():
+            if table_name in stats:
+                continue
+            _emit(MapStarted(table=table_name), on_event)
+            error_count = (
+                len(mapping_result.update_errors)
+                + len(mapping_result.finalize_errors)
+            )
+            instance_count = len(mapping_result.instances)
+            _emit(
+                MapCompleted(
+                    table=table_name,
+                    count=instance_count,
+                    error_count=error_count,
+                ),
+                on_event,
+            )
+            stats[table_name] = TableStats(
+                mapped=instance_count,
+                errors=error_count,
+                inserted=0,
+                failed=0,
+            )
+
+    def _collect_errors(
+        self, raw_results: dict[str, Any]
+    ) -> dict[str, dict[tuple[Any, ...], list[str]]]:
+        errors: dict[str, dict[tuple[Any, ...], list[str]]] = {}
+        for table_name, mapping_result in raw_results.items():
+            all_errors: dict[tuple[Any, ...], list[str]] = {}
+            for key, msgs in mapping_result.update_errors.items():
+                all_errors.setdefault(key, []).extend(msgs)
+            for key, msgs in mapping_result.finalize_errors.items():
+                all_errors.setdefault(key, []).extend(msgs)
+            if all_errors:
+                errors[table_name] = all_errors
+        return errors
+
+    def _bind_relationships_in_scope(
+        self,
+        raw_results: dict[str, Any],
+        link_to_rels: list[dict[str, Any]],
+        backlink_rels: list[dict[str, Any]],
+        scope_tables: set[str],
+    ) -> None:
+        """Bind relationships whose endpoints are within scope_tables."""
+        from etielle.relationships import bind_relationships_via_index, bind_backlinks
+
+        scoped_link_to = [
+            rel for rel in link_to_rels if rel["child_table"] in scope_tables
+        ]
+        scoped_backlinks = [
+            rel
+            for rel in backlink_rels
+            if rel["parent_table"] in scope_tables
+            and rel["child_table"] in scope_tables
+        ]
+
+        child_lookup_values = {
+            table: mr.lookup_values for table, mr in raw_results.items()
+        }
+        parent_lookup_values = child_lookup_values
+
+        if scoped_link_to:
+            bind_relationships_via_index(
+                raw_results,
+                scoped_link_to,
+                child_lookup_values,
+                fail_on_missing=False,
+            )
+        if scoped_backlinks:
+            bind_backlinks(
+                raw_results,
+                scoped_backlinks,
+                parent_lookup_values,
+                fail_on_missing=False,
+            )
+
+    def _flush_sqlalchemy_scope(
+        self,
+        scope_tables: set[str],
+        raw_results: dict[str, Any],
+        dep_graph: dict[str, set[str]],
+        link_to_rels: list[dict[str, Any]],
+        backlink_rels: list[dict[str, Any]],
+        stats: dict[str, TableStats],
+        on_event: TelemetryCallback | None,
+    ) -> None:
+        """Flush tables in scope to SQLAlchemy session in dependency order."""
+        from etielle.utils import topological_sort
+
+        tables = {
+            t: dict(raw_results[t].instances)
+            for t in scope_tables
+            if t in raw_results
+        }
+        flush_order = topological_sort(dep_graph, set(tables.keys()))
+
+        pending_bindings: dict[str, list[tuple[int, str]]] = {}
+        for idx, rel in enumerate(link_to_rels):
+            if rel.get("type") == "backlink":
+                continue
+            if rel["child_table"] in scope_tables:
+                pending_bindings.setdefault(rel["child_table"], []).append(
+                    (idx, rel["parent_table"])
+                )
+
+        for table_name in flush_order:
+            if table_name not in tables:
+                continue
+
+            row_count = len(tables[table_name])
+            _emit(FlushStarted(table=table_name, count=row_count), on_event)
+
+            for _key, instance in tables[table_name].items():
+                if not isinstance(instance, dict):
+                    self._session.add(instance)
+
+            for idx, parent_table in pending_bindings.get(table_name, []):
+                if parent_table not in raw_results:
+                    continue
+                rel = link_to_rels[idx]
+                parent_result = raw_results[parent_table]
+                child_result = raw_results[table_name]
+                attr_name = (
+                    parent_table.rstrip("s")
+                    if parent_table.endswith("s")
+                    else parent_table
+                )
+                lookup_values = child_result.lookup_values
+
+                for child_key, child_obj in child_result.instances.items():
+                    if isinstance(child_obj, dict):
+                        continue
+                    child_values = lookup_values.get(child_key, {})
+                    for child_field, parent_field in rel["by"].items():
+                        lookup_value = child_values.get(child_field)
+                        if lookup_value is None:
+                            continue
+                        parent_index = parent_result.indices.get(parent_field, {})
+                        parent_obj = parent_index.get(lookup_value)
+                        if parent_obj is not None:
+                            setattr(child_obj, attr_name, parent_obj)
+
+            try:
+                self._session.flush()
+                _emit(
+                    FlushCompleted(
+                        table=table_name,
+                        inserted=row_count,
+                        failed=0,
+                        batch_num=1,
+                        batch_total=1,
+                        upsert=False,
+                    ),
+                    on_event,
+                )
+                if table_name in stats:
+                    stats[table_name] = TableStats(
+                        mapped=stats[table_name].mapped,
+                        errors=stats[table_name].errors,
+                        inserted=row_count,
+                        failed=0,
+                    )
+            except Exception as e:
+                _emit(
+                    FlushFailed(
+                        table=table_name,
+                        error=str(e),
+                        affected_count=row_count,
+                    ),
+                    on_event,
+                )
+                if table_name in stats:
+                    stats[table_name] = TableStats(
+                        mapped=stats[table_name].mapped,
+                        errors=stats[table_name].errors,
+                        inserted=0,
+                        failed=row_count,
+                    )
+                raise
+
+        scoped_backlinks = [
+            rel
+            for rel in backlink_rels
+            if rel["parent_table"] in scope_tables
+            and rel["child_table"] in scope_tables
+        ]
+        if scoped_backlinks:
+            from etielle.relationships import bind_backlinks
+
+            parent_lookup_values = {
+                table: mr.lookup_values for table, mr in raw_results.items()
+            }
+            bind_backlinks(
+                raw_results,
+                scoped_backlinks,
+                parent_lookup_values,
+                fail_on_missing=False,
+            )
+            self._session.flush()
+
     def run(
         self,
         *,
@@ -1125,407 +1509,223 @@ class PipelineBuilder:
                 FlushFailed events during pipeline execution.
 
         Returns:
-            PipelineResult with tables, errors, and stats.
+            PipelineResult with tables, errors, and stats. When load() was
+            configured, flushed instances are not retained in result.tables
+            (stats and errors are always returned).
         """
-        from etielle.core import MappingSpec, TraversalSpec
-        from etielle.executor import run_mapping, _iter_traversal_nodes
+        from etielle.core import TraversalSpec
+        from etielle.executor import _iter_traversal_nodes
+        from etielle.utils import partition_components, topological_sort
 
         # Build indices from traversal specs before main execution
         for build in self._index_builds:
             index_name = build["name"]
             key_transform = build["key"]
             value_transform = build["value"]
-
-            # Determine the traversal path from iteration points
-            # iteration_points contains the path at each .each() call
             iteration_points = build["iteration_points"]
 
             if not iteration_points:
-                # No iterations - skip this build
                 continue
 
-            # For nested iterations, outer path is first iteration point
-            # inner path is relative from there to the final path
             outer_path = iteration_points[0]
-
             inner_path = None
             if len(iteration_points) > 1:
-                # Multiple iterations - compute inner path
-                # Inner path is relative to outer path
                 inner_start = len(outer_path)
                 full_path = build["path"]
                 if inner_start < len(full_path):
                     inner_path = full_path[inner_start:]
 
-            # Create traversal spec for index building
             temp_spec = TraversalSpec(
                 path=tuple(outer_path),
                 mode="auto",
                 inner_path=tuple(inner_path) if inner_path else None,
                 inner_mode="auto",
-                emits=(),  # No emissions, just traversing
+                emits=(),
             )
 
             root = self._roots[build["root_index"]]
             index_data: dict[Any, Any] = {}
-
-            # Traverse and populate index
             for ctx in _iter_traversal_nodes(root, temp_spec):
                 k = key_transform(ctx)
                 v = value_transform(ctx)
                 if k is not None:
                     index_data[k] = v
-
             self._indices[index_name] = index_data
 
-        # Extract linkable fields from link_to declarations
         linkable_fields = self._get_linkable_fields()
+        captured_fields = self._get_captured_fields()
+        field_captures = self._build_field_captures(captured_fields)
 
-        # Group emissions by root index
-        emissions_by_root: dict[int, list[dict[str, Any]]] = {}
-        for emission in self._emissions:
-            root_idx = emission["root_index"]
-            emissions_by_root.setdefault(root_idx, []).append(emission)
+        emission_tables = {e["table"] for e in self._emissions}
+        eager_tables = set(self._eager_tables)
+        dep_graph = self._build_dependency_graph()
+        self._validate_eager_tables(eager_tables, dep_graph, emission_tables)
 
-        # Execute for each root and merge results
-        all_raw_results: dict[str, Any] = {}
-
-        for root_idx in sorted(emissions_by_root.keys()):
-            emissions = emissions_by_root[root_idx]
-            root = self._roots[root_idx]
-
-            # Build specs for this root's emissions only
-            specs = []
-            for emission in emissions:
-                # Temporarily set self._emissions to only this emission's list
-                # to reuse _build_traversal_specs logic
-                original_emissions = self._emissions
-                self._emissions = [emission]
-                emission_specs = self._build_traversal_specs()
-                self._emissions = original_emissions
-                specs.extend(emission_specs)
-
-            mapping_spec = MappingSpec(traversals=tuple(specs))
-            raw_results = run_mapping(
-                root,
-                mapping_spec,
-                linkable_fields=linkable_fields,
-                context_slots={"__indices__": self._indices},
-            )
-
-            # Merge into combined results
-            for table_name, mapping_result in raw_results.items():
-                if table_name not in all_raw_results:
-                    all_raw_results[table_name] = mapping_result
-                else:
-                    # Merge instances from this root with existing ones
-                    existing = all_raw_results[table_name]
-                    for key, row in mapping_result.instances.items():
-                        if key in existing.instances:
-                            # Update existing row with new fields
-                            if hasattr(existing.instances[key], 'update'):
-                                existing.instances[key].update(row)
-                            elif hasattr(existing.instances[key], '__dict__'):
-                                # For object instances, merge attributes
-                                for k, v in (row.__dict__ if hasattr(row, '__dict__') else row).items():
-                                    setattr(existing.instances[key], k, v)
-                        else:
-                            existing.instances[key] = row
-                    # Merge errors
-                    for key, msgs in mapping_result.update_errors.items():
-                        existing.update_errors.setdefault(key, []).extend(msgs)
-                    for key, msgs in mapping_result.finalize_errors.items():
-                        existing.finalize_errors.setdefault(key, []).extend(msgs)
-
-        raw_results = all_raw_results
-
-        # Emit mapping events and initialize stats
-        stats: dict[str, TableStats] = {}
-        for table_name, mapping_result in raw_results.items():
-            _emit(MapStarted(table=table_name), on_event)
-            error_count = (
-                len(mapping_result.update_errors) +
-                len(mapping_result.finalize_errors)
-            )
-            instance_count = len(mapping_result.instances)
-            _emit(
-                MapCompleted(
-                    table=table_name,
-                    count=instance_count,
-                    error_count=error_count,
-                ),
-                on_event,
-            )
-            stats[table_name] = TableStats(
-                mapped=instance_count,
-                errors=error_count,
-                inserted=0,  # Updated during flush
-                failed=0,
-            )
-
-        # Handle relationship binding and staged flushing
-        rel_specs: list[Any] = []
-        child_lookup_values: dict[str, dict[tuple[Any, ...], dict[str, Any]]] = {}
-        backlink_lookup_values: dict[str, dict[tuple[Any, ...], dict[str, Any]]] = {}
-
-        # Separate link_to (many-to-one) from backlink (many-to-many) relationships
         link_to_rels = [r for r in self._relationships if r.get("type") != "backlink"]
         backlink_rels = [r for r in self._relationships if r.get("type") == "backlink"]
 
-        if self._relationships:
-            from etielle.relationships import (
-                ManyToOneSpec,
-                bind_relationships_via_index,
-                compute_child_lookup_values,
-                bind_backlinks,
-                compute_backlink_lookup_values,
+        if self._session is not None and backlink_rels and self._is_supabase_client(
+            self._session
+        ):
+            raise ValueError(
+                "backlink() is not supported with Supabase. "
+                "backlink() relies on ORM-native many-to-many handling "
+                "which is only available with SQLAlchemy/SQLModel."
             )
 
-            # Build ManyToOneSpec objects from link_to relationships (not backlinks)
-            for rel in link_to_rels:
-                # Find the child emission to get the transforms for parent key computation
-                child_emission = self._emissions[rel["emission_index"]]
+        stats: dict[str, TableStats] = {}
+        all_errors: dict[str, dict[tuple[Any, ...], list[str]]] = {}
+        result_tables: dict[str, dict[tuple[Any, ...], Any]] = {}
+        result_raw_results: dict[str, Any] | None = {} if self._session is None else None
+        retain_instances = self._session is None
 
-                # Build list of transforms that compute parent key from child context
-                child_to_parent_transforms = []
-                for child_field, parent_field in rel["by"].items():
-                    # Find the transform for this child field
-                    for f in child_emission["fields"]:
-                        if f.name == child_field:
-                            child_to_parent_transforms.append(f.transform)
-                            break
+        # Resident eager tables kept for cross-component binding
+        resident_results: dict[str, Any] = {}
 
-                # Infer attr name from parent table name (singular, lowercase)
-                # e.g., "users" -> "user", "posts" -> "post"
-                parent_table_name = rel["parent_table"]
-                attr_name = parent_table_name.rstrip("s") if parent_table_name.endswith("s") else parent_table_name
+        if eager_tables:
+            eager_results = self._map_tables(
+                eager_tables, linkable_fields, field_captures
+            )
+            self._record_mapping_stats(eager_results, stats, on_event)
+            resident_results.update(eager_results)
 
-                spec = ManyToOneSpec(
-                    child_table=rel["child_table"],
-                    parent_table=rel["parent_table"],
-                    attr=attr_name,
-                    child_to_parent_key=tuple(child_to_parent_transforms),
-                    required=False  # Don't fail on missing parents by default
-                )
-                rel_specs.append(spec)
+            bind_scope = set(eager_results.keys())
+            self._bind_relationships_in_scope(
+                resident_results, link_to_rels, backlink_rels, bind_scope
+            )
 
-            # Compute relationship keys by traversing all roots
-            # We need to rebuild the traversal specs for relationship computation
-            all_specs = []
-            for root_idx in sorted(emissions_by_root.keys()):
-                emissions = emissions_by_root[root_idx]
-                for emission in emissions:
-                    original_emissions = self._emissions
-                    self._emissions = [emission]
-                    emission_specs = self._build_traversal_specs()
-                    self._emissions = original_emissions
-                    all_specs.extend(emission_specs)
-
-            first_root = self._roots[0] if self._roots else {}
-
-            # Compute child lookup values for link_to relationships
-            if link_to_rels:
-                child_lookup_values = compute_child_lookup_values(
-                    first_root, all_specs, link_to_rels, self._emissions,
-                    context_slots={"__indices__": self._indices},
-                )
-
-            # Compute backlink lookup values for parent tables
-            if backlink_rels:
-                backlink_lookup_values = compute_backlink_lookup_values(
-                    first_root, all_specs, backlink_rels, self._emissions,
-                    context_slots={"__indices__": self._indices},
-                )
-
-            # If no session, bind all relationships now (non-DB use case)
-            # Use secondary indices for binding instead of join key computation
-            if self._session is None:
-                if link_to_rels:
-                    bind_relationships_via_index(
-                        raw_results, link_to_rels, child_lookup_values, fail_on_missing=False
+            if self._session is not None:
+                if self._is_supabase_client(self._session):
+                    if backlink_rels:
+                        raise ValueError(
+                            "backlink() is not supported with Supabase. "
+                            "backlink() relies on ORM-native many-to-many handling "
+                            "which is only available with SQLAlchemy/SQLModel."
+                        )
+                    child_lookup = {
+                        t: mr.lookup_values for t, mr in resident_results.items()
+                    }
+                    eager_tables_dict = {
+                        t: dict(mr.instances)
+                        for t, mr in resident_results.items()
+                    }
+                    eager_order = topological_sort(dep_graph, eager_tables)
+                    self._flush_to_supabase(
+                        eager_tables_dict,
+                        eager_order,
+                        child_lookup,
+                        stats,
+                        on_event,
                     )
-                if backlink_rels:
-                    bind_backlinks(
-                        raw_results, backlink_rels, backlink_lookup_values, fail_on_missing=False
-                    )
+                else:
+                    for rel in self._relationships:
+                        if rel.get("fk"):
+                            import warnings
 
-        # Convert to PipelineResult format
-        tables: dict[str, dict[tuple[Any, ...], Any]] = {}
-        errors: dict[str, dict[tuple[Any, ...], list[str]]] = {}
+                            warnings.warn(
+                                f"fk parameter on link_to() is only supported for Supabase. "
+                                f"Ignoring fk={rel['fk']} for {rel['child_table']} -> {rel['parent_table']}.",
+                                UserWarning,
+                                stacklevel=2,
+                            )
+                    self._flush_sqlalchemy_scope(
+                        eager_tables,
+                        resident_results,
+                        dep_graph,
+                        link_to_rels,
+                        backlink_rels,
+                        stats,
+                        on_event,
+                    )
+            elif retain_instances:
+                for table_name, mapping_result in eager_results.items():
+                    result_tables[table_name] = dict(mapping_result.instances)
+                if result_raw_results is not None:
+                    result_raw_results.update(eager_results)
+
+            eager_errors = self._collect_errors(eager_results)
+            for table_name, table_errors in eager_errors.items():
+                all_errors.setdefault(table_name, {}).update(table_errors)
+
+        components = partition_components(dep_graph, emission_tables, eager_tables)
+
+        for component in components:
+            component_results = self._map_tables(
+                component, linkable_fields, field_captures
+            )
+            self._record_mapping_stats(component_results, stats, on_event)
+
+            bind_context = {**resident_results, **component_results}
+            self._bind_relationships_in_scope(
+                bind_context, link_to_rels, backlink_rels, component
+            )
+
+            if self._session is not None:
+                if self._is_supabase_client(self._session):
+                    child_lookup = {
+                        t: mr.lookup_values for t, mr in bind_context.items()
+                    }
+                    component_tables_dict = {
+                        t: dict(component_results[t].instances)
+                        for t in component
+                        if t in component_results
+                    }
+                    component_order = topological_sort(dep_graph, component)
+                    self._flush_to_supabase(
+                        component_tables_dict,
+                        component_order,
+                        child_lookup,
+                        stats,
+                        on_event,
+                    )
+                else:
+                    self._flush_sqlalchemy_scope(
+                        component,
+                        bind_context,
+                        dep_graph,
+                        link_to_rels,
+                        backlink_rels,
+                        stats,
+                        on_event,
+                    )
+            elif retain_instances:
+                for table_name, mapping_result in component_results.items():
+                    result_tables[table_name] = dict(mapping_result.instances)
+                if result_raw_results is not None:
+                    for table_name, mapping_result in component_results.items():
+                        if table_name not in result_raw_results:
+                            result_raw_results[table_name] = mapping_result
+                        else:
+                            self._merge_mapping_results(
+                                result_raw_results[table_name], mapping_result
+                            )
+
+            component_errors = self._collect_errors(component_results)
+            for table_name, table_errors in component_errors.items():
+                all_errors.setdefault(table_name, {}).update(table_errors)
+
+            # Evict component-local accumulators
+            component_results.clear()
+
         table_class_map: dict[str, type] = {}
-
-        for table_name, mapping_result in raw_results.items():
-            tables[table_name] = dict(mapping_result.instances)
-            # Collect errors
-            all_errors: dict[tuple[Any, ...], list[str]] = {}
-            for key, msgs in mapping_result.update_errors.items():
-                all_errors.setdefault(key, []).extend(msgs)
-            for key, msgs in mapping_result.finalize_errors.items():
-                all_errors.setdefault(key, []).extend(msgs)
-            if all_errors:
-                errors[table_name] = all_errors
-
-        # Build class map from emissions
         for emission in self._emissions:
             if emission["table_class"]:
                 table_class_map[emission["table"]] = emission["table_class"]
 
-        # Check if we should fail fast on errors
-        if self._error_mode == "fail_fast" and errors:
-            # Raise an exception with details about the first error
-            for table_name, table_errors in errors.items():
+        if self._error_mode == "fail_fast" and all_errors:
+            for table_name, table_errors in all_errors.items():
                 for key, msgs in table_errors.items():
-                    error_msg = f"Validation failed for table '{table_name}' key {key}:\n" + "\n".join(msgs)
+                    error_msg = (
+                        f"Validation failed for table '{table_name}' key {key}:\n"
+                        + "\n".join(msgs)
+                    )
                     raise ValueError(error_msg)
 
-        # If session/client provided, flush in dependency order
-        if self._session is not None:
-            from etielle.utils import topological_sort
-
-            # Build flush order from dependency graph (parents before children)
-            dep_graph = self._build_dependency_graph()
-            all_tables = set(tables.keys())
-            flush_order = topological_sort(dep_graph, all_tables)
-
-            # Check if this is a Supabase client
-            if self._is_supabase_client(self._session):
-                # Error if backlinks are used with Supabase (not supported)
-                if backlink_rels:
-                    raise ValueError(
-                        "backlink() is not supported with Supabase. "
-                        "backlink() relies on ORM-native many-to-many handling "
-                        "which is only available with SQLAlchemy/SQLModel."
-                    )
-                self._flush_to_supabase(
-                    tables, flush_order, child_lookup_values, stats, on_event
-                )
-            else:
-                # SQLAlchemy/SQLModel path
-                # Warn if any relationships use fk (Supabase-only feature)
-                for rel in self._relationships:
-                    if rel.get("fk"):
-                        import warnings
-                        warnings.warn(
-                            f"fk parameter on link_to() is only supported for Supabase. "
-                            f"Ignoring fk={rel['fk']} for {rel['child_table']} -> {rel['parent_table']}.",
-                            UserWarning,
-                            stacklevel=2,
-                        )
-
-                # Build pending bindings index: {child_table: [(rel_spec_idx, parent_table)]}
-                # This tracks which relationships need to be bound when processing each child
-                pending_bindings: dict[str, list[tuple[int, str]]] = {}
-                for idx, spec in enumerate(rel_specs):
-                    pending_bindings.setdefault(spec.child_table, []).append(
-                        (idx, spec.parent_table)
-                    )
-
-                # Process tables in dependency order (parents before children):
-                # 1. Add this table's instances to session
-                # 2. Bind relationships where this table is the CHILD (parents already flushed)
-                # 3. Flush this table
-                for table_name in flush_order:
-                    if table_name not in tables:
-                        continue
-
-                    row_count = len(tables[table_name])
-                    _emit(FlushStarted(table=table_name, count=row_count), on_event)
-
-                    # Add this table's instances to session
-                    for key, instance in tables[table_name].items():
-                        if not isinstance(instance, dict):
-                            self._session.add(instance)
-
-                    # Bind pending parent relationships for this table using secondary indices
-                    # At this point, all parents have been flushed and have IDs
-                    for idx, parent_table in pending_bindings.get(table_name, []):
-                        if parent_table not in raw_results:
-                            continue
-
-                        # Find the relationship spec for this binding
-                        rel = self._relationships[idx]
-                        parent_result = raw_results[parent_table]
-                        child_result = raw_results[table_name]
-
-                        # Infer attr name from parent table name (singular)
-                        attr_name = parent_table.rstrip("s") if parent_table.endswith("s") else parent_table
-
-                        # Get pre-computed child lookup values
-                        lookup_values = child_lookup_values.get(table_name, {})
-
-                        # Bind each child to its parent using secondary indices
-                        for child_key, child_obj in child_result.instances.items():
-                            if isinstance(child_obj, dict):
-                                continue
-                            child_values = lookup_values.get(child_key, {})
-
-                            for child_field, parent_field in rel["by"].items():
-                                lookup_value = child_values.get(child_field)
-                                if lookup_value is None:
-                                    continue
-
-                                parent_index = parent_result.indices.get(parent_field, {})
-                                parent_obj = parent_index.get(lookup_value)
-
-                                if parent_obj is not None:
-                                    setattr(child_obj, attr_name, parent_obj)
-
-                    # Flush this table - relationships are bound, FKs will be set
-                    try:
-                        self._session.flush()
-                        _emit(
-                            FlushCompleted(
-                                table=table_name,
-                                inserted=row_count,
-                                failed=0,
-                                batch_num=1,
-                                batch_total=1,
-                                upsert=False,
-                            ),
-                            on_event,
-                        )
-                        # Update stats
-                        if table_name in stats:
-                            stats[table_name] = TableStats(
-                                mapped=stats[table_name].mapped,
-                                errors=stats[table_name].errors,
-                                inserted=row_count,
-                                failed=0,
-                            )
-                    except Exception as e:
-                        _emit(
-                            FlushFailed(
-                                table=table_name,
-                                error=str(e),
-                                affected_count=row_count,
-                            ),
-                            on_event,
-                        )
-                        # Update stats
-                        if table_name in stats:
-                            stats[table_name] = TableStats(
-                                mapped=stats[table_name].mapped,
-                                errors=stats[table_name].errors,
-                                inserted=0,
-                                failed=row_count,
-                            )
-                        raise
-
-                # After all tables are flushed, bind backlinks
-                # This sets list attributes on parent objects
-                if backlink_rels:
-                    from etielle.relationships import bind_backlinks
-                    bind_backlinks(
-                        raw_results, backlink_rels, backlink_lookup_values, fail_on_missing=False
-                    )
-                    # Final flush to persist backlink relationships
-                    self._session.flush()
-
         return PipelineResult(
-            tables=tables,
-            errors=errors,
+            tables=result_tables,
+            errors=all_errors,
             _table_class_map=table_class_map,
-            _raw_results=raw_results,
+            _raw_results=result_raw_results,
             _stats=stats,
         )
 

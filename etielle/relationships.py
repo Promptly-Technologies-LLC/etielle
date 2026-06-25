@@ -524,6 +524,9 @@ def bind_relationships_via_index(
                         all_errors.append(f"Parent not found for {parent_field}={lookup_value}")
                     continue
 
+                if isinstance(child_obj, dict):
+                    continue
+
                 # Set relationship
                 setattr(child_obj, attr_name, parent_obj)
 

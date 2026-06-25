@@ -57,3 +57,21 @@ class TestTopologicalSort:
         # a before b, c can be anywhere (it's independent)
         assert result.index("a") < result.index("b")
         assert "c" in result
+
+
+class TestWeaklyConnectedComponents:
+    def test_two_components(self):
+        from etielle.utils import weakly_connected_components
+
+        graph = {"posts": {"users"}, "comments": {"articles"}}
+        nodes = {"users", "posts", "articles", "comments"}
+        components = weakly_connected_components(graph, nodes)
+        assert len(components) == 2
+
+    def test_partition_with_eager(self):
+        from etielle.utils import partition_components
+
+        graph = {"items_a": {"tags"}, "items_b": {"tags"}}
+        all_tables = {"tags", "items_a", "items_b"}
+        components = partition_components(graph, all_tables, {"tags"})
+        assert components == [{"items_a", "items_b"}]
