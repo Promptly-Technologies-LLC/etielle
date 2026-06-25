@@ -2,6 +2,19 @@
 
 <!-- version list -->
 
+## v4.0.0 (2026-06-25)
+
+### Features
+
+- Component-scoped flush/evict and single-pass binding
+  ([`03ac4e8`](https://github.com/Promptly-Technologies-LLC/etielle/commit/03ac4e859f836cd2ec44841bbcb38c6d9a9618b6))
+
+### Breaking Changes
+
+- Load().run() no longer retains flushed instances in PipelineResult.tables. Use result.stats/errors
+  or query the database for persisted rows. Non-load run() behavior is unchanged.
+
+
 ## v3.6.1 (2025-12-14)
 
 ### Bug Fixes

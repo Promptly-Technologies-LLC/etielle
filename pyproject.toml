@@ -1,6 +1,6 @@
 [project]
 name = "etielle"
-version = "3.6.1"
+version = "4.0.0"
 description = "A declarative, type-safe Python DSL for mapping complex nested JSON to relational database schemas"
 readme = "README.md"
 requires-python = ">=3.13"
@@ -17,6 +17,7 @@ supabase = [
     "supabase>=2.0.0",
 ]
 
+
 [build-system]
 requires = ["hatchling>=1.25"]
 build-backend = "hatchling.build"
@@ -24,20 +25,6 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["etielle"]
 
-[dependency-groups]
-dev = [
-    "ipykernel>=6.30.1",
-    "mypy>=1.18.2",
-    "pytest>=8.4.2",
-    "pytest-cov>=7.0.0",
-    "python-semantic-release>=10.4.1",
-    "quarto>=0.1.0",
-    "ruff>=0.14.3",
-    "sqlalchemy>=2.0.0",
-    "sqlmodel>=0.0.27",
-    "supabase>=2.0.0",
-    "ty>=0.0.1a29",
-]
 
 [tool.mypy]
 check_untyped_defs = true
@@ -106,3 +93,19 @@ insecure = false
 [tool.semantic_release.publish]
 dist_glob_patterns = ["dist/*"]
 upload_to_vcs_release = false
+
+[dependency-groups]
+dev = [
+    "ipykernel>=6.30.1",
+    "mypy>=1.18.2",
+    "pytest>=8.4.2",
+    "pytest-cov>=7.0.0",
+    "python-semantic-release>=10.4.1",
+    "quarto>=0.1.0",
+    "ruff>=0.14.3",
+    "sqlalchemy>=2.0.0",
+    "sqlmodel>=0.0.27",
+    "supabase>=2.0.0",
+    "ty>=0.0.1a29",
+]
+
