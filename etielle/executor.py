@@ -5,6 +5,8 @@ from .transforms import _iter_nodes, _resolve_path
 from collections.abc import Mapping, Sequence, Iterable
 from .instances import InstanceEmit, resolve_field_name_for_builder
 
+KeyTuple = Tuple[Any, ...]
+
 # -----------------------------
 # Executor
 # -----------------------------
@@ -166,11 +168,51 @@ def _iter_traversal_nodes(
                 yield ctx
 
 
+
+def _compute_composite_key(
+    emit: Any,
+    ctx: Context,
+    auto_key_counters: Dict[str, int],
+) -> KeyTuple | None:
+    """Compute composite join key for an emit, matching mapping semantics."""
+    if emit.join_keys:
+        key_parts: List[Any] = [tr(ctx) for tr in emit.join_keys]
+        if any(part is None or part == "" for part in key_parts):
+            return None
+        return tuple(key_parts)
+
+    table_name = emit.table
+    counter = auto_key_counters.get(table_name, 0)
+    auto_key_counters[table_name] = counter + 1
+    return (f"__auto_{counter}__",)
+
+
+def _capture_lookup_values(
+    emit: Any,
+    ctx: Context,
+    composite_key: KeyTuple,
+    field_captures: Dict[str, Dict[str, Any]] | None,
+    lookup_store: Dict[str, Dict[KeyTuple, Dict[str, Any]]],
+) -> None:
+    """Capture relationship lookup field values during the primary mapping pass."""
+    if not field_captures:
+        return
+    captures = field_captures.get(emit.table)
+    if not captures:
+        return
+    bucket = lookup_store.setdefault(emit.table, {}).setdefault(composite_key, {})
+    for field_name, transform in captures.items():
+        bucket[field_name] = transform(ctx)
+
+
 def run_mapping(
     root: Any,
     spec: MappingSpec,
     linkable_fields: Dict[str, set[str]] | None = None,
     context_slots: Dict[str, Any] | None = None,
+    field_captures: Dict[str, Dict[str, Any]] | None = None,
+    *,
+    table_filter: set[str] | None = None,
 ) -> Dict[str, MappingResult[Any]]:
     """
     Execute mapping spec against root JSON, returning rows per table.
@@ -186,6 +228,9 @@ def run_mapping(
         spec: The mapping specification
         linkable_fields: Dict mapping table name to set of field names used in link_to
         context_slots: Optional dict to inject into context.slots (e.g., for indices)
+        field_captures: Optional dict mapping table -> {field_name: transform} to
+            capture during mapping for relationship binding (single-pass).
+        table_filter: If set, only emit to tables in this set.
     """
     if linkable_fields is None:
         linkable_fields = {}
@@ -199,23 +244,21 @@ def run_mapping(
     # Auto-generated key counter for instances without join_on
     auto_key_counters: Dict[str, int] = {}
 
+    # Per-table lookup values captured during mapping {table: {key: {field: value}}}
+    lookup_stores: Dict[str, Dict[KeyTuple, Dict[str, Any]]] = {}
+
     for traversal in spec.traversals:
         for ctx in _iter_traversal_nodes(root, traversal, context_slots):
             for emit in traversal.emits:
-                # Compute join key
-                if emit.join_keys:
-                    # Join keys specified - compute composite key
-                    key_parts: List[Any] = [tr(ctx) for tr in emit.join_keys]
-                    if any(part is None or part == "" for part in key_parts):
-                        continue
-                    composite_key = tuple(key_parts)
-                else:
-                    # No join keys - use auto-generated unique key
-                    # This allows each iteration to create a distinct instance
-                    table_name = emit.table
-                    counter = auto_key_counters.get(table_name, 0)
-                    composite_key = (f"__auto_{counter}__",)
-                    auto_key_counters[table_name] = counter + 1
+                if table_filter is not None and emit.table not in table_filter:
+                    continue
+                composite_key = _compute_composite_key(emit, ctx, auto_key_counters)
+                if composite_key is None:
+                    continue
+
+                _capture_lookup_values(
+                    emit, ctx, composite_key, field_captures, lookup_stores
+                )
 
                 # Branch by emit type
                 if isinstance(emit, TableEmit):
@@ -331,6 +374,7 @@ def run_mapping(
                 "num_update_errors": 0,
                 "num_finalize_errors": 0,
             },
+            lookup_values=lookup_stores.get(table, {}),
         )
 
     # 2) Instance tables (builders)
@@ -379,6 +423,7 @@ def run_mapping(
                 "num_finalize_errors": sum(len(v) for v in fin_errors.values()),
             },
             indices=indices,
+            lookup_values=lookup_stores.get(table, {}),
         )
 
     return outputs

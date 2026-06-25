@@ -1,3 +1,12 @@
+"""etielle - declarative JSON-to-relational mapping."""
+
+try:
+    from importlib.metadata import version as _pkg_version
+
+    __version__ = _pkg_version("etielle")
+except Exception:
+    __version__ = "0.0.0.dev"
+
 from .core import (
     Context,
     Field as CoreField,  # Renamed to avoid conflict with fluent.Field

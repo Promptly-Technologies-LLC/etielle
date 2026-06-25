@@ -1,6 +1,6 @@
 """Utility functions for etielle."""
 
-from typing import Dict, Set, List
+from typing import Dict, List, Set
 
 
 def topological_sort(
@@ -52,3 +52,91 @@ def topological_sort(
         raise ValueError(f"Circular dependency detected involving: {remaining}")
 
     return result
+
+
+def weakly_connected_components(
+    graph: Dict[str, Set[str]],
+    nodes: Set[str],
+) -> List[Set[str]]:
+    """Partition nodes into weakly connected components.
+
+    Args:
+        graph: Dict mapping child -> set of parent nodes (directed edges).
+        nodes: All nodes to include.
+
+    Returns:
+        List of component sets in deterministic order (sorted by first member).
+    """
+    adj: Dict[str, Set[str]] = {node: set() for node in nodes}
+
+    for child, parents in graph.items():
+        if child not in nodes:
+            continue
+        for parent in parents:
+            if parent in nodes:
+                adj[child].add(parent)
+                adj[parent].add(child)
+
+    visited: Set[str] = set()
+    components: List[Set[str]] = []
+
+    for start in sorted(nodes):
+        if start in visited:
+            continue
+        component: Set[str] = set()
+        stack = [start]
+        while stack:
+            node = stack.pop()
+            if node in visited:
+                continue
+            visited.add(node)
+            component.add(node)
+            for neighbor in sorted(adj.get(node, set())):
+                if neighbor not in visited:
+                    stack.append(neighbor)
+        components.append(component)
+
+    return components
+
+
+def partition_components(
+    graph: Dict[str, Set[str]],
+    all_tables: Set[str],
+    eager_tables: Set[str],
+) -> List[Set[str]]:
+    """Partition non-eager tables into weakly connected components.
+
+    Edges involving eager tables are excluded from partitioning so shared
+    dimension tables do not collapse unrelated subgraphs into one component.
+    """
+    partition_nodes = all_tables - eager_tables
+    if not partition_nodes:
+        return []
+
+    partition_graph: Dict[str, Set[str]] = {}
+    related_tables: Set[str] = set()
+    for child, parents in graph.items():
+        if child not in partition_nodes:
+            continue
+        filtered = {
+            parent
+            for parent in parents
+            if parent in partition_nodes and parent not in eager_tables
+        }
+        if filtered:
+            partition_graph[child] = filtered
+            related_tables.add(child)
+            related_tables.update(filtered)
+
+    orphan_tables = partition_nodes - related_tables
+    components: List[Set[str]] = []
+
+    if related_tables:
+        components.extend(
+            weakly_connected_components(partition_graph, related_tables)
+        )
+    if orphan_tables:
+        components.append(orphan_tables)
+
+    return components
+

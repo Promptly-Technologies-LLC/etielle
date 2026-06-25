@@ -804,14 +804,11 @@ class TestDatabaseLoadingEdgeCases:
         assert len(users) == 2, "ORM User instances should be persisted"
         assert {u.name for u in users} == {"Alice", "Bob"}
 
-        # Verify dict instances are in result but not in database
-        assert "metadata" in result.tables
-        metadata_dict = result.tables["metadata"]
-        assert len(metadata_dict) == 2, "Dict instances should be in result.tables"
-
-        # Dict instances should not be in session (no table to query)
-        # We can verify this by checking that session.new is empty after the load
-        # (since we already committed, and dicts shouldn't have been added)
+        # load().run() does not retain flushed instances in result.tables
+        assert "users" not in result.tables
+        assert "metadata" not in result.tables
+        assert result.stats["users"].inserted == 2
+        assert result.stats["metadata"].mapped == 2
 
     def test_batch_with_errors_allows_selective_rollback(self, session):
         """Processing multiple batches allows checking errors per batch for selective rollback.

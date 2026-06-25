@@ -10,12 +10,12 @@ title: "Database Loading: Persisting with load().run()"
 
 The `load(session)` method configures your pipeline to persist results to a database. When combined with `run()`, it:
 
-1. Builds all instances in memory
-2. Binds relationships
+1. Maps instances by relationship component
+2. Binds relationships within each component
 3. Adds instances to the session
-4. Flushes (but does NOT commit)
+4. Flushes each component and evicts flushed instances from the result
 
-You control the transaction (commit/rollback).
+`load().run()` returns **stats and errors**, not flushed instances in `result.tables`. Use `session.query()` or equivalent to read persisted rows. You control the transaction (commit/rollback).
 
 ```python
 from etielle import etl, Field, TempField, get
@@ -229,6 +229,33 @@ with Session(engine) as session:
     user = session.get(User, "u1")
     print(f"{user.name} has {len(user.posts)} posts")
 ```
+
+## Component-Scoped Flushing and Memory
+
+Pipelines with relationships are executed as independent **relationship components** (weakly connected subgraphs of the `link_to`/`backlink` graph). Each component is mapped, bound, flushed, and evicted before the next component runs. This bounds peak accumulator memory to the largest component instead of the entire dataset.
+
+Tables with no relationship edges are batched into a single mapping pass for efficiency.
+
+## Shared Tables with `load_eager()`
+
+When a shared dimension table (e.g. `tags`) is referenced by many independent subgraphs, the relationship graph collapses into one giant component and the memory win vanishes. Mark small shared tables as eager so they are loaded once and kept resident while other components are processed:
+
+```python
+result = (
+    etl(data)
+    .goto("tags").each()
+    .map_to(table=Tag, fields=[...])
+    .load_eager(Tag)          # resident across all components
+    .goto_root()
+    .goto("items").each()
+    .map_to(table=Item, fields=[...])
+    .link_to(Tag, by={"tag_id": "id"})
+    .load(session)
+    .run()
+)
+```
+
+`load_eager()` requires an explicit preceding `map_to()` for the same table.
 
 ## Upsert Behavior
 
