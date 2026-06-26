@@ -1298,40 +1298,57 @@ class PipelineBuilder:
 
         all_raw_results: dict[str, Any] = {}
         root_indices = sorted(emissions_by_root.keys())
+
+        def _absorb(raw_results: dict[str, Any]) -> None:
+            for table_name, mapping_result in raw_results.items():
+                if table_name not in all_raw_results:
+                    all_raw_results[table_name] = mapping_result
+                else:
+                    self._merge_mapping_results(
+                        all_raw_results[table_name], mapping_result
+                    )
+
         if sequential:
             if not roots:
                 return all_raw_results
-            sequential_indices = [idx for idx in root_indices if idx == 0]
-            if not sequential_indices:
-                sequential_indices = [root_indices[0]]
-            specs_by_root = {
-                idx: self._build_specs_for_emissions(emissions_by_root[idx])
-                for idx in sequential_indices
-            }
+            non_zero = [idx for idx in root_indices if idx != 0]
+            if non_zero:
+                raise ValueError(
+                    "Streaming sources that yield one record per chunk (sequential "
+                    "chunks) support only a single root, but the pipeline references "
+                    f"goto_root() index(es) {non_zero}. Either drop the multi-root "
+                    "goto_root() calls, or supply a ChunkSource that yields multi-root "
+                    "Chunks (sequential=False) so each goto_root() index maps to a "
+                    "distinct root in the chunk."
+                )
+            if 0 not in emissions_by_root:
+                return all_raw_results
+            specs = self._build_specs_for_emissions(emissions_by_root[0])
+            mapping_spec = MappingSpec(traversals=tuple(specs))
             for root in roots:
-                for root_idx in sequential_indices:
-                    specs = specs_by_root[root_idx]
-                    mapping_spec = MappingSpec(traversals=tuple(specs))
-                    raw_results = run_mapping(
-                        root,
-                        mapping_spec,
-                        linkable_fields=linkable_fields,
-                        context_slots={"__indices__": self._indices},
-                        field_captures=field_captures,
-                        table_filter=target_tables,
-                        runtime_state=state,
-                    )
-                    for table_name, mapping_result in raw_results.items():
-                        if table_name not in all_raw_results:
-                            all_raw_results[table_name] = mapping_result
-                        else:
-                            self._merge_mapping_results(
-                                all_raw_results[table_name], mapping_result
-                            )
+                raw_results = run_mapping(
+                    root,
+                    mapping_spec,
+                    linkable_fields=linkable_fields,
+                    context_slots={"__indices__": self._indices},
+                    field_captures=field_captures,
+                    table_filter=target_tables,
+                    runtime_state=state,
+                )
+                _absorb(raw_results)
         else:
             for root_idx in root_indices:
                 if root_idx >= len(roots):
-                    continue
+                    if self._streaming:
+                        raise ValueError(
+                            f"Chunk supplies {len(roots)} root(s) but the pipeline "
+                            f"references goto_root({root_idx}). Each multi-root chunk "
+                            "must provide a root for every goto_root() index used by "
+                            "the pipeline."
+                        )
+                    raise IndexError(
+                        f"Root index {root_idx} out of range (have {len(roots)} roots)"
+                    )
                 emissions = emissions_by_root[root_idx]
                 specs = self._build_specs_for_emissions(emissions)
                 mapping_spec = MappingSpec(traversals=tuple(specs))
@@ -1345,13 +1362,7 @@ class PipelineBuilder:
                     table_filter=target_tables,
                     runtime_state=state,
                 )
-                for table_name, mapping_result in raw_results.items():
-                    if table_name not in all_raw_results:
-                        all_raw_results[table_name] = mapping_result
-                    else:
-                        self._merge_mapping_results(
-                            all_raw_results[table_name], mapping_result
-                        )
+                _absorb(raw_results)
         return all_raw_results
 
     def _map_tables(
@@ -1697,6 +1708,21 @@ class PipelineBuilder:
                     "Streaming execution currently requires single-field by mappings "
                     f"on link_to(); got {rel['by']!r} for {rel['child_table']!r}."
                 )
+
+        from etielle.chunking import OneRecordPerChunkSource
+
+        referenced_indices = {e["root_index"] for e in self._emissions}
+        multi_root_indices = sorted(i for i in referenced_indices if i > 0)
+        if multi_root_indices and isinstance(
+            self._chunk_source, OneRecordPerChunkSource
+        ):
+            raise ValueError(
+                "This pipeline references goto_root() index(es) "
+                f"{multi_root_indices}, which requires multi-root chunks, but the "
+                "streaming source yields one root per chunk. Pass a ChunkSource that "
+                "yields multi-root Chunks (sequential=False), or remove the "
+                "multi-root goto_root() calls."
+            )
 
     def _run_eager_phase(
         self,

@@ -484,3 +484,54 @@ class TestStreamingValidation:
         assert len(chunks) == 2
         assert chunks[0].roots == ({"x": 1},)
         assert chunks[0].sequential is True
+
+    def test_sequential_source_rejects_multi_root_pipeline_statically(self):
+        builder = (
+            stream([{"users": []}, {"profiles": []}])
+            .goto("users")
+            .each()
+            .map_to(table="users", join_on=["id"], fields=[Field("id", get("id"))])
+            .goto_root(1)
+            .goto("profiles")
+            .each()
+            .map_to(table="users", join_on=["id"], fields=[TempField("id", get("uid"))])
+            .load(MagicMock())
+        )
+        with pytest.raises(ValueError, match="requires multi-root chunks"):
+            builder.run()
+
+    def test_sequential_chunk_with_multi_root_emissions_raises_at_runtime(self):
+        source = CallableChunkSource(
+            lambda: iter([Chunk(roots=({"users": []},), sequential=True)])
+        )
+        builder = (
+            stream(source)
+            .goto("users")
+            .each()
+            .map_to(table="users", join_on=["id"], fields=[Field("id", get("id"))])
+            .goto_root(1)
+            .goto("profiles")
+            .each()
+            .map_to(table="users", join_on=["id"], fields=[TempField("id", get("uid"))])
+            .load(MagicMock())
+        )
+        with pytest.raises(ValueError, match="support only a single root"):
+            builder.run()
+
+    def test_multi_root_chunk_missing_root_raises(self):
+        source = CallableChunkSource(
+            lambda: iter([Chunk(roots=({"users": [{"id": "u1"}]},), sequential=False)])
+        )
+        builder = (
+            stream(source)
+            .goto("users")
+            .each()
+            .map_to(table="users", join_on=["id"], fields=[Field("id", get("id"))])
+            .goto_root(1)
+            .goto("profiles")
+            .each()
+            .map_to(table="users", join_on=["id"], fields=[TempField("id", get("uid"))])
+            .load(sessionmaker(bind=create_engine("sqlite:///:memory:"))())
+        )
+        with pytest.raises(ValueError, match="references goto_root\\(1\\)"):
+            builder.run()
