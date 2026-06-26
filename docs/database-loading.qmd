@@ -337,6 +337,142 @@ On the SQLAlchemy side this needs no special handling: the session's identity ma
 
 The chunk loop is strategy-agnostic: it calls `FlushStrategy.flush(ctx)` at each component boundary. A custom strategy receives a `FlushContext` exposing the scoped tables, mapped results, dependency graph, relationships, stats sink, telemetry callback, and the `session`/`is_supabase` target. Custom strategies (e.g. upsert or buffered variants from issue #77) implement persistence using those public fields plus `etielle.utils.topological_sort`; the built-in `KeyCompleteFlushStrategy` delegates to etielle's standard insert/bind logic.
 
+### How-to: bound peak memory with two roots, many-to-many, and cross-table merge
+
+If you are seeing OOM errors from a pipeline that passes two roots to `etl()`, uses `backlink()` many-to-many, and merges records with `join_on`, the cause is that `etl(root0, root1)` is **resident**: it holds both roots and every mapped instance in memory until a single end-of-run flush, so peak heap grows with the whole dataset. Switching to `stream()` keeps only one chunk resident at a time.
+
+The catch is that streaming chunks must be **self-contained**. A chunk is mapped, validated, bound, flushed, and evicted on its own, so each chunk must carry everything that belongs together. Three rules cover the three features you are using:
+
+- **Two roots → build multi-root chunks yourself.** A pipeline that uses `goto_root(1)` needs `Chunk(roots=(root0_slice, root1_slice), sequential=False)` so root *i* maps to pipeline root index *i*. The default wrapper and `GroupByChunkSource` produce single-root `sequential=True` chunks and are rejected for a multi-root pipeline, so assemble the chunks and pass them through `PreSegmentedChunkSource`.
+- **Merge → co-locate everything that shares a key, and merge within one root.** Cross-chunk scattered merge is not supported: rows with the same `join_on` key in different chunks become separate inserts. Do the merge *within a single root/pass* using `join_on` + a merge policy (e.g. `AddPolicy`); that path applies the policy correctly. Merging the **same** table across two roots only field-overwrites the ORM instance (the second root's partial row carries model defaults), so keep each row's authoritative fields in one root.
+- **`backlink()` → keep both endpoints in the chunk.** Many-to-many endpoints must be co-resident: etielle rejects a `backlink()` whose parent and child straddle the eager / non-eager boundary. Since the streamed side (orders) can't be eager, include the **referenced dimension rows in each chunk**; `join_on` + upsert means re-emitting the same tag across chunks just updates one row. (Reserve `load_eager()` for many-to-one `link_to` parents.) Also keep the `backlink()` parent table authored by a **single** `map_to()` — merging that table from a second emission drops the list field (`tag_ids`) the backlink reads.
+
+So the partition key must be a **complete component root**: pick the coarsest entity that ties the merge and relationship edges together (here, the order id) and put everything reachable from it — from both roots — into the same chunk. Batching many such units per chunk is always safe (more in a chunk only costs memory); splitting one unit across chunks is what breaks correctness.
+
+The example below streams two large feeds: orders (root 0, each carrying the tag ids for its many-to-many `Tag` links) and line items (root 1, merged per `(order_id, sku)` and linked back to their order). Each chunk also carries the `Tag` rows its orders reference, so the `backlink()` endpoints stay co-resident. (`backlink()` requires SQLAlchemy/SQLModel; it is not supported with Supabase.)
+
+```python
+from collections import defaultdict
+
+from sqlmodel import Field as SQLField, Relationship, SQLModel, Session, create_engine
+
+from etielle import (
+    stream, Chunk, PreSegmentedChunkSource, Field, TempField, get, AddPolicy,
+)
+
+
+class OrderTag(SQLModel, table=True):
+    order_id: int = SQLField(foreign_key="order.id", primary_key=True)
+    tag_id: int = SQLField(foreign_key="tag.id", primary_key=True)
+
+
+class Tag(SQLModel, table=True):
+    id: int = SQLField(primary_key=True)
+    name: str
+
+
+class Order(SQLModel, table=True):
+    id: int = SQLField(primary_key=True)
+    customer: str | None = None
+    tags: list[Tag] = Relationship(link_model=OrderTag)
+
+
+class LineItem(SQLModel, table=True):
+    order_id: int = SQLField(foreign_key="order.id", primary_key=True)
+    sku: str = SQLField(primary_key=True)
+    qty: int = 0
+    order: Order | None = Relationship()
+
+
+def aligned_chunks(orders, line_items, tags_by_id, batch_size=500):
+    """Yield multi-root chunks. Each chunk carries a batch of orders, the line
+    items belonging to them, and the distinct Tag rows they reference. Keeping
+    both feeds grouped/sorted by order id lets you build chunks without
+    buffering the whole dataset; the dict index below buffers only the line
+    items feed."""
+    items_by_order: dict[int, list] = defaultdict(list)
+    for it in line_items:
+        items_by_order[it["order_id"]].append(it)
+
+    batch_orders: list = []
+    batch_items: list = []
+
+    def build() -> Chunk:
+        referenced = {tid for o in batch_orders for tid in o.get("tag_ids", [])}
+        batch_tags = [tags_by_id[t] for t in referenced if t in tags_by_id]
+        return Chunk(
+            roots=({"orders": batch_orders, "tags": batch_tags}, {"line_items": batch_items}),
+            sequential=False,
+        )
+
+    for order in orders:
+        batch_orders.append(order)
+        batch_items.extend(items_by_order.pop(order["id"], []))
+        if len(batch_orders) >= batch_size:
+            yield build()
+            batch_orders, batch_items = [], []
+    if batch_orders:
+        yield build()
+
+
+engine = create_engine("sqlite:///app.db")
+SQLModel.metadata.create_all(engine)
+
+# Small shared dimension kept as plain data; only the referenced rows enter each chunk.
+tags_by_id = {10: {"id": 10, "name": "priority"}, 20: {"id": 20, "name": "gift"}}
+
+with Session(engine) as session:
+    result = (
+        stream(PreSegmentedChunkSource(
+            aligned_chunks(orders_feed, line_items_feed, tags_by_id, batch_size=500)
+        ))
+        # Root 0: the tags this chunk's orders reference (re-emitted per chunk, upserted).
+        .goto_root(0)
+        .goto("tags").each()
+        .map_to(table=Tag, join_on=["id"], fields=[
+            Field("id", get("id")),
+            Field("name", get("name")),
+        ])
+
+        # Root 0: orders, authored by a single map_to() so the backlink list survives.
+        .goto_root(0)
+        .goto("orders").each()
+        .map_to(table=Order, join_on=["id"], fields=[
+            Field("id", get("id")),
+            Field("customer", get("customer")),
+            TempField("tag_ids", get("tag_ids")),
+        ])
+
+        # Root 1: line items merged per (order_id, sku) and linked to their order.
+        .goto_root(1)
+        .goto("line_items").each()
+        .map_to(table=LineItem, join_on=["order_id", "sku"], fields=[
+            Field("order_id", get("order_id")),
+            Field("sku", get("sku")),
+            Field("qty", get("qty"), merge=AddPolicy()),
+        ])
+        .link_to(Order, by={"order_id": "id"})
+
+        # Many-to-many: attach the chunk's tags to each order.
+        .backlink(parent=Order, child=Tag, attr="tags", by={"tag_ids": "id"})
+        .load(session)
+        .run()
+    )
+    session.commit()
+```
+
+Why this stays flat:
+
+- Only one chunk's orders, line items, and referenced tags are mapped at a time; once a chunk is flushed, etielle drops its references and the session's identity map holds the persistent rows weakly, so the GC reclaims them before the next chunk.
+- Peak heap is set by `batch_size` (one batch of orders plus their line items and distinct tags), not by the total number of orders.
+
+Practical notes:
+
+- **Keep both feeds grouped/sorted by the partition key** to avoid buffering. The dict index above buffers only the line-items feed; if both feeds arrive sorted by order id you can merge-join them in lockstep and buffer nothing.
+- **`link_to()` in streaming requires single-field `by`.** Composite keys and traversal-based `build_index()` are rejected in streaming mode (a composite `join_on` row key, as on `LineItem` above, is fine — only the `link_to` `by` must be single-field).
+- **Commit cadence is yours.** A single end-of-stream `commit()` keeps everything in one transaction; for very long streams, commit periodically to cap the open-transaction size.
+- **Validate with `result.stats`.** Streaming `run()` does not retain instances in `result.tables`; check `result.stats[...]` (mapped/inserted counts) and query the database to confirm rows and junction links.
+
 ## Upsert Behavior
 
 etielle uses "upsert" semantics---if a row with the same key already exists, it's updated:
