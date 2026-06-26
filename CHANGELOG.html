@@ -396,6 +396,8 @@ ul.task-list li input[type="checkbox"] {
 <li><code>KeyCompleteFlushStrategy</code> as the default flush strategy for streaming</li>
 <li>Relationship-completeness validation for incomplete chunks</li>
 <li>Additive per-table stats across chunk boundaries</li>
+<li><code>GroupByChunkSource</code> single-pass streaming group-by chunking helper (one-chunk memory footprint over grouped/sorted input)</li>
+<li><code>PreSegmentedChunkSource</code> passthrough for caller-supplied iterables of chunks</li>
 </ul>
 </section>
 </section>
