@@ -157,6 +157,8 @@ from .chunking import (
     KeyCompleteFlushStrategy,
     OneRecordPerChunkSource,
     CallableChunkSource,
+    GroupByChunkSource,
+    PreSegmentedChunkSource,
 )
 
 __all__ += [
@@ -174,5 +176,7 @@ __all__ += [
     "KeyCompleteFlushStrategy",
     "OneRecordPerChunkSource",
     "CallableChunkSource",
+    "GroupByChunkSource",
+    "PreSegmentedChunkSource",
     "MappingRuntimeState",
 ]

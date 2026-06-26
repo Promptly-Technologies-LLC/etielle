@@ -10,6 +10,8 @@
 - `KeyCompleteFlushStrategy` as the default flush strategy for streaming
 - Relationship-completeness validation for incomplete chunks
 - Additive per-table stats across chunk boundaries
+- `GroupByChunkSource` single-pass streaming group-by chunking helper (one-chunk memory footprint over grouped/sorted input)
+- `PreSegmentedChunkSource` passthrough for caller-supplied iterables of chunks
 
 ## v4.0.0 (2026-06-25)
 
