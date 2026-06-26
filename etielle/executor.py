@@ -373,15 +373,6 @@ def run_mapping(
         ordered_instances: Dict[Tuple[Any, ...], Dict[str, Any]] = {}
         for key_tuple in ordered_keys:
             ordered_instances[key_tuple] = index[key_tuple]
-        indices: Dict[str, Dict[Any, Any]] = {}
-        for field_name in linkable_fields.get(table, set()):
-            field_index: Dict[Any, Any] = {}
-            for key_tuple, row in ordered_instances.items():
-                field_value = row.get(field_name)
-                if field_value is not None:
-                    field_index[field_value] = row
-            if field_index:
-                indices[field_name] = field_index
         outputs[table] = MappingResult(
             instances=ordered_instances,
             update_errors={},
@@ -391,7 +382,6 @@ def run_mapping(
                 "num_update_errors": 0,
                 "num_finalize_errors": 0,
             },
-            indices=indices,
             lookup_values=lookup_stores.get(table, {}),
         )
 

@@ -39,10 +39,16 @@ class ChunkSource(Protocol):
 
 
 class OneRecordPerChunkSource:
-    """Wrap an iterable of JSON roots; each root becomes its own chunk."""
+    """Wrap an iterable of JSON roots; each root becomes its own chunk.
+
+    A re-iterable input (e.g. a list) can be streamed more than once. A
+    single-use iterator (e.g. a generator or an ``ijson`` stream) is consumed
+    on the first pass, matching the single-consumption nature of streaming
+    sources; running the pipeline again would yield no chunks.
+    """
 
     def __init__(self, records: Iterator[Any] | Sequence[Any]) -> None:
-        self._records = iter(records)
+        self._records = records
 
     def chunks(self) -> Iterator[Chunk]:
         for record in self._records:

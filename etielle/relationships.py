@@ -577,18 +577,24 @@ def validate_relationship_completeness(
         child_field, parent_field = next(iter(by_mapping.items()))
         lookup_values = child_result.lookup_values
 
+        # Build the set of parent key values present in this scope. Using the
+        # captured lookup_values (rather than secondary indices) keeps this
+        # correct for every emit type, including plain-dict tables and
+        # TempField-keyed joins where no instance-level index exists.
+        parent_values_present: set[Any] = set()
+        if parent_result is not None:
+            for parent_vals in parent_result.lookup_values.values():
+                value = parent_vals.get(parent_field)
+                if value is not None:
+                    parent_values_present.add(value)
+
         for child_key, _child_obj in child_result.instances.items():
             child_values = lookup_values.get(child_key, {})
             lookup_value = child_values.get(child_field)
             if lookup_value is None:
                 continue
 
-            parent_obj = None
-            if parent_result is not None:
-                parent_index = parent_result.indices.get(parent_field, {})
-                parent_obj = parent_index.get(lookup_value)
-
-            if parent_obj is None:
+            if lookup_value not in parent_values_present:
                 hint = (
                     f"Use a coarser chunk key or mark {parent_table!r} as load_eager()."
                 )

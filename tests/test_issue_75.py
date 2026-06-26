@@ -182,10 +182,15 @@ class TestResidentParity:
 
 class TestAutoKeySafety:
     def test_auto_keys_do_not_collide_in_chunk(self):
+        engine = create_engine("sqlite:///:memory:")
+        Base.metadata.create_all(engine)
+        Session = sessionmaker(bind=engine)
+        session = Session()
+
         records = [
-            {"items": [{"name": "a"}]},
-            {"items": [{"name": "b"}]},
-            {"items": [{"name": "c"}]},
+            {"users": [{"name": "a"}]},
+            {"users": [{"name": "b"}]},
+            {"users": [{"name": "c"}]},
         ]
 
         result = (
@@ -194,15 +199,18 @@ class TestAutoKeySafety:
                     lambda: iter([Chunk(roots=tuple(records), sequential=True)])
                 )
             )
-            .goto("items")
+            .goto("users")
             .each()
-            .map_to(table="items", fields=[Field("name", get("name"))])
-            .load(sessionmaker(bind=create_engine("sqlite:///:memory:"))())
+            .map_to(table=StreamUser, fields=[Field("name", get("name"))])
+            .load(session)
             .run()
         )
+        session.commit()
 
-        assert result.stats["items"].mapped == 3
-        assert result.stats["items"].inserted == 3
+        assert result.stats["stream_users"].mapped == 3
+        assert result.stats["stream_users"].inserted == 3
+        assert session.query(StreamUser).count() == 3
+        session.close()
 
 
 class TestStatsAggregation:
@@ -393,8 +401,13 @@ class TestLoadEagerStreaming:
 
 class TestMultiRootChunk:
     def test_indexed_multi_root_chunk_merge(self):
-        users_root = {"users": [{"id": "u1", "name": "Alice"}]}
-        profiles_root = {"profiles": [{"user_id": "u1", "email": "alice@example.com"}]}
+        engine = create_engine("sqlite:///:memory:")
+        Base.metadata.create_all(engine)
+        Session = sessionmaker(bind=engine)
+        session = Session()
+
+        users_root = {"users": [{"id": 1, "name": "Alice"}]}
+        profiles_root = {"profiles": [{"user_id": 1, "name_suffix": " Smith"}]}
         source = CallableChunkSource(
             lambda: iter([Chunk(roots=(users_root, profiles_root), sequential=False)])
         )
@@ -404,7 +417,7 @@ class TestMultiRootChunk:
             .goto("users")
             .each()
             .map_to(
-                table="users",
+                table=StreamUser,
                 join_on=["id"],
                 fields=[
                     Field("id", get("id")),
@@ -415,19 +428,23 @@ class TestMultiRootChunk:
             .goto("profiles")
             .each()
             .map_to(
-                table="users",
+                table=StreamUser,
                 join_on=["id"],
                 fields=[
-                    Field("email", get("email")),
+                    Field("name", get("name_suffix")),
                     TempField("id", get("user_id")),
                 ],
             )
-            .load(sessionmaker(bind=create_engine("sqlite:///:memory:"))())
+            .load(session)
             .run()
         )
+        session.commit()
 
-        assert result.stats["users"].mapped == 1
-        assert result.stats["users"].inserted == 1
+        rows = session.query(StreamUser).all()
+        assert len(rows) == 1
+        assert result.stats["stream_users"].mapped == 1
+        assert result.stats["stream_users"].inserted == 1
+        session.close()
 
 
 class TestFlushStrategySeam:

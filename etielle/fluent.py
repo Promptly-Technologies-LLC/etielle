@@ -1518,9 +1518,13 @@ class PipelineBuilder:
             row_count = len(tables[table_name])
             _emit(FlushStarted(table=table_name, count=row_count), on_event)
 
+            # Plain-dict rows are not ORM instances and are not persisted on the
+            # SQLAlchemy path; only count instances actually added to the session.
+            added_count = 0
             for _key, instance in tables[table_name].items():
                 if not isinstance(instance, dict):
                     self._session.add(instance)
+                    added_count += 1
 
             for idx, parent_table in pending_bindings.get(table_name, []):
                 if parent_table not in raw_results:
@@ -1553,7 +1557,7 @@ class PipelineBuilder:
                 _emit(
                     FlushCompleted(
                         table=table_name,
-                        inserted=row_count,
+                        inserted=added_count,
                         failed=0,
                         batch_num=1,
                         batch_total=1,
@@ -1565,14 +1569,14 @@ class PipelineBuilder:
                     self._accumulate_stats(
                         stats,
                         table_name,
-                        inserted=row_count,
+                        inserted=added_count,
                     )
             except Exception as e:
                 _emit(
                     FlushFailed(
                         table=table_name,
                         error=str(e),
-                        affected_count=row_count,
+                        affected_count=added_count,
                     ),
                     on_event,
                 )
@@ -1580,7 +1584,7 @@ class PipelineBuilder:
                     self._accumulate_stats(
                         stats,
                         table_name,
-                        failed=row_count,
+                        failed=added_count,
                     )
                 raise
 
