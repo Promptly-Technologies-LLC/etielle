@@ -43,3 +43,30 @@ uv run python benchmarks/bench_issue_9a.py compare \
 
 Use `--load` to measure load-mode behavior where flushed instances are not retained
 in `PipelineResult.tables`.
+
+# Issue 75 benchmark (streaming bounded memory)
+
+`bench_issue_75.py` loads the same dataset two ways and reports Python heap peak
+(`tracemalloc`) and process RSS peak during the run:
+
+- **resident** — `etl(all_data).load(session).run()` (the only pre-#75 option)
+- **streaming** — `stream(chunks).load(session).run()`
+
+```bash
+uv run python benchmarks/bench_issue_75.py --scale 8000
+```
+
+## Sample result (scale=8000, 2 KiB/row payload, in-memory SQLite)
+
+| mode      | heap peak | rss peak  | wall  |
+|-----------|-----------|-----------|-------|
+| resident  | 45.5 MiB  | 227.9 MiB | 2.4s  |
+| streaming | 0.23 MiB  | 227.9 MiB | 13.1s |
+
+Streaming holds a flat ~0.23 MiB heap peak independent of dataset size (resident grows
+linearly: 17.9 MiB at scale 3000, 45.5 MiB at scale 8000), confirming the bounded-memory
+property. On the SQLAlchemy side this needs no explicit eviction: the identity map references
+persistent instances weakly, so the GC reclaims them once etielle releases its per-chunk
+accumulators. RSS is a process high-water mark and does not fall, so heap peak is the
+meaningful signal here. The wall-time cost is the per-chunk flush overhead of streaming,
+traded for the memory bound.

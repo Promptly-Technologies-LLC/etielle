@@ -19,3 +19,6 @@ uv.lock
 
 # Local Supabase
 supabase/
+
+# Benchmark run artifacts
+artifacts/
