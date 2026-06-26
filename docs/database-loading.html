@@ -357,7 +357,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h2 class="anchored" data-anchor-id="basic-database-persistence">Basic Database Persistence</h2>
 <section id="sqlmodel-example" class="level3">
 <h3 class="anchored" data-anchor-id="sqlmodel-example">SQLModel Example</h3>
-<div id="21010e8b" class="cell" data-execution_count="1">
+<div id="15ee9280" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sqlmodel <span class="im">import</span> SQLModel, Field <span class="im">as</span> SQLField, Session, create_engine</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -405,7 +405,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="sqlalchemy-example" class="level3">
 <h3 class="anchored" data-anchor-id="sqlalchemy-example">SQLAlchemy Example</h3>
-<div id="3192b50c" class="cell" data-execution_count="2">
+<div id="837b44b1" class="cell" data-execution_count="2">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sqlalchemy <span class="im">import</span> Column, String, create_engine</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sqlalchemy.orm <span class="im">import</span> declarative_base, Session</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get</span>
@@ -484,7 +484,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="relationships-and-database-loading" class="level2">
 <h2 class="anchored" data-anchor-id="relationships-and-database-loading">Relationships and Database Loading</h2>
 <p>When using <code>link_to()</code> with ORM models, relationships are bound before flushing:</p>
-<div id="16365c1b" class="cell" data-execution_count="3">
+<div id="28ec608e" class="cell" data-execution_count="3">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sqlmodel <span class="im">import</span> SQLModel, Field <span class="im">as</span> SQLField, Relationship, Session, create_engine</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get, get_from_parent</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -797,7 +797,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>etielle also supports loading data directly to Supabase using the same <code>.load().run()</code> pattern.</p>
 <section id="basic-supabase-example" class="level3">
 <h3 class="anchored" data-anchor-id="basic-supabase-example">Basic Supabase Example</h3>
-<div id="bb33dc04" class="cell" data-execution_count="4">
+<div id="5dc910a8" class="cell" data-execution_count="4">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> supabase <span class="im">import</span> create_client</span>
 <span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get</span>
 <span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -827,7 +827,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="supabase-with-relationships" class="level3">
 <h3 class="anchored" data-anchor-id="supabase-with-relationships">Supabase with Relationships</h3>
-<div id="95d0e0eb" class="cell" data-execution_count="5">
+<div id="b5b5c149" class="cell" data-execution_count="5">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> supabase <span class="im">import</span> create_client</span>
 <span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get, get_from_parent</span>
 <span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -914,7 +914,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="db-generated-ids-two-phase-insert" class="level3">
 <h3 class="anchored" data-anchor-id="db-generated-ids-two-phase-insert">DB-Generated IDs (Two-Phase Insert)</h3>
 <p>When your database generates primary keys (e.g., UUID or auto-increment), use the <code>fk</code> parameter on <code>link_to()</code> to automatically populate child foreign keys after parent insertion:</p>
-<div id="7a471075" class="cell" data-execution_count="6">
+<div id="a3895239" class="cell" data-execution_count="6">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> supabase <span class="im">import</span> create_client</span>
 <span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get, get_from_parent</span>
 <span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a></span>
