@@ -292,7 +292,40 @@ stream(chunks, eager_roots=tags_snapshot)
     ...
 ```
 
-For arbitrarily grouped input, see the chunking helpers in issue #76 (`ChunkSource` group-by and pre-segmented passthrough).
+### Chunking helpers
+
+Producing correct chunks is part of the streaming contract, so etielle ships two `ChunkSource` helpers rather than leaving boundary-finding to the caller.
+
+**`GroupByChunkSource` (single-pass group-by).** Given a `key` function, it reads the input once, accumulates consecutive records that share a key, and emits a chunk when the key changes. Peak memory is one chunk.
+
+```python
+from etielle import stream, GroupByChunkSource, Field, TempField, get
+
+# Each record is a parent subtree; group by the owning order id.
+source = GroupByChunkSource(record_iter, key=lambda r: r["orders"][0]["id"])
+
+stream(source)
+    .goto("orders").each()
+    .map_to(table=Order, fields=[Field("customer", get("customer")), TempField("id", get("id"))])
+    .goto_root()
+    .goto("items").each()
+    .map_to(table=LineItem, fields=[...])
+    .link_to(Order, by={"order_id": "id"})
+    .load(session)
+    .run()
+```
+
+- **Grouped-input requirement.** Grouping is *consecutive only*, so the input must already be grouped (or sorted) by `key`—the natural shape for paginated APIs and "one parent subtree at a time" feeds. If two records share a key but are separated by a record with a different key, they land in different chunks; that still satisfies key-completeness, but the runtime relationship-completeness check will raise if a chunk is then missing relationship endpoints. For unsorted input, sort by `key` first (the robust unsorted-input partitioner, H2, is deferred).
+- **Pick a relationship-complete key.** Choose a key that is a *complete component root*—coarse enough that everything reachable through a relationship from a record sharing the key also shares it (e.g. the owning entity id), not merely a fine merge key. Grouping guarantees key-completeness for the chosen key; the runtime validation catches a key that is too fine.
+
+**`PreSegmentedChunkSource` (passthrough).** If you already have an iterable of `Chunk` objects, hand it over directly—it yields them in order without buffering.
+
+```python
+from etielle import stream, PreSegmentedChunkSource, Chunk
+
+chunks = [Chunk(roots=(subtree,), sequential=True) for subtree in producer]
+stream(PreSegmentedChunkSource(chunks)).goto(...)...
+```
 
 ### Why streaming bounds memory
 

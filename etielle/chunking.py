@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable, Iterator, Sequence
+from collections.abc import Callable, Iterable, Iterator, Sequence
 from dataclasses import dataclass, field
+from itertools import groupby
 from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 
 if TYPE_CHECKING:
@@ -63,6 +64,78 @@ class CallableChunkSource:
 
     def chunks(self) -> Iterator[Chunk]:
         yield from self._factory()
+
+
+class GroupByChunkSource:
+    """Group consecutive records that share a key into one chunk each.
+
+    This is the single-pass, streaming group-by chunker. It reads the input
+    once, accumulates consecutive records that map to the same ``key``, and
+    emits a chunk whenever the key changes. Peak memory is one chunk: only the
+    records for the current key are held at a time.
+
+    Each emitted chunk is ``sequential`` -- every record in the group is mapped
+    against pipeline root index 0 with shared auto-key counters, so a group of
+    related records merges into one component (the repeated single-root shape).
+
+    Grouped-input requirement:
+        Correctness depends on the input *already being grouped (or sorted) by
+        ``key``*, which is the common shape for paginated APIs and "one parent
+        subtree at a time" feeds. Because grouping is consecutive only, records
+        that share a key but are separated by records with a different key land
+        in *separate* chunks. With a relationship key that is fine for
+        key-completeness but breaks relationship-completeness; the runtime
+        relationship-completeness check raises if a chunk is missing endpoints.
+        For unsorted input, sort by ``key`` first, or wait for the robust
+        unsorted-input partitioner (H2, tracked under sub-issue D).
+
+    Choosing a relationship-complete key:
+        Pick a key that is a *complete component root* -- coarse enough that
+        every record reachable through a relationship from one record sharing
+        the key also shares it (e.g. the owning entity id), not merely a fine
+        merge key. Grouping guarantees key-completeness for whatever key you
+        choose; the runtime validation catches a key that is too fine.
+
+    Args:
+        records: An iterable (or single-use iterator) of JSON roots. Consumed
+            exactly once.
+        key: Function mapping a record to its grouping key. Adjacent records
+            with equal keys are batched into the same chunk.
+    """
+
+    def __init__(
+        self,
+        records: Iterator[Any] | Iterable[Any],
+        key: Callable[[Any], Any],
+    ) -> None:
+        self._records = records
+        self._key = key
+
+    def chunks(self) -> Iterator[Chunk]:
+        for _, group in groupby(self._records, key=self._key):
+            yield Chunk(roots=tuple(group), sequential=True)
+
+
+class PreSegmentedChunkSource:
+    """Pass an already-segmented iterable of chunks through unchanged.
+
+    Use this when the caller has already partitioned input into key-complete,
+    relationship-complete ``Chunk`` objects (e.g. a producer that knows its own
+    boundaries). The chunks are yielded in order without buffering, so peak
+    memory is whatever the upstream iterable holds at a time.
+
+    A re-iterable input (e.g. a list) can be streamed more than once; a
+    single-use iterator is consumed on the first pass.
+
+    Args:
+        chunks: An iterable (or single-use iterator) of ``Chunk`` objects.
+    """
+
+    def __init__(self, chunks: Iterator[Chunk] | Iterable[Chunk]) -> None:
+        self._chunks = chunks
+
+    def chunks(self) -> Iterator[Chunk]:
+        yield from self._chunks
 
 
 @dataclass
