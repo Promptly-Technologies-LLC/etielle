@@ -82,9 +82,6 @@ class FlushContext:
     - ``stats`` / ``on_event``: stats accumulator and telemetry sink.
     - ``session``: the SQLAlchemy session or Supabase client from ``load()``.
     - ``is_supabase``: whether ``session`` is a Supabase client.
-    - ``evictable``: whether the scope's flushed instances may be released after
-      flushing. True for per-chunk components in streaming mode; False for
-      resident runs and for eager tables that must survive across chunks.
 
     ``builder`` is the engine handle that the built-in strategies use to reuse
     etielle's standard insert/bind logic. Custom strategies should rely on the
@@ -102,7 +99,6 @@ class FlushContext:
     on_event: TelemetryCallback | None
     session: Any
     is_supabase: bool
-    evictable: bool
     builder: PipelineBuilder = field(repr=False)
 
 
@@ -116,20 +112,7 @@ class FlushStrategy(Protocol):
 
 
 class KeyCompleteFlushStrategy:
-    """Default streaming strategy: plain insert/flush, no cross-chunk merge.
-
-    Args:
-        evict_flushed: When True (default), expunge a component's flushed ORM
-            instances from the SQLAlchemy session after each chunk so the
-            identity map stays bounded to one component plus resident eager
-            tables. Set False to keep flushed instances attached (e.g. when the
-            caller wants to keep working with them, or uses an aggressive
-            relationship cascade that would detach resident parents). Has no
-            effect on the Supabase path, which sends plain rows.
-    """
-
-    def __init__(self, *, evict_flushed: bool = True) -> None:
-        self.evict_flushed = evict_flushed
+    """Default streaming strategy: plain insert/flush, no cross-chunk merge."""
 
     def flush(self, ctx: FlushContext) -> None:
         if ctx.session is None:
@@ -162,5 +145,4 @@ class KeyCompleteFlushStrategy:
                 ctx.backlink_rels,
                 ctx.stats,
                 ctx.on_event,
-                evict=self.evict_flushed and ctx.evictable,
             )

@@ -7,7 +7,6 @@ from unittest.mock import MagicMock
 
 import pytest
 from sqlalchemy import Column, ForeignKey, Integer, String, create_engine
-from sqlalchemy import inspect as sa_inspect
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 
 from etielle import Field, TempField, etl, get, stream
@@ -532,87 +531,8 @@ class TestFlushStrategySeam:
         session.close()
 
 
-class _CapturingStrategy(KeyCompleteFlushStrategy):
-    """Records the ORM instances passed to each flush for state inspection."""
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.captured: list = []
-
-    def flush(self, ctx: FlushContext) -> None:
-        for result in ctx.local_results.values():
-            for instance in result.instances.values():
-                if not isinstance(instance, dict):
-                    self.captured.append(instance)
-        super().flush(ctx)
-
-
-class TestSessionEviction:
-    def test_flushed_instances_evicted_by_default(self):
-        engine = create_engine("sqlite:///:memory:")
-        Base.metadata.create_all(engine)
-        Session = sessionmaker(bind=engine)
-        session = Session()
-
-        strategy = _CapturingStrategy()
-        chunks = [
-            {"users": [{"id": 1, "name": "A"}]},
-            {"users": [{"id": 2, "name": "B"}]},
-            {"users": [{"id": 3, "name": "C"}]},
-        ]
-
-        (
-            stream(chunks, flush_strategy=strategy)
-            .goto("users")
-            .each()
-            .map_to(
-                table=StreamUser,
-                fields=[Field("name", get("name")), TempField("id", get("id"))],
-            )
-            .load(session)
-            .run()
-        )
-
-        # Every flushed instance is detached from the session after its chunk.
-        assert len(strategy.captured) == 3
-        assert all(sa_inspect(obj).detached for obj in strategy.captured)
-        session.commit()
-        assert session.query(StreamUser).count() == 3
-        session.close()
-
-    def test_eviction_can_be_disabled(self):
-        engine = create_engine("sqlite:///:memory:")
-        Base.metadata.create_all(engine)
-        Session = sessionmaker(bind=engine)
-        session = Session()
-
-        strategy = _CapturingStrategy(evict_flushed=False)
-        chunks = [
-            {"users": [{"id": 1, "name": "A"}]},
-            {"users": [{"id": 2, "name": "B"}]},
-            {"users": [{"id": 3, "name": "C"}]},
-        ]
-
-        (
-            stream(chunks, flush_strategy=strategy)
-            .goto("users")
-            .each()
-            .map_to(
-                table=StreamUser,
-                fields=[Field("name", get("name")), TempField("id", get("id"))],
-            )
-            .load(session)
-            .run()
-        )
-
-        # With eviction disabled, flushed instances stay attached (persistent).
-        assert len(strategy.captured) == 3
-        assert all(not sa_inspect(obj).detached for obj in strategy.captured)
-        session.commit()
-        assert session.query(StreamUser).count() == 3
-        session.close()
-
-    def test_eager_parents_survive_eviction(self):
+class TestCrossChunkRelationships:
+    def test_eager_parent_bound_across_chunks(self):
         eager = {"tags": [{"id": 1, "name": "t1"}, {"id": 2, "name": "t2"}]}
         chunks = [
             {"items": [{"id": 1, "name": "i0", "tag_id": 1}]},
@@ -651,7 +571,8 @@ class TestSessionEviction:
         )
         session.commit()
 
-        # All three items bound to a resident eager tag across chunks.
+        # All three items, mapped in separate chunks, bind to the resident eager
+        # tags and persist the correct foreign key.
         assert session.query(StreamItem).count() == 3
         assert session.query(StreamTag).count() == 2
         items = session.query(StreamItem).order_by(StreamItem.id).all()
@@ -659,7 +580,7 @@ class TestSessionEviction:
         assert items[2].tag_id == 2
         session.close()
 
-    def test_evicted_data_is_correct_with_relationships(self):
+    def test_within_chunk_relationship_fk_persisted(self):
         engine = create_engine("sqlite:///:memory:")
         Base.metadata.create_all(engine)
         Session = sessionmaker(bind=engine)
@@ -703,54 +624,6 @@ class TestSessionEviction:
 
         posts = session.query(StreamPost).order_by(StreamPost.id).all()
         assert [p.user_id for p in posts] == [1, 2]
-        session.close()
-
-    def test_eager_scope_is_not_evictable(self):
-        """Eager flushes are marked non-evictable; streaming components are."""
-        seen: list[tuple[frozenset, bool]] = []
-
-        class EvictableRecorder(KeyCompleteFlushStrategy):
-            def flush(self, ctx: FlushContext) -> None:
-                seen.append((frozenset(ctx.scope_tables), ctx.evictable))
-                super().flush(ctx)
-
-        engine = create_engine("sqlite:///:memory:")
-        Base.metadata.create_all(engine)
-        Session = sessionmaker(bind=engine)
-        session = Session()
-
-        (
-            stream(
-                [{"items": [{"id": 1, "name": "i0", "tag_id": 1}]}],
-                eager_roots={"tags": [{"id": 1, "name": "t1"}]},
-                flush_strategy=EvictableRecorder(),
-            )
-            .goto("tags")
-            .each()
-            .map_to(
-                table=StreamTag,
-                fields=[Field("name", get("name")), TempField("id", get("id"))],
-            )
-            .load_eager(StreamTag)
-            .goto_root()
-            .goto("items")
-            .each()
-            .map_to(
-                table=StreamItem,
-                fields=[
-                    Field("name", get("name")),
-                    TempField("id", get("id")),
-                    TempField("tag_id", get("tag_id")),
-                ],
-            )
-            .link_to(StreamTag, by={"tag_id": "id"})
-            .load(session)
-            .run()
-        )
-
-        evictable_by_scope = {scope: ev for scope, ev in seen}
-        assert evictable_by_scope[frozenset({"stream_tags"})] is False
-        assert evictable_by_scope[frozenset({"stream_items"})] is True
         session.close()
 
 

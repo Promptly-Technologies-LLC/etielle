@@ -1,15 +1,13 @@
 #!/usr/bin/env python3
 """Benchmark harness for issue #75: streaming + chunked execution.
 
-Demonstrates the bounded-memory property of streaming versus resident loading,
-and the effect of session eviction. All modes load the same logical dataset
-into a SQLAlchemy session and measure Python heap peak (tracemalloc) and process
-RSS peak during the run.
+Demonstrates the bounded-memory property of streaming versus resident loading.
+Both modes load the same logical dataset into a SQLAlchemy session and measure
+Python heap peak (tracemalloc) and process RSS peak during the run.
 
 Modes:
-  - resident:        etl(all_data).load(session).run()  (the only pre-#75 option)
-  - stream_evict:    stream(chunks).load(session).run() (eviction on, default)
-  - stream_no_evict: stream(chunks, KeyCompleteFlushStrategy(evict_flushed=False))
+  - resident:  etl(all_data).load(session).run()  (the only pre-#75 option)
+  - streaming: stream(chunks).load(session).run()
 
 Usage:
     uv run python benchmarks/bench_issue_75.py --scale 2000
@@ -32,7 +30,7 @@ from typing import Any, Callable
 from sqlalchemy import Column, ForeignKey, Integer, String, create_engine
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 
-from etielle import Field, TempField, KeyCompleteFlushStrategy, etl, get, stream
+from etielle import Field, TempField, etl, get, stream
 from etielle.chunking import CallableChunkSource, Chunk
 
 Base = declarative_base()
@@ -145,7 +143,7 @@ def _run_resident(scale: int) -> Callable[[], Any]:
     return go
 
 
-def _run_streaming(scale: int, *, evict: bool) -> Callable[[], Any]:
+def _run_streaming(scale: int) -> Callable[[], Any]:
     def go() -> Any:
         session = _fresh_session()
         source = CallableChunkSource(
@@ -154,7 +152,7 @@ def _run_streaming(scale: int, *, evict: bool) -> Callable[[], Any]:
             )
         )
         result = (
-            stream(source, flush_strategy=KeyCompleteFlushStrategy(evict_flushed=evict))
+            stream(source)
             .goto("users").each().map_to(table=B75User, fields=_user_fields())
             .goto_root()
             .goto("posts").each().map_to(table=B75Post, fields=_post_fields())
@@ -200,8 +198,7 @@ def main() -> None:
     scale = args.scale
     results = [
         _bench("resident", scale, _run_resident(scale)),
-        _bench("stream_no_evict", scale, _run_streaming(scale, evict=False)),
-        _bench("stream_evict", scale, _run_streaming(scale, evict=True)),
+        _bench("streaming", scale, _run_streaming(scale)),
     ]
 
     print(f"\nissue #75 streaming memory benchmark (scale={scale}, payload=2KiB/row)\n")
@@ -216,13 +213,13 @@ def main() -> None:
         )
 
     base = next(r for r in results if r.name == "resident")
-    evicted = next(r for r in results if r.name == "stream_evict")
+    streaming = next(r for r in results if r.name == "streaming")
     if base.heap_peak_bytes:
-        ratio = evicted.heap_peak_bytes / base.heap_peak_bytes
+        ratio = streaming.heap_peak_bytes / base.heap_peak_bytes
         print(
-            f"\nstream_evict heap peak is {ratio:.2%} of resident "
+            f"\nstreaming heap peak is {ratio:.2%} of resident "
             f"({base.heap_peak_bytes / 1024 / 1024:.1f} MiB -> "
-            f"{evicted.heap_peak_bytes / 1024 / 1024:.1f} MiB)"
+            f"{streaming.heap_peak_bytes / 1024 / 1024:.1f} MiB)"
         )
 
     if args.output:

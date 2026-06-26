@@ -1503,18 +1503,8 @@ class PipelineBuilder:
         backlink_rels: list[dict[str, Any]],
         stats: dict[str, TableStats],
         on_event: TelemetryCallback | None,
-        *,
-        evict: bool = False,
     ) -> None:
-        """Flush tables in scope to SQLAlchemy session in dependency order.
-
-        When ``evict`` is True, the scope's flushed ORM instances are expunged
-        from the session after all binding and flushing completes. This bounds
-        the session identity map to one component (plus resident eager tables)
-        during streaming. Eager/resident tables are never passed in this scope,
-        so they survive across chunks. The just-emitted INSERTs remain in the
-        open transaction; caller-controlled commit/rollback is unaffected.
-        """
+        """Flush tables in scope to SQLAlchemy session in dependency order."""
         from etielle.utils import topological_sort
 
         tables = {
@@ -1629,14 +1619,6 @@ class PipelineBuilder:
                 fail_on_missing=False,
             )
             self._session.flush()
-
-        if evict:
-            for table_name in tables:
-                for instance in tables[table_name].values():
-                    if isinstance(instance, dict):
-                        continue
-                    if instance in self._session:
-                        self._session.expunge(instance)
 
     def _build_traversal_indices(self) -> None:
         """Build traversal-based lookup indices before mapping."""
@@ -1798,7 +1780,6 @@ class PipelineBuilder:
                 on_event=on_event,
                 session=self._session,
                 is_supabase=self._is_supabase_client(self._session),
-                evictable=False,
                 builder=self,
             )
             if self._is_supabase_client(self._session):
@@ -1880,7 +1861,6 @@ class PipelineBuilder:
                 on_event=on_event,
                 session=self._session,
                 is_supabase=self._is_supabase_client(self._session),
-                evictable=self._streaming,
                 builder=self,
             )
             strategy.flush(ctx)
