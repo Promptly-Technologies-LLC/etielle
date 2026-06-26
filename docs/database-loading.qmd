@@ -294,6 +294,14 @@ stream(chunks, eager_roots=tags_snapshot)
 
 For arbitrarily grouped input, see the chunking helpers in issue #76 (`ChunkSource` group-by and pre-segmented passthrough).
 
+### Bounding memory on the SQLAlchemy path
+
+Streaming evicts etielle's own per-chunk accumulators, but a SQLAlchemy `Session` keeps every flushed instance in its identity map until the transaction ends or the instances are expunged. Over many chunks this identity map—not etielle—becomes the dominant memory cost. To keep memory bounded across a long stream, the caller should periodically clear the session, for example by committing (or flushing and calling `Session.expunge_all()`) at a cadence appropriate for the workload. etielle does not commit or expunge on your behalf, so transaction control stays with the caller.
+
+### Extending flush behavior
+
+The chunk loop is strategy-agnostic: it calls `FlushStrategy.flush(ctx)` at each component boundary. A custom strategy receives a `FlushContext` exposing the scoped tables, mapped results, dependency graph, relationships, stats sink, telemetry callback, and the `session`/`is_supabase` target. Custom strategies (e.g. upsert or buffered variants from issue #77) implement persistence using those public fields plus `etielle.utils.topological_sort`; the built-in `KeyCompleteFlushStrategy` delegates to etielle's standard insert/bind logic.
+
 ## Upsert Behavior
 
 etielle uses "upsert" semantics---if a row with the same key already exists, it's updated:

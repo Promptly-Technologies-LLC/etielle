@@ -479,6 +479,51 @@ class TestFlushStrategySeam:
         ctx = seen[0]
         assert "stream_users" in ctx.scope_tables
         assert "stream_users" in ctx.bind_context
+        assert ctx.session is session
+        assert ctx.is_supabase is False
+        session.close()
+
+    def test_custom_strategy_persists_via_public_fields(self):
+        engine = create_engine("sqlite:///:memory:")
+        Base.metadata.create_all(engine)
+        Session = sessionmaker(bind=engine)
+        session = Session()
+
+        class PublicFieldStrategy:
+            """Persists using only public FlushContext fields, no builder internals."""
+
+            def flush(self, ctx: FlushContext) -> None:
+                from etielle.utils import topological_sort
+
+                for table in topological_sort(ctx.dep_graph, ctx.scope_tables):
+                    result = ctx.local_results.get(table)
+                    if result is None:
+                        continue
+                    for instance in result.instances.values():
+                        if not isinstance(instance, dict):
+                            ctx.session.add(instance)
+                ctx.session.flush()
+
+        (
+            stream(
+                [{"users": [{"id": 1, "name": "A"}]}],
+                flush_strategy=PublicFieldStrategy(),
+            )
+            .goto("users")
+            .each()
+            .map_to(
+                table=StreamUser,
+                fields=[
+                    Field("name", get("name")),
+                    TempField("id", get("id")),
+                ],
+            )
+            .load(session)
+            .run()
+        )
+        session.commit()
+
+        assert session.query(StreamUser).count() == 1
         session.close()
 
 

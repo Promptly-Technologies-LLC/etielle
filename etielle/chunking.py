@@ -67,7 +67,27 @@ class CallableChunkSource:
 
 @dataclass
 class FlushContext:
-    """Inputs for a flush at a component boundary."""
+    """Inputs for a flush at a component boundary.
+
+    The public fields provide everything a custom ``FlushStrategy`` needs to
+    persist a component without touching engine internals:
+
+    - ``scope_tables``: tables this flush is responsible for.
+    - ``bind_context``: mapped results for the scope plus any resident/eager
+      tables, used to resolve relationship parents.
+    - ``local_results``: mapped results scoped to ``scope_tables`` only.
+    - ``dep_graph``: child -> parents dependency graph (use
+      ``etielle.utils.topological_sort`` for flush order).
+    - ``link_to_rels`` / ``backlink_rels``: relationship specs in scope.
+    - ``stats`` / ``on_event``: stats accumulator and telemetry sink.
+    - ``session``: the SQLAlchemy session or Supabase client from ``load()``.
+    - ``is_supabase``: whether ``session`` is a Supabase client.
+
+    ``builder`` is the engine handle that the built-in strategies use to reuse
+    etielle's standard insert/bind logic. Custom strategies should rely on the
+    public fields above and implement their own persistence rather than calling
+    builder internals.
+    """
 
     scope_tables: set[str]
     bind_context: dict[str, Any]
@@ -77,6 +97,8 @@ class FlushContext:
     backlink_rels: list[dict[str, Any]]
     stats: dict[str, TableStats]
     on_event: TelemetryCallback | None
+    session: Any
+    is_supabase: bool
     builder: PipelineBuilder = field(repr=False)
 
 
@@ -93,10 +115,9 @@ class KeyCompleteFlushStrategy:
     """Default streaming strategy: plain insert/flush, no cross-chunk merge."""
 
     def flush(self, ctx: FlushContext) -> None:
-        builder = ctx.builder
-        if builder._session is None:
+        if ctx.session is None:
             return
-        if builder._is_supabase_client(builder._session):
+        if ctx.is_supabase:
             from etielle.utils import topological_sort
 
             child_lookup = {
@@ -108,7 +129,7 @@ class KeyCompleteFlushStrategy:
                 if t in ctx.local_results
             }
             component_order = topological_sort(ctx.dep_graph, ctx.scope_tables)
-            builder._flush_to_supabase(
+            ctx.builder._flush_to_supabase(
                 component_tables_dict,
                 component_order,
                 child_lookup,
@@ -116,7 +137,7 @@ class KeyCompleteFlushStrategy:
                 ctx.on_event,
             )
         else:
-            builder._flush_sqlalchemy_scope(
+            ctx.builder._flush_sqlalchemy_scope(
                 ctx.scope_tables,
                 ctx.bind_context,
                 ctx.dep_graph,

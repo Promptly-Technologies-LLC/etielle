@@ -367,6 +367,14 @@ class PipelineBuilder:
         self._upsert_on: dict[str, str | list[str]] | None = None
         self._batch_size: int = 1000
 
+    def _get_flush_strategy(self) -> Any:
+        """Return the configured flush strategy, defaulting to KeyComplete."""
+        if self._flush_strategy is not None:
+            return self._flush_strategy
+        from etielle.chunking import KeyCompleteFlushStrategy
+
+        return KeyCompleteFlushStrategy()
+
     @staticmethod
     def _accumulate_stats(
         stats: dict[str, TableStats],
@@ -1404,15 +1412,19 @@ class PipelineBuilder:
         stats: dict[str, TableStats],
         on_event: TelemetryCallback | None,
     ) -> None:
-        """Emit mapping telemetry and update stats for mapped tables."""
+        """Emit mapping telemetry and update stats for mapped tables.
+
+        MapStarted/MapCompleted are emitted as a pair for each mapping pass. In
+        streaming mode a table is mapped once per chunk, so a pair is emitted per
+        chunk; stats accumulate across those passes.
+        """
         for table_name, mapping_result in raw_results.items():
             error_count = (
                 len(mapping_result.update_errors)
                 + len(mapping_result.finalize_errors)
             )
             instance_count = len(mapping_result.instances)
-            if table_name not in stats:
-                _emit(MapStarted(table=table_name), on_event)
+            _emit(MapStarted(table=table_name), on_event)
             _emit(
                 MapCompleted(
                     table=table_name,
@@ -1638,12 +1650,6 @@ class PipelineBuilder:
                 emits=(),
             )
 
-            if self._streaming:
-                raise ValueError(
-                    "Traversal-based build_index() is not supported in streaming mode; "
-                    "use build_index(name, from_dict=...) with a pre-built index instead."
-                )
-
             root = self._roots[build["root_index"]]
             index_data: dict[Any, Any] = {}
             for ctx in _iter_traversal_nodes(root, temp_spec):
@@ -1656,8 +1662,6 @@ class PipelineBuilder:
     def _prepare_execution(self) -> dict[str, Any]:
         """Compute shared execution metadata for resident and streaming runs."""
         from etielle.utils import partition_components
-
-        self._build_traversal_indices()
 
         linkable_fields = self._get_linkable_fields()
         captured_fields = self._get_captured_fields()
@@ -1762,11 +1766,9 @@ class PipelineBuilder:
         )
 
         if self._session is not None:
-            strategy = self._flush_strategy
-            from etielle.chunking import FlushContext, KeyCompleteFlushStrategy
+            from etielle.chunking import FlushContext
 
-            if strategy is None:
-                strategy = KeyCompleteFlushStrategy()
+            strategy = self._get_flush_strategy()
             ctx = FlushContext(
                 scope_tables=eager_tables,
                 bind_context=resident_results,
@@ -1776,6 +1778,8 @@ class PipelineBuilder:
                 backlink_rels=prepared["backlink_rels"],
                 stats=stats,
                 on_event=on_event,
+                session=self._session,
+                is_supabase=self._is_supabase_client(self._session),
                 builder=self,
             )
             if self._is_supabase_client(self._session):
@@ -1825,7 +1829,7 @@ class PipelineBuilder:
         map_first: bool = True,
     ) -> None:
         """Map (optional), bind, flush, and collect errors for one component."""
-        from etielle.chunking import FlushContext, KeyCompleteFlushStrategy
+        from etielle.chunking import FlushContext
 
         component_results = local_results
         if map_first:
@@ -1845,7 +1849,7 @@ class PipelineBuilder:
         )
 
         if self._session is not None:
-            strategy = self._flush_strategy or KeyCompleteFlushStrategy()
+            strategy = self._get_flush_strategy()
             ctx = FlushContext(
                 scope_tables=component,
                 bind_context=bind_context,
@@ -1855,6 +1859,8 @@ class PipelineBuilder:
                 backlink_rels=prepared["backlink_rels"],
                 stats=stats,
                 on_event=on_event,
+                session=self._session,
+                is_supabase=self._is_supabase_client(self._session),
                 builder=self,
             )
             strategy.flush(ctx)
@@ -1993,6 +1999,7 @@ class PipelineBuilder:
         """
         prepared = self._prepare_execution()
         self._validate_streaming_pipeline(prepared)
+        self._build_traversal_indices()
 
         if self._streaming:
             return self._run_streaming(prepared, on_event)
@@ -2084,7 +2091,7 @@ def stream(
     Returns:
         A ``PipelineBuilder`` for chaining navigation and mapping calls.
     """
-    from etielle.chunking import ChunkSource, KeyCompleteFlushStrategy, OneRecordPerChunkSource
+    from etielle.chunking import ChunkSource, OneRecordPerChunkSource
 
     chunk_source = source
     if not isinstance(source, ChunkSource):
@@ -2094,13 +2101,12 @@ def stream(
     if eager_roots is not None:
         eager = eager_roots if isinstance(eager_roots, tuple) else (eager_roots,)
 
-    strategy = flush_strategy or KeyCompleteFlushStrategy()
     return PipelineBuilder(
         eager,
         errors,
         indices,
         chunk_source=chunk_source,
-        flush_strategy=strategy,
+        flush_strategy=flush_strategy,
         streaming=True,
     )
 
