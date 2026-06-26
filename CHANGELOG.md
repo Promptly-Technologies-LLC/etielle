@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v4.2.0 (2026-06-26)
+
+### Features
+
+- Add mandatory chunking helpers (group-by + pre-segmented passthrough)
+  ([`17f5cdf`](https://github.com/Promptly-Technologies-LLC/etielle/commit/17f5cdff75cad47e569010abd642d171150002c8))
+
+
 ## v4.1.0 (Unreleased)
 
 ### Features
