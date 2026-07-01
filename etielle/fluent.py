@@ -362,6 +362,10 @@ class PipelineBuilder:
         # Session for loading
         self._session: Any | None = None
         self._eager_tables: set[str] = set()
+        # Supabase eager-parent lookup: (parent_table, parent_field) -> {key: row}
+        self._supabase_eager_parent_index: dict[
+            tuple[str, str], dict[Any, dict[str, Any]]
+        ] = {}
         # Supabase-specific options
         self._upsert: bool = False
         self._upsert_on: dict[str, str | list[str]] | None = None
@@ -813,6 +817,88 @@ class PipelineBuilder:
         module = type(obj).__module__
         return module.startswith("supabase") or module.startswith("postgrest")
 
+    @staticmethod
+    def _build_supabase_parent_index(
+        table_data: dict[tuple[Any, ...], dict[str, Any]],
+        parent_lookup: dict[tuple[Any, ...], dict[str, Any]],
+        parent_field: str,
+    ) -> dict[Any, dict[str, Any]]:
+        """Build {parent_key_value: parent_row} for Supabase FK population."""
+        parent_index: dict[Any, dict[str, Any]] = {}
+        for parent_key, parent_row in table_data.items():
+            parent_values = parent_lookup.get(parent_key, {})
+            parent_key_value = parent_values.get(parent_field)
+            if parent_key_value is not None:
+                parent_index[parent_key_value] = parent_row
+        return parent_index
+
+    @staticmethod
+    def _apply_supabase_fk_mapping(
+        rel: dict[str, Any],
+        child_data: dict[tuple[Any, ...], dict[str, Any]],
+        child_lookup: dict[tuple[Any, ...], dict[str, Any]],
+        parent_index: dict[Any, dict[str, Any]],
+    ) -> None:
+        """Populate child FK columns from a parent index."""
+        by_mapping = rel["by"]
+        fk_mapping = rel["fk"]
+        for child_field, parent_field in by_mapping.items():
+            for child_key, child_row in child_data.items():
+                child_values = child_lookup.get(child_key, {})
+                lookup_value = child_values.get(child_field)
+                if lookup_value is None:
+                    continue
+                parent_row = parent_index.get(lookup_value)
+                if parent_row is None:
+                    continue
+                for child_col, parent_col in fk_mapping.items():
+                    generated_value = parent_row.get(parent_col)
+                    if generated_value is not None:
+                        child_row[child_col] = generated_value
+
+    def _store_supabase_eager_parent_index(
+        self,
+        parent_table: str,
+        table_data: dict[tuple[Any, ...], dict[str, Any]],
+        rel: dict[str, Any],
+        parent_lookup: dict[tuple[Any, ...], dict[str, Any]],
+    ) -> None:
+        """Retain eager parent rows keyed by link_to by-field for later chunk flushes."""
+        for _child_field, parent_field in rel["by"].items():
+            parent_index = self._build_supabase_parent_index(
+                table_data, parent_lookup, parent_field
+            )
+            self._supabase_eager_parent_index[(parent_table, parent_field)] = (
+                parent_index
+            )
+
+    def _populate_supabase_fk_from_eager_parents(
+        self,
+        child_table: str,
+        tables: dict[str, dict[tuple[Any, ...], Any]],
+        child_lookup_values: dict[str, dict[tuple[Any, ...], dict[str, Any]]],
+    ) -> None:
+        """Populate child FK columns using indexes from previously flushed eager parents."""
+        child_data = tables[child_table]
+        child_lookup = child_lookup_values.get(child_table, {})
+        for rel in self._relationships:
+            if not rel.get("fk") or rel["child_table"] != child_table:
+                continue
+            parent_table = rel["parent_table"]
+            if parent_table not in self._eager_tables:
+                continue
+            if parent_table in tables:
+                continue
+            for _child_field, parent_field in rel["by"].items():
+                parent_index = self._supabase_eager_parent_index.get(
+                    (parent_table, parent_field)
+                )
+                if not parent_index:
+                    continue
+                self._apply_supabase_fk_mapping(
+                    rel, child_data, child_lookup, parent_index
+                )
+
     def _flush_to_supabase(
         self,
         tables: dict[str, dict[tuple[Any, ...], Any]],
@@ -849,6 +935,10 @@ class PipelineBuilder:
         for table_name in flush_order:
             if table_name not in tables:
                 continue
+
+            self._populate_supabase_fk_from_eager_parents(
+                table_name, tables, child_lookup_values
+            )
 
             # Get rows preserving key order for matching with returned rows
             table_data = tables[table_name]
@@ -942,48 +1032,31 @@ class PipelineBuilder:
                     for col, value in returned_row.items():
                         original[col] = value
 
+                parent_lookup = child_lookup_values.get(table_name, {})
+
                 # For each child table with fk relationship, populate FK columns
                 for rel, child_table in fk_children[table_name]:
                     if child_table not in tables:
+                        if table_name in self._eager_tables:
+                            self._store_supabase_eager_parent_index(
+                                table_name, table_data, rel, parent_lookup
+                            )
                         continue
-
-                    by_mapping = rel["by"]  # {child_field: parent_field}
-                    fk_mapping = rel["fk"]  # {child_col: parent_col}
 
                     child_data = tables[child_table]
                     child_lookup = child_lookup_values.get(child_table, {})
-                    parent_lookup = child_lookup_values.get(table_name, {})
 
-                    # Build parent index using computed TempField values
-                    # For each by mapping (typically one), build index and populate
-                    for child_field, parent_field in by_mapping.items():
-                        # Build parent index: {parent_key_value: parent_row}
-                        # Use parent_lookup to get TempField values that aren't in rows
-                        parent_index: dict[Any, dict[str, Any]] = {}
-                        for parent_key, parent_row in table_data.items():
-                            # Get the parent's TempField value from parent_lookup
-                            parent_values = parent_lookup.get(parent_key, {})
-                            parent_key_value = parent_values.get(parent_field)
-                            if parent_key_value is not None:
-                                parent_index[parent_key_value] = parent_row
-
-                        # Populate FK columns in child rows
-                        for child_key, child_row in child_data.items():
-                            child_values = child_lookup.get(child_key, {})
-                            lookup_value = child_values.get(child_field)
-
-                            if lookup_value is None:
-                                continue
-
-                            parent_row = parent_index.get(lookup_value)
-                            if parent_row is None:
-                                continue
-
-                            # Set the FK column(s) on the child row
-                            for child_col, parent_col in fk_mapping.items():
-                                generated_value = parent_row.get(parent_col)
-                                if generated_value is not None:
-                                    child_row[child_col] = generated_value
+                    for _child_field, parent_field in rel["by"].items():
+                        parent_index = self._build_supabase_parent_index(
+                            table_data, parent_lookup, parent_field
+                        )
+                        if table_name in self._eager_tables:
+                            self._supabase_eager_parent_index[
+                                (table_name, parent_field)
+                            ] = parent_index
+                        self._apply_supabase_fk_mapping(
+                            rel, child_data, child_lookup, parent_index
+                        )
 
     def _build_traversal_specs(self) -> list[TraversalSpec]:
         """Convert accumulated emissions to TraversalSpec objects."""
@@ -1676,6 +1749,8 @@ class PipelineBuilder:
     def _prepare_execution(self) -> dict[str, Any]:
         """Compute shared execution metadata for resident and streaming runs."""
         from etielle.utils import partition_components
+
+        self._supabase_eager_parent_index.clear()
 
         linkable_fields = self._get_linkable_fields()
         captured_fields = self._get_captured_fields()
