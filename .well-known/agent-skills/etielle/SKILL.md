@@ -23,13 +23,16 @@ Main classes provided by the package
 
 - `AddPolicy`
 - `AppendPolicy`
+- `BufferedKeyFlushStrategy`: Streaming strategy that merges late-arriving rows for recently seen keys
 - `CallableChunkSource`: Build chunks from a caller-supplied factory (tests and advanced callers)
 - `ConstructorBuilder`: Simplified builder for classes that accept keyword arguments in their constructor
 - `ExtendPolicy`
+- `ExternalPartitionChunkSource`: Partition arbitrarily-ordered input into key-complete chunks via disk
 - `FirstNonNullPolicy`
 - `GroupByChunkSource`: Group consecutive records that share a key into one chunk each
 - `InstanceBuilder`
 - `KeyCompleteFlushStrategy`: Default streaming strategy: plain insert/flush, no cross-chunk merge
+- `UpsertFlushStrategy`: Streaming strategy with database-level conflict handling (SQLAlchemy)
 - `MaxPolicy`
 - `MergePolicy`
 - `MinPolicy`

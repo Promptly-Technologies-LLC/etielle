@@ -1,0 +1,329 @@
+# Scaling & Memory
+
+**What you'll learn**: What etielle holds in memory at each execution phase, when to use resident ([etl()](../reference/etl.md#etielle.etl)) versus streaming ([stream()](../reference/stream.md#etielle.stream)) execution, how to choose a chunk source and flush strategy, and what memory bounds etielle does *not* provide.
+
+For session setup, transactions, Supabase configuration, and persistence mechanics, see [Database Loading](database-loading.md).
+
+
+# Mental model: what lives in memory
+
+Every pipeline run moves data through the same phases. Understanding what is retained at each step is the key to sizing your ingest.
+
+| Phase | What etielle holds | When it is released |
+|----|----|----|
+| **Map** | Per-table [MappingResult](../reference/MappingResult.md#etielle.MappingResult) accumulators (instances, indices, lookup values) | After flush and evict (streaming), or after each component cycle (resident) |
+| **Bind** | Same objects with relationship attributes populated | Same as map |
+| **Flush** | ORM instances in the session plus etielle's scoped references | etielle drops its references after flush; the session retains flushed rows until you commit |
+| **Resident eager** | [load_eager()](../reference/PipelineBuilder.load_eager.md#etielle.PipelineBuilder.load_eager) tables mapped once and kept in `bind_context` | Entire run (by design) |
+| **Strategy state** | e.g. [BufferedKeyFlushStrategy](../reference/BufferedKeyFlushStrategy.md#etielle.BufferedKeyFlushStrategy) LRU cache of recently flushed keys | Entire run, bounded by `max_keys` |
+| **External partition spill** | Temporary file plus in-memory offset index | Until chunk iteration finishes or the iterator is closed |
+
+``` mermaid
+flowchart LR
+    subgraph per_chunk [Per chunk or component]
+        M[Map accumulators] --> B[Bind relationships]
+        B --> F[Flush to session]
+        F --> E[Evict etielle references]
+    end
+    E --> GC[CPython reclaims mapping objects]
+    F --> S[(Session / open transaction)]
+```
+
+**Key takeaway:** etielle bounds **mapping accumulator** memory. It does **not** bound session or transaction size, strategy cache size, resident eager tables, or external-partition disk usage. You control transaction scope via `session.commit()`.
+
+
+# Resident execution ([etl()](../reference/etl.md#etielle.etl))
+
+Resident mode loads your JSON root(s) once and maps the full payload in memory:
+
+``` python
+from etielle import etl
+
+result = (
+    etl(data)
+    .goto("users").each()
+    .map_to(table=User, fields=[...])
+    .load(session)
+    .run()
+)
+```
+
+
+## Component-scoped flush and evict
+
+Pipelines with relationships are executed as independent **relationship components** (weakly connected subgraphs of the [link_to](../reference/PipelineBuilder.link_to.md#etielle.PipelineBuilder.link_to)/[backlink](../reference/PipelineBuilder.backlink.md#etielle.PipelineBuilder.backlink) graph). Each component is mapped, bound, flushed, and evicted before the next component runs.
+
+Peak mapping memory is bounded by the **largest component**, not necessarily the entire dataset -- but only when the relationship graph splits cleanly. Tables with no relationship edges are batched into a single mapping pass for efficiency.
+
+
+## When resident mode is enough
+
+- The full JSON payload fits comfortably in RAM.
+- You have a single root or a modest number of roots you can hold at once.
+- The relationship graph decomposes into reasonably sized components.
+
+
+## Shared dimensions and [load_eager()](../reference/PipelineBuilder.load_eager.md#etielle.PipelineBuilder.load_eager)
+
+When a shared dimension table (e.g. `tags`) is referenced by many independent subgraphs, the relationship graph collapses into one giant component and the per-component memory win vanishes. Mark small shared tables as eager so they are loaded once and kept resident while other components are processed:
+
+``` python
+result = (
+    etl(data)
+    .goto("tags").each()
+    .map_to(table=Tag, fields=[...])
+    .load_eager(Tag)          # resident across all components
+    .goto_root()
+    .goto("items").each()
+    .map_to(table=Item, fields=[...])
+    .link_to(Tag, by={"tag_id": "id"})
+    .load(session)
+    .run()
+)
+```
+
+Resident eager tables stay in memory for the entire run. Size them for tables that are small relative to your fact data.
+
+
+# Streaming execution ([stream()](../reference/stream.md#etielle.stream))
+
+For large or single-consumption inputs (paginated APIs, `ijson` streams), use [stream()](../reference/stream.md#etielle.stream) instead of [etl()](../reference/etl.md#etielle.etl). Streaming processes **key-complete, relationship-complete** chunks: each chunk is mapped, validated, bound, flushed, and evicted before the next chunk begins.
+
+``` python
+from etielle import stream
+
+result = (
+    stream(record_iter)
+    .goto("users").each()
+    .map_to(table=User, fields=[...])
+    .load(session)   # required in streaming mode
+    .run()
+)
+session.commit()
+```
+
+Peak mapping memory is approximately **one chunk** plus any resident [load_eager()](../reference/PipelineBuilder.load_eager.md#etielle.PipelineBuilder.load_eager) tables -- flat regardless of total dataset size. The benchmark in `benchmarks/bench_issue_75.py` demonstrates Python heap peak staying flat under streaming while resident loading grows with the dataset:
+
+``` bash
+uv run python benchmarks/bench_issue_75.py --scale 2000
+```
+
+
+## Streaming requirements
+
+- [load()](../reference/PipelineBuilder.load.md#etielle.PipelineBuilder.load) is required before [run()](../reference/PipelineBuilder.run.md#etielle.PipelineBuilder.run) in streaming mode.
+- Each chunk must include all relationship endpoints, or use [load_eager()](../reference/PipelineBuilder.load_eager.md#etielle.PipelineBuilder.load_eager) for shared parents present in every chunk.
+- Cross-chunk scattered merge (e.g. merging `users` and `profiles` from different chunks) is not supported.
+- Traversal-based [build_index()](../reference/PipelineBuilder.build_index.md#etielle.PipelineBuilder.build_index) and composite `by` mappings on [link_to()](../reference/PipelineBuilder.link_to.md#etielle.PipelineBuilder.link_to) are rejected.
+
+Pass resident eager data via `eager_roots=` when dimension tables are not repeated in every chunk:
+
+``` python
+stream(chunks, eager_roots=tags_snapshot)
+    .goto("tags").each()
+    .map_to(table=Tag, fields=[...])
+    .load_eager(Tag)
+    ...
+```
+
+
+## SQLAlchemy session behavior
+
+Once etielle drops its per-chunk references after flush, CPython's garbage collector reclaims mapping objects. The session's identity map references persistent (flushed, clean) instances weakly, so no special cleanup is required on the SQLAlchemy side.
+
+Transaction control still belongs to you: `INSERT`s accumulate in the open transaction until you commit or roll back. For very long streams, commit at a cadence that suits your durability needs; a single end-of-stream commit keeps everything in one transaction but grows the session's transaction scope.
+
+
+# Choosing an execution mode
+
+``` mermaid
+flowchart TD
+    Start([Sizing an ingest]) --> Q1{Entire payload fits<br/>comfortably in RAM?}
+    Q1 -->|Yes| Q2{Single JSON root<br/>or modest batch?}
+    Q1 -->|No| Stream[Use stream]
+    Q2 -->|Yes| Etl[Use etl]
+    Q2 -->|No, many roots| Q3{Can you process<br/>one root at a time?}
+    Q3 -->|Yes| Stream
+    Q3 -->|No| EtlWarn["etl with all roots:<br/>peak ≈ full dataset"]
+
+    Stream --> LoadReq[Requires load before run]
+    Etl --> LoadOpt[load optional]
+```
+
+
+# Choosing a chunk source
+
+Chunk sources are only relevant for [stream()](../reference/stream.md#etielle.stream). Producing correct chunks is part of the streaming contract -- each chunk must be key-complete and relationship-complete. See [Relationships](relationships.md) for how [link_to](../reference/PipelineBuilder.link_to.md#etielle.PipelineBuilder.link_to) shapes the component graph.
+
+> **Important: Pick a relationship-complete key**
+>
+> Whether you group with [GroupByChunkSource](../reference/GroupByChunkSource.md#etielle.GroupByChunkSource) or partition with [ExternalPartitionChunkSource](../reference/ExternalPartitionChunkSource.md#etielle.ExternalPartitionChunkSource), choose a key that is a **complete component root** -- coarse enough that every record reachable through a relationship from one record sharing the key also shares it (e.g. the owning entity id), not merely a fine merge key. Grouping guarantees key-completeness for the chosen key; the runtime relationship-completeness check catches a key that is too fine.
+
+``` mermaid
+flowchart TD
+    S([Using stream]) --> Q1{Already have<br/>Chunk objects?}
+    Q1 -->|Yes| Pre[PreSegmentedChunkSource]
+    Q1 -->|No| Q2{Records sharing a key<br/>can be far apart?}
+    Q2 -->|No, consecutive or sorted| Group[GroupByChunkSource]
+    Q2 -->|Yes, arbitrary order| Ext[ExternalPartitionChunkSource]
+    Q1 -->|One record per chunk| Default["Iterable / OneRecordPerChunkSource"]
+
+    Group --> Key[Relationship-complete key]
+    Ext --> Key
+    Pre --> Key
+    Default --> Key
+```
+
+| Chunk source | When to use | Record RAM | Other cost |
+|----|----|----|----|
+| **Iterable / [OneRecordPerChunkSource](../reference/OneRecordPerChunkSource.md#etielle.OneRecordPerChunkSource)** | One JSON root per chunk; simplest streaming shape | One record | None |
+| **[GroupByChunkSource](../reference/GroupByChunkSource.md#etielle.GroupByChunkSource)** | Input is grouped or sorted by key; consecutive records with the same key arrive together | One chunk (current key group) | Single pass, no disk |
+| **[ExternalPartitionChunkSource](../reference/ExternalPartitionChunkSource.md#etielle.ExternalPartitionChunkSource)** | Keys can reappear arbitrarily far apart; input is unsorted | One chunk (current partition) | Full-dataset temp file + offset index |
+| **[PreSegmentedChunkSource](../reference/PreSegmentedChunkSource.md#etielle.PreSegmentedChunkSource)** | You already produce [Chunk](../reference/Chunk.md#etielle.Chunk) objects with known boundaries | Whatever the upstream holds | None (passthrough) |
+
+
+## [GroupByChunkSource](../reference/GroupByChunkSource.md#etielle.GroupByChunkSource)
+
+Single-pass group-by over consecutive records:
+
+``` python
+from etielle import stream, GroupByChunkSource
+
+source = GroupByChunkSource(record_iter, key=lambda r: r["orders"][0]["id"])
+stream(source).goto(...)...
+```
+
+Grouping is **consecutive only**. If two records share a key but are separated by a record with a different key, they land in separate chunks. That still satisfies key-completeness, but the relationship-completeness check will raise if a chunk is then missing endpoints. For unsorted input, use [ExternalPartitionChunkSource](../reference/ExternalPartitionChunkSource.md#etielle.ExternalPartitionChunkSource) instead.
+
+
+## [ExternalPartitionChunkSource](../reference/ExternalPartitionChunkSource.md#etielle.ExternalPartitionChunkSource)
+
+Two-pass disk-backed partitioner for arbitrarily ordered input. Pass one serializes every record to a temporary spill file and builds a key→offsets index; pass two emits one chunk per distinct key by reading records back from disk:
+
+``` python
+from etielle import stream, ExternalPartitionChunkSource
+
+source = ExternalPartitionChunkSource(record_iter, key=lambda r: r["orders"][0]["id"])
+stream(source).goto(...)...
+```
+
+- Peak **record** memory is one chunk; the **full dataset** is written to temp storage.
+- The offset index holds a few machine words per record for the duration of the stream.
+- Pass two performs random reads -- prefer a fast local temp filesystem (`dir=` overrides the location).
+- Records round-trip through `dumps`/`loads` (default JSON); chunks yield reconstructed copies.
+
+
+## [PreSegmentedChunkSource](../reference/PreSegmentedChunkSource.md#etielle.PreSegmentedChunkSource)
+
+Passthrough when you already have an iterable of [Chunk](../reference/Chunk.md#etielle.Chunk) objects:
+
+``` python
+from etielle import stream, PreSegmentedChunkSource, Chunk
+
+chunks = [Chunk(roots=(subtree,), sequential=True) for subtree in producer]
+stream(PreSegmentedChunkSource(chunks)).goto(...)...
+```
+
+
+# Choosing a flush strategy
+
+The chunk loop calls `FlushStrategy.flush(ctx)` at each component boundary. Pass a strategy via `stream(..., flush_strategy=...)`. Resident [etl()](../reference/etl.md#etielle.etl) runs use the same strategy hook at component boundaries.
+
+``` mermaid
+flowchart TD
+    F([Flush at component boundary]) --> Q1{Target?}
+    Q1 -->|Supabase| Supa["Default strategy +<br/>load(upsert=True, upsert_on=...)"]
+    Q1 -->|SQLAlchemy| Q2{How should conflicts<br/>and reappearing keys behave?}
+    Q2 -->|Plain insert| Default[KeyCompleteFlushStrategy]
+    Q2 -->|Overwrite existing row by PK| Upsert["UpsertFlushStrategy<br/>on_conflict='update'"]
+    Q2 -->|Skip conflicting rows / races| Skip["UpsertFlushStrategy<br/>on_conflict='skip'"]
+    Q2 -->|Same natural key reappears<br/>within bounded gap| Buf[BufferedKeyFlushStrategy]
+
+    Buf --> Size["Size max_keys to<br/>worst reappearance gap"]
+```
+
+| Strategy | Cross-chunk state | Use when |
+|----|----|----|
+| **[KeyCompleteFlushStrategy](../reference/KeyCompleteFlushStrategy.md#etielle.KeyCompleteFlushStrategy)** (default) | None | Clean inserts; duplicate keys against stored rows raise `IntegrityError` |
+| **[UpsertFlushStrategy](../reference/UpsertFlushStrategy.md#etielle.UpsertFlushStrategy)** | None (DB resolves) | Idempotent re-runs ([update](../reference/InstanceBuilder.update.md#etielle.InstanceBuilder.update)) or skip-on-conflict ingest (`skip`); SQLAlchemy only |
+| **[BufferedKeyFlushStrategy](../reference/BufferedKeyFlushStrategy.md#etielle.BufferedKeyFlushStrategy)** | LRU cache of `max_keys` entries | Late-arriving rows for the same `join_on` key within a bounded reappearance gap; SQLAlchemy only |
+
+
+## [KeyCompleteFlushStrategy](../reference/KeyCompleteFlushStrategy.md#etielle.KeyCompleteFlushStrategy)
+
+Default behavior: plain `session.add()` and flush with no cross-chunk state. Delegates to etielle's standard insert and relationship-binding logic.
+
+
+## [UpsertFlushStrategy](../reference/UpsertFlushStrategy.md#etielle.UpsertFlushStrategy)
+
+Database-level conflict handling for SQLAlchemy (real upsert via `session.merge()`, not `add()`):
+
+``` python
+from etielle import stream, UpsertFlushStrategy
+
+stream(records, flush_strategy=UpsertFlushStrategy())                    # overwrite by PK
+stream(records, flush_strategy=UpsertFlushStrategy(on_conflict="skip"))    # skip conflicts
+```
+
+- **[update](../reference/InstanceBuilder.update.md#etielle.InstanceBuilder.update)** (default): `session.merge()` -- existing rows with the same primary key are overwritten (last write wins).
+- **`skip`**: per-row `SAVEPOINT` insert; rows raising `IntegrityError` are skipped (duplicate keys, unique constraints, concurrent-insert races). Children bound to a skipped parent are skipped too, because the cascaded parent insert reproduces the conflict inside the child's savepoint.
+- Not a cross-chunk merge substitute: merge policies ([AddPolicy](../reference/AddPolicy.md#etielle.AddPolicy) etc.) run only within a chunk's mapping pass.
+- For Supabase, use `load(upsert=True, upsert_on=...)` with the default strategy instead.
+
+
+## [BufferedKeyFlushStrategy](../reference/BufferedKeyFlushStrategy.md#etielle.BufferedKeyFlushStrategy)
+
+Bounded LRU cache of recently flushed `(table, join_on key)` → instance entries:
+
+``` python
+from etielle import stream, BufferedKeyFlushStrategy
+
+stream(records, flush_strategy=BufferedKeyFlushStrategy(max_keys=50_000))
+```
+
+When a later chunk maps a row whose key is still cached, non-None scalar values are copied onto the already-persisted instance (an UPDATE at the next flush) instead of inserting a duplicate. Children mapped alongside a re-appearing parent are relinked to the persisted instance.
+
+**Correctness is a heuristic bounded by cache size**, not a guarantee: once a key is evicted, a reappearing row inserts a new row (or raises under a unique constraint). Size `max_keys` for your worst-case reappearance gap, or prefer [ExternalPartitionChunkSource](../reference/ExternalPartitionChunkSource.md#etielle.ExternalPartitionChunkSource) when keys can be arbitrarily far apart and exact grouping matters.
+
+Only tables with `join_on` participate; auto-keyed rows always insert because auto keys restart per chunk. The strategy is stateful across the run -- use a fresh instance per pipeline.
+
+
+# What etielle does not bound
+
+| Concern | Why |
+|----|----|
+| **Session / transaction size** | Flushed rows accumulate in the open transaction until you `commit()` |
+| **[BufferedKeyFlushStrategy](../reference/BufferedKeyFlushStrategy.md#etielle.BufferedKeyFlushStrategy) cache** | Up to `max_keys` live ORM instances held for the run |
+| **[load_eager()](../reference/PipelineBuilder.load_eager.md#etielle.PipelineBuilder.load_eager) resident tables** | Entire eager table stays mapped for the run (intentional) |
+| **External partition spill** | Full dataset on disk plus offset index (not RAM, but not free) |
+| **Cross-chunk scattered merge** | Unsupported by design -- not a memory knob, a correctness limit |
+
+
+# Operational guidance
+
+
+## Commit cadence
+
+For long streaming runs, periodic `session.commit()` limits transaction scope and session growth. A single end-of-stream commit is simpler but keeps the entire ingest in one transaction. Choose based on durability requirements and database behavior under large open transactions.
+
+
+## Sizing `max_keys` (buffered strategy)
+
+Estimate the maximum number of distinct `(table, join_on key)` pairs that can reappear before you finish the stream, within the window where late rows still need to merge. If reappearance distance is unbounded or unknown, do not rely on [BufferedKeyFlushStrategy](../reference/BufferedKeyFlushStrategy.md#etielle.BufferedKeyFlushStrategy) alone -- use [ExternalPartitionChunkSource](../reference/ExternalPartitionChunkSource.md#etielle.ExternalPartitionChunkSource) to group records correctly before mapping.
+
+
+## Choosing spill `dir=` (external partition)
+
+Point `ExternalPartitionChunkSource(..., dir=...)` at fast local storage. Pass two reads records back in arbitrary key order; network filesystems add latency without helping correctness.
+
+
+## Manual batching with [etl()](../reference/etl.md#etielle.etl)
+
+Splitting a large dataset into multiple `etl(batch).load(session).run()` calls inside one transaction is a resident pattern. Each batch still peaks at the full batch size in mapping memory. For true flat peak memory over an unbounded stream, use [stream()](../reference/stream.md#etielle.stream) with an appropriate chunk source.
+
+
+# See also
+
+- [Database Loading](database-loading.md) -- sessions, transactions, Supabase, upsert configuration
+- [Relationships](relationships.md) -- [link_to](../reference/PipelineBuilder.link_to.md#etielle.PipelineBuilder.link_to), component graphs, relationship-complete chunks
+- [Error Handling](error-handling.md) -- telemetry during mapping and flush

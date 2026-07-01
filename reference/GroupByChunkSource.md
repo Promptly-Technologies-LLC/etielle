@@ -18,7 +18,7 @@ Each emitted chunk is [sequential](Chunk.md#etielle.Chunk.sequential) - every re
 
 ## Grouped-Input Requirement
 
-Correctness depends on the input *already being grouped (or sorted) by [key](key.md#etielle.key)*, which is the common shape for paginated APIs and "one parent subtree at a time" feeds. Because grouping is consecutive only, records that share a key but are separated by records with a different key land in *separate* chunks. With a relationship key that is fine for key-completeness but breaks relationship-completeness; the runtime relationship-completeness check raises if a chunk is missing endpoints. For unsorted input, sort by [key](key.md#etielle.key) first, or wait for the robust unsorted-input partitioner (H2, tracked under sub-issue D).
+Correctness depends on the input *already being grouped (or sorted) by [key](key.md#etielle.key)*, which is the common shape for paginated APIs and "one parent subtree at a time" feeds. Because grouping is consecutive only, records that share a key but are separated by records with a different key land in *separate* chunks. With a relationship key that is fine for key-completeness but breaks relationship-completeness; the runtime relationship-completeness check raises if a chunk is missing endpoints. For unsorted input, sort by [key](key.md#etielle.key) first or use [ExternalPartitionChunkSource](ExternalPartitionChunkSource.md#etielle.ExternalPartitionChunkSource), the disk-backed partitioner that handles arbitrarily-ordered input.
 
 
 ## Choosing A Relationship-Complete Key

@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.9.38">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Scaling &amp; Memory – etielle | etielle</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../">
+<link href="../user-guide/custom-transforms.html" rel="next">
+<link href="../user-guide/database-loading.html" rel="prev">
+<script src="../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../site_libs/quarto-html/popper.min.js"></script>
+<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-15634bcf2e68342d4ad2dfa704d543f6.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../site_libs/bootstrap/bootstrap-4374c486a51c078b4a30d8ae56e0846f.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script>document.head.appendChild(Object.assign(document.createElement('link'),{rel:'stylesheet',href:(document.querySelector('meta[name="quarto:offset"]')||{content:''}).content+'termshow.css'}));</script>
+<script>document.head.appendChild(Object.assign(document.createElement('link'),{rel:'stylesheet',href:(document.querySelector('meta[name="quarto:offset"]')||{content:''}).content+'gd-lightbox.css'}));</script>
+<script>(function(){var s=document.createElement('script');var m=document.querySelector('meta[name="quarto:offset"]');s.src=(m?m.content:'')+'gd-lightbox.js';s.defer=true;document.head.appendChild(s);})();</script>
+<script>document.head.appendChild(Object.assign(document.createElement('link'),{rel:'stylesheet',href:(document.querySelector('meta[name="quarto:offset"]')||{content:''}).content+'gd-lightbox-compare.css'}));</script>
+<script>(function(){var s=document.createElement('script');var m=document.querySelector('meta[name="quarto:offset"]');s.src=(m?m.content:'')+'gd-lightbox-compare.js';s.defer=true;document.head.appendChild(s);})();</script>
+<script>document.head.appendChild(Object.assign(document.createElement('link'),{rel:'stylesheet',href:(document.querySelector('meta[name="quarto:offset"]')||{content:''}).content+'gd-lightbox-annotate.css'}));</script>
+<script>(function(){var s=document.createElement('script');var m=document.querySelector('meta[name="quarto:offset"]');s.src=(m?m.content:'')+'gd-lightbox-annotate.js';s.defer=true;document.head.appendChild(s);})();</script>
+<script src="../theme-init.js"></script>
+
+
+  <link rel="canonical" href="https://Promptly-Technologies-LLC.github.io/etielle/user-guide/scaling-and-memory.html">
+  <meta name="description" content="For session setup, transactions, Supabase configuration, and persistence mechanics, see Database Loading.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Scaling &amp;amp; Memory – etielle | etielle">
+  <meta property="og:description" content="For session setup, transactions, Supabase configuration, and persistence mechanics, see Database Loading.">
+  <meta property="og:url" content="https://Promptly-Technologies-LLC.github.io/etielle/user-guide/scaling-and-memory.html">
+  <meta property="og:site_name" content="etielle">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Scaling &amp;amp; Memory – etielle | etielle">
+  <meta name="twitter:description" content="For session setup, transactions, Supabase configuration, and persistence mechanics, see Database Loading.">
+</head>
+
+<body class="nav-sidebar floating nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../index.html">
+    <span class="navbar-title">etielle</span>
+    </a>
+  </div>
+            <div id="quarto-search" class=""></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link active" href="../user-guide/introduction-to-etl.html" aria-current="page"> 
+<span class="menu-text">User Guide</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../reference/index.html"> 
+<span class="menu-text">Reference</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <span class="nav-link">
+<div id="github-widget" data-owner="Promptly-Technologies-LLC" data-repo="etielle"></div>
+    </span>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <h1 class="quarto-secondary-nav-title no-breadcrumbs">Scaling &amp; Memory</h1>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start">
+ <span class="menu-text">Getting Started</span></a>
+</div>
+      <ul id="quarto-sidebar-section-1" class="list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../user-guide/introduction-to-etl.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Introduction to ETL</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start">
+ <span class="menu-text">Core Concepts</span></a>
+</div>
+      <ul id="quarto-sidebar-section-2" class="list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../user-guide/navigation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Navigation: Traversing JSON Structure</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../user-guide/transforms.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Transforms: Extracting and Formatting Values</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../user-guide/mapping.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Mapping Tables: Fields and Output Structure</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../user-guide/relationships.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Relationships: Linking Tables with link_to() and backlink()</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start">
+ <span class="menu-text">Advanced Topics</span></a>
+</div>
+      <ul id="quarto-sidebar-section-3" class="list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../user-guide/database-loading.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Database Loading: Persisting with load().run()</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../user-guide/scaling-and-memory.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">Scaling &amp; Memory</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../user-guide/custom-transforms.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Custom Transforms: The <span class="citation" data-cites="transform">@transform</span> Decorator</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../user-guide/error-handling.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Errors and Monitoring</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul class="collapse">
+  <li><a href="#mental-model-what-lives-in-memory" id="toc-mental-model-what-lives-in-memory" class="nav-link active" data-scroll-target="#mental-model-what-lives-in-memory">Mental model: what lives in memory</a></li>
+  <li><a href="#resident-execution-etl" id="toc-resident-execution-etl" class="nav-link" data-scroll-target="#resident-execution-etl">Resident execution (<code>etl()</code>)</a>
+  <ul class="collapse">
+  <li><a href="#component-scoped-flush-and-evict" id="toc-component-scoped-flush-and-evict" class="nav-link" data-scroll-target="#component-scoped-flush-and-evict">Component-scoped flush and evict</a></li>
+  <li><a href="#when-resident-mode-is-enough" id="toc-when-resident-mode-is-enough" class="nav-link" data-scroll-target="#when-resident-mode-is-enough">When resident mode is enough</a></li>
+  <li><a href="#shared-dimensions-and-load_eager" id="toc-shared-dimensions-and-load_eager" class="nav-link" data-scroll-target="#shared-dimensions-and-load_eager">Shared dimensions and <code>load_eager()</code></a></li>
+  </ul></li>
+  <li><a href="#streaming-execution-stream" id="toc-streaming-execution-stream" class="nav-link" data-scroll-target="#streaming-execution-stream">Streaming execution (<code>stream()</code>)</a>
+  <ul class="collapse">
+  <li><a href="#streaming-requirements" id="toc-streaming-requirements" class="nav-link" data-scroll-target="#streaming-requirements">Streaming requirements</a></li>
+  <li><a href="#sqlalchemy-session-behavior" id="toc-sqlalchemy-session-behavior" class="nav-link" data-scroll-target="#sqlalchemy-session-behavior">SQLAlchemy session behavior</a></li>
+  </ul></li>
+  <li><a href="#choosing-an-execution-mode" id="toc-choosing-an-execution-mode" class="nav-link" data-scroll-target="#choosing-an-execution-mode">Choosing an execution mode</a></li>
+  <li><a href="#choosing-a-chunk-source" id="toc-choosing-a-chunk-source" class="nav-link" data-scroll-target="#choosing-a-chunk-source">Choosing a chunk source</a>
+  <ul class="collapse">
+  <li><a href="#groupbychunksource" id="toc-groupbychunksource" class="nav-link" data-scroll-target="#groupbychunksource"><code>GroupByChunkSource</code></a></li>
+  <li><a href="#externalpartitionchunksource" id="toc-externalpartitionchunksource" class="nav-link" data-scroll-target="#externalpartitionchunksource"><code>ExternalPartitionChunkSource</code></a></li>
+  <li><a href="#presegmentedchunksource" id="toc-presegmentedchunksource" class="nav-link" data-scroll-target="#presegmentedchunksource"><code>PreSegmentedChunkSource</code></a></li>
+  </ul></li>
+  <li><a href="#choosing-a-flush-strategy" id="toc-choosing-a-flush-strategy" class="nav-link" data-scroll-target="#choosing-a-flush-strategy">Choosing a flush strategy</a>
+  <ul class="collapse">
+  <li><a href="#keycompleteflushstrategy" id="toc-keycompleteflushstrategy" class="nav-link" data-scroll-target="#keycompleteflushstrategy"><code>KeyCompleteFlushStrategy</code></a></li>
+  <li><a href="#upsertflushstrategy" id="toc-upsertflushstrategy" class="nav-link" data-scroll-target="#upsertflushstrategy"><code>UpsertFlushStrategy</code></a></li>
+  <li><a href="#bufferedkeyflushstrategy" id="toc-bufferedkeyflushstrategy" class="nav-link" data-scroll-target="#bufferedkeyflushstrategy"><code>BufferedKeyFlushStrategy</code></a></li>
+  </ul></li>
+  <li><a href="#what-etielle-does-not-bound" id="toc-what-etielle-does-not-bound" class="nav-link" data-scroll-target="#what-etielle-does-not-bound">What etielle does not bound</a></li>
+  <li><a href="#operational-guidance" id="toc-operational-guidance" class="nav-link" data-scroll-target="#operational-guidance">Operational guidance</a>
+  <ul class="collapse">
+  <li><a href="#commit-cadence" id="toc-commit-cadence" class="nav-link" data-scroll-target="#commit-cadence">Commit cadence</a></li>
+  <li><a href="#sizing-max_keys-buffered-strategy" id="toc-sizing-max_keys-buffered-strategy" class="nav-link" data-scroll-target="#sizing-max_keys-buffered-strategy">Sizing <code>max_keys</code> (buffered strategy)</a></li>
+  <li><a href="#choosing-spill-dir-external-partition" id="toc-choosing-spill-dir-external-partition" class="nav-link" data-scroll-target="#choosing-spill-dir-external-partition">Choosing spill <code>dir=</code> (external partition)</a></li>
+  <li><a href="#manual-batching-with-etl" id="toc-manual-batching-with-etl" class="nav-link" data-scroll-target="#manual-batching-with-etl">Manual batching with <code>etl()</code></a></li>
+  </ul></li>
+  <li><a href="#see-also" id="toc-see-also" class="nav-link" data-scroll-target="#see-also">See also</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title d-none d-lg-block">Scaling &amp; Memory</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<p><strong>What you’ll learn</strong>: What etielle holds in memory at each execution phase, when to use resident (<a href="../reference/etl.html#etielle.etl" class="gdls-link gdls-code">etl()</a>) versus streaming (<a href="../reference/stream.html#etielle.stream" class="gdls-link gdls-code">stream()</a>) execution, how to choose a chunk source and flush strategy, and what memory bounds etielle does <em>not</em> provide.</p>
+<p>For session setup, transactions, Supabase configuration, and persistence mechanics, see <a href="../user-guide/database-loading.html">Database Loading</a>.</p>
+<section id="mental-model-what-lives-in-memory" class="level1">
+<h1>Mental model: what lives in memory</h1>
+<p>Every pipeline run moves data through the same phases. Understanding what is retained at each step is the key to sizing your ingest.</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Phase</th>
+<th>What etielle holds</th>
+<th>When it is released</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Map</strong></td>
+<td>Per-table <a href="../reference/MappingResult.html#etielle.MappingResult" class="gdls-link gdls-code">MappingResult</a> accumulators (instances, indices, lookup values)</td>
+<td>After flush and evict (streaming), or after each component cycle (resident)</td>
+</tr>
+<tr class="even">
+<td><strong>Bind</strong></td>
+<td>Same objects with relationship attributes populated</td>
+<td>Same as map</td>
+</tr>
+<tr class="odd">
+<td><strong>Flush</strong></td>
+<td>ORM instances in the session plus etielle’s scoped references</td>
+<td>etielle drops its references after flush; the session retains flushed rows until you commit</td>
+</tr>
+<tr class="even">
+<td><strong>Resident eager</strong></td>
+<td><a href="../reference/PipelineBuilder.load_eager.html#etielle.PipelineBuilder.load_eager" class="gdls-link gdls-code">load_eager()</a> tables mapped once and kept in <code>bind_context</code></td>
+<td>Entire run (by design)</td>
+</tr>
+<tr class="odd">
+<td><strong>Strategy state</strong></td>
+<td>e.g.&nbsp;<a href="../reference/BufferedKeyFlushStrategy.html#etielle.BufferedKeyFlushStrategy" class="gdls-link gdls-code">BufferedKeyFlushStrategy</a> LRU cache of recently flushed keys</td>
+<td>Entire run, bounded by <code>max_keys</code></td>
+</tr>
+<tr class="even">
+<td><strong>External partition spill</strong></td>
+<td>Temporary file plus in-memory offset index</td>
+<td>Until chunk iteration finishes or the iterator is closed</td>
+</tr>
+</tbody>
+</table>
+<pre class="mermaid"><code>flowchart LR
+    subgraph per_chunk [Per chunk or component]
+        M[Map accumulators] --&gt; B[Bind relationships]
+        B --&gt; F[Flush to session]
+        F --&gt; E[Evict etielle references]
+    end
+    E --&gt; GC[CPython reclaims mapping objects]
+    F --&gt; S[(Session / open transaction)]</code></pre>
+<p><strong>Key takeaway:</strong> etielle bounds <strong>mapping accumulator</strong> memory. It does <strong>not</strong> bound session or transaction size, strategy cache size, resident eager tables, or external-partition disk usage. You control transaction scope via <code>session.commit()</code>.</p>
+</section>
+<section id="resident-execution-etl" class="level1">
+<h1>Resident execution (<a href="../reference/etl.html#etielle.etl" class="gdls-link gdls-code">etl()</a>)</h1>
+<p>Resident mode loads your JSON root(s) once and maps the full payload in memory:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> (</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    etl(data)</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    .goto(<span class="st">"users"</span>).each()</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    .map_to(table<span class="op">=</span>User, fields<span class="op">=</span>[...])</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    .load(session)</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>    .run()</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div>
+<section id="component-scoped-flush-and-evict" class="level2">
+<h2 class="anchored" data-anchor-id="component-scoped-flush-and-evict">Component-scoped flush and evict</h2>
+<p>Pipelines with relationships are executed as independent <strong>relationship components</strong> (weakly connected subgraphs of the <a href="../reference/PipelineBuilder.link_to.html#etielle.PipelineBuilder.link_to" class="gdls-link gdls-code">link_to</a>/<a href="../reference/PipelineBuilder.backlink.html#etielle.PipelineBuilder.backlink" class="gdls-link gdls-code">backlink</a> graph). Each component is mapped, bound, flushed, and evicted before the next component runs.</p>
+<p>Peak mapping memory is bounded by the <strong>largest component</strong>, not necessarily the entire dataset — but only when the relationship graph splits cleanly. Tables with no relationship edges are batched into a single mapping pass for efficiency.</p>
+</section>
+<section id="when-resident-mode-is-enough" class="level2">
+<h2 class="anchored" data-anchor-id="when-resident-mode-is-enough">When resident mode is enough</h2>
+<ul>
+<li>The full JSON payload fits comfortably in RAM.</li>
+<li>You have a single root or a modest number of roots you can hold at once.</li>
+<li>The relationship graph decomposes into reasonably sized components.</li>
+</ul>
+</section>
+<section id="shared-dimensions-and-load_eager" class="level2">
+<h2 class="anchored" data-anchor-id="shared-dimensions-and-load_eager">Shared dimensions and <a href="../reference/PipelineBuilder.load_eager.html#etielle.PipelineBuilder.load_eager" class="gdls-link gdls-code">load_eager()</a></h2>
+<p>When a shared dimension table (e.g.&nbsp;<code>tags</code>) is referenced by many independent subgraphs, the relationship graph collapses into one giant component and the per-component memory win vanishes. Mark small shared tables as eager so they are loaded once and kept resident while other components are processed:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> (</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    etl(data)</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    .goto(<span class="st">"tags"</span>).each()</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    .map_to(table<span class="op">=</span>Tag, fields<span class="op">=</span>[...])</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    .load_eager(Tag)          <span class="co"># resident across all components</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    .goto_root()</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    .goto(<span class="st">"items"</span>).each()</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    .map_to(table<span class="op">=</span>Item, fields<span class="op">=</span>[...])</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>    .link_to(Tag, by<span class="op">=</span>{<span class="st">"tag_id"</span>: <span class="st">"id"</span>})</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>    .load(session)</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>    .run()</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div>
+<p>Resident eager tables stay in memory for the entire run. Size them for tables that are small relative to your fact data.</p>
+</section>
+</section>
+<section id="streaming-execution-stream" class="level1">
+<h1>Streaming execution (<a href="../reference/stream.html#etielle.stream" class="gdls-link gdls-code">stream()</a>)</h1>
+<p>For large or single-consumption inputs (paginated APIs, <code>ijson</code> streams), use <a href="../reference/stream.html#etielle.stream" class="gdls-link gdls-code">stream()</a> instead of <a href="../reference/etl.html#etielle.etl" class="gdls-link gdls-code">etl()</a>. Streaming processes <strong>key-complete, relationship-complete</strong> chunks: each chunk is mapped, validated, bound, flushed, and evicted before the next chunk begins.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> stream</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> (</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    stream(record_iter)</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    .goto(<span class="st">"users"</span>).each()</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>    .map_to(table<span class="op">=</span>User, fields<span class="op">=</span>[...])</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    .load(session)   <span class="co"># required in streaming mode</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>    .run()</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>session.commit()</span></code></pre></div>
+<p>Peak mapping memory is approximately <strong>one chunk</strong> plus any resident <a href="../reference/PipelineBuilder.load_eager.html#etielle.PipelineBuilder.load_eager" class="gdls-link gdls-code">load_eager()</a> tables — flat regardless of total dataset size. The benchmark in <code>benchmarks/bench_issue_75.py</code> demonstrates Python heap peak staying flat under streaming while resident loading grows with the dataset:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run python benchmarks/bench_issue_75.py <span class="at">--scale</span> 2000</span></code></pre></div>
+<section id="streaming-requirements" class="level2">
+<h2 class="anchored" data-anchor-id="streaming-requirements">Streaming requirements</h2>
+<ul>
+<li><a href="../reference/PipelineBuilder.load.html#etielle.PipelineBuilder.load" class="gdls-link gdls-code">load()</a> is required before <a href="../reference/PipelineBuilder.run.html#etielle.PipelineBuilder.run" class="gdls-link gdls-code">run()</a> in streaming mode.</li>
+<li>Each chunk must include all relationship endpoints, or use <a href="../reference/PipelineBuilder.load_eager.html#etielle.PipelineBuilder.load_eager" class="gdls-link gdls-code">load_eager()</a> for shared parents present in every chunk.</li>
+<li>Cross-chunk scattered merge (e.g.&nbsp;merging <code>users</code> and <code>profiles</code> from different chunks) is not supported.</li>
+<li>Traversal-based <a href="../reference/PipelineBuilder.build_index.html#etielle.PipelineBuilder.build_index" class="gdls-link gdls-code">build_index()</a> and composite <code>by</code> mappings on <a href="../reference/PipelineBuilder.link_to.html#etielle.PipelineBuilder.link_to" class="gdls-link gdls-code">link_to()</a> are rejected.</li>
+</ul>
+<p>Pass resident eager data via <code>eager_roots=</code> when dimension tables are not repeated in every chunk:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>stream(chunks, eager_roots<span class="op">=</span>tags_snapshot)</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    .goto(<span class="st">"tags"</span>).each()</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    .map_to(table<span class="op">=</span>Tag, fields<span class="op">=</span>[...])</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    .load_eager(Tag)</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    ...</span></code></pre></div>
+</section>
+<section id="sqlalchemy-session-behavior" class="level2">
+<h2 class="anchored" data-anchor-id="sqlalchemy-session-behavior">SQLAlchemy session behavior</h2>
+<p>Once etielle drops its per-chunk references after flush, CPython’s garbage collector reclaims mapping objects. The session’s identity map references persistent (flushed, clean) instances weakly, so no special cleanup is required on the SQLAlchemy side.</p>
+<p>Transaction control still belongs to you: <code>INSERT</code>s accumulate in the open transaction until you commit or roll back. For very long streams, commit at a cadence that suits your durability needs; a single end-of-stream commit keeps everything in one transaction but grows the session’s transaction scope.</p>
+</section>
+</section>
+<section id="choosing-an-execution-mode" class="level1">
+<h1>Choosing an execution mode</h1>
+<pre class="mermaid"><code>flowchart TD
+    Start([Sizing an ingest]) --&gt; Q1{Entire payload fits&lt;br/&gt;comfortably in RAM?}
+    Q1 --&gt;|Yes| Q2{Single JSON root&lt;br/&gt;or modest batch?}
+    Q1 --&gt;|No| Stream[Use stream]
+    Q2 --&gt;|Yes| Etl[Use etl]
+    Q2 --&gt;|No, many roots| Q3{Can you process&lt;br/&gt;one root at a time?}
+    Q3 --&gt;|Yes| Stream
+    Q3 --&gt;|No| EtlWarn["etl with all roots:&lt;br/&gt;peak ≈ full dataset"]
+
+    Stream --&gt; LoadReq[Requires load before run]
+    Etl --&gt; LoadOpt[load optional]</code></pre>
+</section>
+<section id="choosing-a-chunk-source" class="level1">
+<h1>Choosing a chunk source</h1>
+<p>Chunk sources are only relevant for <a href="../reference/stream.html#etielle.stream" class="gdls-link gdls-code">stream()</a>. Producing correct chunks is part of the streaming contract — each chunk must be key-complete and relationship-complete. See <a href="../user-guide/relationships.html">Relationships</a> for how <a href="../reference/PipelineBuilder.link_to.html#etielle.PipelineBuilder.link_to" class="gdls-link gdls-code">link_to</a> shapes the component graph.</p>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Important</span>Pick a relationship-complete key
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Whether you group with <a href="../reference/GroupByChunkSource.html#etielle.GroupByChunkSource" class="gdls-link gdls-code">GroupByChunkSource</a> or partition with <a href="../reference/ExternalPartitionChunkSource.html#etielle.ExternalPartitionChunkSource" class="gdls-link gdls-code">ExternalPartitionChunkSource</a>, choose a key that is a <strong>complete component root</strong> — coarse enough that every record reachable through a relationship from one record sharing the key also shares it (e.g.&nbsp;the owning entity id), not merely a fine merge key. Grouping guarantees key-completeness for the chosen key; the runtime relationship-completeness check catches a key that is too fine.</p>
+</div>
+</div>
+<pre class="mermaid"><code>flowchart TD
+    S([Using stream]) --&gt; Q1{Already have&lt;br/&gt;Chunk objects?}
+    Q1 --&gt;|Yes| Pre[PreSegmentedChunkSource]
+    Q1 --&gt;|No| Q2{Records sharing a key&lt;br/&gt;can be far apart?}
+    Q2 --&gt;|No, consecutive or sorted| Group[GroupByChunkSource]
+    Q2 --&gt;|Yes, arbitrary order| Ext[ExternalPartitionChunkSource]
+    Q1 --&gt;|One record per chunk| Default["Iterable / OneRecordPerChunkSource"]
+
+    Group --&gt; Key[Relationship-complete key]
+    Ext --&gt; Key
+    Pre --&gt; Key
+    Default --&gt; Key</code></pre>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Chunk source</th>
+<th>When to use</th>
+<th>Record RAM</th>
+<th>Other cost</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Iterable / <a href="../reference/OneRecordPerChunkSource.html#etielle.OneRecordPerChunkSource" class="gdls-link gdls-code">OneRecordPerChunkSource</a></strong></td>
+<td>One JSON root per chunk; simplest streaming shape</td>
+<td>One record</td>
+<td>None</td>
+</tr>
+<tr class="even">
+<td><strong><a href="../reference/GroupByChunkSource.html#etielle.GroupByChunkSource" class="gdls-link gdls-code">GroupByChunkSource</a></strong></td>
+<td>Input is grouped or sorted by key; consecutive records with the same key arrive together</td>
+<td>One chunk (current key group)</td>
+<td>Single pass, no disk</td>
+</tr>
+<tr class="odd">
+<td><strong><a href="../reference/ExternalPartitionChunkSource.html#etielle.ExternalPartitionChunkSource" class="gdls-link gdls-code">ExternalPartitionChunkSource</a></strong></td>
+<td>Keys can reappear arbitrarily far apart; input is unsorted</td>
+<td>One chunk (current partition)</td>
+<td>Full-dataset temp file + offset index</td>
+</tr>
+<tr class="even">
+<td><strong><a href="../reference/PreSegmentedChunkSource.html#etielle.PreSegmentedChunkSource" class="gdls-link gdls-code">PreSegmentedChunkSource</a></strong></td>
+<td>You already produce <a href="../reference/Chunk.html#etielle.Chunk" class="gdls-link gdls-code">Chunk</a> objects with known boundaries</td>
+<td>Whatever the upstream holds</td>
+<td>None (passthrough)</td>
+</tr>
+</tbody>
+</table>
+<section id="groupbychunksource" class="level2">
+<h2 class="anchored" data-anchor-id="groupbychunksource"><a href="../reference/GroupByChunkSource.html#etielle.GroupByChunkSource" class="gdls-link gdls-code">GroupByChunkSource</a></h2>
+<p>Single-pass group-by over consecutive records:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> stream, GroupByChunkSource</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>source <span class="op">=</span> GroupByChunkSource(record_iter, key<span class="op">=</span><span class="kw">lambda</span> r: r[<span class="st">"orders"</span>][<span class="dv">0</span>][<span class="st">"id"</span>])</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>stream(source).goto(...)...</span></code></pre></div>
+<p>Grouping is <strong>consecutive only</strong>. If two records share a key but are separated by a record with a different key, they land in separate chunks. That still satisfies key-completeness, but the relationship-completeness check will raise if a chunk is then missing endpoints. For unsorted input, use <a href="../reference/ExternalPartitionChunkSource.html#etielle.ExternalPartitionChunkSource" class="gdls-link gdls-code">ExternalPartitionChunkSource</a> instead.</p>
+</section>
+<section id="externalpartitionchunksource" class="level2">
+<h2 class="anchored" data-anchor-id="externalpartitionchunksource"><a href="../reference/ExternalPartitionChunkSource.html#etielle.ExternalPartitionChunkSource" class="gdls-link gdls-code">ExternalPartitionChunkSource</a></h2>
+<p>Two-pass disk-backed partitioner for arbitrarily ordered input. Pass one serializes every record to a temporary spill file and builds a key→offsets index; pass two emits one chunk per distinct key by reading records back from disk:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> stream, ExternalPartitionChunkSource</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>source <span class="op">=</span> ExternalPartitionChunkSource(record_iter, key<span class="op">=</span><span class="kw">lambda</span> r: r[<span class="st">"orders"</span>][<span class="dv">0</span>][<span class="st">"id"</span>])</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>stream(source).goto(...)...</span></code></pre></div>
+<ul>
+<li>Peak <strong>record</strong> memory is one chunk; the <strong>full dataset</strong> is written to temp storage.</li>
+<li>The offset index holds a few machine words per record for the duration of the stream.</li>
+<li>Pass two performs random reads — prefer a fast local temp filesystem (<code>dir=</code> overrides the location).</li>
+<li>Records round-trip through <code>dumps</code>/<code>loads</code> (default JSON); chunks yield reconstructed copies.</li>
+</ul>
+</section>
+<section id="presegmentedchunksource" class="level2">
+<h2 class="anchored" data-anchor-id="presegmentedchunksource"><a href="../reference/PreSegmentedChunkSource.html#etielle.PreSegmentedChunkSource" class="gdls-link gdls-code">PreSegmentedChunkSource</a></h2>
+<p>Passthrough when you already have an iterable of <a href="../reference/Chunk.html#etielle.Chunk" class="gdls-link gdls-code">Chunk</a> objects:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> stream, PreSegmentedChunkSource, Chunk</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>chunks <span class="op">=</span> [Chunk(roots<span class="op">=</span>(subtree,), sequential<span class="op">=</span><span class="va">True</span>) <span class="cf">for</span> subtree <span class="kw">in</span> producer]</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>stream(PreSegmentedChunkSource(chunks)).goto(...)...</span></code></pre></div>
+</section>
+</section>
+<section id="choosing-a-flush-strategy" class="level1">
+<h1>Choosing a flush strategy</h1>
+<p>The chunk loop calls <code>FlushStrategy.flush(ctx)</code> at each component boundary. Pass a strategy via <code>stream(..., flush_strategy=...)</code>. Resident <a href="../reference/etl.html#etielle.etl" class="gdls-link gdls-code">etl()</a> runs use the same strategy hook at component boundaries.</p>
+<pre class="mermaid"><code>flowchart TD
+    F([Flush at component boundary]) --&gt; Q1{Target?}
+    Q1 --&gt;|Supabase| Supa["Default strategy +&lt;br/&gt;load(upsert=True, upsert_on=...)"]
+    Q1 --&gt;|SQLAlchemy| Q2{How should conflicts&lt;br/&gt;and reappearing keys behave?}
+    Q2 --&gt;|Plain insert| Default[KeyCompleteFlushStrategy]
+    Q2 --&gt;|Overwrite existing row by PK| Upsert["UpsertFlushStrategy&lt;br/&gt;on_conflict='update'"]
+    Q2 --&gt;|Skip conflicting rows / races| Skip["UpsertFlushStrategy&lt;br/&gt;on_conflict='skip'"]
+    Q2 --&gt;|Same natural key reappears&lt;br/&gt;within bounded gap| Buf[BufferedKeyFlushStrategy]
+
+    Buf --&gt; Size["Size max_keys to&lt;br/&gt;worst reappearance gap"]</code></pre>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Strategy</th>
+<th>Cross-chunk state</th>
+<th>Use when</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong><a href="../reference/KeyCompleteFlushStrategy.html#etielle.KeyCompleteFlushStrategy" class="gdls-link gdls-code">KeyCompleteFlushStrategy</a></strong> (default)</td>
+<td>None</td>
+<td>Clean inserts; duplicate keys against stored rows raise <code>IntegrityError</code></td>
+</tr>
+<tr class="even">
+<td><strong><a href="../reference/UpsertFlushStrategy.html#etielle.UpsertFlushStrategy" class="gdls-link gdls-code">UpsertFlushStrategy</a></strong></td>
+<td>None (DB resolves)</td>
+<td>Idempotent re-runs (<a href="../reference/InstanceBuilder.update.html#etielle.InstanceBuilder.update" class="gdls-link gdls-code">update</a>) or skip-on-conflict ingest (<code>skip</code>); SQLAlchemy only</td>
+</tr>
+<tr class="odd">
+<td><strong><a href="../reference/BufferedKeyFlushStrategy.html#etielle.BufferedKeyFlushStrategy" class="gdls-link gdls-code">BufferedKeyFlushStrategy</a></strong></td>
+<td>LRU cache of <code>max_keys</code> entries</td>
+<td>Late-arriving rows for the same <code>join_on</code> key within a bounded reappearance gap; SQLAlchemy only</td>
+</tr>
+</tbody>
+</table>
+<section id="keycompleteflushstrategy" class="level2">
+<h2 class="anchored" data-anchor-id="keycompleteflushstrategy"><a href="../reference/KeyCompleteFlushStrategy.html#etielle.KeyCompleteFlushStrategy" class="gdls-link gdls-code">KeyCompleteFlushStrategy</a></h2>
+<p>Default behavior: plain <code>session.add()</code> and flush with no cross-chunk state. Delegates to etielle’s standard insert and relationship-binding logic.</p>
+</section>
+<section id="upsertflushstrategy" class="level2">
+<h2 class="anchored" data-anchor-id="upsertflushstrategy"><a href="../reference/UpsertFlushStrategy.html#etielle.UpsertFlushStrategy" class="gdls-link gdls-code">UpsertFlushStrategy</a></h2>
+<p>Database-level conflict handling for SQLAlchemy (real upsert via <code>session.merge()</code>, not <code>add()</code>):</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> stream, UpsertFlushStrategy</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>stream(records, flush_strategy<span class="op">=</span>UpsertFlushStrategy())                    <span class="co"># overwrite by PK</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>stream(records, flush_strategy<span class="op">=</span>UpsertFlushStrategy(on_conflict<span class="op">=</span><span class="st">"skip"</span>))    <span class="co"># skip conflicts</span></span></code></pre></div>
+<ul>
+<li><strong><a href="../reference/InstanceBuilder.update.html#etielle.InstanceBuilder.update" class="gdls-link gdls-code">update</a></strong> (default): <code>session.merge()</code> — existing rows with the same primary key are overwritten (last write wins).</li>
+<li><strong><code>skip</code></strong>: per-row <code>SAVEPOINT</code> insert; rows raising <code>IntegrityError</code> are skipped (duplicate keys, unique constraints, concurrent-insert races). Children bound to a skipped parent are skipped too, because the cascaded parent insert reproduces the conflict inside the child’s savepoint.</li>
+<li>Not a cross-chunk merge substitute: merge policies (<a href="../reference/AddPolicy.html#etielle.AddPolicy" class="gdls-link gdls-code">AddPolicy</a> etc.) run only within a chunk’s mapping pass.</li>
+<li>For Supabase, use <code>load(upsert=True, upsert_on=...)</code> with the default strategy instead.</li>
+</ul>
+</section>
+<section id="bufferedkeyflushstrategy" class="level2">
+<h2 class="anchored" data-anchor-id="bufferedkeyflushstrategy"><a href="../reference/BufferedKeyFlushStrategy.html#etielle.BufferedKeyFlushStrategy" class="gdls-link gdls-code">BufferedKeyFlushStrategy</a></h2>
+<p>Bounded LRU cache of recently flushed <code>(table, join_on key)</code> → instance entries:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> stream, BufferedKeyFlushStrategy</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>stream(records, flush_strategy<span class="op">=</span>BufferedKeyFlushStrategy(max_keys<span class="op">=</span><span class="dv">50_000</span>))</span></code></pre></div>
+<p>When a later chunk maps a row whose key is still cached, non-None scalar values are copied onto the already-persisted instance (an UPDATE at the next flush) instead of inserting a duplicate. Children mapped alongside a re-appearing parent are relinked to the persisted instance.</p>
+<p><strong>Correctness is a heuristic bounded by cache size</strong>, not a guarantee: once a key is evicted, a reappearing row inserts a new row (or raises under a unique constraint). Size <code>max_keys</code> for your worst-case reappearance gap, or prefer <a href="../reference/ExternalPartitionChunkSource.html#etielle.ExternalPartitionChunkSource" class="gdls-link gdls-code">ExternalPartitionChunkSource</a> when keys can be arbitrarily far apart and exact grouping matters.</p>
+<p>Only tables with <code>join_on</code> participate; auto-keyed rows always insert because auto keys restart per chunk. The strategy is stateful across the run — use a fresh instance per pipeline.</p>
+</section>
+</section>
+<section id="what-etielle-does-not-bound" class="level1">
+<h1>What etielle does not bound</h1>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Concern</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Session / transaction size</strong></td>
+<td>Flushed rows accumulate in the open transaction until you <code>commit()</code></td>
+</tr>
+<tr class="even">
+<td><strong><a href="../reference/BufferedKeyFlushStrategy.html#etielle.BufferedKeyFlushStrategy" class="gdls-link gdls-code">BufferedKeyFlushStrategy</a> cache</strong></td>
+<td>Up to <code>max_keys</code> live ORM instances held for the run</td>
+</tr>
+<tr class="odd">
+<td><strong><a href="../reference/PipelineBuilder.load_eager.html#etielle.PipelineBuilder.load_eager" class="gdls-link gdls-code">load_eager()</a> resident tables</strong></td>
+<td>Entire eager table stays mapped for the run (intentional)</td>
+</tr>
+<tr class="even">
+<td><strong>External partition spill</strong></td>
+<td>Full dataset on disk plus offset index (not RAM, but not free)</td>
+</tr>
+<tr class="odd">
+<td><strong>Cross-chunk scattered merge</strong></td>
+<td>Unsupported by design — not a memory knob, a correctness limit</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="operational-guidance" class="level1">
+<h1>Operational guidance</h1>
+<section id="commit-cadence" class="level2">
+<h2 class="anchored" data-anchor-id="commit-cadence">Commit cadence</h2>
+<p>For long streaming runs, periodic <code>session.commit()</code> limits transaction scope and session growth. A single end-of-stream commit is simpler but keeps the entire ingest in one transaction. Choose based on durability requirements and database behavior under large open transactions.</p>
+</section>
+<section id="sizing-max_keys-buffered-strategy" class="level2">
+<h2 class="anchored" data-anchor-id="sizing-max_keys-buffered-strategy">Sizing <code>max_keys</code> (buffered strategy)</h2>
+<p>Estimate the maximum number of distinct <code>(table, join_on key)</code> pairs that can reappear before you finish the stream, within the window where late rows still need to merge. If reappearance distance is unbounded or unknown, do not rely on <a href="../reference/BufferedKeyFlushStrategy.html#etielle.BufferedKeyFlushStrategy" class="gdls-link gdls-code">BufferedKeyFlushStrategy</a> alone — use <a href="../reference/ExternalPartitionChunkSource.html#etielle.ExternalPartitionChunkSource" class="gdls-link gdls-code">ExternalPartitionChunkSource</a> to group records correctly before mapping.</p>
+</section>
+<section id="choosing-spill-dir-external-partition" class="level2">
+<h2 class="anchored" data-anchor-id="choosing-spill-dir-external-partition">Choosing spill <code>dir=</code> (external partition)</h2>
+<p>Point <code>ExternalPartitionChunkSource(..., dir=...)</code> at fast local storage. Pass two reads records back in arbitrary key order; network filesystems add latency without helping correctness.</p>
+</section>
+<section id="manual-batching-with-etl" class="level2">
+<h2 class="anchored" data-anchor-id="manual-batching-with-etl">Manual batching with <a href="../reference/etl.html#etielle.etl" class="gdls-link gdls-code">etl()</a></h2>
+<p>Splitting a large dataset into multiple <code>etl(batch).load(session).run()</code> calls inside one transaction is a resident pattern. Each batch still peaks at the full batch size in mapping memory. For true flat peak memory over an unbounded stream, use <a href="../reference/stream.html#etielle.stream" class="gdls-link gdls-code">stream()</a> with an appropriate chunk source.</p>
+</section>
+</section>
+<section id="see-also" class="level1">
+<h1>See also</h1>
+<ul>
+<li><a href="../user-guide/database-loading.html">Database Loading</a> — sessions, transactions, Supabase, upsert configuration</li>
+<li><a href="../user-guide/relationships.html">Relationships</a> — <a href="../reference/PipelineBuilder.link_to.html#etielle.PipelineBuilder.link_to" class="gdls-link gdls-code">link_to</a>, component graphs, relationship-complete chunks</li>
+<li><a href="../user-guide/error-handling.html">Error Handling</a> — telemetry during mapping and flush</li>
+</ul>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/promptly-technologies-llc\.github\.io\/etielle\/");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<nav class="page-navigation">
+  <div class="nav-page nav-page-previous">
+      <a href="../user-guide/database-loading.html" class="pagination-link" aria-label="Database Loading: Persisting with load().run()">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">Database Loading: Persisting with load().run()</span>
+      </a>          
+  </div>
+  <div class="nav-page nav-page-next">
+      <a href="../user-guide/custom-transforms.html" class="pagination-link" aria-label="Custom Transforms: The @transform Decorator">
+        <span class="nav-page-text">Custom Transforms: The <span class="citation" data-cites="transform">@transform</span> Decorator</span> <i class="bi bi-arrow-right-short"></i>
+      </a>
+  </div>
+</nav>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+<div class="nav-footer-center">
+<p>Site created with <strong>Great&nbsp;Docs</strong>.</p>
+</div>
+</div>
+</footer>
+<script src="../github-widget.js"></script>
+<script src="../copy-page.js"></script>
+<script src="../sidebar-wrap.js"></script>
+<script>(function(){var s=document.createElement('script');var m=document.querySelector('meta[name="quarto:offset"]');s.src=(m?m.content:'')+'sidebar-float.js';document.body.appendChild(s);})();</script>
+<script src="../sidebar-filter.js"></script>
+<script src="../dark-mode-toggle.js"></script>
+<script src="../back-to-top.js"></script>
+<script>(function(){var s=document.createElement('script');var m=document.querySelector('meta[name="quarto:offset"]');s.src=(m?m.content:'')+'on-this-page.js';document.body.appendChild(s);})();</script>
+<script src="../keyboard-nav.js"></script>
+<script src="../copy-code.js"></script>
+<script src="../details.js"></script>
+<script src="../mermaid-renderer.js"></script>
+<script src="../tooltips.js"></script>
+<script>(function(){var s=document.createElement('script');var m=document.querySelector('meta[name="quarto:offset"]');s.src=(m?m.content:'')+'color-swatch.js';document.body.appendChild(s);})();</script>
+<script src="../responsive-tables.js"></script>
+<script>(function(){var s=document.createElement('script');var m=document.querySelector('meta[name="quarto:offset"]');s.src=(m?m.content:'')+'video-embed.js';document.body.appendChild(s);})();</script>
+<script>(function(){var s=document.createElement('script');var m=document.querySelector('meta[name="quarto:offset"]');s.src=(m?m.content:'')+'termshow.js';document.body.appendChild(s);})();</script>
+<script src="../navbar-widgets.js"></script>
+
+
+
+
+</body></html>

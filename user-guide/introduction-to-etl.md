@@ -175,7 +175,7 @@ Learn more: [Transforms](transforms.md), [Mapping Tables](mapping.md), [Relation
 
 **What it does**: Persist the in-memory transformed data to a database (optional)
 
-**Key features**: - `load(session)`: Configure database session - [run()](../reference/PipelineBuilder.run.md#etielle.PipelineBuilder.run): Execute pipeline and flush to database by relationship component - `load_eager(table)`: Keep shared dimension tables resident across components - Flushed instances are not retained in [PipelineResult.tables](../reference/PipelineResult.md#etielle.PipelineResult.tables) (use stats/errors or query the DB) - You control the transaction (commit/rollback)
+**Key features**: - `load(session)`: Configure database session - [run()](../reference/PipelineBuilder.run.md#etielle.PipelineBuilder.run): Execute pipeline and flush to database by relationship component - [stream()](../reference/stream.md#etielle.stream): Chunked execution for large or single-consumption inputs (see [Scaling & Memory](scaling-and-memory.md)) - `load_eager(table)`: Keep shared dimension tables resident across components - Flushed instances are not retained in [PipelineResult.tables](../reference/PipelineResult.md#etielle.PipelineResult.tables) (use stats/errors or query the DB) - You control the transaction (commit/rollback)
 
 **Example**:
 

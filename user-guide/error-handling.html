@@ -137,7 +137,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       <div class="navbar-container container-fluid">
       <div class="navbar-brand-container mx-auto">
     <a class="navbar-brand" href="../index.html">
-    <span class="navbar-title">etielle <span class="version-badge" title="Released 2026-06-26">v4.2.0</span></span>
+    <span class="navbar-title">etielle</span>
     </a>
   </div>
             <div id="quarto-search" class=""></div>
@@ -154,15 +154,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <a class="nav-link" href="../reference/index.html"> 
 <span class="menu-text">Reference</span></a>
   </li>  
-  <li class="nav-item">
-    <a class="nav-link" href="../changelog.html"> 
-<span class="menu-text">Changelog</span></a>
-  </li>  
 </ul>
             <ul class="navbar-nav navbar-nav-scroll ms-auto">
   <li class="nav-item">
     <span class="nav-link">
-<div id="github-widget" data-owner="Promptly-Technologies-LLC" data-repo="etielle" data-stars="1" data-forks="0"></div>
+<div id="github-widget" data-owner="Promptly-Technologies-LLC" data-repo="etielle"></div>
     </span>
   </li>  
 </ul>
@@ -244,6 +240,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../user-guide/database-loading.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Database Loading: Persisting with load().run()</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../user-guide/scaling-and-memory.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Scaling &amp; Memory</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -367,7 +369,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="collect-mode-default" class="level2">
 <h2 class="anchored" data-anchor-id="collect-mode-default">Collect Mode (Default)</h2>
 <p>Collect all errors and inspect them after <a href="../reference/PipelineBuilder.run.html#etielle.PipelineBuilder.run" class="gdls-link gdls-code">run()</a>:</p>
-<div id="031c22b3" class="cell" data-execution_count="1">
+<div id="af1de5ee" class="cell" data-execution_count="1">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -400,7 +402,7 @@ Has errors: False</code></pre>
 <section id="fail-fast-mode" class="level2">
 <h2 class="anchored" data-anchor-id="fail-fast-mode">Fail Fast Mode</h2>
 <p>Stop processing immediately on first error:</p>
-<div id="613ab896" class="cell" data-execution_count="2">
+<div id="71b700e3" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> {<span class="st">"users"</span>: [{<span class="st">"id"</span>: <span class="va">None</span>, <span class="st">"name"</span>: <span class="st">"Bob"</span>}]}</span>
@@ -434,7 +436,7 @@ Has errors: False</code></pre>
 </section>
 <section id="inspecting-errors" class="level2">
 <h2 class="anchored" data-anchor-id="inspecting-errors">Inspecting Errors</h2>
-<div id="e75e84ff" class="cell" data-execution_count="3">
+<div id="6eb09d30" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pydantic <span class="im">import</span> BaseModel, field_validator</span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -661,7 +663,7 @@ Has errors: False</code></pre>
 <section id="pipeline-statistics" class="level2">
 <h2 class="anchored" data-anchor-id="pipeline-statistics">Pipeline Statistics</h2>
 <p>After <a href="../reference/PipelineBuilder.run.html#etielle.PipelineBuilder.run" class="gdls-link gdls-code">run()</a> completes, access per-table statistics via <code>result.stats</code>:</p>
-<div id="e1d6bf1a" class="cell" data-execution_count="4">
+<div id="269ef276" class="cell" data-execution_count="4">
 <div class="sourceCode cell-code" id="cb19"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, get</span>
 <span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> {</span>
@@ -738,7 +740,7 @@ Note
 <section id="telemetry-events" class="level2">
 <h2 class="anchored" data-anchor-id="telemetry-events">Telemetry Events</h2>
 <p>For real-time monitoring during pipeline execution, pass an <code>on_event</code> callback to <a href="../reference/PipelineBuilder.run.html#etielle.PipelineBuilder.run" class="gdls-link gdls-code">run()</a>:</p>
-<div id="077daf57" class="cell" data-execution_count="5">
+<div id="c12e86ea" class="cell" data-execution_count="5">
 <div class="sourceCode cell-code" id="cb21"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, get, MapStarted, MapCompleted</span>
 <span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> {<span class="st">"users"</span>: [{<span class="st">"name"</span>: <span class="st">"Alice"</span>}, {<span class="st">"name"</span>: <span class="st">"Bob"</span>}]}</span>

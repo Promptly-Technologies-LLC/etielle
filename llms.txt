@@ -11,13 +11,16 @@
 
 - [AddPolicy](https://promptly-technologies-llc.github.io/etielle/reference/AddPolicy.html)
 - [AppendPolicy](https://promptly-technologies-llc.github.io/etielle/reference/AppendPolicy.html)
+- [BufferedKeyFlushStrategy](https://promptly-technologies-llc.github.io/etielle/reference/BufferedKeyFlushStrategy.html): Streaming strategy that merges late-arriving rows for recently seen keys
 - [CallableChunkSource](https://promptly-technologies-llc.github.io/etielle/reference/CallableChunkSource.html): Build chunks from a caller-supplied factory (tests and advanced callers)
 - [ConstructorBuilder](https://promptly-technologies-llc.github.io/etielle/reference/ConstructorBuilder.html): Simplified builder for classes that accept keyword arguments in their constructor
 - [ExtendPolicy](https://promptly-technologies-llc.github.io/etielle/reference/ExtendPolicy.html)
+- [ExternalPartitionChunkSource](https://promptly-technologies-llc.github.io/etielle/reference/ExternalPartitionChunkSource.html): Partition arbitrarily-ordered input into key-complete chunks via disk
 - [FirstNonNullPolicy](https://promptly-technologies-llc.github.io/etielle/reference/FirstNonNullPolicy.html)
 - [GroupByChunkSource](https://promptly-technologies-llc.github.io/etielle/reference/GroupByChunkSource.html): Group consecutive records that share a key into one chunk each
 - [InstanceBuilder](https://promptly-technologies-llc.github.io/etielle/reference/InstanceBuilder.html)
 - [KeyCompleteFlushStrategy](https://promptly-technologies-llc.github.io/etielle/reference/KeyCompleteFlushStrategy.html): Default streaming strategy: plain insert/flush, no cross-chunk merge
+- [UpsertFlushStrategy](https://promptly-technologies-llc.github.io/etielle/reference/UpsertFlushStrategy.html): Streaming strategy with database-level conflict handling (SQLAlchemy)
 - [MaxPolicy](https://promptly-technologies-llc.github.io/etielle/reference/MaxPolicy.html)
 - [MergePolicy](https://promptly-technologies-llc.github.io/etielle/reference/MergePolicy.html)
 - [MinPolicy](https://promptly-technologies-llc.github.io/etielle/reference/MinPolicy.html)
