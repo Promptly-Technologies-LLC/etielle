@@ -155,10 +155,13 @@ from .chunking import (
     FlushContext,
     FlushStrategy,
     KeyCompleteFlushStrategy,
+    UpsertFlushStrategy,
+    BufferedKeyFlushStrategy,
     OneRecordPerChunkSource,
     CallableChunkSource,
     GroupByChunkSource,
     PreSegmentedChunkSource,
+    ExternalPartitionChunkSource,
 )
 
 __all__ += [
@@ -174,9 +177,12 @@ __all__ += [
     "FlushContext",
     "FlushStrategy",
     "KeyCompleteFlushStrategy",
+    "UpsertFlushStrategy",
+    "BufferedKeyFlushStrategy",
     "OneRecordPerChunkSource",
     "CallableChunkSource",
     "GroupByChunkSource",
     "PreSegmentedChunkSource",
+    "ExternalPartitionChunkSource",
     "MappingRuntimeState",
 ]
