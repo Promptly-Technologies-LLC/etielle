@@ -79,6 +79,7 @@ user_guide:
   - section: "Advanced Topics"
     contents:
       - database-loading.qmd
+      - scaling-and-memory.qmd
       - custom-transforms.qmd
       - error-handling.qmd
 
@@ -96,15 +97,18 @@ reference:
     contents:
       - AddPolicy  # 1 method(s)
       - AppendPolicy  # 1 method(s)
+      - BufferedKeyFlushStrategy  # 1 method(s)
       - CallableChunkSource  # 1 method(s)
       - name: ConstructorBuilder
         members: false  # 8 methods listed below
       - ExtendPolicy  # 1 method(s)
+      - ExternalPartitionChunkSource  # 1 method(s)
       - FirstNonNullPolicy  # 1 method(s)
       - GroupByChunkSource  # 1 method(s)
       - name: InstanceBuilder
         members: false  # 9 methods listed below
       - KeyCompleteFlushStrategy  # 1 method(s)
+      - UpsertFlushStrategy  # 1 method(s)
       - MaxPolicy  # 1 method(s)
       - MergePolicy  # 1 method(s)
       - MinPolicy  # 1 method(s)

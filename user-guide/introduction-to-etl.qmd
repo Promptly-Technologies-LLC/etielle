@@ -203,6 +203,7 @@ Learn more: [Transforms](transforms.qmd), [Mapping Tables](mapping.qmd), [Relati
 **Key features**:
 - `load(session)`: Configure database session
 - `run()`: Execute pipeline and flush to database by relationship component
+- `stream()`: Chunked execution for large or single-consumption inputs (see [Scaling & Memory](scaling-and-memory.qmd))
 - `load_eager(table)`: Keep shared dimension tables resident across components
 - Flushed instances are not retained in `PipelineResult.tables` (use stats/errors or query the DB)
 - You control the transaction (commit/rollback)
