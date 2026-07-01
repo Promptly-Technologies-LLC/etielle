@@ -100,6 +100,7 @@ upload_to_vcs_release = false
 
 [dependency-groups]
 dev = [
+    "great-docs>=0.14.1",
     "ipykernel>=6.30.1",
     "mypy>=1.18.2",
     "pytest>=8.4.2",
