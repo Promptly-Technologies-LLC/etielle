@@ -1265,14 +1265,26 @@ class PipelineBuilder:
 
     def _merge_mapping_results(self, existing: Any, incoming: Any) -> None:
         """Merge incoming MappingResult into existing in place."""
+        # Maps id(discarded incoming instance) -> retained instance, so index
+        # entries can be redirected and relationship binding never resolves to
+        # a discarded duplicate.
+        replaced: dict[int, Any] = {}
         for key, row in incoming.instances.items():
             if key in existing.instances:
-                if hasattr(existing.instances[key], "update"):
-                    existing.instances[key].update(row)
-                elif hasattr(existing.instances[key], "__dict__"):
+                retained = existing.instances[key]
+                if retained is not row:
+                    replaced[id(row)] = retained
+                if hasattr(retained, "update"):
+                    retained.update(row)
+                elif hasattr(retained, "__dict__"):
                     source = row.__dict__ if hasattr(row, "__dict__") else row
                     for k, v in source.items():
-                        setattr(existing.instances[key], k, v)
+                        # Private attributes (e.g. SQLAlchemy's
+                        # _sa_instance_state) belong to the incoming instance
+                        # and must not be transplanted onto the existing one.
+                        if k.startswith("_"):
+                            continue
+                        setattr(retained, k, v)
             else:
                 existing.instances[key] = row
         for key, msgs in incoming.update_errors.items():
@@ -1280,7 +1292,9 @@ class PipelineBuilder:
         for key, msgs in incoming.finalize_errors.items():
             existing.finalize_errors.setdefault(key, []).extend(msgs)
         for field_name, index in incoming.indices.items():
-            existing.indices.setdefault(field_name, {}).update(index)
+            target = existing.indices.setdefault(field_name, {})
+            for value, obj in index.items():
+                target[value] = replaced.get(id(obj), obj)
         existing.lookup_values.update(incoming.lookup_values)
 
     def _map_roots(

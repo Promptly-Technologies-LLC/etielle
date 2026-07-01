@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import json
+import tempfile
+from collections import OrderedDict
 from collections.abc import Callable, Iterable, Iterator, Sequence
 from dataclasses import dataclass, field
 from itertools import groupby
-from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Any, Literal, Protocol, runtime_checkable
 
 if TYPE_CHECKING:
     from etielle.fluent import PipelineBuilder, TableStats
@@ -86,8 +89,9 @@ class GroupByChunkSource:
         in *separate* chunks. With a relationship key that is fine for
         key-completeness but breaks relationship-completeness; the runtime
         relationship-completeness check raises if a chunk is missing endpoints.
-        For unsorted input, sort by ``key`` first, or wait for the robust
-        unsorted-input partitioner (H2, tracked under sub-issue D).
+        For unsorted input, sort by ``key`` first or use
+        ``ExternalPartitionChunkSource``, the disk-backed partitioner that
+        handles arbitrarily-ordered input.
 
     Choosing a relationship-complete key:
         Pick a key that is a *complete component root* -- coarse enough that
@@ -136,6 +140,90 @@ class PreSegmentedChunkSource:
 
     def chunks(self) -> Iterator[Chunk]:
         yield from self._chunks
+
+
+class ExternalPartitionChunkSource:
+    """Partition arbitrarily-ordered input into key-complete chunks via disk.
+
+    This is the two-pass, disk-backed partitioner (H2): pass one serializes
+    every record to a temporary spill file and builds an in-memory
+    key -> offsets index; pass two emits one chunk per distinct key by reading
+    that key's records back from disk. Unlike ``GroupByChunkSource`` it does
+    not require the input to be grouped or sorted -- records that share a key
+    are collected into the same chunk no matter how far apart they arrive.
+
+    Trade-offs:
+        Peak record memory is one chunk (the current partition), but the full
+        dataset is written to temporary storage, and the offset index holds a
+        few machine words per record for the duration of the stream. Pass two
+        performs random reads, so a fast local temp filesystem is preferable.
+
+    Serialization:
+        Records are serialized with ``dumps`` (default ``json.dumps``) and
+        deserialized with ``loads`` (default ``json.loads``), so chunks yield
+        *reconstructed copies* of the input records. Non-JSON-serializable
+        records need custom ``dumps``/``loads`` callables.
+
+    Emission order:
+        Chunks are emitted in first-appearance order of their keys. Each chunk
+        is ``sequential`` -- every record in the partition is mapped against
+        pipeline root index 0 with shared auto-key counters, matching
+        ``GroupByChunkSource``.
+
+    Choosing a relationship-complete key:
+        As with ``GroupByChunkSource``, pick a key that is a complete
+        component root; partitioning guarantees key-completeness for the
+        chosen key, and the runtime relationship-completeness check catches a
+        key that is too fine.
+
+    Args:
+        records: An iterable (or single-use iterator) of JSON roots. Consumed
+            exactly once per ``chunks()`` iteration.
+        key: Function mapping a record to its partition key. Must return a
+            hashable value.
+        dir: Optional directory for the temporary spill file (defaults to the
+            platform temp directory). The file is deleted when iteration
+            finishes or the iterator is closed.
+        dumps: Serializer from record to ``str`` (default ``json.dumps``).
+        loads: Deserializer from ``str`` to record (default ``json.loads``).
+    """
+
+    def __init__(
+        self,
+        records: Iterator[Any] | Iterable[Any],
+        key: Callable[[Any], Any],
+        *,
+        dir: str | None = None,
+        dumps: Callable[[Any], str] | None = None,
+        loads: Callable[[str], Any] | None = None,
+    ) -> None:
+        self._records = records
+        self._key = key
+        self._dir = dir
+        self._dumps = dumps if dumps is not None else json.dumps
+        self._loads = loads if loads is not None else json.loads
+
+    def chunks(self) -> Iterator[Chunk]:
+        spill = tempfile.TemporaryFile(
+            mode="w+b", dir=self._dir, prefix="etielle-partition-"
+        )
+        try:
+            index: dict[Any, list[tuple[int, int]]] = {}
+            offset = 0
+            for record in self._records:
+                data = self._dumps(record).encode("utf-8")
+                spill.write(data)
+                index.setdefault(self._key(record), []).append((offset, len(data)))
+                offset += len(data)
+
+            for spans in index.values():
+                roots = []
+                for span_offset, span_length in spans:
+                    spill.seek(span_offset)
+                    roots.append(self._loads(spill.read(span_length).decode("utf-8")))
+                yield Chunk(roots=tuple(roots), sequential=True)
+        finally:
+            spill.close()
 
 
 @dataclass
@@ -219,3 +307,320 @@ class KeyCompleteFlushStrategy:
                 ctx.stats,
                 ctx.on_event,
             )
+
+
+def _is_auto_key(key: tuple[Any, ...]) -> bool:
+    """Return True for engine-generated auto keys (no ``join_on`` on the table)."""
+    return len(key) == 1 and isinstance(key[0], str) and key[0].startswith("__auto_")
+
+
+def _parent_attr_name(parent_table: str) -> str:
+    """Infer the relationship attribute name from a parent table name."""
+    return parent_table.rstrip("s") if parent_table.endswith("s") else parent_table
+
+
+def _copy_instance_state(target: Any, incoming: Any) -> None:
+    """Copy non-None scalar attribute values from ``incoming`` onto ``target``.
+
+    Collection-valued attributes (lists/sets, e.g. backlink relationship
+    collections) and private/engine attributes are left untouched, so merging
+    a late-arriving row cannot detach previously bound children.
+    """
+    for attr_name, value in vars(incoming).items():
+        if attr_name.startswith("_"):
+            continue
+        if value is None:
+            continue
+        if isinstance(value, (list, set)):
+            continue
+        setattr(target, attr_name, value)
+
+
+class UpsertFlushStrategy:
+    """Streaming strategy with database-level conflict handling (SQLAlchemy).
+
+    Where the default ``KeyCompleteFlushStrategy`` uses plain ``session.add()``
+    (a duplicate row aborts the chunk's transaction with ``IntegrityError``),
+    this strategy resolves conflicts against rows that are *already stored*:
+
+    - ``on_conflict="update"`` (default): each instance is persisted with
+      ``session.merge()``. If a row with the same primary key exists, its
+      columns are overwritten with the incoming values (last write wins);
+      otherwise the row is inserted. Suited to idempotent re-runs.
+    - ``on_conflict="skip"``: each instance is inserted inside a per-row
+      ``SAVEPOINT``; a row that raises ``IntegrityError`` (duplicate primary
+      key or unique constraint, including a concurrent-insert race) is rolled
+      back and skipped while the rest of the chunk proceeds. Suited to
+      on-conflict-skip deduplication of streaming ingest.
+
+    Documented limitations:
+
+    - **SQLAlchemy only.** For Supabase, pass ``load(upsert=True,
+      upsert_on=...)`` with the default strategy; the Supabase adapter
+      performs native upserts.
+    - **Not a cross-chunk merge substitute.** Merge policies
+      (``AddPolicy`` etc.) run only within a chunk's mapping pass; across
+      re-runs, ``update`` mode overwrites whole rows (including ``None``
+      values) rather than merging fields.
+    - **``update`` mode detects conflicts by primary key.** Instances without
+      primary key values are inserted as new rows, and each merge issues a
+      per-row SELECT when the row is not already in the session's identity
+      map. A concurrent insert between that SELECT and the INSERT can still
+      raise ``IntegrityError``; use ``skip`` mode where races must be
+      tolerated.
+    - **``skip`` mode swallows every ``IntegrityError``,** not only duplicate
+      keys (e.g. a NOT NULL violation also skips the row), and pays a per-row
+      SAVEPOINT + flush round trip. A child bound to a skipped parent is
+      itself skipped, because the cascaded parent insert reproduces the
+      conflict inside the child's SAVEPOINT. Skipped rows are counted in
+      ``mapped`` stats but in neither ``inserted`` nor ``failed``.
+    - **Plain-dict rows** (string table targets) are not persisted, matching
+      the default strategy.
+    """
+
+    def __init__(self, on_conflict: Literal["update", "skip"] = "update") -> None:
+        if on_conflict not in ("update", "skip"):
+            raise ValueError(
+                f"on_conflict must be 'update' or 'skip', got {on_conflict!r}"
+            )
+        self._on_conflict = on_conflict
+
+    def flush(self, ctx: FlushContext) -> None:
+        if ctx.session is None:
+            return
+        if ctx.is_supabase:
+            raise ValueError(
+                "UpsertFlushStrategy supports SQLAlchemy sessions only. For "
+                "Supabase, use load(upsert=True, upsert_on=...) with the default "
+                "flush strategy; the Supabase adapter performs native upserts."
+            )
+        from etielle.telemetry import FlushStarted, _emit
+        from etielle.utils import topological_sort
+
+        for table_name in topological_sort(ctx.dep_graph, ctx.scope_tables):
+            result = ctx.local_results.get(table_name)
+            if result is None:
+                continue
+            _emit(
+                FlushStarted(table=table_name, count=len(result.instances)),
+                ctx.on_event,
+            )
+            if self._on_conflict == "update":
+                self._flush_update(ctx, table_name, result)
+            else:
+                self._flush_skip(ctx, table_name, result)
+
+    def _flush_update(self, ctx: FlushContext, table_name: str, result: Any) -> None:
+        from etielle.telemetry import FlushCompleted, FlushFailed, _emit
+
+        merged_count = 0
+        try:
+            for _key, instance in result.instances.items():
+                if isinstance(instance, dict):
+                    continue
+                ctx.session.merge(instance)
+                merged_count += 1
+            ctx.session.flush()
+        except Exception as e:
+            _emit(
+                FlushFailed(
+                    table=table_name, error=str(e), affected_count=merged_count
+                ),
+                ctx.on_event,
+            )
+            if table_name in ctx.stats:
+                ctx.builder._accumulate_stats(
+                    ctx.stats, table_name, failed=merged_count
+                )
+            raise
+        _emit(
+            FlushCompleted(
+                table=table_name,
+                inserted=merged_count,
+                failed=0,
+                batch_num=1,
+                batch_total=1,
+                upsert=True,
+            ),
+            ctx.on_event,
+        )
+        if table_name in ctx.stats:
+            ctx.builder._accumulate_stats(
+                ctx.stats, table_name, inserted=merged_count
+            )
+
+    def _flush_skip(self, ctx: FlushContext, table_name: str, result: Any) -> None:
+        from sqlalchemy.exc import IntegrityError
+
+        from etielle.telemetry import FlushCompleted, FlushFailed, _emit
+
+        inserted = 0
+        try:
+            for _key, instance in result.instances.items():
+                if isinstance(instance, dict):
+                    continue
+                try:
+                    with ctx.session.begin_nested():
+                        ctx.session.add(instance)
+                        ctx.session.flush()
+                    inserted += 1
+                except IntegrityError:
+                    continue
+        except Exception as e:
+            _emit(
+                FlushFailed(table=table_name, error=str(e), affected_count=inserted),
+                ctx.on_event,
+            )
+            if table_name in ctx.stats:
+                ctx.builder._accumulate_stats(ctx.stats, table_name, failed=inserted)
+            raise
+        _emit(
+            FlushCompleted(
+                table=table_name,
+                inserted=inserted,
+                failed=0,
+                batch_num=1,
+                batch_total=1,
+                upsert=True,
+            ),
+            ctx.on_event,
+        )
+        if table_name in ctx.stats:
+            ctx.builder._accumulate_stats(ctx.stats, table_name, inserted=inserted)
+
+
+class BufferedKeyFlushStrategy:
+    """Streaming strategy that merges late-arriving rows for recently seen keys.
+
+    Keeps a bounded LRU cache of the last ``max_keys`` flushed
+    ``(table, join key)`` -> instance entries. When a later chunk maps a row
+    whose key is still cached, the row is *not* inserted again; instead its
+    non-None scalar attribute values are copied onto the already-persisted
+    instance, which SQLAlchemy turns into an UPDATE at the next flush. Rows
+    with new keys are inserted normally and recorded in the cache.
+
+    Children mapped alongside a re-appearing parent are relinked to the
+    originally persisted parent instance, so no duplicate parent row is
+    inserted through relationship cascades.
+
+    Documented limitations:
+
+    - **Correctness is a heuristic bounded by ``max_keys``.** The cache
+      assumes key reappearance distance is bounded: once a key is evicted, a
+      reappearing row is inserted as a new row (or raises ``IntegrityError``
+      under a unique constraint). This is not a guarantee -- size the cache
+      for the worst-case reappearance gap or fall back to
+      ``ExternalPartitionChunkSource`` for exact grouping.
+    - **Requires natural keys.** Only tables with ``join_on`` participate;
+      auto-keyed rows are always inserted because auto keys restart per chunk
+      and would collide spuriously.
+    - **Merge is last-non-None-write-wins per scalar attribute.** Merge
+      policies (``AddPolicy`` etc.) run only within a chunk's mapping pass;
+      collection-valued attributes (e.g. ``backlink()`` lists) are not merged
+      across chunks.
+    - **Relationship completeness is still validated per chunk.** A child
+      whose parent appears only in an earlier chunk is rejected before the
+      strategy runs; the cache merges repeated *rows*, it does not relax the
+      chunk contract for relationships.
+    - **Stateful across the run.** Use a fresh instance per pipeline run;
+      merged (deduplicated) rows are counted in ``mapped`` stats but not in
+      ``inserted``.
+    - **SQLAlchemy only**; plain-dict rows are not persisted, matching the
+      default strategy.
+
+    Args:
+        max_keys: Maximum number of ``(table, key)`` entries to retain.
+            Bounds strategy memory to at most ``max_keys`` live instances.
+    """
+
+    def __init__(self, max_keys: int = 10_000) -> None:
+        if max_keys < 1:
+            raise ValueError(f"max_keys must be >= 1, got {max_keys}")
+        self._max_keys = max_keys
+        self._cache: OrderedDict[tuple[str, tuple[Any, ...]], Any] = OrderedDict()
+
+    def flush(self, ctx: FlushContext) -> None:
+        if ctx.session is None:
+            return
+        if ctx.is_supabase:
+            raise ValueError(
+                "BufferedKeyFlushStrategy supports SQLAlchemy sessions only."
+            )
+        from etielle.telemetry import (
+            FlushCompleted,
+            FlushFailed,
+            FlushStarted,
+            _emit,
+        )
+        from etielle.utils import topological_sort
+
+        parent_attrs: dict[str, list[str]] = {}
+        for rel in ctx.link_to_rels:
+            parent_attrs.setdefault(rel["child_table"], []).append(
+                _parent_attr_name(rel["parent_table"])
+            )
+
+        # Maps id(duplicate chunk-local instance) -> cached persisted instance,
+        # so children bound to a duplicate parent are relinked before insert.
+        replacements: dict[int, Any] = {}
+
+        for table_name in topological_sort(ctx.dep_graph, ctx.scope_tables):
+            result = ctx.local_results.get(table_name)
+            if result is None:
+                continue
+            _emit(
+                FlushStarted(table=table_name, count=len(result.instances)),
+                ctx.on_event,
+            )
+            inserted = 0
+            try:
+                for key, instance in result.instances.items():
+                    if isinstance(instance, dict):
+                        continue
+                    for attr in parent_attrs.get(table_name, ()):
+                        bound = getattr(instance, attr, None)
+                        if bound is not None and id(bound) in replacements:
+                            setattr(instance, attr, replacements[id(bound)])
+                    if _is_auto_key(key):
+                        ctx.session.add(instance)
+                        inserted += 1
+                        continue
+                    cache_key = (table_name, key)
+                    cached = self._cache.get(cache_key)
+                    if cached is not None and cached is not instance:
+                        _copy_instance_state(cached, instance)
+                        replacements[id(instance)] = cached
+                        self._cache.move_to_end(cache_key)
+                    else:
+                        ctx.session.add(instance)
+                        inserted += 1
+                        self._cache[cache_key] = instance
+                        self._cache.move_to_end(cache_key)
+                        while len(self._cache) > self._max_keys:
+                            self._cache.popitem(last=False)
+                ctx.session.flush()
+            except Exception as e:
+                _emit(
+                    FlushFailed(
+                        table=table_name, error=str(e), affected_count=inserted
+                    ),
+                    ctx.on_event,
+                )
+                if table_name in ctx.stats:
+                    ctx.builder._accumulate_stats(
+                        ctx.stats, table_name, failed=inserted
+                    )
+                raise
+            _emit(
+                FlushCompleted(
+                    table=table_name,
+                    inserted=inserted,
+                    failed=0,
+                    batch_num=1,
+                    batch_total=1,
+                    upsert=False,
+                ),
+                ctx.on_event,
+            )
+            if table_name in ctx.stats:
+                ctx.builder._accumulate_stats(ctx.stats, table_name, inserted=inserted)
