@@ -1,0 +1,289 @@
+# Great Docs Configuration
+# See https://posit-dev.github.io/great-docs/user-guide/configuration.html
+
+# Module Name (optional)
+# ----------------------
+# Set this if your importable module name differs from the project name.
+# Example: project 'py-yaml12' with module name 'yaml12'
+# module: yaml12
+
+# Display Name
+# ------------
+# Title shown in the navbar and browser tab.
+display_name: etielle
+
+# GitHub Repository
+# -----------------
+# Canonical repository URL (used for source links and the GitHub widget).
+repo: https://github.com/Promptly-Technologies-LLC/etielle
+
+# Docstring Parser
+# ----------------
+# The docstring format used in your package (numpy, google, or sphinx)
+parser: google
+
+# Dynamic Introspection
+# ---------------------
+# Use runtime introspection for more accurate documentation (default: true)
+# Set to false if your package has cyclic alias issues (e.g., PyO3/Rust bindings)
+dynamic: true
+
+# API Discovery Settings
+# ----------------------
+# Exclude items from auto-documentation
+# exclude:
+#   - InternalClass
+#   - helper_function
+
+# Logo & Favicon
+# ---------------
+# Point to a single logo file (replaces the text title in the navbar):
+# logo: assets/logo.svg
+#
+# For light/dark variants:
+# logo:
+#   light: assets/logo-light.svg
+#   dark: assets/logo-dark.svg
+#
+# To show the text title alongside the logo, add: show_title: true
+
+# Funding / Copyright Holder
+# --------------------------
+# Credit the organization that funds or holds copyright for this package.
+# Displays in sidebar and footer. Homepage and ROR provide links.
+# funding:
+#   name: "Posit Software, PBC"
+#   roles:
+#     - Copyright holder
+#     - funder
+#   homepage: https://posit.co
+#   ror: https://ror.org/03wc8by49
+
+# User Guide Structure
+# --------------------
+# Explicit ordering and section grouping for the narrative user guide.
+# Files are referenced by name relative to the user-guide/ directory.
+# Using explicit ordering (instead of numeric filename prefixes) keeps the
+# source filenames identical to their published URLs, so links resolve both
+# on the rendered site and when browsing the repository on GitHub.
+user_guide:
+  - section: "Getting Started"
+    contents:
+      - introduction-to-etl.qmd
+  - section: "Core Concepts"
+    contents:
+      - navigation.qmd
+      - transforms.qmd
+      - mapping.qmd
+      - relationships.qmd
+  - section: "Advanced Topics"
+    contents:
+      - database-loading.qmd
+      - custom-transforms.qmd
+      - error-handling.qmd
+
+# API Reference Structure
+# -----------------------
+# Customize the sections below to organize your API documentation.
+# - Reorder items within a section to change their display order
+# - Move items between sections or create new sections
+# - Use 'members: false' to exclude methods from documentation
+# - Add 'desc:' to sections for descriptions
+
+reference:
+  - title: Classes
+    desc: Main classes provided by the package
+    contents:
+      - AddPolicy  # 1 method(s)
+      - AppendPolicy  # 1 method(s)
+      - CallableChunkSource  # 1 method(s)
+      - name: ConstructorBuilder
+        members: false  # 8 methods listed below
+      - ExtendPolicy  # 1 method(s)
+      - FirstNonNullPolicy  # 1 method(s)
+      - GroupByChunkSource  # 1 method(s)
+      - name: InstanceBuilder
+        members: false  # 9 methods listed below
+      - KeyCompleteFlushStrategy  # 1 method(s)
+      - MaxPolicy  # 1 method(s)
+      - MergePolicy  # 1 method(s)
+      - MinPolicy  # 1 method(s)
+      - OneRecordPerChunkSource  # 1 method(s)
+      - name: PipelineBuilder
+        members: false  # 10 methods listed below
+      - PreSegmentedChunkSource  # 1 method(s)
+      - name: PydanticBuilder
+        members: false  # 8 methods listed below
+      - name: PydanticPartialBuilder
+        members: false  # 8 methods listed below
+      - name: TypedDictBuilder
+        members: false  # 8 methods listed below
+
+  - title: Dataclasses
+    desc: Dataclass definitions
+    contents:
+      - Chunk
+      - Context
+      - CoreField
+      - Field
+      - FieldSpec
+      - FlushCompleted
+      - FlushContext
+      - FlushFailed
+      - FlushStarted
+      - InstanceEmit
+      - IterationLevel
+      - ManyToOneSpec
+      - MapCompleted
+      - MapStarted
+      - MappingResult
+      - MappingRuntimeState
+      - MappingSpec
+      - PipelineResult
+      - TableEmit
+      - TableStats
+      - TelemetryEvent
+      - TempField
+      - TraversalSpec  # 1 method(s)
+
+  - title: Protocols
+    desc: Protocol / structural-typing interfaces
+    contents:
+      - ChunkSource  # 1 method(s)
+      - FlushStrategy  # 1 method(s)
+
+  - title: ConstructorBuilder Methods
+    desc: Methods for the ConstructorBuilder class
+    contents:
+      - ConstructorBuilder.update
+      - ConstructorBuilder.finalize_all
+      - ConstructorBuilder.get
+      - ConstructorBuilder.known_fields
+      - ConstructorBuilder.update_errors
+      - ConstructorBuilder.finalize_errors
+      - ConstructorBuilder.record_update_error
+      - ConstructorBuilder.record_finalize_error
+
+  - title: InstanceBuilder Methods
+    desc: Methods for the InstanceBuilder class
+    contents:
+      - InstanceBuilder.update
+      - InstanceBuilder.finalize_all
+      - InstanceBuilder.get
+      - InstanceBuilder.errors
+      - InstanceBuilder.known_fields
+      - InstanceBuilder.update_errors
+      - InstanceBuilder.finalize_errors
+      - InstanceBuilder.record_update_error
+      - InstanceBuilder.record_finalize_error
+
+  - title: PipelineBuilder Methods
+    desc: Methods for the PipelineBuilder class
+    contents:
+      - PipelineBuilder.goto_root
+      - PipelineBuilder.goto
+      - PipelineBuilder.each
+      - PipelineBuilder.build_index
+      - PipelineBuilder.map_to
+      - PipelineBuilder.link_to
+      - PipelineBuilder.backlink
+      - PipelineBuilder.load
+      - PipelineBuilder.load_eager
+      - PipelineBuilder.run
+
+  - title: PydanticBuilder Methods
+    desc: Methods for the PydanticBuilder class
+    contents:
+      - PydanticBuilder.known_fields
+      - PydanticBuilder.update
+      - PydanticBuilder.finalize_all
+      - PydanticBuilder.get
+      - PydanticBuilder.update_errors
+      - PydanticBuilder.finalize_errors
+      - PydanticBuilder.record_update_error
+      - PydanticBuilder.record_finalize_error
+
+  - title: PydanticPartialBuilder Methods
+    desc: Methods for the PydanticPartialBuilder class
+    contents:
+      - PydanticPartialBuilder.known_fields
+      - PydanticPartialBuilder.update
+      - PydanticPartialBuilder.finalize_all
+      - PydanticPartialBuilder.get
+      - PydanticPartialBuilder.update_errors
+      - PydanticPartialBuilder.finalize_errors
+      - PydanticPartialBuilder.record_update_error
+      - PydanticPartialBuilder.record_finalize_error
+
+  - title: TypedDictBuilder Methods
+    desc: Methods for the TypedDictBuilder class
+    contents:
+      - TypedDictBuilder.update
+      - TypedDictBuilder.finalize_all
+      - TypedDictBuilder.get
+      - TypedDictBuilder.known_fields
+      - TypedDictBuilder.update_errors
+      - TypedDictBuilder.finalize_errors
+      - TypedDictBuilder.record_update_error
+      - TypedDictBuilder.record_finalize_error
+
+  - title: Exceptions
+    desc: Exception classes
+    contents:
+      - RelationshipIncompleteError
+
+  - title: Functions
+    desc: Utility functions
+    contents:
+      - apply
+      - bind_many_to_one
+      - coalesce
+      - compute_relationship_keys
+      - concat
+      - etl
+      - field_of
+      - format_id
+      - get
+      - get_from_parent
+      - get_from_root
+      - index
+      - key
+      - len_of
+      - literal
+      - lookup
+      - node
+      - parent_index
+      - parent_key
+      - stream
+      - transform
+      - validate_relationship_completeness
+
+# Site URL
+# --------
+# Canonical address of the deployed documentation site.
+# Required for subdirectory deployments, skills page install commands,
+# .well-known/ discovery, and sitemaps.
+site_url: "https://promptly-technologies-llc.github.io/etielle/"
+
+# Site Settings
+# -------------
+# site:
+#   theme: flatly              # Quarto theme (default: flatly)
+#   toc: true                  # Show table of contents (default: true)
+#   toc-depth: 2               # TOC heading depth (default: 2)
+#   toc-title: On this page    # TOC title (default: "On this page")
+
+# Jupyter Kernel
+# --------------
+# Jupyter kernel to use for executing code cells in .qmd files.
+# This is set at the project level so it applies to all pages, including
+# auto-generated API reference pages. Can be overridden in individual .qmd
+# file frontmatter if needed for special cases.
+jupyter: python3
+
+# CLI Documentation
+# -----------------
+# cli:
+#   enabled: true              # Enable CLI documentation
+#   module: my_package.cli     # Module containing Click commands
+#   name: cli                  # Name of the Click command object

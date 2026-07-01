@@ -13,6 +13,9 @@ wheels/
 /.quarto/
 _docs/
 
+# great-docs ephemeral build directory
+/great-docs/
+
 # Since this is a library, we omit the lockfile
 uv.lock
 **/*.quarto_ipynb
