@@ -46,13 +46,17 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Render Documentation
-        run: |
-          # Publish Quarto documentation
-          uv run quarto publish gh-pages --no-prompt --no-browser
-          
-          # Render README in GitHub Flavored Markdown
-          uv run quarto render index.qmd --output-dir . --output README.md --to gfm
+      - name: Build documentation site
+        run: uv run great-docs build
+
+      - name: Publish to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./great-docs/_site
+
+      - name: Render README in GitHub Flavored Markdown
+        run: uv run quarto render index.qmd --output-dir . --output README.md --to gfm
 
       - name: Commit README
         uses: stefanzweifel/git-auto-commit-action@v5
