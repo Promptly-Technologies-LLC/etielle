@@ -1462,6 +1462,258 @@
     "text": "Troubleshooting\nTests still skipped after setting env vars: - Ensure variables are exported in the current shell - Check echo $SUPABASE_URL returns the expected value\nConnection refused errors: - Verify Supabase is running: supabase status - Check Docker containers: docker ps | grep supabase\nTable does not exist errors: - Create the test tables as shown above - Verify via Supabase Studio at http://localhost:54323"
   },
   {
+    "objectID": "changelog.html",
+    "href": "changelog.html",
+    "title": "Changelog",
+    "section": "",
+    "text": "This changelog is generated automatically from GitHub Releases."
+  },
+  {
+    "objectID": "changelog.html#whats-changed",
+    "href": "changelog.html#whats-changed",
+    "title": "Changelog",
+    "section": "What’s Changed",
+    "text": "What’s Changed\n\ndocs: migrate documentation to great-docs (user-guide flow) by @chriscarrollsmith in https://github.com/Promptly-Technologies-LLC/etielle/pull/83\nfeat: additional ChunkSource/FlushStrategy implementations (issue #77) by @chriscarrollsmith in https://github.com/Promptly-Technologies-LLC/etielle/pull/84\n\nFull Changelog: https://github.com/Promptly-Technologies-LLC/etielle/compare/v4.2.0…v4.3.0"
+  },
+  {
+    "objectID": "changelog.html#whats-changed-1",
+    "href": "changelog.html#whats-changed-1",
+    "title": "Changelog",
+    "section": "What’s Changed",
+    "text": "What’s Changed\n\nfeat: mandatory chunking helpers (streaming group-by + pre-segmented passthrough) by @chriscarrollsmith in https://github.com/Promptly-Technologies-LLC/etielle/pull/80\n\nFull Changelog: https://github.com/Promptly-Technologies-LLC/etielle/compare/v4.1.0…v4.2.0"
+  },
+  {
+    "objectID": "changelog.html#whats-changed-2",
+    "href": "changelog.html#whats-changed-2",
+    "title": "Changelog",
+    "section": "What’s Changed",
+    "text": "What’s Changed\n\nfeat: streaming/chunked execution (key-complete contract, issue #75) by @chriscarrollsmith in https://github.com/Promptly-Technologies-LLC/etielle/pull/79\n\nFull Changelog: https://github.com/Promptly-Technologies-LLC/etielle/compare/v4.0.0…v4.1.0"
+  },
+  {
+    "objectID": "changelog.html#whats-changed-3",
+    "href": "changelog.html#whats-changed-3",
+    "title": "Changelog",
+    "section": "What’s Changed",
+    "text": "What’s Changed\n\nfeat!: component-scoped flush/evict and single-pass binding (issue #9A) by @chriscarrollsmith in https://github.com/Promptly-Technologies-LLC/etielle/pull/78\n\nFull Changelog: https://github.com/Promptly-Technologies-LLC/etielle/compare/v3.6.1…v4.0.0"
+  },
+  {
+    "objectID": "changelog.html#whats-changed-4",
+    "href": "changelog.html#whats-changed-4",
+    "title": "Changelog",
+    "section": "What’s Changed",
+    "text": "What’s Changed\n\nfix: Create GitHub Release before uploading assets by @chriscarrollsmith in https://github.com/Promptly-Technologies-LLC/etielle/pull/73\n\nFull Changelog: https://github.com/Promptly-Technologies-LLC/etielle/compare/v3.6.0…v3.6.1"
+  },
+  {
+    "objectID": "changelog.html#v3.5.0-2025-12-03",
+    "href": "changelog.html#v3.5.0-2025-12-03",
+    "title": "Changelog",
+    "section": "v3.5.0 (2025-12-03)",
+    "text": "v3.5.0 (2025-12-03)\n\nFeatures\n\nAdd build_index() method for external dicts (786445a)\nAdd indices parameter to etl() (b938334)\nAdd lookup() transform for index queries (ab1d9c2)\nBuild indices from JSON traversal (ef65bfe)\nExport lookup from package (30bf7e2)\nInject indices into context during pipeline execution (98100b7)\n\n\nDetailed Changes: v3.4.0…v3.5.0"
+  },
+  {
+    "objectID": "changelog.html#v3.4.0-2025-12-03",
+    "href": "changelog.html#v3.4.0-2025-12-03",
+    "title": "Changelog",
+    "section": "v3.4.0 (2025-12-03)",
+    "text": "v3.4.0 (2025-12-03)\n\nFeatures\n\nExport missing public types for py.typed compliance (5f2b017)\n\n\nDetailed Changes: v3.3.0…v3.4.0"
+  },
+  {
+    "objectID": "changelog.html#v3.3.0-2025-12-03",
+    "href": "changelog.html#v3.3.0-2025-12-03",
+    "title": "Changelog",
+    "section": "v3.3.0 (2025-12-03)",
+    "text": "v3.3.0 (2025-12-03)\n\nChores\n\nFix linting and type checking errors (29b2d5c)\n\n\n\nDocumentation\n\nAdd monitoring/telemetry section to error handling docs (19236ec)\n\n\n\nFeatures\n\nAdd pipeline telemetry and stats tracking (277def1)\n\n\nDetailed Changes: v3.2.0…v3.3.0"
+  },
+  {
+    "objectID": "changelog.html#v3.2.0-2025-12-02",
+    "href": "changelog.html#v3.2.0-2025-12-02",
+    "title": "Changelog",
+    "section": "v3.2.0 (2025-12-02)",
+    "text": "v3.2.0 (2025-12-02)\n\nDocumentation\n\nDocument fk parameter for DB-generated IDs (399bc10)\nFix pipe escaping in table (0f54422)\n\n\n\nFeatures\n\nSupport Supabase-generated PKs (6d4c76c)\n\n\nDetailed Changes: v3.1.0…v3.2.0"
+  },
+  {
+    "objectID": "changelog.html#v3.1.0-2025-12-02",
+    "href": "changelog.html#v3.1.0-2025-12-02",
+    "title": "Changelog",
+    "section": "v3.1.0 (2025-12-02)",
+    "text": "v3.1.0 (2025-12-02)\n\nDocumentation\n\nAdd upsert_on parameter and Supabase to README (4d23be0)\n\n\n\nFeatures\n\nsupabase: Support per-table upsert conflict columns (ab11f85)\n\n\nDetailed Changes: v3.0.0…v3.1.0"
+  },
+  {
+    "objectID": "changelog.html#v3.0.0-2025-12-02",
+    "href": "changelog.html#v3.0.0-2025-12-02",
+    "title": "Changelog",
+    "section": "v3.0.0 (2025-12-02)",
+    "text": "v3.0.0 (2025-12-02)\n\nRefactoring\n\nRemove legacy SQLAlchemy/SQLModel adapters (33fd86c)\n\n\n\nTesting\n\nAdd comprehensive test coverage for documented behaviors (1b5e138)\n\n\n\nBreaking Changes\n\nThe legacy bind_and_flush adapters have been removed. Use the fluent API (.load(session).run()) instead.\n\n\nDetailed Changes: v2.6.0…v3.0.0"
+  },
+  {
+    "objectID": "changelog.html#v2.6.0-2025-12-02",
+    "href": "changelog.html#v2.6.0-2025-12-02",
+    "title": "Changelog",
+    "section": "v2.6.0 (2025-12-02)",
+    "text": "v2.6.0 (2025-12-02)\n\nChores\n\nAdd supabase/ to .gitignore (15a76fc)\n\n\n\nDocumentation\n\nAdd CONTRIBUTING.md with dev setup and Supabase test instructions (3d6525a)\n\n\n\nFeatures\n\nadapter: Add Supabase adapter (8c62339)\n\n\nDetailed Changes: v2.5.0…v2.6.0"
+  },
+  {
+    "objectID": "changelog.html#v2.5.0-2025-12-01",
+    "href": "changelog.html#v2.5.0-2025-12-01",
+    "title": "Changelog",
+    "section": "v2.5.0 (2025-12-01)",
+    "text": "v2.5.0 (2025-12-01)\n\nDocumentation\n\nAdd apply transform to documentation (487db7a)\n\n\n\nFeatures\n\nAdd apply transform for type coercion and function application (136badf)\n\n\nDetailed Changes: v2.4.0…v2.5.0"
+  },
+  {
+    "objectID": "changelog.html#v2.4.0-2025-12-01",
+    "href": "changelog.html#v2.4.0-2025-12-01",
+    "title": "Changelog",
+    "section": "v2.4.0 (2025-12-01)",
+    "text": "v2.4.0 (2025-12-01)\n\nBug Fixes\n\nJoin_on fields are now persisted instead of excluded (6b7b895)\nProper flush ordering for NOT NULL FK constraints (ba23476)\nRemove fields() proxy and undeprecate field_of (6eed551)\nResolve spurious iteration bug (50af234)\nResolve type errors (eb30b0f)\nSingleton mapping without explicit join key now persists correctly (965ffd2)\nSingleton parents can now be linked by children (cb19d14)\n\n\n\nDocumentation\n\nAdd fluent API documentation to README (ae9078a)\nFull documentation rewrite (c2b553c)\nUpdate docs to reflect architecture changes (b3744e7)\n\n\n\nFeatures\n\nAdd _build_dependency_graph to PipelineBuilder (682eef7)\nAdd _get_linkable_fields to extract linking fields from pipeline (f5e02d4)\nAdd bind_many_to_one_via_index for secondary index lookup (4ed9ab1)\nAdd indices field to MappingResult for secondary indices (cbd05c7)\nAdd topological_sort utility for dependency ordering (42b416e)\nBuild secondary indices for linkable fields during instance creation (4cdf311)\nDecouple join keys from relationship linking (4295408)\nExport fluent API from package root (4b3b4aa)\nImplement dependency-ordered flushing for auto-generated PKs (06864f8)\nfluent: Add @transform decorator for custom transforms (fada2b7)\nfluent: Add automatic model type detection for builders (a64ff0d)\nfluent: Add database persistence with load().run() (e14cd8c)\nfluent: Add each() iteration marker (8a817a0)\nfluent: Add Field dataclass for persisted fields (9e382c1)\nfluent: Add FieldUnion type alias (9f5ae39)\nfluent: Add goto() navigation method (9b3e14a)\nfluent: Add goto_root() navigation method (4c52b32)\nfluent: Add link_to() relationship method (bc67613)\nfluent: Add load() session configuration method (0f6edf8)\nfluent: Add map_to() emission method (09b1e6a)\nfluent: Add multiple root support in run() (3fc47ee)\nfluent: Add node() transform (5a5d5e1)\nfluent: Add parent_index() transform (0620c99)\nfluent: Add PipelineBuilder skeleton and etl() entry point (e5d1c0d)\nfluent: Add PipelineResult with _TablesProxy (2ed4844)\nfluent: Add relationship binding in run() (da4f6a2)\nfluent: Add run() execution method with basic extraction (dd8a627)\nfluent: Add TempField dataclass for join-only fields (5cd86b8)\n\n\n\nTesting\n\nfluent: Add error handling mode tests (4b04968)\nfluent: Add tests for row merging with join_on (3e0382b)\n\n\nDetailed Changes: v2.3.2…v2.4.0"
+  },
+  {
+    "objectID": "changelog.html#v2.3.2-2025-11-29",
+    "href": "changelog.html#v2.3.2-2025-11-29",
+    "title": "Changelog",
+    "section": "v2.3.2 (2025-11-29)",
+    "text": "v2.3.2 (2025-11-29)\n\nBug Fixes\n\nTransform from Protocol to TypeAlias (3f8a377)\n\n\nDetailed Changes: v2.3.1…v2.3.2"
+  },
+  {
+    "objectID": "changelog.html#v2.3.1-2025-11-29",
+    "href": "changelog.html#v2.3.1-2025-11-29",
+    "title": "Changelog",
+    "section": "v2.3.1 (2025-11-29)",
+    "text": "v2.3.1 (2025-11-29)\n\nBug Fixes\n\nExport types (e8d66d9)\n\n\nDetailed Changes: v2.3.0…v2.3.1"
+  },
+  {
+    "objectID": "changelog.html#v2.3.0-2025-11-29",
+    "href": "changelog.html#v2.3.0-2025-11-29",
+    "title": "Changelog",
+    "section": "v2.3.0 (2025-11-29)",
+    "text": "v2.3.0 (2025-11-29)\n\nDocumentation\n\nMore logical sequence, better examples (16f9b32)\nResolve some link resolution issues (0663cbd)\n\n\n\nFeatures\n\nNew fields selector for class instances (0d0dc11)\n\n\nDetailed Changes: v2.2.1…v2.3.0"
+  },
+  {
+    "objectID": "changelog.html#v2.2.1-2025-11-25",
+    "href": "changelog.html#v2.2.1-2025-11-25",
+    "title": "Changelog",
+    "section": "v2.2.1 (2025-11-25)",
+    "text": "v2.2.1 (2025-11-25)\n\nBug Fixes\n\nSupport &gt;1 spec per child table (57ee01e)\n\n\n\nChores\n\nLint code (9f4d3c8)\n\n\n\nDocumentation\n\nAdd comprehensive introduction to ETL documentation (69e8029)\nIntroduction to ETL (90e0fd1)\nRefine ETL concept mapping in introduction (bbdb9a7)\n\n\nDetailed Changes: v2.2.0…v2.2.1"
+  },
+  {
+    "objectID": "changelog.html#v2.2.0-2025-10-23",
+    "href": "changelog.html#v2.2.0-2025-10-23",
+    "title": "Changelog",
+    "section": "v2.2.0 (2025-10-23)",
+    "text": "v2.2.0 (2025-10-23)\n\nChores\n\nRemove lockfile from version control (0229547)\n\n\n\nFeatures\n\nNew ConstructorBuilder for ORMs (977b0a0)\n\n\nDetailed Changes: v2.1.0…v2.2.0"
+  },
+  {
+    "objectID": "changelog.html#v2.1.0-2025-10-20",
+    "href": "changelog.html#v2.1.0-2025-10-20",
+    "title": "Changelog",
+    "section": "v2.1.0 (2025-10-20)",
+    "text": "v2.1.0 (2025-10-20)\n\nDocumentation\n\nClarify field selector docs (cb90959)\nCross-linking, user-friendliness (acb8b87)\nImprove clarity of README (dbc75c2)\nMore detailed emission guide (782ab62)\n\n\n\nFeatures\n\nConsolidate/enhance adapter documentation (e6df5ed)\n\n\nDetailed Changes: v2.0.0…v2.1.0"
+  },
+  {
+    "objectID": "changelog.html#v2.0.0-2025-10-19",
+    "href": "changelog.html#v2.0.0-2025-10-19",
+    "title": "Changelog",
+    "section": "v2.0.0 (2025-10-19)",
+    "text": "v2.0.0 (2025-10-19)\n\nBug Fixes\n\nMake release workflow ff after publish (506d3c8)\n\n\n\nDocumentation\n\nAdd backticks around code (e251f3f)\nAll documentation code runs (61dbb24)\nDocumentation website (8019c14)\nExample code triggers errors (b12093e)\nFix header text color (69ab9d4)\nPrint mapping result (1ef1164)\n\n\n\nFeatures\n\nSimplify iteration API (25e1c17)\n\n\nDetailed Changes: v1.4.0…v2.0.0"
+  },
+  {
+    "objectID": "changelog.html#v1.4.0-2025-10-15",
+    "href": "changelog.html#v1.4.0-2025-10-15",
+    "title": "Changelog",
+    "section": "v1.4.0 (2025-10-15)",
+    "text": "v1.4.0 (2025-10-15)\n\nFeatures\n\nSqlalchemy adapter (3ac07a1)\n\n\nDetailed Changes: v1.3.0…v1.4.0"
+  },
+  {
+    "objectID": "changelog.html#v1.3.0-2025-10-14",
+    "href": "changelog.html#v1.3.0-2025-10-14",
+    "title": "Changelog",
+    "section": "v1.3.0 (2025-10-14)",
+    "text": "v1.3.0 (2025-10-14)\n\nFeatures\n\nMutation-based emit (21dbbe6)\n\n\nDetailed Changes: v1.2.0…v1.3.0"
+  },
+  {
+    "objectID": "changelog.html#v1.2.0-2025-10-14",
+    "href": "changelog.html#v1.2.0-2025-10-14",
+    "title": "Changelog",
+    "section": "v1.2.0 (2025-10-14)",
+    "text": "v1.2.0 (2025-10-14)\n\nFeatures\n\nError reporting (10657ec)\nInstance emission adapter (4c02de0)\n\n\nDetailed Changes: v1.1.0…v1.2.0"
+  },
+  {
+    "objectID": "changelog.html#v1.1.0-2025-10-14",
+    "href": "changelog.html#v1.1.0-2025-10-14",
+    "title": "Changelog",
+    "section": "v1.1.0 (2025-10-14)",
+    "text": "v1.1.0 (2025-10-14)\n\nFeatures\n\nImplement field selectors API (e099dbe)\n\n\nDetailed Changes: v1.0.6…v1.1.0"
+  },
+  {
+    "objectID": "changelog.html#v1.0.6-2025-10-14",
+    "href": "changelog.html#v1.0.6-2025-10-14",
+    "title": "Changelog",
+    "section": "v1.0.6 (2025-10-14)",
+    "text": "v1.0.6 (2025-10-14)\n\nBug Fixes\n\nConfigure pyproject version stamping (49c4e07)\n\n\nDetailed Changes: v1.0.5…v1.0.6"
+  },
+  {
+    "objectID": "changelog.html#v1.0.5-2025-10-14",
+    "href": "changelog.html#v1.0.5-2025-10-14",
+    "title": "Changelog",
+    "section": "v1.0.5 (2025-10-14)",
+    "text": "v1.0.5 (2025-10-14)\n\nBug Fixes\n\nMake release dependent on test (b377958)\n\n\nDetailed Changes: v1.0.4…v1.0.5"
+  },
+  {
+    "objectID": "changelog.html#v1.0.4-2025-10-14",
+    "href": "changelog.html#v1.0.4-2025-10-14",
+    "title": "Changelog",
+    "section": "v1.0.4 (2025-10-14)",
+    "text": "v1.0.4 (2025-10-14)\n\nBug Fixes\n\nCorrectly use PyPi env for publish job (2dd6cea)\n\n\nDetailed Changes: v1.0.3…v1.0.4"
+  },
+  {
+    "objectID": "changelog.html#v1.0.3-2025-10-14",
+    "href": "changelog.html#v1.0.3-2025-10-14",
+    "title": "Changelog",
+    "section": "v1.0.3 (2025-10-14)",
+    "text": "v1.0.3 (2025-10-14)\n\nBug Fixes\n\nRun build in PSR container (6c359c6)\n\n\nDetailed Changes: v1.0.2…v1.0.3"
+  },
+  {
+    "objectID": "changelog.html#v1.0.2-2025-10-14",
+    "href": "changelog.html#v1.0.2-2025-10-14",
+    "title": "Changelog",
+    "section": "v1.0.2 (2025-10-14)",
+    "text": "v1.0.2 (2025-10-14)\n\nBug Fixes\n\nRestore build step (4250642)\n\n\nDetailed Changes: v1.0.1…v1.0.2"
+  },
+  {
+    "objectID": "changelog.html#v1.0.1-2025-10-14",
+    "href": "changelog.html#v1.0.1-2025-10-14",
+    "title": "Changelog",
+    "section": "v1.0.1 (2025-10-14)",
+    "text": "v1.0.1 (2025-10-14)\n\nBug Fixes\n\nGate artifact upload (5e5bda1)\n\n\nDetailed Changes: v1.0.0…v1.0.1"
+  },
+  {
+    "objectID": "changelog.html#v1.0.0-2025-10-14",
+    "href": "changelog.html#v1.0.0-2025-10-14",
+    "title": "Changelog",
+    "section": "v1.0.0 (2025-10-14)",
+    "text": "v1.0.0 (2025-10-14)\n\nBug Fixes\n\nActions-compliant root path (251d553)\nAdd missing semantic release config (f6235d4)\nSemantic release version mismatch (3dbf9a0)\nUse semantic release’s built-in committer (6681c31)\n\n\nDetailed Changes: v0.2.0…v1.0.0"
+  },
+  {
+    "objectID": "changelog.html#v0.2.0-2025-10-12",
+    "href": "changelog.html#v0.2.0-2025-10-12",
+    "title": "Changelog",
+    "section": "v0.2.0 (2025-10-12)",
+    "text": "v0.2.0 (2025-10-12)\n\nFeatures\n\nMore descriptive README (d1036e0)\n\n\nDetailed Changes: v0.1.1…v0.2.0"
+  },
+  {
+    "objectID": "changelog.html#v0.1.1-2025-10-10",
+    "href": "changelog.html#v0.1.1-2025-10-10",
+    "title": "Changelog",
+    "section": "v0.1.1 (2025-10-10)",
+    "text": "v0.1.1 (2025-10-10)\n\nBug Fixes\n\nRemove private classifier (5b2a23c)\n\n\nDetailed Changes: v0.1.0…v0.1.1"
+  },
+  {
+    "objectID": "changelog.html#v0.1.0-2025-10-10",
+    "href": "changelog.html#v0.1.0-2025-10-10",
+    "title": "Changelog",
+    "section": "v0.1.0 (2025-10-10)",
+    "text": "v0.1.0 (2025-10-10)\n\nBug Fixes\n\nDeclare environment (3f6d1d3)\n\n\n\nFeatures\n\nRefactored module organization (faf2932)"
+  },
+  {
     "objectID": "user-guide/database-loading.html",
     "href": "user-guide/database-loading.html",
     "title": "Database Loading: Persisting with load().run()",
