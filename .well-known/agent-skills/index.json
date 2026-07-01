@@ -1,0 +1,11 @@
+{
+  "skills": [
+    {
+      "name": "etielle",
+      "description": "A declarative, type-safe Python DSL for mapping complex nested JSON to relational database schemas. Use when writing Python code that uses the etielle package.",
+      "files": [
+        "SKILL.md"
+      ]
+    }
+  ]
+}

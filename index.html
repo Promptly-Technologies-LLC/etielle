@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Quickstart: Declarative JSON-to-Relational Mapping in Python – etielle: Declarative JSON-to-Relational Mapping in Python</title>
+<title>etielle | etielle</title>
 <style>
 /* Default styles provided by pandoc.
 ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
@@ -77,7 +77,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link href="site_libs/quarto-html/quarto-syntax-highlighting-15634bcf2e68342d4ad2dfa704d543f6.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="site_libs/bootstrap/bootstrap-46c1e64c2409ffa41d8278daa552b940.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="site_libs/bootstrap/bootstrap-4374c486a51c078b4a30d8ae56e0846f.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -105,11 +105,44 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     "search-label": "Search"
   }
 }</script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script>document.head.appendChild(Object.assign(document.createElement('link'),{rel:'stylesheet',href:(document.querySelector('meta[name="quarto:offset"]')||{content:''}).content+'termshow.css'}));</script>
+<script>document.head.appendChild(Object.assign(document.createElement('link'),{rel:'stylesheet',href:(document.querySelector('meta[name="quarto:offset"]')||{content:''}).content+'gd-lightbox.css'}));</script>
+<script>(function(){var s=document.createElement('script');var m=document.querySelector('meta[name="quarto:offset"]');s.src=(m?m.content:'')+'gd-lightbox.js';s.defer=true;document.head.appendChild(s);})();</script>
+<script>document.head.appendChild(Object.assign(document.createElement('link'),{rel:'stylesheet',href:(document.querySelector('meta[name="quarto:offset"]')||{content:''}).content+'gd-lightbox-compare.css'}));</script>
+<script>(function(){var s=document.createElement('script');var m=document.querySelector('meta[name="quarto:offset"]');s.src=(m?m.content:'')+'gd-lightbox-compare.js';s.defer=true;document.head.appendChild(s);})();</script>
+<script>document.head.appendChild(Object.assign(document.createElement('link'),{rel:'stylesheet',href:(document.querySelector('meta[name="quarto:offset"]')||{content:''}).content+'gd-lightbox-annotate.css'}));</script>
+<script>(function(){var s=document.createElement('script');var m=document.querySelector('meta[name="quarto:offset"]');s.src=(m?m.content:'')+'gd-lightbox-annotate.js';s.defer=true;document.head.appendChild(s);})();</script>
+<script src="theme-init.js"></script>
 
 
+  <link rel="canonical" href="https://Promptly-Technologies-LLC.github.io/etielle/">
+  <meta name="description" content="JSON data from APIs is often deeply nested and requires complicated parsing. etielle helps by:">
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareSourceCode",
+  "name": "etielle",
+  "description": "A declarative, type-safe Python DSL for mapping complex nested JSON to relational database schemas",
+  "url": "https://Promptly-Technologies-LLC.github.io/etielle",
+  "documentation": "https://Promptly-Technologies-LLC.github.io/etielle",
+  "programmingLanguage": {
+    "@type": "ComputerLanguage",
+    "name": "Python"
+  }
+}
+</script>
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="etielle | etielle">
+  <meta property="og:description" content="JSON data from APIs is often deeply nested and requires complicated parsing. etielle helps by:">
+  <meta property="og:url" content="https://Promptly-Technologies-LLC.github.io/etielle">
+  <meta property="og:site_name" content="etielle">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="etielle | etielle">
+  <meta name="twitter:description" content="JSON data from APIs is often deeply nested and requires complicated parsing. etielle helps by:">
 </head>
 
-<body class="nav-sidebar docked nav-fixed quarto-light">
+<body class="nav-fixed gd-homepage quarto-light">
 
 <div id="quarto-search-results"></div>
   <header id="quarto-header" class="headroom fixed-top">
@@ -117,19 +150,33 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       <div class="navbar-container container-fluid">
       <div class="navbar-brand-container mx-auto">
     <a class="navbar-brand" href="./index.html">
-    <span class="navbar-title">etielle: Declarative JSON-to-Relational Mapping in Python</span>
+    <span class="navbar-title">etielle <span class="version-badge" title="Released 2026-06-26">v4.2.0</span></span>
     </a>
   </div>
-            <div id="quarto-search" class="" title="Search"></div>
+            <div id="quarto-search" class=""></div>
           <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
   <span class="navbar-toggler-icon"></span>
 </button>
           <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="./user-guide/introduction-to-etl.html"> 
+<span class="menu-text">User Guide</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="./reference/index.html"> 
+<span class="menu-text">Reference</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="./changelog.html"> 
+<span class="menu-text">Changelog</span></a>
+  </li>  
+</ul>
             <ul class="navbar-nav navbar-nav-scroll ms-auto">
-  <li class="nav-item compact">
-    <a class="nav-link" href="https://github.com/promptly-technologies-llc/etielle"> <i class="bi bi-github" role="img">
-</i> 
-<span class="menu-text"></span></a>
+  <li class="nav-item">
+    <span class="nav-link">
+<div id="github-widget" data-owner="Promptly-Technologies-LLC" data-repo="etielle" data-stars="1" data-forks="0"></div>
+    </span>
   </li>  
 </ul>
           </div> <!-- /navcollapse -->
@@ -137,172 +184,48 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
       </div> <!-- /container-fluid -->
     </nav>
-  <nav class="quarto-secondary-nav">
-    <div class="container-fluid d-flex">
-      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
-        <i class="bi bi-layout-text-sidebar-reverse"></i>
-      </button>
-        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./index.html">Getting Started</a></li><li class="breadcrumb-item"><a href="./index.html">Quickstart</a></li></ol></nav>
-        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
-        </a>
-    </div>
-  </nav>
 </header>
 <!-- content -->
 <div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
 <!-- sidebar -->
-  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation docked overflow-auto">
-    <div class="sidebar-menu-container"> 
-    <ul class="list-unstyled mt-1">
-        <li class="sidebar-item sidebar-item-section">
-      <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true">
- <span class="menu-text">Getting Started</span></a>
-          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true" aria-label="Toggle section">
-            <i class="bi bi-chevron-right ms-2"></i>
-          </a> 
-      </div>
-      <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="./index.html" class="sidebar-item-text sidebar-link active">
- <span class="menu-text">Quickstart</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="./docs/introduction-to-etl.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Introduction to ETL</span></a>
-  </div>
-</li>
-      </ul>
-  </li>
-        <li class="sidebar-item sidebar-item-section">
-      <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true">
- <span class="menu-text">Core Concepts</span></a>
-          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true" aria-label="Toggle section">
-            <i class="bi bi-chevron-right ms-2"></i>
-          </a> 
-      </div>
-      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 show">  
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="./docs/navigation.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Navigation</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="./docs/transforms.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Transforms</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="./docs/mapping.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Mapping Tables</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="./docs/relationships.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Relationships</span></a>
-  </div>
-</li>
-      </ul>
-  </li>
-        <li class="sidebar-item sidebar-item-section">
-      <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true">
- <span class="menu-text">Advanced Topics</span></a>
-          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true" aria-label="Toggle section">
-            <i class="bi bi-chevron-right ms-2"></i>
-          </a> 
-      </div>
-      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth1 show">  
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="./docs/database-loading.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Database Loading</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="./docs/custom-transforms.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Custom Transforms</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="./docs/error-handling.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Errors and Monitoring</span></a>
-  </div>
-</li>
-      </ul>
-  </li>
-    </ul>
-    </div>
-</nav>
-<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
 <!-- margin-sidebar -->
-    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
-        <nav id="TOC" role="doc-toc" class="toc-active">
-    <h2 id="toc-title">On this page</h2>
-   
-  <ul>
-  <li><a href="#why-use-etielle-for-beginners" id="toc-why-use-etielle-for-beginners" class="nav-link active" data-scroll-target="#why-use-etielle-for-beginners">Why Use <code>etielle</code>? (For Beginners)</a></li>
-  <li><a href="#learning-path" id="toc-learning-path" class="nav-link" data-scroll-target="#learning-path">Learning Path</a></li>
-  <li><a href="#installation" id="toc-installation" class="nav-link" data-scroll-target="#installation">Installation</a>
-  <ul class="collapse">
-  <li><a href="#optional-install-with-orm-adapters" id="toc-optional-install-with-orm-adapters" class="nav-link" data-scroll-target="#optional-install-with-orm-adapters">Optional: Install with ORM adapters</a></li>
-  </ul></li>
-  <li><a href="#quick-start-your-first-mapping" id="toc-quick-start-your-first-mapping" class="nav-link" data-scroll-target="#quick-start-your-first-mapping">Quick Start: Your First Mapping</a></li>
-  <li><a href="#core-concepts-breaking-it-down" id="toc-core-concepts-breaking-it-down" class="nav-link" data-scroll-target="#core-concepts-breaking-it-down">Core Concepts: Breaking It Down</a>
-  <ul class="collapse">
-  <li><a href="#the-etl-entry-point" id="toc-the-etl-entry-point" class="nav-link" data-scroll-target="#the-etl-entry-point">1. The <code>etl()</code> Entry Point</a></li>
-  <li><a href="#navigation-goto-and-each" id="toc-navigation-goto-and-each" class="nav-link" data-scroll-target="#navigation-goto-and-each">2. Navigation: <code>goto()</code> and <code>each()</code></a></li>
-  <li><a href="#fields-and-tempfields" id="toc-fields-and-tempfields" class="nav-link" data-scroll-target="#fields-and-tempfields">3. Fields and TempFields</a></li>
-  <li><a href="#transforms-smart-data-extractors" id="toc-transforms-smart-data-extractors" class="nav-link" data-scroll-target="#transforms-smart-data-extractors">4. Transforms: Smart Data Extractors</a></li>
-  <li><a href="#running-the-pipeline" id="toc-running-the-pipeline" class="nav-link" data-scroll-target="#running-the-pipeline">5. Running the Pipeline</a></li>
-  </ul></li>
-  <li><a href="#detailed-examples" id="toc-detailed-examples" class="nav-link" data-scroll-target="#detailed-examples">Detailed Examples</a>
-  <ul class="collapse">
-  <li><a href="#example-1-merging-data-from-multiple-paths" id="toc-example-1-merging-data-from-multiple-paths" class="nav-link" data-scroll-target="#example-1-merging-data-from-multiple-paths">Example 1: Merging Data from Multiple Paths</a></li>
-  <li><a href="#example-2-deep-nesting" id="toc-example-2-deep-nesting" class="nav-link" data-scroll-target="#example-2-deep-nesting">Example 2: Deep Nesting</a></li>
-  <li><a href="#example-3-typed-output-with-pydantic" id="toc-example-3-typed-output-with-pydantic" class="nav-link" data-scroll-target="#example-3-typed-output-with-pydantic">Example 3: Typed Output with Pydantic</a></li>
-  </ul></li>
-  <li><a href="#transform-cheatsheet" id="toc-transform-cheatsheet" class="nav-link" data-scroll-target="#transform-cheatsheet">Transform Cheatsheet</a></li>
-  <li><a href="#common-mistakes" id="toc-common-mistakes" class="nav-link" data-scroll-target="#common-mistakes">Common Mistakes</a></li>
-  <li><a href="#next-steps" id="toc-next-steps" class="nav-link" data-scroll-target="#next-steps">Next Steps</a></li>
-  <li><a href="#glossary" id="toc-glossary" class="nav-link" data-scroll-target="#glossary">Glossary</a></li>
-  <li><a href="#license" id="toc-license" class="nav-link" data-scroll-target="#license">License</a></li>
-  </ul>
-</nav>
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
     </div>
 <!-- main -->
-<main class="content" id="quarto-document-content">
-
-<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./index.html">Getting Started</a></li><li class="breadcrumb-item"><a href="./index.html">Quickstart</a></li></ol></nav>
-<div class="quarto-title">
-<h1 class="title">Quickstart: Declarative JSON-to-Relational Mapping in Python</h1>
-</div>
+<main class="content page-columns page-full" id="quarto-document-content"><header id="title-block-header" class="quarto-title-block"></header>
 
 
 
-<div class="quarto-title-meta">
 
-    
-  
-    
-  </div>
-  
+<style>
+section.level1:first-of-type > h1:first-child,
+section.level2:first-of-type > h2:first-child,
+.column-body-outset-right > section.level1:first-of-type > h1,
+#quarto-document-content > section:first-of-type > h1 {
+  margin-top: 4px !important;
+}
+</style>
 
-
-</header>
-
-
-<p><code>etielle</code> is a simple, powerful Python library for reshaping nested <a href="https://en.wikipedia.org/wiki/JSON">JSON</a> data, typically from an API, into relational tables that fit your database schema. Think of <code>etielle</code> as a “JSON extractor” that you program with clear instructions: “Go here in the JSON, pull this data, and put it in that table.” The library’s name is a play on <a href="./docs/introduction-to-etl.html">ETL (“Extract, Transform, Load”)</a>, which is the technical term for this set of operations.</p>
+<div class="no-row-height column-margin column-container"><div class="">
+<section id="links" class="level3">
+<h3 class="anchored" data-anchor-id="links">Links</h3>
+<p><a href="https://pypi.org/project/etielle/">View on PyPI<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -0.05em; margin-left: 0em; margin-top: 0.1em;" viewbox="0 0 24 24"><path d="M7 7h10v10"></path><path d="M7 17 17 7"></path></svg></a><br></p>
+</section>
+<section id="ai-agents" class="level3">
+<h3 class="anchored" data-anchor-id="ai-agents">AI / Agents</h3>
+<p><a href="skills.html">Skills<svg class="gd-sparkle" xmlns="http://www.w3.org/2000/svg" width="0.85em" height="0.85em" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -0.1em; margin-left: 0.25em;"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.582a.5.5 0 0 1 0 .963L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"></path><path d="M20 3v4"></path><path d="M22 5h-4"></path></svg></a><br> <a href="llms.txt">llms.txt</a><br> <a href="llms-full.txt">llms-full.txt</a><br></p>
+</section>
+<section id="community" class="level3">
+<h3 class="anchored" data-anchor-id="community">Community</h3>
+<p><a href="./contributing.html">Contributing guide</a><br></p>
+</section>
+<section id="meta" class="level3">
+<h3 class="anchored" data-anchor-id="meta">Meta</h3>
+<p><strong>Requires:</strong> Python <code>&gt;=3.13</code><br> <strong>Provides-Extra:</strong> <code>sqlalchemy</code>, <code>sqlmodel</code>, <code>supabase</code></p>
+</section>
+</div></div><section id="quickstart-declarative-json-to-relational-mapping-in-python" class="level1">
+<h1>Quickstart: Declarative JSON-to-Relational Mapping in Python</h1>
+<p><code>etielle</code> is a simple, powerful Python library for reshaping nested <a href="https://en.wikipedia.org/wiki/JSON">JSON</a> data, typically from an API, into relational tables that fit your database schema. Think of <code>etielle</code> as a “JSON extractor” that you program with clear instructions: “Go here in the JSON, pull this data, and put it in that table.” The library’s name is a play on <a href="./user-guide/introduction-to-etl.html">ETL (“Extract, Transform, Load”)</a>, which is the technical term for this set of operations.</p>
 <ul>
 <li><strong>Repository</strong>: <a href="https://github.com/Promptly-Technologies-LLC/etielle">Promptly-Technologies-LLC/etielle</a></li>
 <li><strong>PyPI</strong>: <a href="https://pypi.org/project/etielle/"><code>etielle</code></a></li>
@@ -323,47 +246,47 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h2 class="anchored" data-anchor-id="learning-path">Learning Path</h2>
 <ol type="1">
 <li><a href="./index.html"><strong>Quickstart</strong></a>: Quick and dirty introduction to <code>etielle</code> and how to use it.</li>
-<li><a href="./docs/introduction-to-etl.html"><strong>Introduction to ETL</strong></a>: The problem <code>etielle</code> is solving: JSON data ETL.</li>
-<li><a href="./docs/navigation.html"><strong>Navigation</strong></a>: How to navigate through your JSON data with <code>goto()</code> and <code>each()</code>.</li>
-<li><a href="./docs/transforms.html"><strong>Transforms</strong></a>: Getting and altering values from the JSON data.</li>
-<li><a href="./docs/mapping.html"><strong>Mapping Tables</strong></a>: Outputting data with <code>Field</code> and <code>TempField</code>.</li>
-<li><a href="./docs/relationships.html"><strong>Relationships</strong></a>: Linking tables together with <code>link_to()</code>.</li>
-<li><a href="./docs/database-loading.html"><strong>Database Loading</strong></a>: Persisting data with <code>load()</code> and <code>run()</code>.</li>
+<li><a href="./user-guide/introduction-to-etl.html"><strong>Introduction to ETL</strong></a>: The problem <code>etielle</code> is solving: JSON data ETL.</li>
+<li><a href="./user-guide/navigation.html"><strong>Navigation</strong></a>: How to navigate through your JSON data with <a href="reference/PipelineBuilder.goto.html#etielle.PipelineBuilder.goto" class="gdls-link gdls-code">goto()</a> and <a href="reference/PipelineBuilder.each.html#etielle.PipelineBuilder.each" class="gdls-link gdls-code">each()</a>.</li>
+<li><a href="./user-guide/transforms.html"><strong>Transforms</strong></a>: Getting and altering values from the JSON data.</li>
+<li><a href="./user-guide/mapping.html"><strong>Mapping Tables</strong></a>: Outputting data with <a href="reference/Field.html#etielle.Field" class="gdls-link gdls-code">Field</a> and <a href="reference/TempField.html#etielle.TempField" class="gdls-link gdls-code">TempField</a>.</li>
+<li><a href="./user-guide/relationships.html"><strong>Relationships</strong></a>: Linking tables together with <a href="reference/PipelineBuilder.link_to.html#etielle.PipelineBuilder.link_to" class="gdls-link gdls-code">link_to()</a>.</li>
+<li><a href="./user-guide/database-loading.html"><strong>Database Loading</strong></a>: Persisting data with <a href="reference/PipelineBuilder.load.html#etielle.PipelineBuilder.load" class="gdls-link gdls-code">load()</a> and <a href="reference/PipelineBuilder.run.html#etielle.PipelineBuilder.run" class="gdls-link gdls-code">run()</a>.</li>
 </ol>
 </section>
 <section id="installation" class="level2">
 <h2 class="anchored" data-anchor-id="installation">Installation</h2>
 <p>We recommend using <code>uv</code> for faster installs, but <code>pip</code> works too.</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> add etielle</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="co"># or</span></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="ex">pip</span> install etielle</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> add etielle</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="co">## or</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="ex">pip</span> install etielle</span></code></pre></div>
 <section id="optional-install-with-orm-adapters" class="level3">
 <h3 class="anchored" data-anchor-id="optional-install-with-orm-adapters">Optional: Install with ORM adapters</h3>
 <p>If you plan to bind relationships and flush to your database via SQLAlchemy or SQLModel, install with the optional extra for your ORM:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> add <span class="st">"etielle[sqlalchemy]"</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="co"># or</span></span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> add <span class="st">"etielle[sqlmodel]"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> add <span class="st">"etielle[sqlalchemy]"</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="co">## or</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> add <span class="st">"etielle[sqlmodel]"</span></span></code></pre></div>
 </section>
 </section>
 <section id="quick-start-your-first-mapping" class="level2">
 <h2 class="anchored" data-anchor-id="quick-start-your-first-mapping">Quick Start: Your First Mapping</h2>
 <p>Let’s start with a simple example. Suppose you have this JSON:</p>
-<div id="53389ea7" class="cell" data-execution_count="1">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
+<div id="b015a3e5" class="cell" data-execution_count="1">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> {</span>
 <span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="st">"users"</span>: [</span>
 <span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    {<span class="st">"id"</span>: <span class="st">"u1"</span>, <span class="st">"name"</span>: <span class="st">"Alice"</span>, <span class="st">"posts"</span>: [{<span class="st">"id"</span>: <span class="st">"p1"</span>, <span class="st">"title"</span>: <span class="st">"Hello"</span>}, {<span class="st">"id"</span>: <span class="st">"p2"</span>, <span class="st">"title"</span>: <span class="st">"World"</span>}]},</span>
 <span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    {<span class="st">"id"</span>: <span class="st">"u2"</span>, <span class="st">"name"</span>: <span class="st">"Bob"</span>, <span class="st">"posts"</span>: []}</span>
 <span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  ]</span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
 </div>
 <p>We want two tables: “users” (id, name) and “posts” (id, user_id, title).</p>
 <p>Here’s the code using the fluent API:</p>
-<div id="dd50a00b" class="cell" data-execution_count="2">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get, get_from_parent</span>
+<div id="89c6a533" class="cell" data-execution_count="2">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get, get_from_parent</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Build and run the pipeline</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="co">## Build and run the pipeline</span></span>
 <span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> (</span>
 <span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    etl(data)</span>
 <span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Extract users</span></span>
@@ -382,9 +305,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>    .run()</span>
 <span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>)</span>
 <span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a><span class="co"># result.tables gives you dict access by table name</span></span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a><span class="co">## result.tables gives you dict access by table name</span></span>
 <span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>out <span class="op">=</span> {table: <span class="bu">list</span>(rows.values()) <span class="cf">for</span> table, rows <span class="kw">in</span> result.tables.items()}</span>
-<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(json.dumps(out, indent<span class="op">=</span><span class="dv">2</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(json.dumps(out, indent<span class="op">=</span><span class="dv">2</span>))</span></code></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>{
   "users": [
@@ -417,9 +340,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="core-concepts-breaking-it-down" class="level2">
 <h2 class="anchored" data-anchor-id="core-concepts-breaking-it-down">Core Concepts: Breaking It Down</h2>
 <section id="the-etl-entry-point" class="level3">
-<h3 class="anchored" data-anchor-id="the-etl-entry-point">1. The <code>etl()</code> Entry Point</h3>
+<h3 class="anchored" data-anchor-id="the-etl-entry-point">1. The <a href="reference/etl.html#etielle.etl" class="gdls-link gdls-code">etl()</a> Entry Point</h3>
 <p>Everything starts with <code>etl(data)</code>. This creates a pipeline builder that you chain methods onto:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl</span>
+<div class="sourceCode" id="cb6"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> (</span>
 <span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    etl(data)           <span class="co"># Start with your JSON</span></span>
@@ -427,32 +350,32 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>    .each()             <span class="co"># Iterate over items</span></span>
 <span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    .map_to(...)        <span class="co"># Emit table rows</span></span>
 <span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>    .run()              <span class="co"># Execute and get results</span></span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div>
 </section>
 <section id="navigation-goto-and-each" class="level3">
-<h3 class="anchored" data-anchor-id="navigation-goto-and-each">2. Navigation: <code>goto()</code> and <code>each()</code></h3>
+<h3 class="anchored" data-anchor-id="navigation-goto-and-each">2. Navigation: <a href="reference/PipelineBuilder.goto.html#etielle.PipelineBuilder.goto" class="gdls-link gdls-code">goto()</a> and <a href="reference/PipelineBuilder.each.html#etielle.PipelineBuilder.each" class="gdls-link gdls-code">each()</a></h3>
 <p>Navigation tells etielle where to find your data:</p>
 <ul>
 <li><strong><code>goto(path)</code></strong>: Navigate to a nested location (supports dot notation: <code>"data.users"</code>)</li>
-<li><strong><code>each()</code></strong>: Iterate over items in a list or dict</li>
+<li><strong><a href="reference/PipelineBuilder.each.html#etielle.PipelineBuilder.each" class="gdls-link gdls-code">each()</a></strong>: Iterate over items in a list or dict</li>
 </ul>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Navigate to data["response"]["users"] and iterate</span></span>
+<div class="sourceCode" id="cb7"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co">## Navigate to data["response"]["users"] and iterate</span></span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>.goto(<span class="st">"response.users"</span>).each()</span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Or use list syntax</span></span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>.goto([<span class="st">"response"</span>, <span class="st">"users"</span>]).each()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="co">## Or use list syntax</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>.goto([<span class="st">"response"</span>, <span class="st">"users"</span>]).each()</span></code></pre></div>
 </section>
 <section id="fields-and-tempfields" class="level3">
 <h3 class="anchored" data-anchor-id="fields-and-tempfields">3. Fields and TempFields</h3>
-<p>When you call <code>map_to()</code>, you define what data to extract:</p>
+<p>When you call <a href="reference/PipelineBuilder.map_to.html#etielle.PipelineBuilder.map_to" class="gdls-link gdls-code">map_to()</a>, you define what data to extract:</p>
 <ul>
 <li><strong><code>Field(name, transform)</code></strong>: A column that appears in your output</li>
 <li><strong><code>TempField(name, transform)</code></strong>: Used for joins/relationships, but NOT in output</li>
 </ul>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>.map_to(table<span class="op">=</span><span class="st">"users"</span>, fields<span class="op">=</span>[</span>
+<div class="sourceCode" id="cb8"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>.map_to(table<span class="op">=</span><span class="st">"users"</span>, fields<span class="op">=</span>[</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    Field(<span class="st">"id"</span>, get(<span class="st">"id"</span>)),          <span class="co"># Output column (also available for joins)</span></span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    Field(<span class="st">"name"</span>, get(<span class="st">"name"</span>)),      <span class="co"># Output column</span></span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>])</span></code></pre></div>
 </section>
 <section id="transforms-smart-data-extractors" class="level3">
 <h3 class="anchored" data-anchor-id="transforms-smart-data-extractors">4. Transforms: Smart Data Extractors</h3>
@@ -482,11 +405,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>Constant value</td>
 </tr>
 <tr class="odd">
-<td><code>key()</code></td>
+<td><a href="reference/key.html#etielle.key" class="gdls-link gdls-code">key()</a></td>
 <td>Current dict key</td>
 </tr>
 <tr class="even">
-<td><code>index()</code></td>
+<td><a href="reference/index.html#etielle.index" class="gdls-link gdls-code">index()</a></td>
 <td>Current list index</td>
 </tr>
 <tr class="odd">
@@ -495,33 +418,33 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 </tbody>
 </table>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Combine transforms</span></span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>Field(<span class="st">"full_id"</span>, concat(literal(<span class="st">"user_"</span>), get(<span class="st">"id"</span>)))  <span class="co"># "user_u1"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co">## Combine transforms</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>Field(<span class="st">"full_id"</span>, concat(literal(<span class="st">"user_"</span>), get(<span class="st">"id"</span>)))  <span class="co"># "user_u1"</span></span></code></pre></div>
 </section>
 <section id="running-the-pipeline" class="level3">
 <h3 class="anchored" data-anchor-id="running-the-pipeline">5. Running the Pipeline</h3>
 <p>Call <code>.run()</code> to execute and get results:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> pipeline.run()</span>
+<div class="sourceCode" id="cb10"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> pipeline.run()</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Access tables by name</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="co">## Access tables by name</span></span>
 <span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>users <span class="op">=</span> result.tables[<span class="st">"users"</span>]    <span class="co"># Dict[tuple, dict]</span></span>
 <span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Or by model class (if using typed models)</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a><span class="co">## Or by model class (if using typed models)</span></span>
 <span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>users <span class="op">=</span> result.tables[User]       <span class="co"># Dict[tuple, User]</span></span>
 <span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Check for errors</span></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a><span class="co">## Check for errors</span></span>
 <span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> result.errors:</span>
 <span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> table, errs <span class="kw">in</span> result.errors.items():</span>
-<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>table<span class="sc">}</span><span class="ss">: </span><span class="sc">{</span>errs<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>table<span class="sc">}</span><span class="ss">: </span><span class="sc">{</span>errs<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div>
 </section>
 </section>
 <section id="detailed-examples" class="level2">
 <h2 class="anchored" data-anchor-id="detailed-examples">Detailed Examples</h2>
 <section id="example-1-merging-data-from-multiple-paths" class="level3">
 <h3 class="anchored" data-anchor-id="example-1-merging-data-from-multiple-paths">Example 1: Merging Data from Multiple Paths</h3>
-<p>Merge user info from two parts of JSON using <code>goto_root()</code>:</p>
-<div id="76c5b17d" class="cell" data-execution_count="3">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get</span>
+<p>Merge user info from two parts of JSON using <a href="reference/PipelineBuilder.goto_root.html#etielle.PipelineBuilder.goto_root" class="gdls-link gdls-code">goto_root()</a>:</p>
+<div id="47790529" class="cell" data-execution_count="3">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get</span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> {</span>
 <span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">"users"</span>: [{<span class="st">"id"</span>: <span class="st">"u1"</span>, <span class="st">"name"</span>: <span class="st">"Alice"</span>}],</span>
@@ -547,7 +470,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb11-24"><a href="#cb11-24" aria-hidden="true" tabindex="-1"></a>)</span>
 <span id="cb11-25"><a href="#cb11-25" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb11-26"><a href="#cb11-26" aria-hidden="true" tabindex="-1"></a>user <span class="op">=</span> <span class="bu">list</span>(result.tables[<span class="st">"users"</span>].values())[<span class="dv">0</span>]</span>
-<span id="cb11-27"><a href="#cb11-27" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(user)  <span class="co"># Has id, name, AND email merged together</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb11-27"><a href="#cb11-27" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(user)  <span class="co"># Has id, name, AND email merged together</span></span></code></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>{'id': 'u1', 'name': 'Alice', 'email': 'alice@example.com'}</code></pre>
 </div>
@@ -556,8 +479,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="example-2-deep-nesting" class="level3">
 <h3 class="anchored" data-anchor-id="example-2-deep-nesting">Example 2: Deep Nesting</h3>
 <p>Handle deeply nested structures with chained navigation:</p>
-<div id="f85087ed" class="cell" data-execution_count="4">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># servers -&gt; channels -&gt; messages -&gt; reactions (3 levels deep)</span></span>
+<div id="76dfa5a7" class="cell" data-execution_count="4">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co">## servers -&gt; channels -&gt; messages -&gt; reactions (3 levels deep)</span></span>
 <span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> (</span>
 <span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>    etl(data)</span>
 <span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    .goto(<span class="st">"servers"</span>).each()</span>
@@ -576,14 +499,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a>        ...</span>
 <span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a>    ])</span>
 <span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a>    .run()</span>
-<span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div>
 </div>
 </section>
 <section id="example-3-typed-output-with-pydantic" class="level3">
 <h3 class="anchored" data-anchor-id="example-3-typed-output-with-pydantic">Example 3: Typed Output with Pydantic</h3>
 <p>Use model classes for validated, typed output:</p>
-<div id="c421454c" class="cell" data-execution_count="5">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pydantic <span class="im">import</span> BaseModel</span>
+<div id="62f8eea3" class="cell" data-execution_count="5">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pydantic <span class="im">import</span> BaseModel</span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get</span>
 <span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> User(BaseModel):</span>
@@ -604,7 +527,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb14-19"><a href="#cb14-19" aria-hidden="true" tabindex="-1"></a>)</span>
 <span id="cb14-20"><a href="#cb14-20" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb14-21"><a href="#cb14-21" aria-hidden="true" tabindex="-1"></a>user <span class="op">=</span> <span class="bu">list</span>(result.tables[User].values())[<span class="dv">0</span>]</span>
-<span id="cb14-22"><a href="#cb14-22" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Type: </span><span class="sc">{</span><span class="bu">type</span>(user)<span class="sc">.</span><span class="va">__name__</span><span class="sc">}</span><span class="ss">, name: </span><span class="sc">{</span>user<span class="sc">.</span>name<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb14-22"><a href="#cb14-22" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Type: </span><span class="sc">{</span><span class="bu">type</span>(user)<span class="sc">.</span><span class="va">__name__</span><span class="sc">}</span><span class="ss">, name: </span><span class="sc">{</span>user<span class="sc">.</span>name<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Type: User, name: Alice</code></pre>
 </div>
@@ -614,11 +537,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="transform-cheatsheet" class="level2">
 <h2 class="anchored" data-anchor-id="transform-cheatsheet">Transform Cheatsheet</h2>
 <table class="caption-top table">
-<colgroup>
-<col style="width: 37%">
-<col style="width: 31%">
-<col style="width: 31%">
-</colgroup>
 <thead>
 <tr class="header">
 <th>Transform</th>
@@ -643,27 +561,27 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td><code>get_from_root("version")</code></td>
 </tr>
 <tr class="even">
-<td><code>key()</code></td>
+<td><a href="reference/key.html#etielle.key" class="gdls-link gdls-code">key()</a></td>
 <td>Current dict key</td>
 <td>When iterating <code>{"a": 1, "b": 2}</code></td>
 </tr>
 <tr class="odd">
-<td><code>index()</code></td>
+<td><a href="reference/index.html#etielle.index" class="gdls-link gdls-code">index()</a></td>
 <td>Current list index</td>
 <td>0, 1, 2, …</td>
 </tr>
 <tr class="even">
-<td><code>parent_key()</code></td>
+<td><a href="reference/parent_key.html#etielle.parent_key" class="gdls-link gdls-code">parent_key()</a></td>
 <td>Parent’s dict key</td>
 <td>Access parent iteration key</td>
 </tr>
 <tr class="odd">
-<td><code>parent_index()</code></td>
+<td><a href="reference/parent_index.html#etielle.parent_index" class="gdls-link gdls-code">parent_index()</a></td>
 <td>Parent’s list index</td>
 <td>Access parent iteration index</td>
 </tr>
 <tr class="even">
-<td><code>node()</code></td>
+<td><a href="reference/node.html#etielle.node" class="gdls-link gdls-code">node()</a></td>
 <td>Current node value</td>
 <td>The whole current object</td>
 </tr>
@@ -700,17 +618,17 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <ul>
 <li><strong>Empty results?</strong>
 <ul>
-<li>Check your <code>goto()</code> path matches the JSON structure exactly</li>
+<li>Check your <a href="reference/PipelineBuilder.goto.html#etielle.PipelineBuilder.goto" class="gdls-link gdls-code">goto()</a> path matches the JSON structure exactly</li>
 <li>Make sure you called <code>.each()</code> to iterate</li>
 </ul></li>
 <li><strong>Missing parent data?</strong>
 <ul>
-<li>Check the <code>depth</code> parameter in <code>get_from_parent()</code></li>
+<li>Check the <code>depth</code> parameter in <a href="reference/get_from_parent.html#etielle.get_from_parent" class="gdls-link gdls-code">get_from_parent()</a></li>
 <li>Ensure the parent context exists in your navigation chain</li>
 </ul></li>
 <li><strong>Duplicate or missing rows?</strong>
 <ul>
-<li>Verify <code>TempField</code> values are unique for each row</li>
+<li>Verify <a href="reference/TempField.html#etielle.TempField" class="gdls-link gdls-code">TempField</a> values are unique for each row</li>
 <li>Check that join keys don’t contain <code>None</code> values</li>
 </ul></li>
 </ul>
@@ -718,18 +636,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="next-steps" class="level2">
 <h2 class="anchored" data-anchor-id="next-steps">Next Steps</h2>
 <ul>
-<li><strong><a href="./docs/navigation.html">Navigation</a></strong> - Deep dive into <code>goto()</code>, <code>each()</code>, and <code>goto_root()</code></li>
-<li><strong><a href="./docs/transforms.html">Transforms</a></strong> - All built-in transforms and how to use them</li>
-<li><strong><a href="./docs/mapping.html">Mapping Tables</a></strong> - <code>Field</code>, <code>TempField</code>, merge policies</li>
-<li><strong><a href="./docs/relationships.html">Relationships</a></strong> - Link tables with <code>link_to()</code></li>
-<li><strong><a href="./docs/database-loading.html">Database Loading</a></strong> - Persist with <code>load().run()</code></li>
+<li><strong><a href="./user-guide/navigation.html">Navigation</a></strong> - Deep dive into <a href="reference/PipelineBuilder.goto.html#etielle.PipelineBuilder.goto" class="gdls-link gdls-code">goto()</a>, <a href="reference/PipelineBuilder.each.html#etielle.PipelineBuilder.each" class="gdls-link gdls-code">each()</a>, and <a href="reference/PipelineBuilder.goto_root.html#etielle.PipelineBuilder.goto_root" class="gdls-link gdls-code">goto_root()</a></li>
+<li><strong><a href="./user-guide/transforms.html">Transforms</a></strong> - All built-in transforms and how to use them</li>
+<li><strong><a href="./user-guide/mapping.html">Mapping Tables</a></strong> - <a href="reference/Field.html#etielle.Field" class="gdls-link gdls-code">Field</a>, <a href="reference/TempField.html#etielle.TempField" class="gdls-link gdls-code">TempField</a>, merge policies</li>
+<li><strong><a href="./user-guide/relationships.html">Relationships</a></strong> - Link tables with <a href="reference/PipelineBuilder.link_to.html#etielle.PipelineBuilder.link_to" class="gdls-link gdls-code">link_to()</a></li>
+<li><strong><a href="./user-guide/database-loading.html">Database Loading</a></strong> - Persist with <code>load().run()</code></li>
 </ul>
 </section>
 <section id="glossary" class="level2">
 <h2 class="anchored" data-anchor-id="glossary">Glossary</h2>
 <ul>
-<li><strong>Pipeline</strong>: The chain of operations from <code>etl()</code> to <code>run()</code></li>
-<li><strong>Navigation</strong>: Methods like <code>goto()</code> and <code>each()</code> that position you in the JSON</li>
+<li><strong>Pipeline</strong>: The chain of operations from <a href="reference/etl.html#etielle.etl" class="gdls-link gdls-code">etl()</a> to <a href="reference/PipelineBuilder.run.html#etielle.PipelineBuilder.run" class="gdls-link gdls-code">run()</a></li>
+<li><strong>Navigation</strong>: Methods like <a href="reference/PipelineBuilder.goto.html#etielle.PipelineBuilder.goto" class="gdls-link gdls-code">goto()</a> and <a href="reference/PipelineBuilder.each.html#etielle.PipelineBuilder.each" class="gdls-link gdls-code">each()</a> that position you in the JSON</li>
 <li><strong>Transform</strong>: A function that extracts values from the current context</li>
 <li><strong>Field</strong>: An output column in your table</li>
 <li><strong>TempField</strong>: A field used for joins/linking but not in final output</li>
@@ -743,6 +661,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 
 </section>
+</section>
 
 </main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
@@ -754,71 +673,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       icon: icon
     };
     anchorJS.add('.anchored');
-    const isCodeAnnotation = (el) => {
-      for (const clz of el.classList) {
-        if (clz.startsWith('code-annotation-')) {                     
-          return true;
-        }
-      }
-      return false;
-    }
-    const onCopySuccess = function(e) {
-      // button target
-      const button = e.trigger;
-      // don't keep focus
-      button.blur();
-      // flash "checked"
-      button.classList.add('code-copy-button-checked');
-      var currentTitle = button.getAttribute("title");
-      button.setAttribute("title", "Copied!");
-      let tooltip;
-      if (window.bootstrap) {
-        button.setAttribute("data-bs-toggle", "tooltip");
-        button.setAttribute("data-bs-placement", "left");
-        button.setAttribute("data-bs-title", "Copied!");
-        tooltip = new bootstrap.Tooltip(button, 
-          { trigger: "manual", 
-            customClass: "code-copy-button-tooltip",
-            offset: [0, -8]});
-        tooltip.show();    
-      }
-      setTimeout(function() {
-        if (tooltip) {
-          tooltip.hide();
-          button.removeAttribute("data-bs-title");
-          button.removeAttribute("data-bs-toggle");
-          button.removeAttribute("data-bs-placement");
-        }
-        button.setAttribute("title", currentTitle);
-        button.classList.remove('code-copy-button-checked');
-      }, 1000);
-      // clear code selection
-      e.clearSelection();
-    }
-    const getTextToCopy = function(trigger) {
-      const outerScaffold = trigger.parentElement.cloneNode(true);
-      const codeEl = outerScaffold.querySelector('code');
-      for (const childEl of codeEl.children) {
-        if (isCodeAnnotation(childEl)) {
-          childEl.remove();
-        }
-      }
-      return codeEl.innerText;
-    }
-    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
-      text: getTextToCopy
-    });
-    clipboard.on('success', onCopySuccess);
-    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
-      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
-        text: getTextToCopy,
-        container: window.document.getElementById('quarto-embedded-source-code-modal')
-      });
-      clipboardModal.on('success', onCopySuccess);
-    }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp("https:\/\/Promptly-Technologies-LLC\.github\.io\/etielle\/");
+        var filterRegex = new RegExp("https:\/\/promptly-technologies-llc\.github\.io\/etielle\/");
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }
@@ -1148,24 +1005,28 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div> <!-- /content -->
 <footer class="footer">
   <div class="nav-footer">
-    <div class="nav-footer-left">
-<p>Copyright 2025, Promptly Technologies, LLC. MIT License.</p>
-</div>   
-    <div class="nav-footer-center">
-      &nbsp;
-    </div>
-    <div class="nav-footer-right">
-      <ul class="footer-items list-unstyled">
-    <li class="nav-item compact">
-    <a class="nav-link" href="https://github.com/promptly-technologies-llc/etielle">
-      <i class="bi bi-github" role="img">
-</i> 
-    </a>
-  </li>  
-</ul>
-    </div>
-  </div>
+<div class="nav-footer-center">
+<p>Site created with <strong>Great&nbsp;Docs</strong>.</p>
+</div>
+</div>
 </footer>
+<script src="github-widget.js"></script>
+<script src="sidebar-wrap.js"></script>
+<script>(function(){var s=document.createElement('script');var m=document.querySelector('meta[name="quarto:offset"]');s.src=(m?m.content:'')+'sidebar-float.js';document.body.appendChild(s);})();</script>
+<script src="sidebar-filter.js"></script>
+<script src="dark-mode-toggle.js"></script>
+<script src="back-to-top.js"></script>
+<script>(function(){var s=document.createElement('script');var m=document.querySelector('meta[name="quarto:offset"]');s.src=(m?m.content:'')+'on-this-page.js';document.body.appendChild(s);})();</script>
+<script src="keyboard-nav.js"></script>
+<script src="copy-code.js"></script>
+<script src="details.js"></script>
+<script src="mermaid-renderer.js"></script>
+<script src="tooltips.js"></script>
+<script>(function(){var s=document.createElement('script');var m=document.querySelector('meta[name="quarto:offset"]');s.src=(m?m.content:'')+'color-swatch.js';document.body.appendChild(s);})();</script>
+<script src="responsive-tables.js"></script>
+<script>(function(){var s=document.createElement('script');var m=document.querySelector('meta[name="quarto:offset"]');s.src=(m?m.content:'')+'video-embed.js';document.body.appendChild(s);})();</script>
+<script>(function(){var s=document.createElement('script');var m=document.querySelector('meta[name="quarto:offset"]');s.src=(m?m.content:'')+'termshow.js';document.body.appendChild(s);})();</script>
+<script src="navbar-widgets.js"></script>
 
 
 

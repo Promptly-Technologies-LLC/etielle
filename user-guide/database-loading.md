@@ -1,0 +1,750 @@
+# Database Loading: Persisting with load().run()
+
+**What you'll learn**: How to use [load()](../reference/PipelineBuilder.load.md#etielle.PipelineBuilder.load) to persist your transformed data to a database using SQLAlchemy or SQLModel.
+
+**ETL context**: Database loading is the **Load** step--the final step that persists your in-memory objects to a database.
+
+
+# What is [load()](../reference/PipelineBuilder.load.md#etielle.PipelineBuilder.load)?
+
+The `load(session)` method configures your pipeline to persist results to a database. When combined with [run()](../reference/PipelineBuilder.run.md#etielle.PipelineBuilder.run), it:
+
+1.  Maps instances by relationship component
+2.  Binds relationships within each component
+3.  Adds instances to the session
+4.  Flushes each component and evicts flushed instances from the result
+
+`load().run()` returns **stats and errors**, not flushed instances in `result.tables`. Use `session.query()` or equivalent to read persisted rows. You control the transaction (commit/rollback).
+
+``` python
+from etielle import etl, Field, TempField, get
+
+result = (
+    etl(data)
+    .goto("users").each()
+    .map_to(table=User, fields=[...])
+    .load(session)  # Configure database session
+    .run()          # Execute and flush
+)
+
+session.commit()    # You control the transaction
+```
+
+
+# Basic Database Persistence
+
+
+## SQLModel Example
+
+
+``` python
+from sqlmodel import SQLModel, Field as SQLField, Session, create_engine
+from etielle import etl, Field, TempField, get
+
+# Define your model
+class User(SQLModel, table=True):
+    id: str = SQLField(primary_key=True)
+    name: str
+    email: str | None = None
+
+# Create engine and tables
+engine = create_engine("sqlite:///example.db")
+SQLModel.metadata.create_all(engine)
+
+# Your JSON data
+data = {
+    "users": [
+        {"id": "u1", "name": "Alice", "email": "alice@example.com"},
+        {"id": "u2", "name": "Bob", "email": "bob@example.com"}
+    ]
+}
+
+# Run pipeline with database loading
+with Session(engine) as session:
+    result = (
+        etl(data)
+        .goto("users").each()
+        .map_to(table=User, fields=[
+            Field("id", get("id")),
+            Field("name", get("name")),
+            Field("email", get("email")),
+            TempField("id", get("id"))
+        ])
+        .load(session)
+        .run()
+    )
+
+    session.commit()  # Persist to database
+
+# Query back
+with Session(engine) as session:
+    users = session.query(User).all()
+    for user in users:
+        print(f"{user.name}: {user.email}")
+```
+
+
+## SQLAlchemy Example
+
+
+``` python
+from sqlalchemy import Column, String, create_engine
+from sqlalchemy.orm import declarative_base, Session
+from etielle import etl, Field, TempField, get
+
+Base = declarative_base()
+
+class User(Base):
+    __tablename__ = "users"
+    id = Column(String, primary_key=True)
+    name = Column(String)
+    email = Column(String)
+
+engine = create_engine("sqlite:///example.db")
+Base.metadata.create_all(engine)
+
+data = {"users": [{"id": "u1", "name": "Alice", "email": "alice@example.com"}]}
+
+with Session(engine) as session:
+    result = (
+        etl(data)
+        .goto("users").each()
+        .map_to(table=User, fields=[
+            Field("id", get("id")),
+            Field("name", get("name")),
+            Field("email", get("email")),
+            TempField("id", get("id"))
+        ])
+        .load(session)
+        .run()
+    )
+
+    session.commit()
+```
+
+
+# Transaction Control
+
+
+## You Control Commit/Rollback
+
+`load().run()` flushes but does NOT commit. This gives you full control:
+
+``` python
+with Session(engine) as session:
+    try:
+        result = (
+            etl(data)
+            .goto("users").each()
+            .map_to(table=User, fields=[...])
+            .load(session)
+            .run()
+        )
+
+        # Do additional work...
+        session.execute(...)
+
+        session.commit()  # Commit everything together
+
+    except Exception:
+        session.rollback()  # Rollback on error
+        raise
+```
+
+
+## Batch Processing
+
+Process multiple JSON payloads in one transaction:
+
+``` python
+with Session(engine) as session:
+    for json_payload in payloads:
+        result = (
+            etl(json_payload)
+            .goto("users").each()
+            .map_to(table=User, fields=[...])
+            .load(session)
+            .run()
+        )
+
+    session.commit()  # Commit all batches together
+```
+
+
+# Relationships and Database Loading
+
+When using [link_to()](../reference/PipelineBuilder.link_to.md#etielle.PipelineBuilder.link_to) with ORM models, relationships are bound before flushing:
+
+
+``` python
+from sqlmodel import SQLModel, Field as SQLField, Relationship, Session, create_engine
+from etielle import etl, Field, TempField, get, get_from_parent
+
+class User(SQLModel, table=True):
+    id: str = SQLField(primary_key=True)
+    name: str
+    posts: list["Post"] = Relationship(back_populates="user")
+
+class Post(SQLModel, table=True):
+    id: str = SQLField(primary_key=True)
+    title: str
+    user_id: str = SQLField(foreign_key="user.id")
+    user: User | None = Relationship(back_populates="posts")
+
+engine = create_engine("sqlite:///example.db")
+SQLModel.metadata.create_all(engine)
+
+data = {
+    "users": [{
+        "id": "u1",
+        "name": "Alice",
+        "posts": [
+            {"id": "p1", "title": "Hello"},
+            {"id": "p2", "title": "World"}
+        ]
+    }]
+}
+
+with Session(engine) as session:
+    result = (
+        etl(data)
+        .goto("users").each()
+        .map_to(table=User, fields=[
+            Field("id", get("id")),
+            Field("name", get("name")),
+            TempField("id", get("id"))
+        ])
+
+        .goto("posts").each()
+        .map_to(table=Post, fields=[
+            Field("id", get("id")),
+            Field("title", get("title")),
+            Field("user_id", get_from_parent("id")),  # Foreign key column
+            TempField("id", get("id")),
+            TempField("user_id", get_from_parent("id"))
+        ])
+        .link_to(User, by={"user_id": "id"})  # Bind relationship
+        .load(session)
+        .run()
+    )
+
+    session.commit()
+
+# Query with relationships
+with Session(engine) as session:
+    user = session.get(User, "u1")
+    print(f"{user.name} has {len(user.posts)} posts")
+```
+
+
+# Component-Scoped Flushing and Memory
+
+Pipelines with relationships are executed as independent **relationship components** (weakly connected subgraphs of the [link_to](../reference/PipelineBuilder.link_to.md#etielle.PipelineBuilder.link_to)/[backlink](../reference/PipelineBuilder.backlink.md#etielle.PipelineBuilder.backlink) graph). Each component is mapped, bound, flushed, and evicted before the next component runs. This bounds peak accumulator memory to the largest component instead of the entire dataset.
+
+Tables with no relationship edges are batched into a single mapping pass for efficiency.
+
+
+# Shared Tables with [load_eager()](../reference/PipelineBuilder.load_eager.md#etielle.PipelineBuilder.load_eager)
+
+When a shared dimension table (e.g. `tags`) is referenced by many independent subgraphs, the relationship graph collapses into one giant component and the memory win vanishes. Mark small shared tables as eager so they are loaded once and kept resident while other components are processed:
+
+``` python
+result = (
+    etl(data)
+    .goto("tags").each()
+    .map_to(table=Tag, fields=[...])
+    .load_eager(Tag)          # resident across all components
+    .goto_root()
+    .goto("items").each()
+    .map_to(table=Item, fields=[...])
+    .link_to(Tag, by={"tag_id": "id"})
+    .load(session)
+    .run()
+)
+```
+
+[load_eager()](../reference/PipelineBuilder.load_eager.md#etielle.PipelineBuilder.load_eager) requires an explicit preceding [map_to()](../reference/PipelineBuilder.map_to.md#etielle.PipelineBuilder.map_to) for the same table.
+
+
+# Streaming and Chunked Execution
+
+For large or single-consumption inputs (paginated APIs, `ijson` streams), use [stream()](../reference/stream.md#etielle.stream) instead of [etl()](../reference/etl.md#etielle.etl). Streaming mode processes **key-complete, relationship-complete** chunks: each chunk is mapped, validated, bound, flushed, and evicted before the next chunk begins.
+
+``` python
+from etielle import stream, Field, TempField, get
+
+# One JSON root per chunk (default)
+result = (
+    stream(record_iter)
+    .goto("users").each()
+    .map_to(table=User, fields=[...])
+    .load(session)
+    .run()
+)
+session.commit()
+```
+
+**Requirements and restrictions:**
+
+- [load()](../reference/PipelineBuilder.load.md#etielle.PipelineBuilder.load) is required before [run()](../reference/PipelineBuilder.run.md#etielle.PipelineBuilder.run) in streaming mode.
+- Chunks must include all relationship endpoints (or use [load_eager()](../reference/PipelineBuilder.load_eager.md#etielle.PipelineBuilder.load_eager) for shared parents).
+- Cross-chunk scattered merge (e.g. merging `users` and `profiles` from different chunks) is not supported.
+- Traversal-based [build_index()](../reference/PipelineBuilder.build_index.md#etielle.PipelineBuilder.build_index) and composite `by` mappings on [link_to()](../reference/PipelineBuilder.link_to.md#etielle.PipelineBuilder.link_to) are rejected.
+
+Pass resident eager data via `eager_roots=` when dimension tables are not repeated in every chunk:
+
+``` python
+stream(chunks, eager_roots=tags_snapshot)
+    .goto("tags").each()
+    .map_to(table=Tag, fields=[...])
+    .load_eager(Tag)
+    ...
+```
+
+
+## Chunking helpers
+
+Producing correct chunks is part of the streaming contract, so etielle ships two [ChunkSource](../reference/ChunkSource.md#etielle.ChunkSource) helpers rather than leaving boundary-finding to the caller.
+
+**[GroupByChunkSource](../reference/GroupByChunkSource.md#etielle.GroupByChunkSource) (single-pass group-by).** Given a [key](../reference/key.md#etielle.key) function, it reads the input once, accumulates consecutive records that share a key, and emits a chunk when the key changes. Peak memory is one chunk.
+
+``` python
+from etielle import stream, GroupByChunkSource, Field, TempField, get
+
+# Each record is a parent subtree; group by the owning order id.
+source = GroupByChunkSource(record_iter, key=lambda r: r["orders"][0]["id"])
+
+stream(source)
+    .goto("orders").each()
+    .map_to(table=Order, fields=[Field("customer", get("customer")), TempField("id", get("id"))])
+    .goto_root()
+    .goto("items").each()
+    .map_to(table=LineItem, fields=[...])
+    .link_to(Order, by={"order_id": "id"})
+    .load(session)
+    .run()
+```
+
+- **Grouped-input requirement.** Grouping is *consecutive only*, so the input must already be grouped (or sorted) by [key](../reference/key.md#etielle.key)--the natural shape for paginated APIs and "one parent subtree at a time" feeds. If two records share a key but are separated by a record with a different key, they land in different chunks; that still satisfies key-completeness, but the runtime relationship-completeness check will raise if a chunk is then missing relationship endpoints. For unsorted input, sort by [key](../reference/key.md#etielle.key) first (the robust unsorted-input partitioner, H2, is deferred).
+- **Pick a relationship-complete key.** Choose a key that is a *complete component root*--coarse enough that everything reachable through a relationship from a record sharing the key also shares it (e.g. the owning entity id), not merely a fine merge key. Grouping guarantees key-completeness for the chosen key; the runtime validation catches a key that is too fine.
+
+**[PreSegmentedChunkSource](../reference/PreSegmentedChunkSource.md#etielle.PreSegmentedChunkSource) (passthrough).** If you already have an iterable of [Chunk](../reference/Chunk.md#etielle.Chunk) objects, hand it over directly--it yields them in order without buffering.
+
+``` python
+from etielle import stream, PreSegmentedChunkSource, Chunk
+
+chunks = [Chunk(roots=(subtree,), sequential=True) for subtree in producer]
+stream(PreSegmentedChunkSource(chunks)).goto(...)...
+```
+
+
+## Why streaming bounds memory
+
+Streaming keeps peak memory flat regardless of dataset size: etielle maps a chunk, flushes it, and releases that chunk's accumulators before mapping the next, so it never holds more than one chunk (plus any resident [load_eager()](../reference/PipelineBuilder.load_eager.md#etielle.PipelineBuilder.load_eager) tables) at a time. The benchmark in `benchmarks/bench_issue_75.py` shows the Python heap peak staying flat under streaming while resident loading grows linearly with the dataset.
+
+On the SQLAlchemy side this needs no special handling: the session's identity map references *persistent* (flushed, clean) instances weakly, so once etielle drops its per-chunk references, CPython's garbage collector reclaims them. Transaction control still belongs to the caller--the `INSERT`s accumulate in the open transaction until you commit or roll back. For a very long stream, commit at a cadence that suits your durability needs; a single end-of-stream commit keeps everything in one transaction.
+
+
+## Extending flush behavior
+
+The chunk loop is strategy-agnostic: it calls `FlushStrategy.flush(ctx)` at each component boundary. A custom strategy receives a [FlushContext](../reference/FlushContext.md#etielle.FlushContext) exposing the scoped tables, mapped results, dependency graph, relationships, stats sink, telemetry callback, and the `session`/`is_supabase` target. Custom strategies (e.g. upsert or buffered variants from issue \#77) implement persistence using those public fields plus `etielle.utils.topological_sort`; the built-in [KeyCompleteFlushStrategy](../reference/KeyCompleteFlushStrategy.md#etielle.KeyCompleteFlushStrategy) delegates to etielle's standard insert/bind logic.
+
+
+# Upsert Behavior
+
+etielle uses "upsert" semantics--if a row with the same key already exists, it's updated:
+
+``` python
+# First load: creates user u1
+data1 = {"users": [{"id": "u1", "name": "Alice", "email": "old@example.com"}]}
+etl(data1).goto("users").each().map_to(...).load(session).run()
+
+# Second load: updates user u1
+data2 = {"users": [{"id": "u1", "name": "Alice", "email": "new@example.com"}]}
+etl(data2).goto("users").each().map_to(...).load(session).run()
+
+session.commit()
+# User u1 now has email "new@example.com"
+```
+
+
+## Merge Policies with Database Loading
+
+Merge policies work with database loading too:
+
+``` python
+from etielle import AddPolicy
+
+# Each load adds to the count
+.map_to(table=Stats, fields=[
+    Field("count", literal(1), merge=AddPolicy()),
+    TempField("id", get("id"))
+])
+.load(session)
+.run()
+```
+
+
+# Without Database Loading
+
+You can use etielle without database loading for in-memory transformations:
+
+``` python
+# No load() = no database interaction
+result = (
+    etl(data)
+    .goto("users").each()
+    .map_to(table=User, fields=[...])
+    .run()  # Just run(), no load()
+)
+
+# Result contains Pydantic/dataclass instances in memory
+for key, user in result.tables[User].items():
+    print(user.name)  # Access in-memory objects
+```
+
+
+# Error Handling During Load
+
+
+## Check Errors Before Commit
+
+``` python
+with Session(engine) as session:
+    result = (
+        etl(data)
+        .goto("users").each()
+        .map_to(table=User, fields=[...])
+        .load(session)
+        .run()
+    )
+
+    if result.errors:
+        # Log or handle errors
+        for table, errors in result.errors.items():
+            for key, messages in errors.items():
+                print(f"Error in {table}[{key}]: {messages}")
+
+        session.rollback()
+    else:
+        session.commit()
+```
+
+
+## Fail Fast Mode
+
+Use `errors="fail_fast"` to raise immediately on validation errors:
+
+``` python
+try:
+    result = (
+        etl(data, errors="fail_fast")
+        .goto("users").each()
+        .map_to(table=User, fields=[...])
+        .load(session)
+        .run()
+    )
+    session.commit()
+except ValueError as e:
+    print(f"Validation failed: {e}")
+    session.rollback()
+```
+
+
+# [load()](../reference/PipelineBuilder.load.md#etielle.PipelineBuilder.load) Reference
+
+| Parameter | Type                        | Description                 |
+|-----------|-----------------------------|-----------------------------|
+| `session` | SQLAlchemy/SQLModel Session | The database session to use |
+
+
+## Behavior
+
+1.  All ORM instances are added to the session via `session.add()`
+2.  `session.flush()` is called to send SQL to the database
+3.  Transaction is NOT committed--you must call `session.commit()`
+4.  Plain dict results (from `table="name"`) are NOT added to session
+
+
+## Requirements
+
+- Model classes must be ORM models (have `__tablename__`)
+- Session must be active and not in an error state
+- Model's table must exist in the database
+
+
+# Best Practices
+
+
+## Use Context Managers
+
+``` python
+with Session(engine) as session:
+    result = etl(data)...load(session).run()
+    session.commit()
+# Session is automatically closed
+```
+
+
+## Handle Large Datasets in Batches
+
+``` python
+BATCH_SIZE = 1000
+
+with Session(engine) as session:
+    for i in range(0, len(records), BATCH_SIZE):
+        batch = {"users": records[i:i + BATCH_SIZE]}
+        etl(batch).goto("users").each().map_to(...).load(session).run()
+
+    session.commit()
+```
+
+
+## Separate Transform and Load
+
+For complex pipelines, consider separating concerns:
+
+``` python
+# Transform step (no database)
+result = etl(data).goto("users").each().map_to(table=User, ...).run()
+
+# Validate
+if result.errors:
+    handle_errors(result.errors)
+    return
+
+# Load step
+with Session(engine) as session:
+    for user in result.tables[User].values():
+        session.add(user)
+    session.commit()
+```
+
+
+# Supabase
+
+etielle also supports loading data directly to Supabase using the same `.load().run()` pattern.
+
+
+## Basic Supabase Example
+
+
+``` python
+from supabase import create_client
+from etielle import etl, Field, TempField, get
+
+# Create Supabase client
+client = create_client("https://your-project.supabase.co", "your-anon-key")
+
+data = {
+    "users": [
+        {"id": "u1", "name": "Alice"},
+        {"id": "u2", "name": "Bob"}
+    ]
+}
+
+# Load directly to Supabase
+result = (
+    etl(data)
+    .goto("users").each()
+    .map_to(table="users", fields=[
+        Field("id", get("id")),
+        Field("name", get("name")),
+        TempField("id", get("id"))
+    ])
+    .load(client)  # Supabase client auto-detected
+    .run()
+)
+```
+
+
+## Supabase with Relationships
+
+
+``` python
+from supabase import create_client
+from etielle import etl, Field, TempField, get, get_from_parent
+
+client = create_client("https://your-project.supabase.co", "your-anon-key")
+
+data = {
+    "users": [{
+        "id": "u1",
+        "name": "Alice",
+        "posts": [
+            {"id": "p1", "title": "Hello"},
+            {"id": "p2", "title": "World"}
+        ]
+    }]
+}
+
+result = (
+    etl(data)
+    .goto("users").each()
+    .map_to(table="users", fields=[
+        Field("id", get("id")),
+        Field("name", get("name")),
+        TempField("id", get("id"))
+    ])
+
+    .goto("posts").each()
+    .map_to(table="posts", fields=[
+        Field("id", get("id")),
+        Field("title", get("title")),
+        Field("user_id", get_from_parent("id")),  # FK set via transform
+        TempField("id", get("id")),
+        TempField("user_id", get_from_parent("id"))
+    ])
+    .link_to("users", by={"user_id": "id"})  # Defines insert order
+    .load(client)
+    .run()
+)
+```
+
+
+Tables are inserted in dependency order (parents before children) based on [link_to()](../reference/PipelineBuilder.link_to.md#etielle.PipelineBuilder.link_to) declarations.
+
+
+## Upsert Mode
+
+Use `upsert=True` for idempotent loads. By default, Supabase uses the table's primary key for conflict detection:
+
+``` python
+result = (
+    etl(data)
+    .goto("users").each()
+    .map_to(table="users", fields=[...])
+    .load(client, upsert=True)  # Uses table's primary key
+    .run()
+)
+```
+
+
+## Custom Conflict Columns
+
+Use `upsert_on` to specify which columns to use for conflict detection per table. This is useful when you want to upsert on a unique constraint other than the primary key:
+
+``` python
+result = (
+    etl(data)
+    .goto("users").each()
+    .map_to(table="users", fields=[
+        Field("id", get("id")),
+        Field("email", get("email")),
+        Field("name", get("name")),
+    ])
+    .goto_root()
+    .goto("posts").each()
+    .map_to(table="posts", fields=[
+        Field("id", get("id")),
+        Field("user_id", get("user_id")),
+        Field("slug", get("slug")),
+        Field("title", get("title")),
+    ])
+    .load(client, upsert=True, upsert_on={
+        "users": "email",              # Upsert on email column
+        "posts": ["user_id", "slug"],  # Composite unique constraint
+    })
+    .run()
+)
+```
+
+Tables not in `upsert_on` use the default (table's primary key).
+
+
+## Batching
+
+Control batch size for large datasets:
+
+``` python
+.load(client, batch_size=500)  # Default is 1000
+```
+
+
+## DB-Generated IDs (Two-Phase Insert)
+
+When your database generates primary keys (e.g., UUID or auto-increment), use the `fk` parameter on [link_to()](../reference/PipelineBuilder.link_to.md#etielle.PipelineBuilder.link_to) to automatically populate child foreign keys after parent insertion:
+
+
+``` python
+from supabase import create_client
+from etielle import etl, Field, TempField, get, get_from_parent
+
+client = create_client("https://your-project.supabase.co", "your-anon-key")
+
+# Data without IDs - database will generate them
+data = {
+    "orgs": [
+        {
+            "name": "Acme Corp",
+            "members": [
+                {"name": "Alice"},
+                {"name": "Bob"},
+            ],
+        },
+    ],
+}
+
+result = (
+    etl(data)
+    .goto("orgs").each()
+    .map_to(table="orgs", fields=[
+        Field("name", get("name")),
+        TempField("_key", get("name")),  # Business key for matching
+    ])
+
+    .goto("members").each()
+    .map_to(table="members", fields=[
+        Field("name", get("name")),
+        TempField("_parent_key", get_from_parent("name")),
+    ])
+    # fk={"org_id": "id"} means: set child's org_id to parent's generated id
+    .link_to("orgs", by={"_parent_key": "_key"}, fk={"org_id": "id"})
+    .load(client)
+    .run()
+)
+```
+
+
+**How it works:**
+
+1.  Parents ("orgs") are inserted first
+2.  Supabase returns rows with generated IDs
+3.  Child FK columns ("org_id") are populated with parent IDs
+4.  Children ("members") are inserted with correct FK values
+
+**Parameters:**
+
+- `by`: Matches children to parents using TempField values (business keys)
+- `fk`: Maps `{child_column: parent_column}` to populate after parent insert
+
+**Requirements:**
+
+- Parent table must have a TempField that uniquely identifies each row (business key)
+- Child table must have a TempField that references the parent's business key
+- Supabase must return rows in insertion order (default behavior)
+
+
+## Supabase vs SQLAlchemy
+
+| Feature       | SQLAlchemy/SQLModel       | Supabase                  |
+|---------------|---------------------------|---------------------------|
+| Transaction   | Session-based             | Per-table HTTP calls      |
+| Relationships | ORM object references     | FK columns via transforms |
+| Commit        | Manual `session.commit()` | Automatic on insert       |
+| Upsert        | ORM merge                 | `upsert=True` option      |
+
+**Key difference:** With Supabase, foreign key values must be set via transforms (like [get_from_parent()](../reference/get_from_parent.md#etielle.get_from_parent)) since there's no ORM session to resolve relationships.
+
+
+## Limitations
+
+- **No transactions across tables**: Each table insert is a separate HTTP call
+- **No automatic rollback**: If a child insert fails after parent insert, parent data remains
+
+
+# See also
+
+- [Mapping Tables](mapping.md) - Defining output structure
+- [Relationships](relationships.md) - Linking tables before persistence
+- [Error Handling](error-handling.md) - Handling validation errors

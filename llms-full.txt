@@ -1,0 +1,4862 @@
+----------------------------------------------------------------------
+This is the API documentation for the etielle library.
+----------------------------------------------------------------------
+
+
+## Classes
+
+Main classes provided by the package
+
+
+AddPolicy()
+
+AppendPolicy()
+
+CallableChunkSource(factory: 'Callable[[], Iterator[Chunk]]') -> 'None'
+
+Build chunks from a caller-supplied factory (tests and advanced callers).
+
+ConstructorBuilder(constructor: Callable[..., +T]) -> None
+
+Simplified builder for classes that accept keyword arguments in their constructor.
+Perfect for SQLAlchemy/SQLModel ORM models.
+
+Usage:
+    builder = ConstructorBuilder(User)  # Just pass the class
+
+Equivalent to:
+    builder = TypedDictBuilder(lambda d: User(**d))
+
+ExtendPolicy()
+
+FirstNonNullPolicy()
+
+GroupByChunkSource(records: 'Iterator[Any] | Iterable[Any]', key: 'Callable[[Any], Any]') -> 'None'
+
+Group consecutive records that share a key into one chunk each.
+
+This is the single-pass, streaming group-by chunker. It reads the input
+once, accumulates consecutive records that map to the same ``key``, and
+emits a chunk whenever the key changes. Peak memory is one chunk: only the
+records for the current key are held at a time.
+
+Each emitted chunk is ``sequential`` -- every record in the group is mapped
+against pipeline root index 0 with shared auto-key counters, so a group of
+related records merges into one component (the repeated single-root shape).
+
+Grouped-input requirement:
+    Correctness depends on the input *already being grouped (or sorted) by
+    ``key``*, which is the common shape for paginated APIs and "one parent
+    subtree at a time" feeds. Because grouping is consecutive only, records
+    that share a key but are separated by records with a different key land
+    in *separate* chunks. With a relationship key that is fine for
+    key-completeness but breaks relationship-completeness; the runtime
+    relationship-completeness check raises if a chunk is missing endpoints.
+    For unsorted input, sort by ``key`` first, or wait for the robust
+    unsorted-input partitioner (H2, tracked under sub-issue D).
+
+Choosing a relationship-complete key:
+    Pick a key that is a *complete component root* -- coarse enough that
+    every record reachable through a relationship from one record sharing
+    the key also shares it (e.g. the owning entity id), not merely a fine
+    merge key. Grouping guarantees key-completeness for whatever key you
+    choose; the runtime validation catches a key that is too fine.
+
+Args:
+    records: An iterable (or single-use iterator) of JSON roots. Consumed
+        exactly once.
+    key: Function mapping a record to its grouping key. Adjacent records
+        with equal keys are batched into the same chunk.
+
+InstanceBuilder()
+
+KeyCompleteFlushStrategy()
+
+Default streaming strategy: plain insert/flush, no cross-chunk merge.
+
+MaxPolicy()
+
+MergePolicy()
+
+MinPolicy()
+
+OneRecordPerChunkSource(records: 'Iterator[Any] | Sequence[Any]') -> 'None'
+
+Wrap an iterable of JSON roots; each root becomes its own chunk.
+
+A re-iterable input (e.g. a list) can be streamed more than once. A
+single-use iterator (e.g. a generator or an ``ijson`` stream) is consumed
+on the first pass, matching the single-consumption nature of streaming
+sources; running the pipeline again would yield no chunks.
+
+PipelineBuilder(roots: 'tuple[Any, ...]', error_mode: 'ErrorMode' = 'collect', indices: 'dict[str, dict[Any, Any]] | None' = None, *, chunk_source: 'Any | None' = None, flush_strategy: 'Any | None' = None, streaming: 'bool' = False) -> 'None'
+
+Fluent builder for E→T→L pipelines.
+
+Use etl() to create instances of this class.
+
+Example:
+    result = (
+        etl(data)
+        .goto("users").each()
+        .map_to(table=User, fields=[...])
+        .run()
+    )
+
+PreSegmentedChunkSource(chunks: 'Iterator[Chunk] | Iterable[Chunk]') -> 'None'
+
+Pass an already-segmented iterable of chunks through unchanged.
+
+Use this when the caller has already partitioned input into key-complete,
+relationship-complete ``Chunk`` objects (e.g. a producer that knows its own
+boundaries). The chunks are yielded in order without buffering, so peak
+memory is whatever the upstream iterable holds at a time.
+
+A re-iterable input (e.g. a list) can be streamed more than once; a
+single-use iterator is consumed on the first pass.
+
+Args:
+    chunks: An iterable (or single-use iterator) of ``Chunk`` objects.
+
+PydanticBuilder(model: type[+T])
+
+PydanticPartialBuilder(model: type[+T])
+
+TypedDictBuilder(factory: Callable[[Dict[str, Any]], +T], *, field_type_checkers: Optional[Mapping[str, Callable[[Any], Any]]] = None) -> None
+
+
+## Dataclasses
+
+Dataclass definitions
+
+
+Chunk(roots: 'RootTuple', sequential: 'bool' = False) -> None
+
+A key-complete batch of JSON roots to map together.
+
+Attributes:
+    roots: One or more JSON payloads for this chunk.
+    sequential: If True, every root is mapped against pipeline root index 0
+        with shared auto-key counters (group-by / repeated single-root records).
+        If False, root at position *i* maps to pipeline root index *i*
+        (multi-root ``goto_root()`` semantics).
+
+Context(root: 'Any', node: 'Any', path: 'Tuple[str | int, ...]', parent: "Optional['Context']", key: 'Optional[str]', index: 'Optional[int]', slots: 'dict[str, Any]' = <factory>) -> None
+
+Runtime context while traversing the JSON structure.
+During traversal, a base context is created that is shared by all nodes.
+Subsequent contexts created during iteration extend the parent's path and link to the parent context.
+Each new context gets fresh slots, but you can walk up the chain with get_from_parent.
+
+- root: original full JSON payload
+- node: current node under iteration
+- path: absolute path from root to this node (tuple of str|int)
+- parent: parent context if any
+- key: current mapping key when iterating dicts (stringified)
+- index: current index when iterating lists
+- slots: scratchpad for intermediate identifiers if needed by transforms
+
+Field(name: 'str', transform: 'Transform[Any]') -> None
+
+Field(name: 'str', transform: 'Transform[Any]')
+
+Field(name: 'str', transform: 'Transform[Any]', merge: 'MergePolicy | None' = None) -> None
+
+A field that will be persisted to the output table.
+
+Args:
+    name: The column/attribute name in the output.
+    transform: How to compute the value from the current context.
+    merge: Optional policy for merging values when rows are combined.
+
+FieldSpec(selector: Union[str, Callable[[+T], Any]], transform: Callable[[etielle.core.Context], Any]) -> None
+
+FieldSpec(selector: Union[str, Callable[[+T], Any]], transform: Callable[[etielle.core.Context], Any])
+
+FlushCompleted(table: 'str', inserted: 'int', failed: 'int', batch_num: 'int', batch_total: 'int', upsert: 'bool') -> None
+
+Emitted when flush completes for a table (or batch).
+
+Attributes:
+    table: The table name being flushed.
+    inserted: Number of rows successfully inserted/upserted.
+    failed: Number of rows that failed.
+    batch_num: Which batch (1-indexed).
+    batch_total: Total number of batches for this table.
+    upsert: True if this was an upsert operation.
+
+FlushContext(scope_tables: 'set[str]', bind_context: 'dict[str, Any]', local_results: 'dict[str, Any]', dep_graph: 'dict[str, set[str]]', link_to_rels: 'list[dict[str, Any]]', backlink_rels: 'list[dict[str, Any]]', stats: 'dict[str, TableStats]', on_event: 'TelemetryCallback | None', session: 'Any', is_supabase: 'bool', builder: 'PipelineBuilder') -> None
+
+Inputs for a flush at a component boundary.
+
+The public fields provide everything a custom ``FlushStrategy`` needs to
+persist a component without touching engine internals:
+
+- ``scope_tables``: tables this flush is responsible for.
+- ``bind_context``: mapped results for the scope plus any resident/eager
+  tables, used to resolve relationship parents.
+- ``local_results``: mapped results scoped to ``scope_tables`` only.
+- ``dep_graph``: child -> parents dependency graph (use
+  ``etielle.utils.topological_sort`` for flush order).
+- ``link_to_rels`` / ``backlink_rels``: relationship specs in scope.
+- ``stats`` / ``on_event``: stats accumulator and telemetry sink.
+- ``session``: the SQLAlchemy session or Supabase client from ``load()``.
+- ``is_supabase``: whether ``session`` is a Supabase client.
+
+``builder`` is the engine handle that the built-in strategies use to reuse
+etielle's standard insert/bind logic. Custom strategies should rely on the
+public fields above and implement their own persistence rather than calling
+builder internals.
+
+FlushFailed(table: 'str', error: 'str', affected_count: 'int') -> None
+
+Emitted when an entire batch/table flush fails.
+
+Attributes:
+    table: The table name that failed.
+    error: Error message describing the failure.
+    affected_count: Number of rows that were in the failed batch.
+
+FlushStarted(table: 'str', count: 'int') -> None
+
+Emitted when flush begins for a table.
+
+Attributes:
+    table: The table name being flushed.
+    count: Number of instances to flush.
+
+InstanceEmit(table: str, join_keys: Sequence[Callable[[etielle.core.Context], Any]], fields: Sequence[etielle.instances.FieldSpec[+T]], builder: etielle.instances.InstanceBuilder[+T], policies: Mapping[str, etielle.instances.MergePolicy] = <factory>, strict_fields: bool = True, allow_extras: bool = False, strict_mode: str = 'collect_all', temp_fields: frozenset[str] = <factory>) -> None
+
+InstanceEmit(table: str, join_keys: Sequence[Callable[[etielle.core.Context], Any]], fields: Sequence[etielle.instances.FieldSpec[+T]], builder: etielle.instances.InstanceBuilder[+T], policies: Mapping[str, etielle.instances.MergePolicy] = <factory>, strict_fields: bool = True, allow_extras: bool = False, strict_mode: str = 'collect_all', temp_fields: frozenset[str] = <factory>)
+
+IterationLevel(path: 'Sequence[str]', mode: "Literal['auto', 'items', 'single']" = 'auto') -> None
+
+Represents a single level of iteration in a traversal.
+
+- path: path segments to navigate before iterating (can be empty for
+  consecutive .each() calls on the same container)
+- mode: how to iterate: "auto" (detect list/dict), "items", or "single"
+
+ManyToOneSpec(child_table: 'str', parent_table: 'str', attr: 'str', child_to_parent_key: 'Sequence[Transform[Any]]', required: 'bool' = True) -> None
+
+Declarative specification for a many-to-one relationship.
+
+- child_table: name used in `InstanceEmit.table` when emitting child instances
+- parent_table: name used in `InstanceEmit.table` when emitting parent instances
+- attr: attribute name on the child instance that references the parent instance
+- child_to_parent_key: transforms evaluated in the child's traversal context that
+  produce the composite logical key of the parent. Keys are computed during a
+  dedicated traversal pass (see `compute_relationship_keys`).
+- required: if True, binding fails when a parent cannot be found
+
+MapCompleted(table: 'str', count: 'int', error_count: 'int') -> None
+
+Emitted when mapping completes for a table.
+
+Attributes:
+    table: The table name being mapped.
+    count: Number of instances created.
+    error_count: Number of validation/transform errors.
+
+MapStarted(table: 'str') -> None
+
+Emitted when mapping begins for a table.
+
+MappingResult(instances: 'Dict[Tuple[Any, ...], T]', update_errors: 'Dict[Tuple[Any, ...], List[str]]', finalize_errors: 'Dict[Tuple[Any, ...], List[str]]', stats: 'Dict[str, int]', indices: 'Dict[str, Dict[Any, T]]' = <factory>, lookup_values: 'Dict[Tuple[Any, ...], Dict[str, Any]]' = <factory>) -> None
+
+Unified result for both classic table rows and instance builders.
+
+- instances: mapping from composite join key tuple to instance/row payload
+- update_errors: per-key errors recorded during incremental updates
+- finalize_errors: per-key errors recorded while finalizing/validating instances
+- stats: simple counters to aid diagnostics (keys: num_instances, num_update_errors, num_finalize_errors)
+- indices: secondary indices for relationship linking {field_name: {value: instance}}
+- lookup_values: per-key field values captured during mapping for relationship binding
+
+MappingRuntimeState(auto_key_counters: Dict[str, int] = <factory>) -> None
+
+Shared mapping state across multiple roots in one chunk.
+
+MappingSpec(traversals: 'Sequence[TraversalSpec]') -> None
+
+MappingSpec(traversals: 'Sequence[TraversalSpec]')
+
+PipelineResult(tables: 'dict[str, dict[tuple[Any, ...], Any]]', errors: 'dict[str, dict[tuple[Any, ...], list[str]]]', _table_class_map: 'dict[str, type] | None' = None, _raw_results: 'dict[str, Any] | None' = None, _stats: 'dict[str, TableStats] | None' = None) -> 'None'
+
+Result from running a pipeline.
+
+Attributes:
+    tables: Access tables by string name or model class.
+    errors: Validation/transform errors keyed by table then row key.
+    stats: Per-table statistics (mapped, errors, inserted, failed).
+
+TableEmit(table: 'str', fields: 'Sequence[Field]', join_keys: 'Sequence[Transform[Any]]') -> None
+
+Describes how to produce rows for a table from a given traversal context.
+
+- table: table name
+- fields: list of computed fields
+- join_keys: functions that compute the composite key for merging rows
+
+TableStats(mapped: 'int', errors: 'int', inserted: 'int', failed: 'int') -> None
+
+Statistics for a single table after pipeline execution.
+
+Attributes:
+    mapped: Number of instances created during the mapping phase.
+    errors: Number of validation/transform errors during mapping.
+    inserted: Number of rows successfully written to DB (0 if no session).
+    failed: Number of rows that failed during flush.
+
+TelemetryEvent(table: 'str') -> None
+
+Base class for all telemetry events.
+
+TempField(name: 'str', transform: 'Transform[Any]') -> None
+
+A field used only for joining/linking, not persisted.
+
+TempFields are used to:
+- Compute join keys for merging rows
+- Store parent IDs for relationship linking
+
+They do not appear in the final output objects.
+
+Args:
+    name: The field name (used in join_on and link_to).
+    transform: How to compute the value from the current context.
+
+TraversalSpec(path: 'Sequence[str]', emits: "Sequence[TableEmit | 'InstanceEmit[Any]']", mode: "Literal['auto', 'items', 'single']" = 'auto', inner_path: 'Optional[Sequence[str]]' = None, inner_mode: "Literal['auto', 'items', 'single']" = 'auto', levels: 'Optional[Sequence[IterationLevel]]' = None) -> None
+
+How to reach and iterate a collection of nodes under root.
+
+Supports N-level nested iteration through the `levels` parameter:
+- Each level represents one .each() call
+- Levels can have paths (for .goto().each()) or empty paths (for .each().each())
+
+Legacy parameters (path, mode, inner_path, inner_mode) are still supported
+for backward compatibility and are converted to levels internally.
+
+- path: list of keys from root to the outer container (e.g., ["blocks"])
+- mode: how to iterate the outer container: "auto" (default), "items" (dict key/value), or "single" (treat as one node)
+- inner_path: optional path inside each outer node to reach an inner container (e.g., ["elements"]). If provided, iterate that container instead of the outer node
+- inner_mode: how to iterate the inner container when inner_path is provided: "auto" (default), "items", or "single"
+- levels: list of IterationLevel for N-level nested iteration (overrides path/inner_path if provided)
+- emits: table emitters to run for each yielded node
+
+
+## Protocols
+
+Protocol / structural-typing interfaces
+
+
+ChunkSource(*args, **kwargs)
+
+Produces key-complete chunks for streaming execution.
+
+FlushStrategy(*args, **kwargs)
+
+Defines persistence behavior at a chunk/component boundary.
+
+
+## ConstructorBuilder Methods
+
+Methods for the ConstructorBuilder class
+
+
+update(self, key: Tuple[Any, ...], updates: Mapping[str, Any]) -> None
+
+finalize_all(self) -> Dict[Tuple[Any, ...], +T]
+
+get(self, key: Tuple[Any, ...]) -> Optional[+T]
+
+known_fields(self) -> set[str]
+
+update_errors(self) -> Dict[Tuple[Any, ...], list[str]]
+
+finalize_errors(self) -> Dict[Tuple[Any, ...], list[str]]
+
+record_update_error(self, key: Tuple[Any, ...], reason: str) -> None
+
+record_finalize_error(self, key: Tuple[Any, ...], reason: str) -> None
+
+
+## InstanceBuilder Methods
+
+Methods for the InstanceBuilder class
+
+
+update(self, key: Tuple[Any, ...], updates: Mapping[str, Any]) -> None
+
+finalize_all(self) -> Dict[Tuple[Any, ...], +T]
+
+get(self, key: Tuple[Any, ...]) -> Optional[+T]
+
+errors(self) -> Dict[Tuple[Any, ...], list[str]]
+
+known_fields(self) -> set[str]
+
+update_errors(self) -> Dict[Tuple[Any, ...], list[str]]
+
+finalize_errors(self) -> Dict[Tuple[Any, ...], list[str]]
+
+record_update_error(self, key: Tuple[Any, ...], reason: str) -> None
+
+record_finalize_error(self, key: Tuple[Any, ...], reason: str) -> None
+
+
+## PipelineBuilder Methods
+
+Methods for the PipelineBuilder class
+
+
+goto_root(self, index: 'int' = 0) -> 'PipelineBuilder'
+
+Navigate to a specific JSON root.
+
+Resets the current path and iteration state.
+
+Args:
+    index: Which root to navigate to (0-indexed, defaults to 0).
+
+Returns:
+    Self for method chaining.
+
+Raises:
+    IndexError: If index is out of range.
+
+Example:
+    etl(users_json, posts_json)
+    .goto_root(0).goto("users").each()  # Process users
+    .goto_root(1).goto("posts").each()  # Process posts
+
+goto(self, path: 'str | list[str]') -> 'PipelineBuilder'
+
+Navigate to a relative path from the current position.
+
+Args:
+    path: Path segments as string (dot-separated) or list.
+
+Returns:
+    Self for method chaining.
+
+Example:
+    .goto("users")           # Single segment
+    .goto("data.users")      # Dot notation
+    .goto(["data", "users"]) # List of segments
+
+each(self) -> 'PipelineBuilder'
+
+Iterate over items at the current path.
+
+For lists: iterates by index.
+For dicts: iterates key-value pairs.
+
+Can be chained for nested iteration:
+- `.each().each()` on dict-of-lists: first iterates dict keys,
+  second iterates list values. Use `parent_key()` to get the dict key.
+- `.each().each()` on list-of-lists: first iterates outer list,
+  second iterates inner lists. Use `parent_index()` to get outer index.
+- `.each().goto("field").each()`: iterates outer container, then
+  navigates to a nested field before iterating.
+
+Returns:
+    Self for method chaining.
+
+Example:
+    .goto("users").each()                    # Iterate list
+    .goto("mapping").each().each()           # Dict of lists
+    .goto("grid").each().each()              # 2D array
+    .goto("items").each().goto("tags").each() # Nested objects
+
+build_index(self, name: 'str', *, from_dict: 'dict[Any, Any] | None' = None, key: 'Transform[Any] | None' = None, value: 'Transform[Any] | None' = None) -> 'PipelineBuilder'
+
+Build or seed a lookup index.
+
+Two modes:
+1. from_dict: Seed index from an external dictionary
+2. key + value: Build index from current traversal (must call after .each())
+
+Args:
+    name: Name for the index (used in lookup() calls)
+    from_dict: External dictionary to use as the index
+    key: Transform to compute index keys (traversal mode)
+    value: Transform to compute index values (traversal mode)
+
+Returns:
+    Self for method chaining.
+
+Example (external dict):
+    .build_index("db_ids", from_dict={"Q1": 42, "Q2": 43})
+
+Example (traversal):
+    .goto("questions").each()
+    .goto("choice_ids").each()
+    .build_index("parent_by_child", key=node(), value=get_from_parent("id"))
+
+map_to(self, table: 'str | type', fields: 'Sequence[FieldUnion]', join_on: 'Sequence[str] | None' = None, errors: 'ErrorMode | None' = None) -> 'PipelineBuilder'
+
+Emit rows to a table from the current traversal position.
+
+Args:
+    table: Table name (string) or model class.
+    fields: List of Field and TempField definitions.
+    join_on: Field names to use as composite key for merging.
+            Required for subsequent map_to calls to the same table.
+    errors: Override the pipeline's error mode for this table.
+
+Returns:
+    Self for method chaining.
+
+Example:
+    .map_to(table=User, fields=[
+        Field("name", get("name")),
+        TempField("id", get("id"))
+    ])
+
+link_to(self, parent: 'type | str', by: 'dict[str, str]', fk: 'dict[str, str] | None' = None) -> 'PipelineBuilder'
+
+Define a relationship from the current table to a parent table.
+
+The `by` dict maps child field names to parent field names.
+Both Field and TempField names can be used.
+
+Args:
+    parent: The parent model class or table name string.
+    by: Mapping of {child_field: parent_field}.
+    fk: Mapping of {child_column: parent_column} for FK population
+        (Supabase only). After inserting parents, child's FK column
+        is populated with parent's generated ID.
+
+Returns:
+    Self for method chaining.
+
+Raises:
+    ValueError: If called without a preceding map_to().
+
+Example:
+    .map_to(table=Post, fields=[
+        TempField("user_id", get("author_id"))
+    ])
+    .link_to(User, by={"user_id": "id"})
+
+    # Or with table names:
+    .map_to(table="posts", fields=[...])
+    .link_to("users", by={"user_id": "id"})
+
+    # With DB-generated parent IDs (Supabase):
+    .map_to(table="posts", fields=[
+        TempField("_parent_key", get_from_parent("name"))
+    ])
+    .link_to("users", by={"_parent_key": "_key"}, fk={"user_id": "id"})
+
+backlink(self, parent: 'type | str', child: 'type | str', attr: 'str', by: 'dict[str, str]') -> 'PipelineBuilder'
+
+Define a many-to-many relationship where parent has a list of children.
+
+This is used with ORMs like SQLModel/SQLAlchemy that handle junction
+tables automatically. After running the pipeline, the parent objects
+will have their list attribute populated with matching child objects.
+
+Args:
+    parent: The parent model class or table name that will hold the list.
+    child: The child model class or table name.
+    attr: The attribute name on the parent that holds the list of children.
+    by: Mapping of {parent_field: child_field} where parent_field contains
+        a list of values that match child_field on the child objects.
+
+Returns:
+    Self for method chaining.
+
+Raises:
+    ValueError: If used with Supabase adapter (not supported).
+
+Example:
+    # Parent has choice_ids list, child has id field
+    .map_to(table=Question, fields=[
+        Field("text", get("text")),
+        TempField("id", get("id")),
+        TempField("choice_ids", get("choice_ids")),  # list of child IDs
+    ])
+    .goto_root()
+    .goto("choices").each()
+    .map_to(table=Choice, fields=[
+        Field("text", get("text")),
+        TempField("id", get("id")),
+    ])
+    .backlink(
+        parent=Question,
+        child=Choice,
+        attr="choices",           # sets question.choices = [...]
+        by={"choice_ids": "id"},  # parent's choice_ids contains child's id
+    )
+
+load(self, session: 'Any', *, upsert: 'bool' = False, upsert_on: 'dict[str, str | list[str]] | None' = None, batch_size: 'int' = 1000) -> 'PipelineBuilder'
+
+Configure database session or client for persistence.
+
+When load() is called before run(), the pipeline will:
+1. Map instances by relationship component
+2. Bind relationships within each component
+3. Add instances to the session (SQLAlchemy) or insert to database (Supabase)
+4. Flush and evict each component (instances are not retained in PipelineResult)
+
+The caller controls the transaction (commit/rollback) for SQLAlchemy.
+
+Args:
+    session: SQLAlchemy/SQLModel session or Supabase client.
+    upsert: If True, use upsert instead of insert (Supabase only).
+        Uses the table's primary key for conflict detection by default.
+    upsert_on: Override conflict columns per table (Supabase only).
+        Only used when upsert=True. Maps table names to conflict columns:
+        - Single column: {"users": "email"}
+        - Composite key: {"posts": ["user_id", "slug"]}
+    batch_size: Maximum rows per insert batch (Supabase only).
+
+Returns:
+    Self for method chaining.
+
+Example (SQLAlchemy):
+    result = (
+        etl(data)
+        .goto("users").each()
+        .map_to(table=User, fields=[...])
+        .load(session)
+        .run()
+    )
+    session.commit()  # Caller controls transaction
+
+Example (Supabase with default conflict):
+    result = (
+        etl(data)
+        .goto("users").each()
+        .map_to(table="users", fields=[...])
+        .load(supabase_client, upsert=True)
+        .run()
+    )
+
+Example (Supabase with custom conflict columns):
+    result = (
+        etl(data)
+        .goto("users").each()
+        .map_to(table="users", fields=[...])
+        .load(supabase_client, upsert=True, upsert_on={
+            "users": "email",
+            "posts": ["user_id", "slug"],
+        })
+        .run()
+    )
+
+load_eager(self, table: 'str | type') -> 'PipelineBuilder'
+
+Mark a table as eagerly loaded and kept resident across components.
+
+Shared dimension tables referenced by many independent subgraphs should
+be loaded eagerly so component partitioning can proceed without collapsing
+the entire graph into one component.
+
+Args:
+    table: Model class or table name string declared via map_to().
+
+Returns:
+    Self for method chaining.
+
+Example:
+    etl(data)
+    .goto("tags").each()
+    .map_to(table=Tag, fields=[...])
+    .load_eager(Tag)
+    .goto_root()
+    ...
+
+run(self, *, on_event: 'TelemetryCallback | None' = None) -> 'PipelineResult'
+
+Execute the pipeline and return results.
+
+If load() was called, also persists to the database.
+
+Args:
+    on_event: Optional callback for telemetry events. Called with
+        MapStarted, MapCompleted, FlushStarted, FlushCompleted, or
+        FlushFailed events during pipeline execution.
+
+Returns:
+    PipelineResult with tables, errors, and stats. When load() was
+    configured, flushed instances are not retained in result.tables
+    (stats and errors are always returned).
+
+
+## PydanticBuilder Methods
+
+Methods for the PydanticBuilder class
+
+
+known_fields(self) -> set[str]
+
+update(self, key: Tuple[Any, ...], updates: Mapping[str, Any]) -> None
+
+finalize_all(self) -> Dict[Tuple[Any, ...], +T]
+
+get(self, key: Tuple[Any, ...]) -> Optional[+T]
+
+update_errors(self) -> Dict[Tuple[Any, ...], list[str]]
+
+finalize_errors(self) -> Dict[Tuple[Any, ...], list[str]]
+
+record_update_error(self, key: Tuple[Any, ...], reason: str) -> None
+
+record_finalize_error(self, key: Tuple[Any, ...], reason: str) -> None
+
+
+## PydanticPartialBuilder Methods
+
+Methods for the PydanticPartialBuilder class
+
+
+known_fields(self) -> set[str]
+
+update(self, key: Tuple[Any, ...], updates: Mapping[str, Any]) -> None
+
+finalize_all(self) -> Dict[Tuple[Any, ...], +T]
+
+get(self, key: Tuple[Any, ...]) -> Optional[+T]
+
+update_errors(self) -> Dict[Tuple[Any, ...], list[str]]
+
+finalize_errors(self) -> Dict[Tuple[Any, ...], list[str]]
+
+record_update_error(self, key: Tuple[Any, ...], reason: str) -> None
+
+record_finalize_error(self, key: Tuple[Any, ...], reason: str) -> None
+
+
+## TypedDictBuilder Methods
+
+Methods for the TypedDictBuilder class
+
+
+update(self, key: Tuple[Any, ...], updates: Mapping[str, Any]) -> None
+
+finalize_all(self) -> Dict[Tuple[Any, ...], +T]
+
+get(self, key: Tuple[Any, ...]) -> Optional[+T]
+
+known_fields(self) -> set[str]
+
+update_errors(self) -> Dict[Tuple[Any, ...], list[str]]
+
+finalize_errors(self) -> Dict[Tuple[Any, ...], list[str]]
+
+record_update_error(self, key: Tuple[Any, ...], reason: str) -> None
+
+record_finalize_error(self, key: Tuple[Any, ...], reason: str) -> None
+
+
+## Exceptions
+
+Exception classes
+
+
+RelationshipIncompleteError
+
+Raised when a chunk lacks a required relationship target.
+
+
+## Functions
+
+Utility functions
+
+
+apply(func: Callable[[~U], ~V], inner: Callable[[etielle.core.Context], ~U]) -> Callable[[etielle.core.Context], ~V]
+
+Apply a function to the result of another transform.
+
+bind_many_to_one(results: 'Mapping[str, MappingResult[Any]]', specs: 'Sequence[ManyToOneSpec]', child_to_parent: 'Mapping[int, Mapping[KeyTuple, KeyTuple]]', *, fail_on_missing: 'bool' = True) -> 'None'
+
+Bind child -> parent object references in-place using plain attribute assignment.
+
+- results: output of executor.run_mapping(root, spec)
+- specs: relationship specs
+- child_to_parent: sidecar keys as returned by `compute_relationship_keys`
+- fail_on_missing: if True, raise RuntimeError aggregating missing parents
+
+coalesce(*inners: Callable[[etielle.core.Context], Any]) -> Callable[[etielle.core.Context], Any]
+
+compute_relationship_keys(root: 'Any', traversals: 'Sequence[TraversalSpec]', specs: 'Sequence[ManyToOneSpec]') -> 'Dict[int, Dict[KeyTuple, KeyTuple]]'
+
+Compute child->parent composite keys for each ManyToOneSpec by re-walking the
+MappingSpec traversals. This avoids mutating domain objects and keeps the
+computed keys in a sidecar map keyed by the child's composite key.
+
+Returns a dict keyed by the index of each ManyToOneSpec in `specs`, containing
+a mapping of child_composite_key -> parent_composite_key for that spec.
+
+concat(*parts: Union[str, Callable[[etielle.core.Context], Any]]) -> Callable[[etielle.core.Context], str]
+
+etl(*roots: 'Any', errors: 'ErrorMode' = 'collect', indices: 'dict[str, dict[Any, Any]] | None' = None) -> 'PipelineBuilder'
+
+Entry point for fluent E→T→L pipelines.
+
+Args:
+    *roots: One or more JSON objects to process.
+    errors: Error handling mode - "collect" (default) or "fail_fast".
+    indices: Pre-built lookup indices for use with lookup() transform.
+
+Returns:
+    A PipelineBuilder for chaining navigation and mapping calls.
+
+Example:
+    result = (
+        etl(data)
+        .goto("users").each()
+        .map_to(table=User, fields=[
+            Field("name", get("name"))
+        ])
+        .run()
+    )
+
+field_of(model: 'type[T]', selector: 'Attr[T, Any]') -> 'str'
+
+Resolve a model field name from a type-checked selector lambda.
+
+Example:
+    field_of(UserModel, lambda u: u.email) -> "email"
+
+Constraints enforced at runtime:
+  - Exactly one attribute access must occur.
+  - No method calls, indexing, or chained attribute access.
+
+format_id(*parts: Union[str, Callable[[etielle.core.Context], Any]], sep: str = '_') -> Callable[[etielle.core.Context], str]
+
+get(path: Union[str, Sequence[str | int]]) -> Callable[[etielle.core.Context], Any]
+
+Resolve a value relative to the current node using a dot-separated path
+(or an explicit sequence of segments). Supports list indices when an int
+segment is provided.
+
+get_from_parent(path: Union[str, Sequence[str | int]], depth: int = 1) -> Callable[[etielle.core.Context], Any]
+
+get_from_root(path: Union[str, Sequence[str | int]]) -> Callable[[etielle.core.Context], Any]
+
+index() -> Callable[[etielle.core.Context], Optional[int]]
+
+key() -> Callable[[etielle.core.Context], Optional[str]]
+
+len_of(inner: Callable[[etielle.core.Context], Any]) -> Callable[[etielle.core.Context], Optional[int]]
+
+literal(value: ~U) -> Callable[[etielle.core.Context], ~U]
+
+lookup(index_name: str, key_transform: Callable[[etielle.core.Context], Any], *, default: Any = None) -> Callable[[etielle.core.Context], Any]
+
+Look up a value in a named index.
+
+Args:
+    index_name: Name of the index to query
+    key_transform: Transform that computes the lookup key
+    default: Value to return if key not found (default: None)
+
+Returns:
+    Transform that returns the looked-up value
+
+Raises:
+    ValueError: If the index doesn't exist
+
+node(ctx: 'Context') -> 'Any'
+
+Return the current node value.
+
+Useful when iterating and the node itself is the value you want.
+
+Example:
+    # Data: {"ids": [1, 2, 3]}
+    .goto("ids").each()
+    .map_to(table=Item, fields=[
+        Field("id", node())
+    ])
+
+parent_index(ctx: 'Context', depth: 'int' = 1) -> 'int | None'
+
+Return the list index of an ancestor context.
+
+Args:
+    depth: How many levels up to look (1 = parent, 2 = grandparent).
+
+Returns:
+    The index if the ancestor was iterating a list, None otherwise.
+
+Example:
+    # Data: {"rows": [[1, 2], [3, 4]]}
+    .goto("rows").each().each()
+    .map_to(table=Cell, fields=[
+        Field("row_num", parent_index()),  # 0 or 1
+        Field("value", node())
+    ])
+
+parent_key(depth: int = 1) -> Callable[[etielle.core.Context], Optional[str]]
+
+stream(source: 'Any', *, eager_roots: 'Any | tuple[Any, ...] | None' = None, flush_strategy: 'Any | None' = None, errors: 'ErrorMode' = 'collect', indices: 'dict[str, dict[Any, Any]] | None' = None) -> 'PipelineBuilder'
+
+Entry point for streaming/chunked E→T→L pipelines.
+
+Each chunk must be key-complete and relationship-complete. Streaming
+execution requires ``load()`` before ``run()``.
+
+Args:
+    source: A ``ChunkSource`` or iterable of JSON roots (one root per chunk).
+    eager_roots: Optional resident JSON root(s) for ``load_eager()`` tables.
+    flush_strategy: Optional flush strategy (defaults to ``KeyCompleteFlushStrategy``).
+    errors: Error handling mode - ``collect`` (default) or ``fail_fast``.
+    indices: Pre-built lookup indices for use with ``lookup()`` transform.
+
+Returns:
+    A ``PipelineBuilder`` for chaining navigation and mapping calls.
+
+transform(func: 'Callable[..., Any]') -> 'Callable[..., Transform[Any]]'
+
+Decorator to create custom transforms with curried arguments.
+
+The decorated function must have `ctx: Context` as its first parameter.
+Any additional parameters become factory arguments.
+
+Example:
+    @transform
+    def split_id(ctx: Context, field: str, index: int) -> str:
+        return ctx.node[field].split("_")[index]
+
+    # Usage in field definition
+    TempField("user_id", split_id("composite_id", 0))
+
+Args:
+    func: A function with signature (ctx: Context, *args) -> T
+
+Returns:
+    A factory function that returns Transform[T]
+
+validate_relationship_completeness(raw_results: 'Mapping[str, MappingResult[Any]]', relationships: 'Sequence[dict[str, Any]]', *, chunk_tables: 'set[str]', eager_tables: 'set[str]') -> 'None'
+
+Ensure every child lookup in the chunk resolves within chunk or eager tables.
+
+
+----------------------------------------------------------------------
+This is the User Guide documentation for the package.
+----------------------------------------------------------------------
+
+
+## Getting Started
+
+### Introduction to ETL
+
+**What you'll learn**: What ETL (Extract, Transform, Load) means, why it's important, how it relates to working with JSON data from APIs, and how `etielle`'s fluent API supports each ETL step.
+
+## What is ETL?
+
+**ETL** stands for **Extract, Transform, Load**---the three fundamental steps for moving data from one system to another. Understanding these steps is key to understanding how `etielle` works:
+
+| ETL Step | What it means | How `etielle` does it |
+|----------|---------------|----------------------|
+| **Extract** | Navigate and pull data from a source | `goto()` and `each()` navigate nested JSON |
+| **Transform** | Reshape and format the data | Transforms, `Field`, and `TempField` reshape data |
+| **Load** | Insert data into the target system | `load(session).run()` persists to database |
+
+ETL is a core concept in data engineering and has been used for decades to move data between systems. `etielle` brings declarative ETL to Python for JSON-to-relational transformations.
+
+## ETL in Action: A Simple Example
+
+Imagine you're building an app that tracks GitHub repositories. Here's how each ETL step works with `etielle`'s fluent API:
+
+### 1. Extract: Navigate the JSON structure
+
+**Goal**: Pull a subset of data from GitHub's API (returns nested JSON with repositories, contributors, commits)
+
+**How `etielle` does it**: `goto()` and `each()` define how to walk through the JSON:
+
+```python
+from etielle import etl, Field, TempField, get
+
+result = (
+    etl(github_data)
+    # Extract: Navigate to repositories array
+    .goto("repositories").each()
+    .map_to(table="repos", fields=[...])
+
+    # Extract: Navigate to commits nested inside each repo
+    .goto("commits").each()
+    .map_to(table="commits", fields=[...])
+
+    .run()
+)
+```
+
+**Key concept**: `goto()` tells `etielle` *where* to go in the JSON, and `each()` tells it to iterate through items. They handle the **Extract** step.
+
+Learn more: [Navigation](navigation.qmd)
+
+### 2. Transform: Reshape data in memory
+
+**Goal**: Extract specific fields, link parent-child records, format values, build table structures
+
+**How `etielle` does it**: Multiple features work together to transform data:
+
+1. **Field-level transforms** extract and modify individual values:
+    ```python
+    from etielle import get, get_from_parent, concat, literal
+
+    # Transform: Extract a field from the current item
+    repo_name = get("name")
+
+    # Transform: Get a field from the parent (for relationship linking)
+    parent_repo_id = get_from_parent("id")
+
+    # Transform: Combine values (e.g. "123" -> "repo_123")
+    full_id = concat(literal("repo_"), get("id"))
+    ```
+
+2. **Table-level transforms** via `map_to()` define output structure:
+    ```python
+    from etielle import etl, Field, TempField, get
+
+    (
+        etl(data)
+        .goto("repositories").each()
+        .map_to(table="repositories", fields=[
+            Field("id", get("id")),          # Output column
+            Field("name", get("name")),      # Output column
+            Field("url", get("url")),        # Output column
+            TempField("id", get("id"))       # Join key (not in output)
+        ])
+    )
+    ```
+
+3. **Relationship transforms** link records together with `link_to()`:
+    ```python
+    from etielle import etl, Field, TempField, get, get_from_parent
+
+    (
+        etl(data)
+        .goto("repositories").each()
+        .map_to(table=Repository, fields=[...])
+
+        .goto("commits").each()
+        .map_to(table=Commit, fields=[
+            Field("message", get("message")),
+            TempField("repo_id", get_from_parent("id"))
+        ])
+        .link_to(Repository, by={"repo_id": "id"})  # Link commits to repos
+    )
+    ```
+
+**Key concept**: Transforms, fields, and relationships are all processed in-memory, before any database persistence. The fluent API chains these operations naturally.
+
+Learn more: [Transforms](transforms.qmd), [Mapping Tables](mapping.qmd), [Relationships](relationships.qmd)
+
+### 3. Load: Persist to database
+
+**Goal**: Insert the transformed data into PostgreSQL
+
+**How `etielle` does it**: `load(session).run()` persists the in-memory data:
+
+```python
+from etielle import etl, Field, TempField, get
+
+result = (
+    etl(data)
+    .goto("users").each()
+    .map_to(table=User, fields=[...])
+    .load(session)   # Configure database session
+    .run()           # Execute and persist
+)
+
+session.commit()     # You control the transaction
+```
+
+**Key concept**: The **Load** step is optional and happens via `load()`. Without it, `etielle` just transforms JSON to in-memory Python objects.
+
+Learn more: [Database Loading](database-loading.qmd)
+
+---
+
+**The full ETL flow with `etielle`**:
+
+1. **Extract** (`goto()`, `each()`): "Go to `repositories`, iterate through each one"
+2. **Transform** (transforms + `Field` + `link_to()`): "Get the `name` field, format the `id`, build table rows, link children to parents"
+3. **Load** (`load().run()`): "Persist the in-memory objects to PostgreSQL" (optional)
+
+Without `etielle`, you'd write nested loops, manual field extraction, and explicit inserts. With `etielle`, you declare the mapping once, and the library handles the rest.
+
+## The Three Pillars of `etielle` ETL
+
+To summarize, `etielle` implements ETL through three core feature groups:
+
+### 1. Extract: Navigation
+
+**What it does**: Navigate nested JSON structures and iterate over items
+
+**Key methods**:
+- `goto(path)`: Navigate to a nested location
+- `each()`: Iterate over list items or dict key-value pairs
+- `goto_root(index)`: Switch between multiple JSON roots
+
+**Example**:
+```python
+(
+    etl(data)
+    .goto("users").each()           # Extract: Navigate and iterate
+    .goto("posts").each()           # Extract: Nested iteration
+    .map_to(...)
+)
+```
+
+Learn more: [Navigation](navigation.qmd)
+
+### 2. Transform: Fields, Transforms, and Relationships
+
+**What it does**: Reshape data in memory from nested JSON to structured tables/objects
+
+**Key features**:
+
+**Transforms** (value extraction):
+- `get()`: Get field from current node
+- `get_from_parent()`: Get field from ancestor (for relationships)
+- `concat()`, `format_id()`: Format and combine values
+- `coalesce()`: Provide fallback values
+
+**Field types** (table structure):
+- `Field(name, transform)`: Output column
+- `TempField(name, transform)`: Join key only (not in output)
+- `merge` policies: Sum, append, min/max when merging rows
+
+**Relationships**:
+- `link_to(Parent, by={...})`: Link child records to parents
+
+**Example**:
+```python
+.map_to(table=Post, fields=[
+    Field("title", get("title")),
+    Field("user_id", get_from_parent("id")),    # Link to parent
+    TempField("id", get("id"))                   # Join key
+])
+.link_to(User, by={"user_id": "id"})            # Bind relationship
+```
+
+Learn more: [Transforms](transforms.qmd), [Mapping Tables](mapping.qmd), [Relationships](relationships.qmd)
+
+### 3. Load: Database Persistence
+
+**What it does**: Persist the in-memory transformed data to a database (optional)
+
+**Key features**:
+- `load(session)`: Configure database session
+- `run()`: Execute pipeline and flush to database by relationship component
+- `load_eager(table)`: Keep shared dimension tables resident across components
+- Flushed instances are not retained in `PipelineResult.tables` (use stats/errors or query the DB)
+- You control the transaction (commit/rollback)
+
+**Example**:
+```python
+result = (
+    etl(data)
+    .goto("users").each()
+    .map_to(table=User, fields=[...])
+    .load(session)
+    .run()
+)
+
+session.commit()  # You control the transaction
+```
+
+**Note**: This step is optional! You can use `etielle` just for in-memory JSON transformation without database persistence.
+
+Learn more: [Database Loading](database-loading.qmd)
+
+## Next Steps
+
+Now that you understand ETL and how `etielle` implements each step, you're ready to dive deeper:
+
+1. **[Quickstart](../index.qmd)** - Jump straight into using `etielle` with a complete example
+2. **[Navigation](navigation.qmd)** - Master the **Extract** step: `goto()`, `each()`, `goto_root()`
+3. **[Transforms](transforms.qmd)** - Master the **Transform** step: value extraction and formatting
+4. **[Mapping Tables](mapping.qmd)** - Master the **Transform** step: `Field`, `TempField`, merge policies
+5. **[Relationships](relationships.qmd)** - Master the **Transform** step: `link_to()` for linking records
+6. **[Database Loading](database-loading.qmd)** - Master the **Load** step: `load().run()` for persistence
+
+
+
+## Core Concepts
+
+### Navigation: Traversing JSON Structure
+
+**What you'll learn**: How to use `goto()`, `each()`, and `goto_root()` to navigate nested JSON structures and control iteration behavior.
+
+**ETL context**: Navigation is the **Extract** step---it tells etielle *where* to find data in your JSON and *how* to iterate through it.
+
+## What is Navigation?
+
+Navigation defines a path through your JSON structure. Think of it as giving directions: "Start at the 'users' key, then loop through each item in that array."
+
+```python
+from etielle import etl, Field, TempField, get
+
+result = (
+    etl(data)
+    .goto("users")   # Navigate to the "users" key
+    .each()          # Iterate over each item
+    .map_to(table="users", fields=[...])
+    .run()
+)
+```
+
+## Path Navigation with `goto()`
+
+The `goto()` method navigates to nested locations in your JSON:
+
+``` {python}
+#| eval: false
+from etielle import etl
+
+# Simple path: data["users"]
+etl(data).goto("users")
+
+# Dot notation: data["response"]["data"]["users"]
+etl(data).goto("response.data.users")
+
+# List syntax: data["pages"][0]["items"]
+etl(data).goto(["pages", 0, "items"])
+
+# Chained calls work too
+etl(data).goto("response").goto("data").goto("users")
+```
+
+### Path Syntax Options
+
+| Syntax | Example | Result |
+|--------|---------|--------|
+| Single key | `goto("users")` | `data["users"]` |
+| Dot notation | `goto("data.users")` | `data["data"]["users"]` |
+| List of keys | `goto(["data", "users"])` | `data["data"]["users"]` |
+| With index | `goto(["pages", 0])` | `data["pages"][0]` |
+
+## Iteration with `each()`
+
+The `each()` method iterates over items at the current path:
+
+- **For lists**: iterates by index (0, 1, 2, ...)
+- **For dicts**: iterates key-value pairs
+
+``` {python}
+from etielle import etl, Field, TempField, get, key
+import json
+
+# Example: Iterating a dict by key-value pairs
+data = {
+    "settings": {
+        "theme": "dark",
+        "language": "en",
+        "notifications": "enabled"
+    }
+}
+
+result = (
+    etl(data)
+    .goto("settings").each()  # Iterate key-value pairs
+    .map_to(table="settings", fields=[
+        Field("name", key()),       # "theme", "language", etc.
+        Field("value", get([])),    # "dark", "en", etc. (empty path = current node)
+        TempField("name", key())
+    ])
+    .run()
+)
+
+print(json.dumps(list(result.tables["settings"].values()), indent=2))
+```
+
+## Nested Iteration
+
+For parent-child relationships (users -> posts, orders -> items), chain `goto()` and `each()`:
+
+``` {python}
+from etielle import etl, Field, TempField, get, get_from_parent
+import json
+
+data = {
+    "users": [
+        {"id": "u1", "name": "Alice", "posts": [
+            {"id": "p1", "title": "Hello"},
+            {"id": "p2", "title": "World"}
+        ]},
+        {"id": "u2", "name": "Bob", "posts": []}
+    ]
+}
+
+result = (
+    etl(data)
+    # Outer iteration: users
+    .goto("users").each()
+    .map_to(table="users", fields=[
+        Field("id", get("id")),
+        Field("name", get("name")),
+        TempField("id", get("id"))
+    ])
+
+    # Inner iteration: posts within each user
+    .goto("posts").each()
+    .map_to(table="posts", fields=[
+        Field("id", get("id")),
+        Field("user_id", get_from_parent("id")),  # Link to parent user
+        Field("title", get("title")),
+        TempField("id", get("id"))
+    ])
+    .run()
+)
+
+print("Users:", list(result.tables["users"].values()))
+print("Posts:", list(result.tables["posts"].values()))
+```
+
+## Deep Nesting (Arbitrary Depth)
+
+Handle arbitrarily deep structures with chained navigation. Use the `depth` parameter in `get_from_parent()` to access ancestors:
+
+- `get_from_parent("id")` or `depth=1` -> immediate parent
+- `get_from_parent("id", depth=2)` -> grandparent
+- `get_from_parent("id", depth=3)` -> great-grandparent
+
+``` {python}
+#| eval: false
+# servers -> channels -> messages -> reactions (3 levels deep)
+result = (
+    etl(data)
+    .goto("servers").each()
+    .map_to(table="servers", fields=[
+        Field("id", get("id")),
+        Field("name", get("name")),
+        TempField("id", get("id"))
+    ])
+
+    .goto("channels").each()
+    .map_to(table="channels", fields=[
+        Field("id", get("id")),
+        Field("server_id", get_from_parent("id")),  # depth=1
+        Field("name", get("name")),
+        TempField("id", get("id"))
+    ])
+
+    .goto("messages").each()
+    .map_to(table="messages", fields=[
+        Field("id", get("id")),
+        Field("channel_id", get_from_parent("id")),        # depth=1
+        Field("server_id", get_from_parent("id", depth=2)), # depth=2
+        TempField("id", get("id"))
+    ])
+
+    .goto("reactions").each()
+    .map_to(table="reactions", fields=[
+        Field("emoji", get("emoji")),
+        Field("message_id", get_from_parent("id")),        # depth=1
+        Field("channel_id", get_from_parent("id", depth=2)), # depth=2
+        Field("server_id", get_from_parent("id", depth=3)),  # depth=3
+        TempField("id", get("id"))
+    ])
+    .run()
+)
+```
+
+## Multiple JSON Roots with `goto_root()`
+
+When processing multiple JSON objects, use `goto_root(index)` to switch between them:
+
+``` {python}
+from etielle import etl, Field, TempField, get
+
+users_json = {"users": [{"id": "u1", "name": "Alice"}]}
+profiles_json = {"profiles": [{"user_id": "u1", "bio": "Developer"}]}
+
+result = (
+    etl(users_json, profiles_json)  # Pass multiple JSON objects
+
+    # Process first root (index 0)
+    .goto_root(0)
+    .goto("users").each()
+    .map_to(table="users", fields=[
+        Field("name", get("name")),
+        TempField("id", get("id"))
+    ])
+
+    # Switch to second root (index 1)
+    .goto_root(1)
+    .goto("profiles").each()
+    .map_to(table="users", join_on=["id"], fields=[
+        Field("bio", get("bio")),
+        TempField("id", get("user_id"))  # Matches users by id
+    ])
+
+    .run()
+)
+
+user = list(result.tables["users"].values())[0]
+print(user)  # Has both name and bio merged together
+```
+
+### `goto_root()` Behavior
+
+- Resets the current navigation path
+- Resets the iteration state
+- Defaults to index 0 if no argument provided
+- Raises `IndexError` if index is out of range
+
+## Resetting Navigation with `goto_root()`
+
+Use `goto_root()` (without arguments) to return to the root of the current JSON and start a new navigation path:
+
+``` {python}
+from etielle import etl, Field, TempField, get
+
+data = {
+    "users": [{"id": "u1", "name": "Alice"}],
+    "products": [{"id": "prod1", "name": "Widget"}]
+}
+
+result = (
+    etl(data)
+    # First path: users
+    .goto("users").each()
+    .map_to(table="users", fields=[
+        Field("id", get("id")),
+        Field("name", get("name")),
+        TempField("id", get("id"))
+    ])
+
+    # Reset to root, then navigate to products
+    .goto_root()
+    .goto("products").each()
+    .map_to(table="products", fields=[
+        Field("id", get("id")),
+        Field("name", get("name")),
+        TempField("id", get("id"))
+    ])
+    .run()
+)
+
+print("Users:", list(result.tables["users"].values()))
+print("Products:", list(result.tables["products"].values()))
+```
+
+## Row Merging with `join_on`
+
+When multiple `map_to()` calls emit to the same table, rows with matching keys are merged:
+
+``` {python}
+from etielle import etl, Field, TempField, get
+
+data = {
+    "users": [{"id": "u1", "name": "Alice"}],
+    "profiles": [{"user_id": "u1", "email": "alice@example.com"}]
+}
+
+result = (
+    etl(data)
+    # First emission: basic user data
+    .goto("users").each()
+    .map_to(table="users", fields=[
+        Field("id", get("id")),
+        Field("name", get("name")),
+        TempField("id", get("id"))  # Key: u1
+    ])
+
+    # Second emission: add profile data to same table
+    .goto_root()
+    .goto("profiles").each()
+    .map_to(table="users", join_on=["id"], fields=[  # join_on required for second emission
+        Field("email", get("email")),
+        TempField("id", get("user_id"))  # Key: u1 (matches above)
+    ])
+    .run()
+)
+
+user = list(result.tables["users"].values())[0]
+print(user)  # {"id": "u1", "name": "Alice", "email": "alice@example.com"}
+```
+
+### `join_on` Rules
+
+- First `map_to` for a table doesn't need `join_on`
+- Subsequent `map_to` calls for the same table require `join_on`
+- `join_on` references field names (from `Field` or `TempField`)
+- Rows with matching keys are merged
+
+## Navigation Reference
+
+| Method | Purpose | Example |
+|--------|---------|---------|
+| `goto(path)` | Navigate to a nested path | `.goto("users")` or `.goto("data.users")` |
+| `each()` | Iterate over items at current path | `.goto("users").each()` |
+| `goto_root(index)` | Switch to a different JSON root | `.goto_root(1)` for second root |
+| `goto_root()` | Reset to root of current JSON | `.goto_root()` to start fresh |
+
+## See also
+
+- [Transforms](transforms.qmd) - Extracting values at each navigation position
+- [Mapping Tables](mapping.qmd) - Defining output structure with `Field` and `TempField`
+
+
+### Transforms: Extracting and Formatting Values
+
+**What you'll learn**: How to use transforms to extract, format, and combine values from your JSON data.
+
+**ETL context**: Transforms are part of the **Transform** step---they define how to compute field values from the current position in your JSON.
+
+## What is a Transform?
+
+A transform is a function that extracts or computes a value from the current context. They're "lazy"---they don't run until the pipeline executes, and they adapt to wherever they're used.
+
+```python
+from etielle import get, literal, concat
+
+# Extract a field
+Field("name", get("name"))  # Get "name" from current node
+
+# Use a constant
+Field("version", literal(1))  # Always returns 1
+
+# Combine values
+Field("full_name", concat(get("first"), literal(" "), get("last")))
+```
+
+## Core Transforms
+
+### `get(path)` - Extract from current node
+
+The most common transform. Extracts a value from the current JSON node.
+
+``` {python}
+from etielle import etl, Field, TempField, get
+import json
+
+data = {"users": [{"id": "u1", "profile": {"name": "Alice", "age": 30}}]}
+
+result = (
+    etl(data)
+    .goto("users").each()
+    .map_to(table="users", fields=[
+        Field("id", get("id")),              # Simple field
+        Field("name", get("profile.name")),  # Nested with dot notation
+        Field("age", get(["profile", "age"])),  # Nested with list
+        TempField("id", get("id"))
+    ])
+    .run()
+)
+
+print(json.dumps(list(result.tables["users"].values()), indent=2))
+```
+
+### `get_from_parent(path, depth=1)` - Extract from ancestor
+
+Gets a value from a parent context. Essential for linking child records to parents.
+
+``` {python}
+from etielle import etl, Field, TempField, get, get_from_parent
+import json
+
+data = {
+    "users": [{
+        "id": "u1",
+        "name": "Alice",
+        "posts": [{"id": "p1", "title": "Hello"}]
+    }]
+}
+
+result = (
+    etl(data)
+    .goto("users").each()
+    .map_to(table="users", fields=[
+        Field("id", get("id")),
+        Field("name", get("name")),
+        TempField("id", get("id"))
+    ])
+
+    .goto("posts").each()
+    .map_to(table="posts", fields=[
+        Field("id", get("id")),
+        Field("title", get("title")),
+        Field("user_id", get_from_parent("id")),   # Get id from parent user
+        Field("user_name", get_from_parent("name")),  # Get name from parent
+        TempField("id", get("id"))
+    ])
+    .run()
+)
+
+print(json.dumps(list(result.tables["posts"].values()), indent=2))
+```
+
+#### Depth parameter
+
+Use `depth` to access grandparents and beyond:
+
+```python
+get_from_parent("id")           # Parent (depth=1, default)
+get_from_parent("id", depth=2)  # Grandparent
+get_from_parent("id", depth=3)  # Great-grandparent
+```
+
+### `get_from_root(path)` - Extract from JSON root
+
+Gets a value from the top-level JSON object, regardless of current position.
+
+``` {python}
+from etielle import etl, Field, TempField, get, get_from_root
+import json
+
+data = {
+    "version": "2.0",
+    "users": [{"id": "u1", "name": "Alice"}]
+}
+
+result = (
+    etl(data)
+    .goto("users").each()
+    .map_to(table="users", fields=[
+        Field("id", get("id")),
+        Field("name", get("name")),
+        Field("api_version", get_from_root("version")),  # From root
+        TempField("id", get("id"))
+    ])
+    .run()
+)
+
+print(json.dumps(list(result.tables["users"].values()), indent=2))
+```
+
+### `literal(value)` - Constant value
+
+Returns a constant value, useful for defaults or computed fields.
+
+``` {python}
+from etielle import etl, Field, TempField, get, literal
+import json
+
+data = {"users": [{"id": "u1", "name": "Alice"}]}
+
+result = (
+    etl(data)
+    .goto("users").each()
+    .map_to(table="users", fields=[
+        Field("id", get("id")),
+        Field("name", get("name")),
+        Field("status", literal("active")),  # Constant value
+        Field("count", literal(0)),          # Numeric constant
+        TempField("id", get("id"))
+    ])
+    .run()
+)
+
+print(json.dumps(list(result.tables["users"].values()), indent=2))
+```
+
+## Iteration Transforms
+
+### `key()` - Current dict key
+
+When iterating over a dict with `each()`, returns the current key.
+
+``` {python}
+from etielle import etl, Field, TempField, get, key
+import json
+
+data = {
+    "scores": {
+        "alice": 95,
+        "bob": 87,
+        "carol": 92
+    }
+}
+
+result = (
+    etl(data)
+    .goto("scores").each()  # Iterate dict key-value pairs
+    .map_to(table="scores", fields=[
+        Field("player", key()),       # "alice", "bob", "carol"
+        Field("score", get([])),      # 95, 87, 92 (empty path = current node)
+        TempField("player", key())
+    ])
+    .run()
+)
+
+print(json.dumps(list(result.tables["scores"].values()), indent=2))
+```
+
+### `index()` - Current list index
+
+When iterating over a list with `each()`, returns the current index.
+
+``` {python}
+from etielle import etl, Field, TempField, get, index
+import json
+
+data = {"items": ["apple", "banana", "cherry"]}
+
+result = (
+    etl(data)
+    .goto("items").each()
+    .map_to(table="items", fields=[
+        Field("position", index()),   # 0, 1, 2
+        Field("name", get([])),       # "apple", "banana", "cherry"
+        TempField("position", index())
+    ])
+    .run()
+)
+
+print(json.dumps(list(result.tables["items"].values()), indent=2))
+```
+
+### `parent_key(depth=1)` - Parent's dict key
+
+Gets the dict key from a parent iteration.
+
+``` {python}
+from etielle import etl, Field, TempField, get, parent_key
+import json
+
+data = {
+    "categories": {
+        "fruits": ["apple", "banana"],
+        "vegetables": ["carrot", "broccoli"]
+    }
+}
+
+result = (
+    etl(data)
+    .goto("categories").each()  # Iterate categories (dict)
+    .each()                      # Iterate items in each category (list)
+    .map_to(table="items", fields=[
+        Field("category", parent_key()),  # "fruits" or "vegetables"
+        Field("name", get([])),           # The item name
+        TempField("id", get([]))
+    ])
+    .run()
+)
+
+print(json.dumps(list(result.tables["items"].values()), indent=2))
+```
+
+### `parent_index(depth=1)` - Parent's list index
+
+Gets the list index from a parent iteration.
+
+``` {python}
+from etielle import etl, Field, TempField, get, parent_index, index, concat, literal
+import json
+
+data = {
+    "rows": [
+        ["a", "b", "c"],
+        ["d", "e", "f"]
+    ]
+}
+
+result = (
+    etl(data)
+    .goto("rows").each()  # Iterate rows
+    .each()               # Iterate cells in each row
+    .map_to(table="cells", fields=[
+        Field("row", parent_index()),  # 0 or 1
+        Field("col", index()),         # 0, 1, or 2
+        Field("value", get([])),       # The cell value
+        TempField("id", concat(literal("r"), parent_index(), literal("c"), index()))
+    ])
+    .run()
+)
+
+print(json.dumps(list(result.tables["cells"].values()), indent=2))
+```
+
+### `node()` - Current node value
+
+Returns the entire current node. Useful when iterating over scalar values.
+
+``` {python}
+from etielle import etl, Field, TempField, node
+import json
+
+data = {"ids": [101, 102, 103]}
+
+result = (
+    etl(data)
+    .goto("ids").each()
+    .map_to(table="items", fields=[
+        Field("id", node()),  # The id value itself
+        TempField("id", node())
+    ])
+    .run()
+)
+
+print(json.dumps(list(result.tables["items"].values()), indent=2))
+```
+
+## Combining Transforms
+
+### `concat(*parts)` - Join strings
+
+Concatenates multiple transforms into a single string.
+
+``` {python}
+from etielle import etl, Field, TempField, get, literal, concat
+import json
+
+data = {"users": [{"first": "Alice", "last": "Smith", "id": "u1"}]}
+
+result = (
+    etl(data)
+    .goto("users").each()
+    .map_to(table="users", fields=[
+        Field("full_name", concat(get("first"), literal(" "), get("last"))),
+        Field("user_key", concat(literal("user_"), get("id"))),
+        TempField("id", get("id"))
+    ])
+    .run()
+)
+
+print(json.dumps(list(result.tables["users"].values()), indent=2))
+```
+
+### `format_id(*parts, sep="_")` - Join with separator
+
+Joins non-empty parts with a separator. Skips `None` values.
+
+``` {python}
+from etielle import etl, Field, TempField, get, format_id
+import json
+
+data = {"records": [{"type": "post", "id": "123", "sub": None}]}
+
+result = (
+    etl(data)
+    .goto("records").each()
+    .map_to(table="records", fields=[
+        Field("key", format_id(get("type"), get("id"), get("sub"))),  # "post_123" (None skipped)
+        TempField("id", get("id"))
+    ])
+    .run()
+)
+
+print(json.dumps(list(result.tables["records"].values()), indent=2))
+```
+
+### `coalesce(*transforms)` - First non-None value
+
+Returns the first non-`None` result from the given transforms.
+
+``` {python}
+from etielle import etl, Field, TempField, get, literal, coalesce
+import json
+
+data = {"users": [
+    {"id": "u1", "nickname": "Ali", "name": "Alice"},
+    {"id": "u2", "nickname": None, "name": "Bob"}
+]}
+
+result = (
+    etl(data)
+    .goto("users").each()
+    .map_to(table="users", fields=[
+        Field("display_name", coalesce(get("nickname"), get("name"), literal("Anonymous"))),
+        TempField("id", get("id"))
+    ])
+    .run()
+)
+
+print(json.dumps(list(result.tables["users"].values()), indent=2))
+```
+
+### `apply(func, inner)` - Apply a function
+
+Applies any callable to the result of another transform. Useful for type coercion, string methods, and custom transformations.
+
+``` {python}
+from etielle import etl, Field, TempField, get, apply
+import json
+
+data = {"products": [
+    {"id": "p1", "name": "  Widget  ", "price": "19.99", "quantity": "5"}
+]}
+
+result = (
+    etl(data)
+    .goto("products").each()
+    .map_to(table="products", fields=[
+        Field("id", get("id")),
+        Field("name", apply(str.strip, get("name"))),       # String method
+        Field("price", apply(float, get("price"))),         # Type coercion
+        Field("quantity", apply(int, get("quantity"))),     # Type coercion
+        TempField("id", get("id"))
+    ])
+    .run()
+)
+
+print(json.dumps(list(result.tables["products"].values()), indent=2))
+```
+
+You can use any callable—built-in types, string methods, or custom functions:
+
+```python
+apply(int, get("count"))              # Convert to int
+apply(float, get("price"))            # Convert to float
+apply(str.upper, get("code"))         # Uppercase
+apply(str.strip, get("name"))         # Trim whitespace
+apply(lambda x: x * 100, get("rate")) # Custom transformation
+```
+
+## Lookup Transforms
+
+### `lookup(index_name, key_transform)` - Query a named index
+
+Looks up a value from a pre-built index. This is powerful for reverse-lookup scenarios where a parent has a list of child IDs, or when resolving external IDs to database primary keys.
+
+**Two ways to provide indices:**
+
+#### 1. External dictionary via `etl()`
+
+Pass pre-built lookup dictionaries directly:
+
+``` {python}
+from etielle import etl, Field, TempField, get, lookup
+import json
+
+# External lookup dict (e.g., from database query)
+db_ids = {"Q1": 100, "Q2": 200, "Q3": 300}
+
+data = {"responses": [
+    {"question_ref": "Q1", "value": "yes"},
+    {"question_ref": "Q2", "value": "no"}
+]}
+
+result = (
+    etl(data, indices={"questions": db_ids})
+    .goto("responses").each()
+    .map_to(table="responses", fields=[
+        Field("question_id", lookup("questions", get("question_ref"))),
+        Field("value", get("value")),
+        TempField("ref", get("question_ref"))
+    ])
+    .run()
+)
+
+print(json.dumps(list(result.tables["responses"].values()), indent=2))
+```
+
+#### 2. Build index from JSON traversal
+
+Build a reverse-lookup index by traversing the data structure:
+
+``` {python}
+from etielle import etl, Field, TempField, get, get_from_parent, node, lookup
+import json
+
+data = {
+    "questions": [
+        {"id": "Q1", "text": "Favorite color?", "choice_ids": ["c1", "c2"]},
+        {"id": "Q2", "text": "Favorite food?", "choice_ids": ["c3", "c4"]}
+    ],
+    "choices": [
+        {"id": "c1", "text": "Red"},
+        {"id": "c2", "text": "Blue"},
+        {"id": "c3", "text": "Pizza"},
+        {"id": "c4", "text": "Tacos"}
+    ]
+}
+
+result = (
+    etl(data)
+    # Build reverse lookup: choice_id -> question_id
+    .goto("questions").each()
+    .goto("choice_ids").each()
+    .build_index("question_by_choice", key=node(), value=get_from_parent("id"))
+
+    # Now map choices with their parent question
+    .goto_root()
+    .goto("choices").each()
+    .map_to(table="choices", fields=[
+        Field("id", get("id")),
+        Field("text", get("text")),
+        Field("question_id", lookup("question_by_choice", get("id"))),
+        TempField("id", get("id"))
+    ])
+    .run()
+)
+
+print(json.dumps(list(result.tables["choices"].values()), indent=2))
+```
+
+#### Default values
+
+If a key isn't found, `lookup()` returns `None` by default. You can specify a different default:
+
+```python
+Field("question_id", lookup("questions", get("ref"), default=-1))
+```
+
+#### Mid-pipeline index seeding
+
+You can also seed indices mid-pipeline with `build_index(from_dict=)`:
+
+```python
+etl(data)
+    .build_index("categories", from_dict={"A": "Alpha", "B": "Beta"})
+    .goto("items").each()
+    .map_to(table="items", fields=[
+        Field("category_name", lookup("categories", get("category_code")))
+    ])
+```
+
+## Transform Reference
+
+| Transform | Purpose | Example |
+|-----------|---------|---------|
+| `get(path)` | Extract from current node | `get("user.name")` |
+| `get_from_parent(path, depth=1)` | Extract from ancestor | `get_from_parent("id", depth=2)` |
+| `get_from_root(path)` | Extract from JSON root | `get_from_root("version")` |
+| `literal(value)` | Constant value | `literal("active")` |
+| `key()` | Current dict key | When iterating `{"a": 1}` |
+| `index()` | Current list index | 0, 1, 2, ... |
+| `parent_key(depth=1)` | Parent's dict key | Access parent iteration key |
+| `parent_index(depth=1)` | Parent's list index | Access parent iteration index |
+| `node()` | Current node value | The entire current object |
+| `concat(*parts)` | Join strings | `concat(get("a"), get("b"))` |
+| `format_id(*parts, sep="_")` | Join with separator | `format_id(get("type"), get("id"))` |
+| `coalesce(*transforms)` | First non-None | `coalesce(get("nick"), get("name"))` |
+| `apply(func, inner)` | Apply function to result | `apply(int, get("count"))` |
+| `len_of(inner)` | Length of list/dict/string | `len_of(get("tags"))` |
+| `lookup(index, key)` | Query a named index | `lookup("db_ids", get("ref"))` |
+
+## Custom Transforms
+
+You can create custom transforms using the `@transform` decorator. See [Custom Transforms](custom-transforms.qmd) for details.
+
+## See also
+
+- [Navigation](navigation.qmd) - How to position yourself in the JSON
+- [Mapping Tables](mapping.qmd) - Using transforms in `Field` and `TempField`
+- [Custom Transforms](custom-transforms.qmd) - Creating your own transforms
+
+
+### Mapping Tables: Fields and Output Structure
+
+**What you'll learn**: How to use `map_to()`, `Field`, and `TempField` to define your output tables, including merge policies for combining rows.
+
+**ETL context**: Mapping is part of the **Transform** step---it defines the structure of your output tables and how rows are keyed and merged.
+
+## What is Mapping?
+
+Mapping defines what table rows to create at each position in your navigation. Use `map_to()` to emit rows with `Field` (output columns) and `TempField` (join keys).
+
+```python
+from etielle import etl, Field, TempField, get
+
+result = (
+    etl(data)
+    .goto("users").each()
+    .map_to(table="users", fields=[
+        Field("name", get("name")),      # Output column
+        Field("email", get("email")),    # Output column
+        TempField("id", get("id"))       # Join key (not in output)
+    ])
+    .run()
+)
+```
+
+## Field Types
+
+### `Field(name, transform, merge=None)` - Output Column
+
+A `Field` defines a column that appears in your output:
+
+```python
+from etielle import Field, get, literal
+
+Field("name", get("name"))              # Extract from JSON
+Field("status", literal("active"))      # Constant value
+Field("count", literal(1), merge=AddPolicy())  # With merge policy
+```
+
+### `TempField(name, transform)` - Join Key
+
+A `TempField` is used for row identification and relationships, but is NOT included in the output:
+
+```python
+from etielle import TempField, get, get_from_parent
+
+TempField("id", get("id"))              # Primary key
+TempField("user_id", get_from_parent("id"))  # Foreign key for linking
+```
+
+**Why TempField?**
+
+- Defines the unique key for each row (like a primary key)
+- Used with `join_on` to merge rows from different paths
+- Used with `link_to()` to establish relationships
+- Keeps your output clean by excluding internal keys
+
+## Basic Mapping
+
+### Simple Table Emission
+
+``` {python}
+from etielle import etl, Field, TempField, get
+import json
+
+data = {"users": [
+    {"id": "u1", "name": "Alice", "email": "alice@example.com"},
+    {"id": "u2", "name": "Bob", "email": "bob@example.com"}
+]}
+
+result = (
+    etl(data)
+    .goto("users").each()
+    .map_to(table="users", fields=[
+        Field("name", get("name")),
+        Field("email", get("email")),
+        TempField("id", get("id"))  # Row key
+    ])
+    .run()
+)
+
+# Access results
+for key, row in result.tables["users"].items():
+    print(f"Key: {key}, Row: {row}")
+```
+
+### Typed Output with Model Classes
+
+Pass a model class instead of a string to get typed output:
+
+``` {python}
+from pydantic import BaseModel
+from etielle import etl, Field, TempField, get
+
+class User(BaseModel):
+    name: str
+    email: str
+
+data = {"users": [{"id": "u1", "name": "Alice", "email": "alice@example.com"}]}
+
+result = (
+    etl(data)
+    .goto("users").each()
+    .map_to(table=User, fields=[  # Pass model class
+        Field("name", get("name")),
+        Field("email", get("email")),
+        TempField("id", get("id"))
+    ])
+    .run()
+)
+
+# Access by model class
+user = list(result.tables[User].values())[0]
+print(f"Type: {type(user).__name__}, Name: {user.name}")
+```
+
+### Supported Model Types
+
+etielle auto-detects the model type and uses the appropriate builder:
+
+| Model Type | Detection | Builder Used |
+|------------|-----------|--------------|
+| Pydantic | `issubclass(cls, BaseModel)` | `PydanticBuilder` |
+| SQLAlchemy/SQLModel | Has `__tablename__` and `__mapper__` | `ConstructorBuilder` |
+| TypedDict | `is_typeddict(cls)` | `TypedDictBuilder` |
+| Dataclass/Other | Default | `ConstructorBuilder` |
+| String | `table="name"` | Plain dict output |
+
+## Row Merging with `join_on`
+
+When multiple `map_to()` calls emit to the same table, rows with matching keys are merged.
+
+### First Emission (No `join_on` needed)
+
+The first `map_to()` for a table uses `TempField` values as the row key:
+
+```python
+.map_to(table="users", fields=[
+    Field("name", get("name")),
+    TempField("id", get("id"))  # Defines the key
+])
+```
+
+### Subsequent Emissions (Require `join_on`)
+
+Later `map_to()` calls to the same table must specify `join_on`:
+
+```python
+.map_to(table="users", join_on=["id"], fields=[  # Must specify join_on
+    Field("email", get("email")),
+    TempField("id", get("user_id"))  # Must produce matching key
+])
+```
+
+### Complete Merge Example
+
+``` {python}
+from etielle import etl, Field, TempField, get
+import json
+
+data = {
+    "users": [{"id": "u1", "name": "Alice"}],
+    "profiles": [{"user_id": "u1", "email": "alice@example.com", "bio": "Developer"}]
+}
+
+result = (
+    etl(data)
+    # First emission: basic user data
+    .goto("users").each()
+    .map_to(table="users", fields=[
+        Field("id", get("id")),
+        Field("name", get("name")),
+        TempField("id", get("id"))  # Key: ("u1",)
+    ])
+
+    # Second emission: profile data (merged by id)
+    .goto_root()
+    .goto("profiles").each()
+    .map_to(table="users", join_on=["id"], fields=[
+        Field("email", get("email")),
+        Field("bio", get("bio")),
+        TempField("id", get("user_id"))  # Key: ("u1",) - matches!
+    ])
+    .run()
+)
+
+user = list(result.tables["users"].values())[0]
+print(json.dumps(user, indent=2))  # Has id, name, email, AND bio
+```
+
+## Merge Policies
+
+By default, when merging rows, the last value wins. Merge policies change this behavior:
+
+| Policy | Behavior | Use Case |
+|--------|----------|----------|
+| `AddPolicy()` | Sum numbers | Counters, totals |
+| `AppendPolicy()` | Append single item to list | Collecting tags |
+| `ExtendPolicy()` | Extend list with another list | Merging lists |
+| `MinPolicy()` | Keep minimum value | Earliest date |
+| `MaxPolicy()` | Keep maximum value | Latest date |
+| `FirstNonNullPolicy()` | Keep first non-null | Fallback defaults |
+
+### Using Merge Policies
+
+``` {python}
+from etielle import etl, Field, TempField, get, literal
+from etielle import AddPolicy
+import json
+
+data = {
+    "transactions": [
+        {"user_id": "u1", "amount": 100},
+        {"user_id": "u1", "amount": 50},
+        {"user_id": "u2", "amount": 75}
+    ]
+}
+
+result = (
+    etl(data)
+    .goto("transactions").each()
+    .map_to(table="totals", fields=[
+        Field("total", get("amount"), merge=AddPolicy()),  # Sum amounts
+        Field("count", literal(1), merge=AddPolicy()),     # Count transactions
+        TempField("user_id", get("user_id"))
+    ])
+    .run()
+)
+
+for key, row in result.tables["totals"].items():
+    print(f"User {key}: {row}")
+```
+
+### Collecting Values with AppendPolicy
+
+``` {python}
+from etielle import etl, Field, TempField, get
+from etielle import AppendPolicy
+import json
+
+data = {
+    "tags": [
+        {"item_id": "i1", "tag": "featured"},
+        {"item_id": "i1", "tag": "sale"},
+        {"item_id": "i2", "tag": "new"}
+    ]
+}
+
+result = (
+    etl(data)
+    .goto("tags").each()
+    .map_to(table="items", fields=[
+        Field("tags", get("tag"), merge=AppendPolicy()),  # Collect into list
+        TempField("id", get("item_id"))
+    ])
+    .run()
+)
+
+for key, row in result.tables["items"].items():
+    print(f"Item {key}: {row}")
+```
+
+## Result Structure
+
+### Accessing Tables
+
+```python
+result = pipeline.run()
+
+# By string name
+users = result.tables["users"]  # Dict[tuple, dict]
+
+# By model class (if used)
+users = result.tables[User]     # Dict[tuple, User]
+
+# Iterate
+for key, row in result.tables["users"].items():
+    print(f"Key: {key}, Row: {row}")
+```
+
+### Row Keys
+
+Rows are keyed by tuples derived from `TempField` values:
+
+```python
+# Single TempField
+TempField("id", get("id"))  # Key: ("u1",)
+
+# Multiple TempFields (composite key)
+TempField("user_id", get("user_id"))
+TempField("post_id", get("post_id"))  # Key: ("u1", "p1")
+```
+
+### Checking Errors
+
+```python
+if result.errors:
+    for table_name, table_errors in result.errors.items():
+        for key, messages in table_errors.items():
+            print(f"{table_name}[{key}]: {messages}")
+```
+
+## `map_to()` Reference
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `table` | `str` or `type` | Table name or model class |
+| `fields` | `list[Field \| TempField]` | Field definitions |
+| `join_on` | `list[str]` or `None` | Field names for row merging (required for 2nd+ emission) |
+| `errors` | `"collect"` or `"fail_fast"` or `None` | Override error handling for this table |
+
+## Best Practices
+
+### Always Include a TempField
+
+Every `map_to()` should have at least one `TempField` to define the row key:
+
+```python
+# Good: Has a key
+.map_to(table="users", fields=[
+    Field("name", get("name")),
+    TempField("id", get("id"))  # Row key
+])
+
+# Bad: No key (rows can't be uniquely identified)
+.map_to(table="users", fields=[
+    Field("name", get("name"))
+])
+```
+
+### Use Meaningful Key Names
+
+Choose `TempField` names that match your mental model:
+
+```python
+# Good: Clear what each key represents
+TempField("user_id", get_from_parent("id"))
+TempField("post_id", get("id"))
+
+# Less clear
+TempField("key1", get_from_parent("id"))
+TempField("key2", get("id"))
+```
+
+### Consider Output vs. Keys
+
+Decide what goes in output (`Field`) vs. what's just for joining (`TempField`):
+
+```python
+# If you need the ID in output AND as a key:
+Field("id", get("id"))
+TempField("id", get("id"))  # Same value, different purpose
+
+# If ID is only for joining:
+TempField("id", get("id"))  # Won't appear in output
+```
+
+## See also
+
+- [Navigation](navigation.qmd) - Positioning before mapping
+- [Transforms](transforms.qmd) - Computing field values
+- [Relationships](relationships.qmd) - Linking tables with `link_to()`
+- [Error Handling](error-handling.qmd) - Handling validation errors
+
+
+### Relationships: Linking Tables with link_to() and backlink()
+
+**What you'll learn**: How to use `link_to()` for many-to-one and `backlink()` for many-to-many relationships between tables.
+
+**ETL context**: Relationships are part of the **Transform** step---they link child records to parent records in memory before persistence.
+
+## What is `link_to()`?
+
+`link_to()` establishes a many-to-one relationship between the current table (child) and a parent table. It links records in memory so you can navigate between them or persist with proper foreign keys.
+
+```python
+from etielle import etl, Field, TempField, get, get_from_parent
+
+result = (
+    etl(data)
+    .goto("users").each()
+    .map_to(table=User, fields=[...])
+
+    .goto("posts").each()
+    .map_to(table=Post, fields=[
+        Field("title", get("title")),
+        TempField("user_id", get_from_parent("id"))  # Foreign key value
+    ])
+    .link_to(User, by={"user_id": "id"})  # Link posts to users
+    .run()
+)
+```
+
+## Basic Relationship Binding
+
+### One-to-Many (Users -> Posts)
+
+The most common pattern: users have many posts.
+
+``` {python}
+from pydantic import BaseModel
+from etielle import etl, Field, TempField, get, get_from_parent
+
+class User(BaseModel):
+    id: str
+    name: str
+
+class Post(BaseModel):
+    id: str
+    title: str
+    user: User | None = None  # Relationship attribute
+
+data = {
+    "users": [{
+        "id": "u1",
+        "name": "Alice",
+        "posts": [
+            {"id": "p1", "title": "Hello"},
+            {"id": "p2", "title": "World"}
+        ]
+    }]
+}
+
+result = (
+    etl(data)
+    # Map users
+    .goto("users").each()
+    .map_to(table=User, fields=[
+        Field("id", get("id")),
+        Field("name", get("name")),
+    ])
+
+    # Map posts and link to users
+    .goto("posts").each()
+    .map_to(table=Post, fields=[
+        Field("id", get("id")),
+        Field("title", get("title")),
+        TempField("user_id", get_from_parent("id"))  # Foreign key (not persisted)
+    ])
+    .link_to(User, by={"user_id": "id"})  # Link by user_id -> id
+    .run()
+)
+
+# Posts now have user references
+for key, post in result.tables[Post].items():
+    print(f"{post.title} by {post.user.name if post.user else 'Unknown'}")
+```
+
+## How `link_to()` Works
+
+### The `by` Parameter
+
+The `by` dict maps child field names to parent field names:
+
+```python
+.link_to(User, by={"user_id": "id"})
+```
+
+This means: "Match the child's `user_id` TempField to the parent's `id` TempField."
+
+### Attribute Inference
+
+etielle infers the relationship attribute name from the parent table name:
+
+| Parent Table | Inferred Attribute |
+|--------------|-------------------|
+| `users` | `user` |
+| `posts` | `post` |
+| `categories` | `categorie` (strips trailing 's') |
+
+You can override this by using a model class with an explicit attribute.
+
+## Multiple Relationships
+
+A child table can link to multiple parent tables:
+
+``` {python}
+from pydantic import BaseModel
+from etielle import etl, Field, TempField, get, get_from_parent
+
+class User(BaseModel):
+    id: str
+    name: str
+
+class Post(BaseModel):
+    id: str
+    title: str
+
+class Comment(BaseModel):
+    id: str
+    body: str
+    user: User | None = None
+    post: Post | None = None
+
+data = {
+    "users": [{"id": "u1", "name": "Alice"}],
+    "posts": [{"id": "p1", "title": "Hello", "user_id": "u1"}],
+    "comments": [
+        {"id": "c1", "body": "Great post!", "user_id": "u1", "post_id": "p1"}
+    ]
+}
+
+result = (
+    etl(data)
+    .goto("users").each()
+    .map_to(table=User, fields=[
+        Field("id", get("id")),
+        Field("name", get("name")),
+    ])
+
+    .goto_root()
+    .goto("posts").each()
+    .map_to(table=Post, fields=[
+        Field("id", get("id")),
+        Field("title", get("title")),
+    ])
+
+    .goto_root()
+    .goto("comments").each()
+    .map_to(table=Comment, fields=[
+        Field("id", get("id")),
+        Field("body", get("body")),
+        TempField("user_id", get("user_id")),  # Foreign key (not persisted)
+        TempField("post_id", get("post_id"))   # Foreign key (not persisted)
+    ])
+    .link_to(User, by={"user_id": "id"})  # Link to user
+    .link_to(Post, by={"post_id": "id"})  # Link to post
+    .run()
+)
+
+comment = list(result.tables[Comment].values())[0]
+print(f"Comment: {comment.body}")
+print(f"By: {comment.user.name if comment.user else 'Unknown'}")
+print(f"On: {comment.post.title if comment.post else 'Unknown'}")
+```
+
+## Nested Data Relationships
+
+When data is nested, use `get_from_parent()` to extract the foreign key:
+
+``` {python}
+from pydantic import BaseModel
+from etielle import etl, Field, TempField, get, get_from_parent
+
+class Order(BaseModel):
+    id: str
+    customer: str
+
+class Item(BaseModel):
+    id: str
+    product: str
+    order: Order | None = None
+
+data = {
+    "orders": [{
+        "id": "o1",
+        "customer": "Alice",
+        "items": [
+            {"id": "i1", "product": "Widget"},
+            {"id": "i2", "product": "Gadget"}
+        ]
+    }]
+}
+
+result = (
+    etl(data)
+    .goto("orders").each()
+    .map_to(table=Order, fields=[
+        Field("id", get("id")),
+        Field("customer", get("customer")),
+    ])
+
+    .goto("items").each()
+    .map_to(table=Item, fields=[
+        Field("id", get("id")),
+        Field("product", get("product")),
+        TempField("order_id", get_from_parent("id"))  # Foreign key (not persisted)
+    ])
+    .link_to(Order, by={"order_id": "id"})
+    .run()
+)
+
+for key, item in result.tables[Item].items():
+    print(f"{item.product} - Order: {item.order.id if item.order else 'None'}")
+```
+
+## Composite Keys
+
+For relationships with composite keys, include multiple entries in the `by` dict:
+
+```python
+# Child has both region_id and store_id pointing to parent
+.link_to(Store, by={
+    "region_id": "region_id",
+    "store_id": "store_id"
+})
+```
+
+## Many-to-Many Junction Tables
+
+Many-to-many relationships require a **junction table** (also called link table or join table) to connect two entities. etielle supports creating junction table records through nested iteration.
+
+::: {.callout-important}
+## Explicit IDs Required
+
+Junction table patterns only work when entities have **explicit IDs in the source data**. They do not work with database-generated auto-increment IDs, because the junction records need to reference the parent IDs before database insertion.
+
+For DB-generated IDs, you'll need to:
+1. Insert parent entities first
+2. Query back the generated IDs
+3. Run a second pipeline to create junction records
+:::
+
+### Pattern 1: List of IDs on Parent
+
+The most common pattern: each parent has a list of related child IDs.
+
+``` {python}
+from dataclasses import dataclass
+from etielle import etl, Field, get, get_from_parent, node
+
+@dataclass
+class Question:
+    __tablename__ = "questions"
+    id: str
+    text: str
+
+@dataclass
+class QuestionChoice:
+    """Junction table linking questions to choices."""
+    __tablename__ = "question_choices"
+    question_id: str
+    choice_id: str
+
+data = {
+    "questions": [
+        {"id": "Q1", "text": "Question 1", "choice_ids": ["c1", "c2"]},
+        {"id": "Q2", "text": "Question 2", "choice_ids": ["c2", "c3"]},
+    ]
+}
+
+result = (
+    etl(data)
+    # Extract questions (first traversal)
+    .goto("questions").each()
+    .map_to(table=Question, fields=[
+        Field("id", get("id")),
+        Field("text", get("text")),
+    ])
+    # Create junction records (separate traversal)
+    .goto_root()
+    .goto("questions").each()
+    .goto("choice_ids").each()
+    .map_to(table=QuestionChoice, fields=[
+        Field("question_id", get_from_parent("id")),
+        Field("choice_id", node()),
+    ])
+    .run()
+)
+
+# Verify junction records
+for key, junction in result.tables[QuestionChoice].items():
+    print(f"Question {junction.question_id} -> Choice {junction.choice_id}")
+```
+
+### Pattern 2: Explicit Junction Array
+
+When junction records are provided as explicit objects:
+
+``` {python}
+from dataclasses import dataclass
+from etielle import etl, Field, get
+
+@dataclass
+class QuestionChoice:
+    __tablename__ = "question_choices"
+    question_id: str
+    choice_id: str
+
+data = {
+    "question_choices": [
+        {"question_id": "Q1", "choice_id": "c1"},
+        {"question_id": "Q1", "choice_id": "c2"},
+        {"question_id": "Q2", "choice_id": "c2"},
+    ]
+}
+
+result = (
+    etl(data)
+    .goto("question_choices").each()
+    .map_to(table=QuestionChoice, fields=[
+        Field("question_id", get("question_id")),
+        Field("choice_id", get("choice_id")),
+    ])
+    .run()
+)
+
+print(f"Created {len(result.tables[QuestionChoice])} junction records")
+```
+
+### Pattern 3: Wrapped Mapping Objects
+
+For dict-like mappings, wrap each entry in an object with an explicit field for the child IDs:
+
+``` {python}
+from dataclasses import dataclass
+from etielle import etl, Field, get, get_from_parent, node
+
+@dataclass
+class QuestionChoice:
+    __tablename__ = "question_choices"
+    question_id: str
+    choice_id: str
+
+# Wrap dict-of-lists as list of objects
+data = {
+    "question_choices": [
+        {"question_id": "Q1", "choices": ["c1", "c2"]},
+        {"question_id": "Q2", "choices": ["c2", "c3"]},
+    ]
+}
+
+result = (
+    etl(data)
+    .goto("question_choices").each()
+    .goto("choices").each()
+    .map_to(table=QuestionChoice, fields=[
+        Field("question_id", get_from_parent("question_id")),
+        Field("choice_id", node()),
+    ])
+    .run()
+)
+
+for key, junction in result.tables[QuestionChoice].items():
+    print(f"Question {junction.question_id} -> Choice {junction.choice_id}")
+```
+
+### Pattern 4: Inverse Relationship
+
+When child entities have lists of parent IDs:
+
+``` {python}
+from dataclasses import dataclass
+from etielle import etl, Field, get, get_from_parent, node
+
+@dataclass
+class Choice:
+    __tablename__ = "choices"
+    id: str
+    text: str
+
+@dataclass
+class QuestionChoice:
+    __tablename__ = "question_choices"
+    question_id: str
+    choice_id: str
+
+data = {
+    "choices": [
+        {"id": "c1", "text": "Choice 1", "question_ids": ["Q1"]},
+        {"id": "c2", "text": "Choice 2", "question_ids": ["Q1", "Q2"]},
+    ]
+}
+
+result = (
+    etl(data)
+    # Extract choices
+    .goto("choices").each()
+    .map_to(table=Choice, fields=[
+        Field("id", get("id")),
+        Field("text", get("text")),
+    ])
+    # Create junction records
+    .goto_root()
+    .goto("choices").each()
+    .goto("question_ids").each()
+    .map_to(table=QuestionChoice, fields=[
+        Field("question_id", node()),
+        Field("choice_id", get_from_parent("id")),
+    ])
+    .run()
+)
+
+print(f"Choices: {len(result.tables[Choice])}")
+print(f"Junctions: {len(result.tables[QuestionChoice])}")
+```
+
+### Using Lookups for ID Resolution
+
+When source data uses external identifiers (slugs, codes) that need to be resolved:
+
+``` {python}
+from dataclasses import dataclass
+from etielle import etl, Field, get, lookup
+
+@dataclass
+class Question:
+    __tablename__ = "questions"
+    id: str
+    text: str
+
+@dataclass
+class QuestionChoice:
+    __tablename__ = "question_choices"
+    question_id: str
+    choice_id: str
+
+data = {
+    "questions": [
+        {"slug": "q1", "text": "Question 1"},
+        {"slug": "q2", "text": "Question 2"},
+    ],
+    "mappings": [
+        {"question": "q1", "choice": "c1"},
+        {"question": "q1", "choice": "c2"},
+    ],
+}
+
+result = (
+    etl(data)
+    # Extract questions and build lookup index
+    .goto("questions").each()
+    .map_to(table=Question, fields=[
+        Field("id", get("slug")),
+        Field("text", get("text")),
+    ])
+    .build_index("question_by_slug", key=get("slug"), value=get("slug"))
+
+    # Create junctions using lookup
+    .goto_root()
+    .goto("mappings").each()
+    .map_to(table=QuestionChoice, fields=[
+        Field("question_id", lookup("question_by_slug", get("question"))),
+        Field("choice_id", get("choice")),
+    ])
+    .run()
+)
+
+for key, junction in result.tables[QuestionChoice].items():
+    print(f"Question {junction.question_id} -> Choice {junction.choice_id}")
+```
+
+### Pattern 5: Direct Dict-of-Lists Iteration
+
+For dict-of-lists structures like `{"Q1": ["c1", "c2"], "Q2": ["c2", "c3"]}`, use `.each().each()` directly without `.goto()`:
+
+``` {python}
+from dataclasses import dataclass
+from etielle import etl, Field, node
+from etielle.transforms import parent_key
+
+@dataclass
+class QuestionChoice:
+    __tablename__ = "question_choices"
+    question_id: str
+    choice_id: str
+
+data = {
+    "question_choices": {
+        "Q1": ["c1", "c2"],
+        "Q2": ["c2", "c3"],
+    }
+}
+
+result = (
+    etl(data)
+    .goto("question_choices")
+    .each()  # Iterate dict keys: "Q1", "Q2"
+    .each()  # Iterate list values: "c1", "c2", "c2", "c3"
+    .map_to(table=QuestionChoice, fields=[
+        Field("question_id", parent_key()),  # Get dict key from parent context
+        Field("choice_id", node()),          # Get current list item
+    ])
+    .run()
+)
+
+for key, junction in result.tables[QuestionChoice].items():
+    print(f"Question {junction.question_id} -> Choice {junction.choice_id}")
+```
+
+### Pattern 6: List-of-Lists (2D Arrays)
+
+For 2D arrays, use `.each().each()` with `parent_index()` to track position:
+
+``` {python}
+from dataclasses import dataclass
+from etielle import etl, Field, node, parent_index
+from etielle.transforms import index
+
+@dataclass
+class Cell:
+    __tablename__ = "cells"
+    row: int
+    col: int
+    value: int
+
+data = {
+    "rows": [
+        [1, 2, 3],
+        [4, 5, 6],
+    ]
+}
+
+result = (
+    etl(data)
+    .goto("rows")
+    .each()  # Iterate outer list (rows)
+    .each()  # Iterate inner list (columns)
+    .map_to(table=Cell, fields=[
+        Field("row", parent_index()),  # Outer list index
+        Field("col", index()),          # Inner list index
+        Field("value", node()),         # Current value
+    ])
+    .run()
+)
+
+for key, cell in result.tables[Cell].items():
+    print(f"Cell[{cell.row},{cell.col}] = {cell.value}")
+```
+
+### Pattern 7: N-Level Deep Nesting
+
+For arbitrarily deep nested structures, chain multiple `.each()` calls:
+
+``` {python}
+from dataclasses import dataclass
+from etielle import etl, Field, node
+from etielle.transforms import parent_key
+
+@dataclass
+class Value:
+    __tablename__ = "values"
+    level: str
+    group: str
+    value: int
+
+# Dict-of-dict-of-lists structure
+data = {
+    "levels": {
+        "L1": {
+            "A": [1, 2],
+            "B": [3],
+        },
+        "L2": {
+            "C": [4, 5, 6],
+        },
+    }
+}
+
+result = (
+    etl(data)
+    .goto("levels")
+    .each()  # Iterate outer dict keys: "L1", "L2"
+    .each()  # Iterate inner dict keys: "A", "B", "C"
+    .each()  # Iterate list values: 1, 2, 3, 4, 5, 6
+    .map_to(table=Value, fields=[
+        Field("level", parent_key(depth=2)),  # Grandparent key
+        Field("group", parent_key(depth=1)),  # Parent key
+        Field("value", node()),                # Current value
+    ])
+    .run()
+)
+
+for key, val in result.tables[Value].items():
+    print(f"{val.level}/{val.group}: {val.value}")
+```
+
+### Best Practices for Junction Tables
+
+1. **Use separate traversals**: Extract parent entities first, then create junction records in a separate traversal starting with `.goto_root()`.
+
+2. **Use `Field` for junction columns**: Junction table columns (`question_id`, `choice_id`) should be `Field`, not `TempField`, since they're the actual data being stored.
+
+3. **Explicit IDs only**: Junction patterns require IDs to be present in the source data. Database-generated IDs require a two-pass approach.
+
+4. **Direct `.each().each()` for dict-of-lists and list-of-lists**: Use `.each().each()` without `.goto()` between them when iterating dict values that are lists, or for 2D arrays. Use `parent_key()` to access the dict key and `parent_index()` to access the outer list index.
+
+5. **Use `.goto()` between `.each()` for nested objects**: When iterating objects with nested arrays (e.g., `{"items": [{"choices": [...]}]}`), use `.each().goto("choices").each()` pattern.
+
+## `link_to()` Reference
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `parent` | `type | str` | The parent model class or table name |
+| `by` | `dict[str, str]` | Mapping of `{child_field: parent_field}` |
+| `fk` | `dict[str, str] | None` | (Supabase only) Mapping of `{child_column: parent_column}` for DB-generated IDs |
+
+### The `fk` Parameter (Supabase)
+
+When using Supabase with DB-generated primary keys (UUID, auto-increment), use `fk` to populate child foreign keys after parent insertion:
+
+```python
+.link_to("users", by={"_parent_key": "_key"}, fk={"user_id": "id"})
+```
+
+This tells etielle: "After inserting users, set each child's `user_id` column to the parent's generated `id`."
+
+See [Database Loading](database-loading.qmd#db-generated-ids-two-phase-insert) for a complete example.
+
+### Requirements
+
+- Must be called after `map_to()` (links the most recent emission)
+- Both child and parent fields can be `Field` or `TempField` names
+- Parent table must be emitted somewhere in the pipeline
+
+### Error Handling
+
+- Missing parents: By default, `link_to()` does not fail if a parent is not found
+- The relationship attribute will be `None` for unmatched children
+- Use error handling modes to change this behavior
+
+## Best Practices
+
+### Use TempField for Foreign Keys
+
+Foreign key values should be in `TempField`, not `Field`, unless you also need them in output:
+
+```python
+# Good: Foreign key is TempField (not in output, just for linking)
+TempField("user_id", get_from_parent("id"))
+
+# If you need user_id in output: use Field (it's also available for linking)
+Field("user_id", get_from_parent("id"))
+
+# Note: Don't use both Field and TempField with the same name
+# The TempField will shadow the Field and prevent it from being persisted
+```
+
+### Order Matters
+
+Emit parent tables before child tables that link to them:
+
+```python
+# Good: Users emitted before posts
+.map_to(table=User, fields=[...])
+.goto("posts").each()
+.map_to(table=Post, fields=[...])
+.link_to(User, by={"user_id": "id"})
+
+# Also works: Order within same run() is handled correctly
+```
+
+### Match Key Types
+
+Ensure child and parent key values are the same type:
+
+```python
+# If parent key is string "u1"
+TempField("id", get("id"))  # Returns "u1"
+
+# Child key must also be string
+TempField("user_id", get("user_id"))  # Must return "u1", not 1
+```
+
+## Many-to-Many Relationships with `backlink()`
+
+While `link_to()` handles many-to-one relationships (child → parent), `backlink()` handles many-to-many relationships where a parent has a list of children.
+
+### What is `backlink()`?
+
+`backlink()` populates a list attribute on the parent object with matching child objects. This is useful for ORM-native many-to-many relationships where the ORM handles junction tables automatically (e.g., SQLModel, SQLAlchemy).
+
+```python
+from dataclasses import dataclass, field
+from etielle import etl, Field, TempField, get
+
+@dataclass
+class Question:
+    text: str
+    choices: list = field(default_factory=list)  # Will be populated by backlink()
+
+@dataclass
+class Choice:
+    text: str
+
+data = {
+    "questions": [
+        {"id": 1, "text": "What is 2+2?", "choice_ids": [10, 11]},
+    ],
+    "choices": [
+        {"id": 10, "text": "3"},
+        {"id": 11, "text": "4"},
+    ],
+}
+
+result = (
+    etl(data)
+    .goto("questions").each()
+    .map_to(table=Question, fields=[
+        Field("text", get("text")),
+        TempField("id", get("id")),
+        TempField("choice_ids", get("choice_ids")),  # List of child IDs
+    ])
+    .goto_root()
+    .goto("choices").each()
+    .map_to(table=Choice, fields=[
+        Field("text", get("text")),
+        TempField("id", get("id")),
+    ])
+    .backlink(
+        parent=Question,
+        child=Choice,
+        attr="choices",               # Sets question.choices = [...]
+        by={"choice_ids": "id"},      # Parent's choice_ids contains child's id
+    )
+    .run()
+)
+
+# Question now has its choices populated
+question = list(result.tables[Question].values())[0]
+print(f"Question: {question.text}")
+for choice in question.choices:
+    print(f"  - {choice.text}")
+```
+
+### How `backlink()` Works
+
+The `by` parameter mapping is **reversed** from `link_to()`:
+
+| Method | `by` mapping direction | Example |
+|--------|----------------------|---------|
+| `link_to()` | `{child_field: parent_field}` | `by={"user_id": "id"}` |
+| `backlink()` | `{parent_field: child_field}` | `by={"choice_ids": "id"}` |
+
+For `backlink()`, the parent field (`choice_ids`) contains a list of values that match the child field (`id`).
+
+### `backlink()` Reference
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `parent` | `type \| str` | The parent model class or table name that holds the list |
+| `child` | `type \| str` | The child model class or table name |
+| `attr` | `str` | The list attribute name on the parent to populate |
+| `by` | `dict[str, str]` | Mapping of `{parent_field: child_field}` where parent_field contains list of child IDs |
+
+### Requirements
+
+- Parent's field in `by` must contain a list of child IDs (or a single ID)
+- Child's field in `by` must be indexed (available as TempField)
+- Both tables must be emitted in the pipeline
+- **Not supported with Supabase** - `backlink()` relies on ORM-native junction table handling
+
+### Combining `link_to()` and `backlink()`
+
+You can use both relationship types in the same pipeline:
+
+```python
+result = (
+    etl(data)
+    .goto("users").each()
+    .map_to(table=User, fields=[...])
+
+    .goto_root()
+    .goto("questions").each()
+    .map_to(table=Question, fields=[
+        TempField("user_id", get("user_id")),
+        TempField("choice_ids", get("choice_ids")),
+        ...
+    ])
+    .link_to(User, by={"user_id": "id"})  # Many-to-one: Question -> User
+
+    .goto_root()
+    .goto("choices").each()
+    .map_to(table=Choice, fields=[...])
+    .backlink(
+        parent=Question,
+        child=Choice,
+        attr="choices",
+        by={"choice_ids": "id"},
+    )  # Many-to-many: Question.choices = [Choice, ...]
+    .run()
+)
+```
+
+## See also
+
+- [Mapping Tables](mapping.qmd) - Defining the tables that relationships link
+- [Database Loading](database-loading.qmd) - Persisting linked records to database
+- [Navigation](navigation.qmd) - Nested traversal for parent-child data
+
+
+
+## Advanced Topics
+
+### Database Loading: Persisting with load().run()
+
+**What you'll learn**: How to use `load()` to persist your transformed data to a database using SQLAlchemy or SQLModel.
+
+**ETL context**: Database loading is the **Load** step---the final step that persists your in-memory objects to a database.
+
+## What is `load()`?
+
+The `load(session)` method configures your pipeline to persist results to a database. When combined with `run()`, it:
+
+1. Maps instances by relationship component
+2. Binds relationships within each component
+3. Adds instances to the session
+4. Flushes each component and evicts flushed instances from the result
+
+`load().run()` returns **stats and errors**, not flushed instances in `result.tables`. Use `session.query()` or equivalent to read persisted rows. You control the transaction (commit/rollback).
+
+```python
+from etielle import etl, Field, TempField, get
+
+result = (
+    etl(data)
+    .goto("users").each()
+    .map_to(table=User, fields=[...])
+    .load(session)  # Configure database session
+    .run()          # Execute and flush
+)
+
+session.commit()    # You control the transaction
+```
+
+## Basic Database Persistence
+
+### SQLModel Example
+
+``` {python}
+#| eval: false
+from sqlmodel import SQLModel, Field as SQLField, Session, create_engine
+from etielle import etl, Field, TempField, get
+
+# Define your model
+class User(SQLModel, table=True):
+    id: str = SQLField(primary_key=True)
+    name: str
+    email: str | None = None
+
+# Create engine and tables
+engine = create_engine("sqlite:///example.db")
+SQLModel.metadata.create_all(engine)
+
+# Your JSON data
+data = {
+    "users": [
+        {"id": "u1", "name": "Alice", "email": "alice@example.com"},
+        {"id": "u2", "name": "Bob", "email": "bob@example.com"}
+    ]
+}
+
+# Run pipeline with database loading
+with Session(engine) as session:
+    result = (
+        etl(data)
+        .goto("users").each()
+        .map_to(table=User, fields=[
+            Field("id", get("id")),
+            Field("name", get("name")),
+            Field("email", get("email")),
+            TempField("id", get("id"))
+        ])
+        .load(session)
+        .run()
+    )
+
+    session.commit()  # Persist to database
+
+# Query back
+with Session(engine) as session:
+    users = session.query(User).all()
+    for user in users:
+        print(f"{user.name}: {user.email}")
+```
+
+### SQLAlchemy Example
+
+``` {python}
+#| eval: false
+from sqlalchemy import Column, String, create_engine
+from sqlalchemy.orm import declarative_base, Session
+from etielle import etl, Field, TempField, get
+
+Base = declarative_base()
+
+class User(Base):
+    __tablename__ = "users"
+    id = Column(String, primary_key=True)
+    name = Column(String)
+    email = Column(String)
+
+engine = create_engine("sqlite:///example.db")
+Base.metadata.create_all(engine)
+
+data = {"users": [{"id": "u1", "name": "Alice", "email": "alice@example.com"}]}
+
+with Session(engine) as session:
+    result = (
+        etl(data)
+        .goto("users").each()
+        .map_to(table=User, fields=[
+            Field("id", get("id")),
+            Field("name", get("name")),
+            Field("email", get("email")),
+            TempField("id", get("id"))
+        ])
+        .load(session)
+        .run()
+    )
+
+    session.commit()
+```
+
+## Transaction Control
+
+### You Control Commit/Rollback
+
+`load().run()` flushes but does NOT commit. This gives you full control:
+
+```python
+with Session(engine) as session:
+    try:
+        result = (
+            etl(data)
+            .goto("users").each()
+            .map_to(table=User, fields=[...])
+            .load(session)
+            .run()
+        )
+
+        # Do additional work...
+        session.execute(...)
+
+        session.commit()  # Commit everything together
+
+    except Exception:
+        session.rollback()  # Rollback on error
+        raise
+```
+
+### Batch Processing
+
+Process multiple JSON payloads in one transaction:
+
+```python
+with Session(engine) as session:
+    for json_payload in payloads:
+        result = (
+            etl(json_payload)
+            .goto("users").each()
+            .map_to(table=User, fields=[...])
+            .load(session)
+            .run()
+        )
+
+    session.commit()  # Commit all batches together
+```
+
+## Relationships and Database Loading
+
+When using `link_to()` with ORM models, relationships are bound before flushing:
+
+``` {python}
+#| eval: false
+from sqlmodel import SQLModel, Field as SQLField, Relationship, Session, create_engine
+from etielle import etl, Field, TempField, get, get_from_parent
+
+class User(SQLModel, table=True):
+    id: str = SQLField(primary_key=True)
+    name: str
+    posts: list["Post"] = Relationship(back_populates="user")
+
+class Post(SQLModel, table=True):
+    id: str = SQLField(primary_key=True)
+    title: str
+    user_id: str = SQLField(foreign_key="user.id")
+    user: User | None = Relationship(back_populates="posts")
+
+engine = create_engine("sqlite:///example.db")
+SQLModel.metadata.create_all(engine)
+
+data = {
+    "users": [{
+        "id": "u1",
+        "name": "Alice",
+        "posts": [
+            {"id": "p1", "title": "Hello"},
+            {"id": "p2", "title": "World"}
+        ]
+    }]
+}
+
+with Session(engine) as session:
+    result = (
+        etl(data)
+        .goto("users").each()
+        .map_to(table=User, fields=[
+            Field("id", get("id")),
+            Field("name", get("name")),
+            TempField("id", get("id"))
+        ])
+
+        .goto("posts").each()
+        .map_to(table=Post, fields=[
+            Field("id", get("id")),
+            Field("title", get("title")),
+            Field("user_id", get_from_parent("id")),  # Foreign key column
+            TempField("id", get("id")),
+            TempField("user_id", get_from_parent("id"))
+        ])
+        .link_to(User, by={"user_id": "id"})  # Bind relationship
+        .load(session)
+        .run()
+    )
+
+    session.commit()
+
+# Query with relationships
+with Session(engine) as session:
+    user = session.get(User, "u1")
+    print(f"{user.name} has {len(user.posts)} posts")
+```
+
+## Component-Scoped Flushing and Memory
+
+Pipelines with relationships are executed as independent **relationship components** (weakly connected subgraphs of the `link_to`/`backlink` graph). Each component is mapped, bound, flushed, and evicted before the next component runs. This bounds peak accumulator memory to the largest component instead of the entire dataset.
+
+Tables with no relationship edges are batched into a single mapping pass for efficiency.
+
+## Shared Tables with `load_eager()`
+
+When a shared dimension table (e.g. `tags`) is referenced by many independent subgraphs, the relationship graph collapses into one giant component and the memory win vanishes. Mark small shared tables as eager so they are loaded once and kept resident while other components are processed:
+
+```python
+result = (
+    etl(data)
+    .goto("tags").each()
+    .map_to(table=Tag, fields=[...])
+    .load_eager(Tag)          # resident across all components
+    .goto_root()
+    .goto("items").each()
+    .map_to(table=Item, fields=[...])
+    .link_to(Tag, by={"tag_id": "id"})
+    .load(session)
+    .run()
+)
+```
+
+`load_eager()` requires an explicit preceding `map_to()` for the same table.
+
+## Streaming and Chunked Execution
+
+For large or single-consumption inputs (paginated APIs, `ijson` streams), use `stream()` instead of `etl()`. Streaming mode processes **key-complete, relationship-complete** chunks: each chunk is mapped, validated, bound, flushed, and evicted before the next chunk begins.
+
+```python
+from etielle import stream, Field, TempField, get
+
+# One JSON root per chunk (default)
+result = (
+    stream(record_iter)
+    .goto("users").each()
+    .map_to(table=User, fields=[...])
+    .load(session)
+    .run()
+)
+session.commit()
+```
+
+**Requirements and restrictions:**
+
+- `load()` is required before `run()` in streaming mode.
+- Chunks must include all relationship endpoints (or use `load_eager()` for shared parents).
+- Cross-chunk scattered merge (e.g. merging `users` and `profiles` from different chunks) is not supported.
+- Traversal-based `build_index()` and composite `by` mappings on `link_to()` are rejected.
+
+Pass resident eager data via `eager_roots=` when dimension tables are not repeated in every chunk:
+
+```python
+stream(chunks, eager_roots=tags_snapshot)
+    .goto("tags").each()
+    .map_to(table=Tag, fields=[...])
+    .load_eager(Tag)
+    ...
+```
+
+### Chunking helpers
+
+Producing correct chunks is part of the streaming contract, so etielle ships two `ChunkSource` helpers rather than leaving boundary-finding to the caller.
+
+**`GroupByChunkSource` (single-pass group-by).** Given a `key` function, it reads the input once, accumulates consecutive records that share a key, and emits a chunk when the key changes. Peak memory is one chunk.
+
+```python
+from etielle import stream, GroupByChunkSource, Field, TempField, get
+
+# Each record is a parent subtree; group by the owning order id.
+source = GroupByChunkSource(record_iter, key=lambda r: r["orders"][0]["id"])
+
+stream(source)
+    .goto("orders").each()
+    .map_to(table=Order, fields=[Field("customer", get("customer")), TempField("id", get("id"))])
+    .goto_root()
+    .goto("items").each()
+    .map_to(table=LineItem, fields=[...])
+    .link_to(Order, by={"order_id": "id"})
+    .load(session)
+    .run()
+```
+
+- **Grouped-input requirement.** Grouping is *consecutive only*, so the input must already be grouped (or sorted) by `key`—the natural shape for paginated APIs and "one parent subtree at a time" feeds. If two records share a key but are separated by a record with a different key, they land in different chunks; that still satisfies key-completeness, but the runtime relationship-completeness check will raise if a chunk is then missing relationship endpoints. For unsorted input, sort by `key` first (the robust unsorted-input partitioner, H2, is deferred).
+- **Pick a relationship-complete key.** Choose a key that is a *complete component root*—coarse enough that everything reachable through a relationship from a record sharing the key also shares it (e.g. the owning entity id), not merely a fine merge key. Grouping guarantees key-completeness for the chosen key; the runtime validation catches a key that is too fine.
+
+**`PreSegmentedChunkSource` (passthrough).** If you already have an iterable of `Chunk` objects, hand it over directly—it yields them in order without buffering.
+
+```python
+from etielle import stream, PreSegmentedChunkSource, Chunk
+
+chunks = [Chunk(roots=(subtree,), sequential=True) for subtree in producer]
+stream(PreSegmentedChunkSource(chunks)).goto(...)...
+```
+
+### Why streaming bounds memory
+
+Streaming keeps peak memory flat regardless of dataset size: etielle maps a chunk, flushes it, and releases that chunk's accumulators before mapping the next, so it never holds more than one chunk (plus any resident `load_eager()` tables) at a time. The benchmark in `benchmarks/bench_issue_75.py` shows the Python heap peak staying flat under streaming while resident loading grows linearly with the dataset.
+
+On the SQLAlchemy side this needs no special handling: the session's identity map references *persistent* (flushed, clean) instances weakly, so once etielle drops its per-chunk references, CPython's garbage collector reclaims them. Transaction control still belongs to the caller—the `INSERT`s accumulate in the open transaction until you commit or roll back. For a very long stream, commit at a cadence that suits your durability needs; a single end-of-stream commit keeps everything in one transaction.
+
+### Extending flush behavior
+
+The chunk loop is strategy-agnostic: it calls `FlushStrategy.flush(ctx)` at each component boundary. A custom strategy receives a `FlushContext` exposing the scoped tables, mapped results, dependency graph, relationships, stats sink, telemetry callback, and the `session`/`is_supabase` target. Custom strategies (e.g. upsert or buffered variants from issue #77) implement persistence using those public fields plus `etielle.utils.topological_sort`; the built-in `KeyCompleteFlushStrategy` delegates to etielle's standard insert/bind logic.
+
+## Upsert Behavior
+
+etielle uses "upsert" semantics---if a row with the same key already exists, it's updated:
+
+```python
+# First load: creates user u1
+data1 = {"users": [{"id": "u1", "name": "Alice", "email": "old@example.com"}]}
+etl(data1).goto("users").each().map_to(...).load(session).run()
+
+# Second load: updates user u1
+data2 = {"users": [{"id": "u1", "name": "Alice", "email": "new@example.com"}]}
+etl(data2).goto("users").each().map_to(...).load(session).run()
+
+session.commit()
+# User u1 now has email "new@example.com"
+```
+
+### Merge Policies with Database Loading
+
+Merge policies work with database loading too:
+
+```python
+from etielle import AddPolicy
+
+# Each load adds to the count
+.map_to(table=Stats, fields=[
+    Field("count", literal(1), merge=AddPolicy()),
+    TempField("id", get("id"))
+])
+.load(session)
+.run()
+```
+
+## Without Database Loading
+
+You can use etielle without database loading for in-memory transformations:
+
+```python
+# No load() = no database interaction
+result = (
+    etl(data)
+    .goto("users").each()
+    .map_to(table=User, fields=[...])
+    .run()  # Just run(), no load()
+)
+
+# Result contains Pydantic/dataclass instances in memory
+for key, user in result.tables[User].items():
+    print(user.name)  # Access in-memory objects
+```
+
+## Error Handling During Load
+
+### Check Errors Before Commit
+
+```python
+with Session(engine) as session:
+    result = (
+        etl(data)
+        .goto("users").each()
+        .map_to(table=User, fields=[...])
+        .load(session)
+        .run()
+    )
+
+    if result.errors:
+        # Log or handle errors
+        for table, errors in result.errors.items():
+            for key, messages in errors.items():
+                print(f"Error in {table}[{key}]: {messages}")
+
+        session.rollback()
+    else:
+        session.commit()
+```
+
+### Fail Fast Mode
+
+Use `errors="fail_fast"` to raise immediately on validation errors:
+
+```python
+try:
+    result = (
+        etl(data, errors="fail_fast")
+        .goto("users").each()
+        .map_to(table=User, fields=[...])
+        .load(session)
+        .run()
+    )
+    session.commit()
+except ValueError as e:
+    print(f"Validation failed: {e}")
+    session.rollback()
+```
+
+## `load()` Reference
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `session` | SQLAlchemy/SQLModel Session | The database session to use |
+
+### Behavior
+
+1. All ORM instances are added to the session via `session.add()`
+2. `session.flush()` is called to send SQL to the database
+3. Transaction is NOT committed---you must call `session.commit()`
+4. Plain dict results (from `table="name"`) are NOT added to session
+
+### Requirements
+
+- Model classes must be ORM models (have `__tablename__`)
+- Session must be active and not in an error state
+- Model's table must exist in the database
+
+## Best Practices
+
+### Use Context Managers
+
+```python
+with Session(engine) as session:
+    result = etl(data)...load(session).run()
+    session.commit()
+# Session is automatically closed
+```
+
+### Handle Large Datasets in Batches
+
+```python
+BATCH_SIZE = 1000
+
+with Session(engine) as session:
+    for i in range(0, len(records), BATCH_SIZE):
+        batch = {"users": records[i:i + BATCH_SIZE]}
+        etl(batch).goto("users").each().map_to(...).load(session).run()
+
+    session.commit()
+```
+
+### Separate Transform and Load
+
+For complex pipelines, consider separating concerns:
+
+```python
+# Transform step (no database)
+result = etl(data).goto("users").each().map_to(table=User, ...).run()
+
+# Validate
+if result.errors:
+    handle_errors(result.errors)
+    return
+
+# Load step
+with Session(engine) as session:
+    for user in result.tables[User].values():
+        session.add(user)
+    session.commit()
+```
+
+## Supabase
+
+etielle also supports loading data directly to Supabase using the same `.load().run()` pattern.
+
+### Basic Supabase Example
+
+``` {python}
+#| eval: false
+from supabase import create_client
+from etielle import etl, Field, TempField, get
+
+# Create Supabase client
+client = create_client("https://your-project.supabase.co", "your-anon-key")
+
+data = {
+    "users": [
+        {"id": "u1", "name": "Alice"},
+        {"id": "u2", "name": "Bob"}
+    ]
+}
+
+# Load directly to Supabase
+result = (
+    etl(data)
+    .goto("users").each()
+    .map_to(table="users", fields=[
+        Field("id", get("id")),
+        Field("name", get("name")),
+        TempField("id", get("id"))
+    ])
+    .load(client)  # Supabase client auto-detected
+    .run()
+)
+```
+
+### Supabase with Relationships
+
+``` {python}
+#| eval: false
+from supabase import create_client
+from etielle import etl, Field, TempField, get, get_from_parent
+
+client = create_client("https://your-project.supabase.co", "your-anon-key")
+
+data = {
+    "users": [{
+        "id": "u1",
+        "name": "Alice",
+        "posts": [
+            {"id": "p1", "title": "Hello"},
+            {"id": "p2", "title": "World"}
+        ]
+    }]
+}
+
+result = (
+    etl(data)
+    .goto("users").each()
+    .map_to(table="users", fields=[
+        Field("id", get("id")),
+        Field("name", get("name")),
+        TempField("id", get("id"))
+    ])
+
+    .goto("posts").each()
+    .map_to(table="posts", fields=[
+        Field("id", get("id")),
+        Field("title", get("title")),
+        Field("user_id", get_from_parent("id")),  # FK set via transform
+        TempField("id", get("id")),
+        TempField("user_id", get_from_parent("id"))
+    ])
+    .link_to("users", by={"user_id": "id"})  # Defines insert order
+    .load(client)
+    .run()
+)
+```
+
+Tables are inserted in dependency order (parents before children) based on `link_to()` declarations.
+
+### Upsert Mode
+
+Use `upsert=True` for idempotent loads. By default, Supabase uses the table's primary key for conflict detection:
+
+```python
+result = (
+    etl(data)
+    .goto("users").each()
+    .map_to(table="users", fields=[...])
+    .load(client, upsert=True)  # Uses table's primary key
+    .run()
+)
+```
+
+### Custom Conflict Columns
+
+Use `upsert_on` to specify which columns to use for conflict detection per table. This is useful when you want to upsert on a unique constraint other than the primary key:
+
+```python
+result = (
+    etl(data)
+    .goto("users").each()
+    .map_to(table="users", fields=[
+        Field("id", get("id")),
+        Field("email", get("email")),
+        Field("name", get("name")),
+    ])
+    .goto_root()
+    .goto("posts").each()
+    .map_to(table="posts", fields=[
+        Field("id", get("id")),
+        Field("user_id", get("user_id")),
+        Field("slug", get("slug")),
+        Field("title", get("title")),
+    ])
+    .load(client, upsert=True, upsert_on={
+        "users": "email",              # Upsert on email column
+        "posts": ["user_id", "slug"],  # Composite unique constraint
+    })
+    .run()
+)
+```
+
+Tables not in `upsert_on` use the default (table's primary key).
+
+### Batching
+
+Control batch size for large datasets:
+
+```python
+.load(client, batch_size=500)  # Default is 1000
+```
+
+### DB-Generated IDs (Two-Phase Insert)
+
+When your database generates primary keys (e.g., UUID or auto-increment), use the `fk` parameter on `link_to()` to automatically populate child foreign keys after parent insertion:
+
+``` {python}
+#| eval: false
+from supabase import create_client
+from etielle import etl, Field, TempField, get, get_from_parent
+
+client = create_client("https://your-project.supabase.co", "your-anon-key")
+
+# Data without IDs - database will generate them
+data = {
+    "orgs": [
+        {
+            "name": "Acme Corp",
+            "members": [
+                {"name": "Alice"},
+                {"name": "Bob"},
+            ],
+        },
+    ],
+}
+
+result = (
+    etl(data)
+    .goto("orgs").each()
+    .map_to(table="orgs", fields=[
+        Field("name", get("name")),
+        TempField("_key", get("name")),  # Business key for matching
+    ])
+
+    .goto("members").each()
+    .map_to(table="members", fields=[
+        Field("name", get("name")),
+        TempField("_parent_key", get_from_parent("name")),
+    ])
+    # fk={"org_id": "id"} means: set child's org_id to parent's generated id
+    .link_to("orgs", by={"_parent_key": "_key"}, fk={"org_id": "id"})
+    .load(client)
+    .run()
+)
+```
+
+**How it works:**
+
+1. Parents ("orgs") are inserted first
+2. Supabase returns rows with generated IDs
+3. Child FK columns ("org_id") are populated with parent IDs
+4. Children ("members") are inserted with correct FK values
+
+**Parameters:**
+
+- `by`: Matches children to parents using TempField values (business keys)
+- `fk`: Maps `{child_column: parent_column}` to populate after parent insert
+
+**Requirements:**
+
+- Parent table must have a TempField that uniquely identifies each row (business key)
+- Child table must have a TempField that references the parent's business key
+- Supabase must return rows in insertion order (default behavior)
+
+### Supabase vs SQLAlchemy
+
+| Feature | SQLAlchemy/SQLModel | Supabase |
+|---------|---------------------|----------|
+| Transaction | Session-based | Per-table HTTP calls |
+| Relationships | ORM object references | FK columns via transforms |
+| Commit | Manual `session.commit()` | Automatic on insert |
+| Upsert | ORM merge | `upsert=True` option |
+
+**Key difference:** With Supabase, foreign key values must be set via transforms (like `get_from_parent()`) since there's no ORM session to resolve relationships.
+
+### Limitations
+
+- **No transactions across tables**: Each table insert is a separate HTTP call
+- **No automatic rollback**: If a child insert fails after parent insert, parent data remains
+
+## See also
+
+- [Mapping Tables](mapping.qmd) - Defining output structure
+- [Relationships](relationships.qmd) - Linking tables before persistence
+- [Error Handling](error-handling.qmd) - Handling validation errors
+
+
+### Custom Transforms: The @transform Decorator
+
+**What you'll learn**: How to create custom transforms using the `@transform` decorator for reusable data extraction logic.
+
+**ETL context**: Custom transforms extend the **Transform** step with your own domain-specific data extraction functions.
+
+## What is `@transform`?
+
+The `@transform` decorator converts a function into a reusable transform factory. The function receives a `Context` object as its first parameter, and any additional parameters become factory arguments.
+
+```python
+from etielle import transform
+from etielle.core import Context
+
+@transform
+def uppercase(ctx: Context, field: str) -> str | None:
+    """Extract a field and convert to uppercase."""
+    value = ctx.node.get(field)
+    return value.upper() if value else None
+
+# Usage
+Field("name", uppercase("name"))  # Returns "ALICE" for {"name": "Alice"}
+```
+
+## Basic Custom Transforms
+
+### Simple Field Transformation
+
+``` {python}
+from etielle import etl, Field, TempField, get, transform
+from etielle.core import Context
+import json
+
+@transform
+def initials(ctx: Context, first_field: str, last_field: str) -> str:
+    """Extract initials from first and last name."""
+    first = ctx.node.get(first_field, "")
+    last = ctx.node.get(last_field, "")
+    return f"{first[0]}{last[0]}" if first and last else ""
+
+data = {"users": [
+    {"id": "u1", "first_name": "Alice", "last_name": "Smith"},
+    {"id": "u2", "first_name": "Bob", "last_name": "Jones"}
+]}
+
+result = (
+    etl(data)
+    .goto("users").each()
+    .map_to(table="users", fields=[
+        Field("initials", initials("first_name", "last_name")),
+        TempField("id", get("id"))
+    ])
+    .run()
+)
+
+print(json.dumps(list(result.tables["users"].values()), indent=2))
+```
+
+### Transform with Default Arguments
+
+``` {python}
+from etielle import etl, Field, TempField, get, transform
+from etielle.core import Context
+import json
+
+@transform
+def truncate(ctx: Context, field: str, max_length: int = 50) -> str | None:
+    """Truncate a field to max_length characters."""
+    value = ctx.node.get(field)
+    if value is None:
+        return None
+    return value[:max_length] + "..." if len(value) > max_length else value
+
+data = {"posts": [
+    {"id": "p1", "title": "Short title"},
+    {"id": "p2", "title": "This is a very long title that should be truncated for display"}
+]}
+
+result = (
+    etl(data)
+    .goto("posts").each()
+    .map_to(table="posts", fields=[
+        Field("title", truncate("title", max_length=20)),
+        TempField("id", get("id"))
+    ])
+    .run()
+)
+
+print(json.dumps(list(result.tables["posts"].values()), indent=2))
+```
+
+## Using Context Fields
+
+The `Context` object provides access to:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `ctx.node` | `Any` | Current JSON node being processed |
+| `ctx.root` | `Any` | The entire JSON payload |
+| `ctx.parent` | `Context \| None` | Parent context (one level up) |
+| `ctx.key` | `str \| None` | Current dict key (when iterating dict) |
+| `ctx.index` | `int \| None` | Current list index (when iterating list) |
+| `ctx.path` | `tuple` | Full path from root to current node |
+
+### Accessing Parent Context
+
+``` {python}
+from etielle import etl, Field, TempField, get, transform
+from etielle.core import Context
+import json
+
+@transform
+def full_path(ctx: Context) -> str:
+    """Build a path string from parent name and current name."""
+    parent_name = ""
+    if ctx.parent and ctx.parent.node:
+        parent_name = ctx.parent.node.get("name", "")
+
+    current_name = ctx.node.get("name", "")
+    return f"{parent_name}/{current_name}" if parent_name else current_name
+
+data = {
+    "categories": [{
+        "name": "Electronics",
+        "items": [
+            {"name": "Phone"},
+            {"name": "Laptop"}
+        ]
+    }]
+}
+
+result = (
+    etl(data)
+    .goto("categories").each()
+    .goto("items").each()
+    .map_to(table="items", fields=[
+        Field("path", full_path()),
+        TempField("name", get("name"))
+    ])
+    .run()
+)
+
+print(json.dumps(list(result.tables["items"].values()), indent=2))
+```
+
+### Using Root Context
+
+``` {python}
+from etielle import etl, Field, TempField, get, transform
+from etielle.core import Context
+import json
+
+@transform
+def with_prefix(ctx: Context, field: str) -> str:
+    """Prefix a field value with the root's prefix setting."""
+    prefix = ctx.root.get("prefix", "")
+    value = ctx.node.get(field, "")
+    return f"{prefix}{value}"
+
+data = {
+    "prefix": "APP_",
+    "settings": [
+        {"key": "debug", "value": "true"},
+        {"key": "timeout", "value": "30"}
+    ]
+}
+
+result = (
+    etl(data)
+    .goto("settings").each()
+    .map_to(table="settings", fields=[
+        Field("key", with_prefix("key")),
+        Field("value", get("value")),
+        TempField("key", get("key"))
+    ])
+    .run()
+)
+
+print(json.dumps(list(result.tables["settings"].values()), indent=2))
+```
+
+## Transform Patterns
+
+### Lookup Transform
+
+Use closures to create transforms that reference external data:
+
+``` {python}
+from etielle import etl, Field, TempField, get, transform
+from etielle.core import Context
+import json
+
+# External lookup data
+CATEGORY_NAMES = {
+    "cat1": "Electronics",
+    "cat2": "Clothing",
+    "cat3": "Books"
+}
+
+@transform
+def lookup_category(ctx: Context, field: str) -> str | None:
+    """Look up category name from ID."""
+    category_id = ctx.node.get(field)
+    return CATEGORY_NAMES.get(category_id, "Unknown")
+
+data = {
+    "products": [
+        {"id": "p1", "name": "Phone", "category_id": "cat1"},
+        {"id": "p2", "name": "Shirt", "category_id": "cat2"},
+        {"id": "p3", "name": "Novel", "category_id": "cat3"}
+    ]
+}
+
+result = (
+    etl(data)
+    .goto("products").each()
+    .map_to(table="products", fields=[
+        Field("name", get("name")),
+        Field("category", lookup_category("category_id")),
+        TempField("id", get("id"))
+    ])
+    .run()
+)
+
+print(json.dumps(list(result.tables["products"].values()), indent=2))
+```
+
+### Validation Transform
+
+``` {python}
+from etielle import etl, Field, TempField, get, transform
+from etielle.core import Context
+import re
+import json
+
+@transform
+def validate_email(ctx: Context, field: str) -> str | None:
+    """Validate and normalize email address."""
+    email = ctx.node.get(field)
+    if not email:
+        return None
+
+    email = email.strip().lower()
+    if re.match(r"^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$", email):
+        return email
+    return None  # Invalid email returns None
+
+data = {
+    "contacts": [
+        {"id": "c1", "email": "Alice@Example.COM"},
+        {"id": "c2", "email": "not-an-email"},
+        {"id": "c3", "email": "bob@test.org"}
+    ]
+}
+
+result = (
+    etl(data)
+    .goto("contacts").each()
+    .map_to(table="contacts", fields=[
+        Field("email", validate_email("email")),
+        TempField("id", get("id"))
+    ])
+    .run()
+)
+
+print(json.dumps(list(result.tables["contacts"].values()), indent=2))
+```
+
+### Computed Key Transform
+
+``` {python}
+from etielle import etl, Field, TempField, get, transform
+from etielle.core import Context
+import hashlib
+import json
+
+@transform
+def hash_key(ctx: Context, *fields: str) -> str:
+    """Generate a hash key from multiple fields."""
+    parts = [str(ctx.node.get(f, "")) for f in fields]
+    combined = "|".join(parts)
+    return hashlib.md5(combined.encode()).hexdigest()[:8]
+
+data = {
+    "events": [
+        {"date": "2024-01-15", "type": "login", "user": "alice"},
+        {"date": "2024-01-15", "type": "logout", "user": "alice"}
+    ]
+}
+
+result = (
+    etl(data)
+    .goto("events").each()
+    .map_to(table="events", fields=[
+        Field("date", get("date")),
+        Field("type", get("type")),
+        Field("user", get("user")),
+        TempField("id", hash_key("date", "type", "user"))
+    ])
+    .run()
+)
+
+print(json.dumps(list(result.tables["events"].values()), indent=2))
+```
+
+## No-Argument Transforms
+
+For transforms that don't need parameters, the decorator still works:
+
+``` {python}
+from etielle import etl, Field, TempField, transform
+from etielle.core import Context
+import json
+
+@transform
+def current_path(ctx: Context) -> str:
+    """Return the JSON path to current node as a string."""
+    return ".".join(str(p) for p in ctx.path)
+
+@transform
+def is_first(ctx: Context) -> bool:
+    """Check if this is the first item in an iteration."""
+    return ctx.index == 0
+
+data = {"items": ["a", "b", "c"]}
+
+result = (
+    etl(data)
+    .goto("items").each()
+    .map_to(table="items", fields=[
+        Field("path", current_path()),
+        Field("is_first", is_first()),
+        TempField("index", lambda ctx: ctx.index)
+    ])
+    .run()
+)
+
+print(json.dumps(list(result.tables["items"].values()), indent=2))
+```
+
+## Best Practices
+
+### Keep Transforms Pure
+
+Transforms should be side-effect free:
+
+```python
+# Good: Pure function
+@transform
+def uppercase(ctx: Context, field: str) -> str | None:
+    value = ctx.node.get(field)
+    return value.upper() if value else None
+
+# Bad: Side effects
+counter = 0
+
+@transform
+def counted(ctx: Context) -> int:
+    global counter
+    counter += 1  # Side effect!
+    return counter
+```
+
+### Handle Missing Data
+
+Return `None` rather than raising exceptions:
+
+```python
+# Good: Defensive
+@transform
+def safe_get(ctx: Context, field: str) -> str | None:
+    try:
+        return ctx.node[field]
+    except (KeyError, TypeError):
+        return None
+
+# Bad: May raise
+@transform
+def unsafe_get(ctx: Context, field: str) -> str:
+    return ctx.node[field]  # Raises if missing!
+```
+
+### Document Complex Logic
+
+```python
+@transform
+def compute_score(ctx: Context) -> float:
+    """
+    Calculate weighted score for a product.
+
+    Formula: (rating * 0.7) + (review_count_normalized * 0.3)
+    - rating: 1-5 star rating
+    - review_count_normalized: log10(review_count + 1) / 5
+
+    Returns 0.0 if rating is missing.
+    """
+    rating = ctx.node.get("rating", 0)
+    reviews = ctx.node.get("review_count", 0)
+
+    import math
+    normalized_reviews = math.log10(reviews + 1) / 5
+    return round(rating * 0.7 + normalized_reviews * 0.3, 2)
+```
+
+### Type Hints
+
+Use type hints for better IDE support:
+
+```python
+@transform
+def parse_date(ctx: Context, field: str, format: str = "%Y-%m-%d") -> str | None:
+    """Parse and reformat a date string."""
+    from datetime import datetime
+
+    value = ctx.node.get(field)
+    if not value:
+        return None
+
+    try:
+        dt = datetime.strptime(value, format)
+        return dt.isoformat()
+    except ValueError:
+        return None
+```
+
+## Built-in Transforms as Reference
+
+etielle includes these transforms that follow the same patterns:
+
+- `node()` - Returns `ctx.node`
+- `parent_index(depth=1)` - Returns `ctx.parent.index` at given depth
+
+You can use these as reference implementations for your own transforms.
+
+## See also
+
+- [Transforms](transforms.qmd) - Built-in transforms reference
+- [Mapping Tables](mapping.qmd) - Using transforms in fields
+
+
+### Errors and Monitoring
+
+**What you'll learn**: How to handle validation errors, track pipeline statistics, and monitor execution with telemetry events.
+
+**ETL context**: Error handling ensures data quality during the **Transform** step. Monitoring provides visibility into pipeline execution during **Transform** and **Load** steps.
+
+## Error Modes
+
+etielle supports two error handling modes:
+
+| Mode | Behavior |
+|------|----------|
+| `"collect"` (default) | Collect all errors and continue processing |
+| `"fail_fast"` | Raise immediately on first error |
+
+### Collect Mode (Default)
+
+Collect all errors and inspect them after `run()`:
+
+``` {python}
+from etielle import etl, Field, TempField, get
+import json
+
+data = {
+    "users": [
+        {"id": "u1", "name": "Alice"},
+        {"id": None, "name": "Bob"},  # Invalid: null ID
+        {"id": "u3", "name": "Carol"}
+    ]
+}
+
+result = (
+    etl(data, errors="collect")  # Default mode
+    .goto("users").each()
+    .map_to(table="users", fields=[
+        Field("name", get("name")),
+        TempField("id", get("id"))  # Will have None for Bob
+    ])
+    .run()
+)
+
+print(f"Rows extracted: {len(result.tables['users'])}")
+print(f"Has errors: {bool(result.errors)}")
+```
+
+### Fail Fast Mode
+
+Stop processing immediately on first error:
+
+``` {python}
+#| eval: false
+from etielle import etl, Field, TempField, get
+
+data = {"users": [{"id": None, "name": "Bob"}]}
+
+try:
+    result = (
+        etl(data, errors="fail_fast")
+        .goto("users").each()
+        .map_to(table="users", fields=[
+            Field("name", get("name")),
+            TempField("id", get("id"))
+        ])
+        .run()
+    )
+except ValueError as e:
+    print(f"Pipeline failed: {e}")
+```
+
+## Accessing Errors
+
+### Error Structure
+
+Errors are keyed by table name, then by row key:
+
+```python
+result.errors = {
+    "table_name": {
+        ("row", "key"): ["error message 1", "error message 2"],
+        ("another", "key"): ["error message"]
+    }
+}
+```
+
+### Inspecting Errors
+
+``` {python}
+from etielle import etl, Field, TempField, get
+from pydantic import BaseModel, field_validator
+
+class User(BaseModel):
+    name: str
+
+    @field_validator("name")
+    @classmethod
+    def name_not_empty(cls, v):
+        if not v or not v.strip():
+            raise ValueError("Name cannot be empty")
+        return v
+
+data = {
+    "users": [
+        {"id": "u1", "name": "Alice"},
+        {"id": "u2", "name": ""},      # Invalid: empty name
+        {"id": "u3", "name": "Carol"}
+    ]
+}
+
+result = (
+    etl(data)
+    .goto("users").each()
+    .map_to(table=User, fields=[
+        Field("name", get("name")),
+        TempField("id", get("id"))
+    ])
+    .run()
+)
+
+# Check for errors
+if result.errors:
+    for table_name, table_errors in result.errors.items():
+        for row_key, messages in table_errors.items():
+            print(f"{table_name}[{row_key}]: {messages}")
+```
+
+## Per-Table Error Mode
+
+Override the pipeline-level error mode for specific tables:
+
+```python
+result = (
+    etl(data, errors="collect")  # Default for pipeline
+
+    .goto("critical_data").each()
+    .map_to(table=CriticalModel, errors="fail_fast", fields=[...])  # Override
+
+    .goto_root()
+    .goto("optional_data").each()
+    .map_to(table=OptionalModel, errors="collect", fields=[...])  # Explicit collect
+
+    .run()
+)
+```
+
+## Common Error Scenarios
+
+### Missing Required Fields
+
+```python
+from pydantic import BaseModel
+
+class User(BaseModel):
+    id: str      # Required
+    name: str    # Required
+    email: str | None = None  # Optional
+
+# If data is missing "name", Pydantic will raise ValidationError
+# In collect mode: error is recorded, row is skipped
+# In fail_fast mode: pipeline raises immediately
+```
+
+### Type Validation Errors
+
+```python
+class Product(BaseModel):
+    id: str
+    price: float  # Expects a number
+
+# If JSON has "price": "not a number", validation fails
+```
+
+### Transform Errors
+
+```python
+@transform
+def parse_date(ctx: Context, field: str) -> str:
+    value = ctx.node.get(field)
+    # If this raises an exception, it becomes an error
+    return datetime.strptime(value, "%Y-%m-%d").isoformat()
+```
+
+## Error Handling Patterns
+
+### Continue on Error
+
+Process what you can, report what failed:
+
+```python
+result = etl(data, errors="collect").goto(...).map_to(...).run()
+
+# Process successful rows
+for key, row in result.tables["users"].items():
+    save_to_database(row)
+
+# Report failed rows
+if result.errors:
+    log_errors(result.errors)
+    send_alert(f"Failed to process {len(result.errors['users'])} users")
+```
+
+### All-or-Nothing
+
+Fail the entire batch if any row fails:
+
+```python
+result = etl(data, errors="collect").goto(...).map_to(...).run()
+
+if result.errors:
+    raise ValueError(f"Batch failed with {sum(len(e) for e in result.errors.values())} errors")
+
+# Only proceed if no errors
+with Session(engine) as session:
+    for row in result.tables["users"].values():
+        session.add(row)
+    session.commit()
+```
+
+### Partial Success with Reporting
+
+```python
+result = etl(data).goto(...).map_to(...).run()
+
+successful = list(result.tables["users"].values())
+failed_keys = list(result.errors.get("users", {}).keys()) if result.errors else []
+
+print(f"Processed: {len(successful)} successful, {len(failed_keys)} failed")
+
+# Save successful rows
+for row in successful:
+    save(row)
+
+# Queue failed rows for retry
+for key in failed_keys:
+    queue_for_retry(key)
+```
+
+### Validation Before Database
+
+```python
+with Session(engine) as session:
+    result = (
+        etl(data)
+        .goto("users").each()
+        .map_to(table=User, fields=[...])
+        .load(session)
+        .run()
+    )
+
+    if result.errors:
+        # Don't commit if there are errors
+        session.rollback()
+        raise ValueError("Validation errors occurred")
+
+    session.commit()
+```
+
+## Error Types
+
+### Update Errors
+
+Errors that occur during field extraction or transformation:
+
+- Transform returns an invalid value
+- Required field is missing
+- Type coercion fails
+
+### Finalize Errors
+
+Errors that occur when building the final instance:
+
+- Pydantic validation fails
+- Model constructor raises
+- Missing required fields after all emissions
+
+## Best Practices
+
+### Always Check for Errors
+
+```python
+result = pipeline.run()
+
+# Don't assume success
+if result.errors:
+    handle_errors(result.errors)
+```
+
+### Log Error Details
+
+```python
+import logging
+
+if result.errors:
+    for table, errors in result.errors.items():
+        for key, messages in errors.items():
+            logging.error(f"Validation failed for {table}[{key}]", extra={
+                "table": table,
+                "key": key,
+                "errors": messages
+            })
+```
+
+### Use Fail Fast for Critical Data
+
+```python
+# Critical configuration - fail immediately
+config_result = etl(config_data, errors="fail_fast")...run()
+
+# User content - collect and report
+content_result = etl(user_data, errors="collect")...run()
+```
+
+### Graceful Degradation
+
+```python
+result = etl(data).goto(...).map_to(...).run()
+
+if result.errors:
+    # Use partial results
+    users = result.tables.get("users", {})
+    logging.warning(f"Partial load: {len(users)} users, {len(result.errors.get('users', {}))} errors")
+else:
+    users = result.tables["users"]
+```
+
+## Monitoring Pipeline Execution
+
+Beyond error handling, etielle provides tools for monitoring pipeline execution: statistics for post-run summaries and telemetry events for real-time progress tracking.
+
+### Pipeline Statistics
+
+After `run()` completes, access per-table statistics via `result.stats`:
+
+``` {python}
+from etielle import etl, Field, get
+
+data = {
+    "users": [
+        {"name": "Alice"},
+        {"name": "Bob"},
+        {"name": "Carol"}
+    ]
+}
+
+result = (
+    etl(data)
+    .goto("users").each()
+    .map_to(table="users", fields=[Field("name", get("name"))])
+    .run()
+)
+
+# Access statistics
+for table_name, stats in result.stats.items():
+    print(f"{table_name}:")
+    print(f"  Mapped: {stats.mapped}")
+    print(f"  Errors: {stats.errors}")
+    print(f"  Inserted: {stats.inserted}")
+    print(f"  Failed: {stats.failed}")
+```
+
+The `TableStats` object contains:
+
+| Field | Description |
+|-------|-------------|
+| `mapped` | Instances created during mapping phase |
+| `errors` | Validation/transform errors during mapping |
+| `inserted` | Rows successfully written to database |
+| `failed` | Rows that failed during database flush |
+
+::: {.callout-note}
+When no database session is provided, `inserted` will be 0 since no flush occurs.
+:::
+
+### Telemetry Events
+
+For real-time monitoring during pipeline execution, pass an `on_event` callback to `run()`:
+
+``` {python}
+from etielle import etl, Field, get, MapStarted, MapCompleted
+
+data = {"users": [{"name": "Alice"}, {"name": "Bob"}]}
+
+events = []
+
+result = (
+    etl(data)
+    .goto("users").each()
+    .map_to(table="users", fields=[Field("name", get("name"))])
+    .run(on_event=events.append)
+)
+
+# Inspect collected events
+for event in events:
+    print(f"{type(event).__name__}: {event}")
+```
+
+### Event Types
+
+etielle emits different events during mapping and database flush phases:
+
+**Mapping Phase:**
+
+| Event | Fields | Description |
+|-------|--------|-------------|
+| `MapStarted` | `table` | Emitted when mapping begins for a table |
+| `MapCompleted` | `table`, `count`, `error_count` | Emitted when mapping completes |
+
+**Flush Phase (with database session):**
+
+| Event | Fields | Description |
+|-------|--------|-------------|
+| `FlushStarted` | `table`, `count` | Emitted when flush begins for a table |
+| `FlushCompleted` | `table`, `inserted`, `failed`, `batch_num`, `batch_total`, `upsert` | Emitted per batch |
+| `FlushFailed` | `table`, `error`, `affected_count` | Emitted when flush fails |
+
+### Logging Example
+
+Log pipeline progress to standard logging:
+
+```python
+import logging
+from etielle import etl, Field, get, MapCompleted, FlushCompleted, FlushFailed
+
+logging.basicConfig(level=logging.INFO)
+log = logging.getLogger("etl")
+
+def log_event(event):
+    if isinstance(event, MapCompleted):
+        log.info(f"Mapped {event.count} rows to {event.table} ({event.error_count} errors)")
+    elif isinstance(event, FlushCompleted):
+        log.info(f"Flushed {event.inserted} rows to {event.table} (batch {event.batch_num}/{event.batch_total})")
+    elif isinstance(event, FlushFailed):
+        log.error(f"Flush failed for {event.table}: {event.error}")
+
+result = pipeline.run(on_event=log_event)
+```
+
+### Progress Bar Example
+
+Integrate with `tqdm` for visual progress tracking:
+
+```python
+from tqdm import tqdm
+from etielle import FlushCompleted
+
+# Create progress bar with expected total
+pbar = tqdm(total=expected_row_count, desc="Loading")
+
+def update_progress(event):
+    if isinstance(event, FlushCompleted):
+        pbar.update(event.inserted)
+
+result = pipeline.load(session).run(on_event=update_progress)
+pbar.close()
+```
+
+### Post-Run Summary Pattern
+
+Combine statistics with error checking for comprehensive reporting:
+
+```python
+result = pipeline.run(on_event=log_event)
+
+# Summary report
+print("\n=== Pipeline Summary ===")
+for table, stats in result.stats.items():
+    status = "✓" if stats.errors == 0 and stats.failed == 0 else "✗"
+    print(f"{status} {table}: {stats.inserted}/{stats.mapped} inserted")
+    if stats.errors > 0:
+        print(f"    {stats.errors} validation errors")
+    if stats.failed > 0:
+        print(f"    {stats.failed} flush failures")
+
+# Detailed errors if any
+if result.errors:
+    print("\n=== Error Details ===")
+    for table, errors in result.errors.items():
+        for key, messages in errors.items():
+            print(f"{table}[{key}]: {messages}")
+```
+
+## See also
+
+- [Mapping Tables](mapping.qmd) - Where validation occurs
+- [Database Loading](database-loading.qmd) - Error handling during persistence
+- [Custom Transforms](custom-transforms.qmd) - Error handling in transforms
+

@@ -1,0 +1,168 @@
+# etielle
+
+> A declarative, type-safe Python DSL for mapping complex nested JSON to relational database schemas
+
+## Docs
+
+### API Reference
+
+#### Classes
+> Main classes provided by the package
+
+- [AddPolicy](https://promptly-technologies-llc.github.io/etielle/reference/AddPolicy.html)
+- [AppendPolicy](https://promptly-technologies-llc.github.io/etielle/reference/AppendPolicy.html)
+- [CallableChunkSource](https://promptly-technologies-llc.github.io/etielle/reference/CallableChunkSource.html): Build chunks from a caller-supplied factory (tests and advanced callers)
+- [ConstructorBuilder](https://promptly-technologies-llc.github.io/etielle/reference/ConstructorBuilder.html): Simplified builder for classes that accept keyword arguments in their constructor
+- [ExtendPolicy](https://promptly-technologies-llc.github.io/etielle/reference/ExtendPolicy.html)
+- [FirstNonNullPolicy](https://promptly-technologies-llc.github.io/etielle/reference/FirstNonNullPolicy.html)
+- [GroupByChunkSource](https://promptly-technologies-llc.github.io/etielle/reference/GroupByChunkSource.html): Group consecutive records that share a key into one chunk each
+- [InstanceBuilder](https://promptly-technologies-llc.github.io/etielle/reference/InstanceBuilder.html)
+- [KeyCompleteFlushStrategy](https://promptly-technologies-llc.github.io/etielle/reference/KeyCompleteFlushStrategy.html): Default streaming strategy: plain insert/flush, no cross-chunk merge
+- [MaxPolicy](https://promptly-technologies-llc.github.io/etielle/reference/MaxPolicy.html)
+- [MergePolicy](https://promptly-technologies-llc.github.io/etielle/reference/MergePolicy.html)
+- [MinPolicy](https://promptly-technologies-llc.github.io/etielle/reference/MinPolicy.html)
+- [OneRecordPerChunkSource](https://promptly-technologies-llc.github.io/etielle/reference/OneRecordPerChunkSource.html): Wrap an iterable of JSON roots; each root becomes its own chunk
+- [PipelineBuilder](https://promptly-technologies-llc.github.io/etielle/reference/PipelineBuilder.html): Fluent builder for E→T→L pipelines
+- [PreSegmentedChunkSource](https://promptly-technologies-llc.github.io/etielle/reference/PreSegmentedChunkSource.html): Pass an already-segmented iterable of chunks through unchanged
+- [PydanticBuilder](https://promptly-technologies-llc.github.io/etielle/reference/PydanticBuilder.html)
+- [PydanticPartialBuilder](https://promptly-technologies-llc.github.io/etielle/reference/PydanticPartialBuilder.html)
+- [TypedDictBuilder](https://promptly-technologies-llc.github.io/etielle/reference/TypedDictBuilder.html)
+
+#### Dataclasses
+> Dataclass definitions
+
+- [Chunk](https://promptly-technologies-llc.github.io/etielle/reference/Chunk.html): A key-complete batch of JSON roots to map together
+- [Context](https://promptly-technologies-llc.github.io/etielle/reference/Context.html): Runtime context while traversing the JSON structure
+- [CoreField](https://promptly-technologies-llc.github.io/etielle/reference/CoreField.html): Field(name: 'str', transform: 'Transform[Any]')
+- [Field](https://promptly-technologies-llc.github.io/etielle/reference/Field.html): A field that will be persisted to the output table
+- [FieldSpec](https://promptly-technologies-llc.github.io/etielle/reference/FieldSpec.html): FieldSpec(selector: Union[str, Callable[[+T], Any]], transform: Callable[[etielle.core.Context], Any])
+- [FlushCompleted](https://promptly-technologies-llc.github.io/etielle/reference/FlushCompleted.html): Emitted when flush completes for a table (or batch)
+- [FlushContext](https://promptly-technologies-llc.github.io/etielle/reference/FlushContext.html): Inputs for a flush at a component boundary
+- [FlushFailed](https://promptly-technologies-llc.github.io/etielle/reference/FlushFailed.html): Emitted when an entire batch/table flush fails
+- [FlushStarted](https://promptly-technologies-llc.github.io/etielle/reference/FlushStarted.html): Emitted when flush begins for a table
+- [InstanceEmit](https://promptly-technologies-llc.github.io/etielle/reference/InstanceEmit.html): InstanceEmit(table: str, join_keys: Sequence[Callable[[etielle.core.Context], Any]], fields: Sequence[etielle.instances.FieldSpec[+T]], builder: etielle.instances.InstanceBuilder[+T], policies: Mapping[str, etielle.instances.MergePolicy] = <factory>, strict_fields: bool = True, allow_extras: bool = False, strict_mode: str = 'collect_all', temp_fields: frozenset[str] = <factory>)
+- [IterationLevel](https://promptly-technologies-llc.github.io/etielle/reference/IterationLevel.html): Represents a single level of iteration in a traversal
+- [ManyToOneSpec](https://promptly-technologies-llc.github.io/etielle/reference/ManyToOneSpec.html): Declarative specification for a many-to-one relationship
+- [MapCompleted](https://promptly-technologies-llc.github.io/etielle/reference/MapCompleted.html): Emitted when mapping completes for a table
+- [MapStarted](https://promptly-technologies-llc.github.io/etielle/reference/MapStarted.html): Emitted when mapping begins for a table
+- [MappingResult](https://promptly-technologies-llc.github.io/etielle/reference/MappingResult.html): Unified result for both classic table rows and instance builders
+- [MappingRuntimeState](https://promptly-technologies-llc.github.io/etielle/reference/MappingRuntimeState.html): Shared mapping state across multiple roots in one chunk
+- [MappingSpec](https://promptly-technologies-llc.github.io/etielle/reference/MappingSpec.html): MappingSpec(traversals: 'Sequence[TraversalSpec]')
+- [PipelineResult](https://promptly-technologies-llc.github.io/etielle/reference/PipelineResult.html): Result from running a pipeline
+- [TableEmit](https://promptly-technologies-llc.github.io/etielle/reference/TableEmit.html): Describes how to produce rows for a table from a given traversal context
+- [TableStats](https://promptly-technologies-llc.github.io/etielle/reference/TableStats.html): Statistics for a single table after pipeline execution
+- [TelemetryEvent](https://promptly-technologies-llc.github.io/etielle/reference/TelemetryEvent.html): Base class for all telemetry events
+- [TempField](https://promptly-technologies-llc.github.io/etielle/reference/TempField.html): A field used only for joining/linking, not persisted
+- [TraversalSpec](https://promptly-technologies-llc.github.io/etielle/reference/TraversalSpec.html): How to reach and iterate a collection of nodes under root
+
+#### Protocols
+> Protocol / structural-typing interfaces
+
+- [ChunkSource](https://promptly-technologies-llc.github.io/etielle/reference/ChunkSource.html): Produces key-complete chunks for streaming execution
+- [FlushStrategy](https://promptly-technologies-llc.github.io/etielle/reference/FlushStrategy.html): Defines persistence behavior at a chunk/component boundary
+
+#### ConstructorBuilder Methods
+> Methods for the ConstructorBuilder class
+
+- [ConstructorBuilder.update](https://promptly-technologies-llc.github.io/etielle/reference/ConstructorBuilder.update.html)
+- [ConstructorBuilder.finalize_all](https://promptly-technologies-llc.github.io/etielle/reference/ConstructorBuilder.finalize_all.html)
+- [ConstructorBuilder.get](https://promptly-technologies-llc.github.io/etielle/reference/ConstructorBuilder.get.html)
+- [ConstructorBuilder.known_fields](https://promptly-technologies-llc.github.io/etielle/reference/ConstructorBuilder.known_fields.html)
+- [ConstructorBuilder.update_errors](https://promptly-technologies-llc.github.io/etielle/reference/ConstructorBuilder.update_errors.html)
+- [ConstructorBuilder.finalize_errors](https://promptly-technologies-llc.github.io/etielle/reference/ConstructorBuilder.finalize_errors.html)
+- [ConstructorBuilder.record_update_error](https://promptly-technologies-llc.github.io/etielle/reference/ConstructorBuilder.record_update_error.html)
+- [ConstructorBuilder.record_finalize_error](https://promptly-technologies-llc.github.io/etielle/reference/ConstructorBuilder.record_finalize_error.html)
+
+#### InstanceBuilder Methods
+> Methods for the InstanceBuilder class
+
+- [InstanceBuilder.update](https://promptly-technologies-llc.github.io/etielle/reference/InstanceBuilder.update.html)
+- [InstanceBuilder.finalize_all](https://promptly-technologies-llc.github.io/etielle/reference/InstanceBuilder.finalize_all.html)
+- [InstanceBuilder.get](https://promptly-technologies-llc.github.io/etielle/reference/InstanceBuilder.get.html)
+- [InstanceBuilder.errors](https://promptly-technologies-llc.github.io/etielle/reference/InstanceBuilder.errors.html)
+- [InstanceBuilder.known_fields](https://promptly-technologies-llc.github.io/etielle/reference/InstanceBuilder.known_fields.html)
+- [InstanceBuilder.update_errors](https://promptly-technologies-llc.github.io/etielle/reference/InstanceBuilder.update_errors.html)
+- [InstanceBuilder.finalize_errors](https://promptly-technologies-llc.github.io/etielle/reference/InstanceBuilder.finalize_errors.html)
+- [InstanceBuilder.record_update_error](https://promptly-technologies-llc.github.io/etielle/reference/InstanceBuilder.record_update_error.html)
+- [InstanceBuilder.record_finalize_error](https://promptly-technologies-llc.github.io/etielle/reference/InstanceBuilder.record_finalize_error.html)
+
+#### PipelineBuilder Methods
+> Methods for the PipelineBuilder class
+
+- [PipelineBuilder.goto_root](https://promptly-technologies-llc.github.io/etielle/reference/PipelineBuilder.goto_root.html)
+- [PipelineBuilder.goto](https://promptly-technologies-llc.github.io/etielle/reference/PipelineBuilder.goto.html)
+- [PipelineBuilder.each](https://promptly-technologies-llc.github.io/etielle/reference/PipelineBuilder.each.html)
+- [PipelineBuilder.build_index](https://promptly-technologies-llc.github.io/etielle/reference/PipelineBuilder.build_index.html)
+- [PipelineBuilder.map_to](https://promptly-technologies-llc.github.io/etielle/reference/PipelineBuilder.map_to.html)
+- [PipelineBuilder.link_to](https://promptly-technologies-llc.github.io/etielle/reference/PipelineBuilder.link_to.html)
+- [PipelineBuilder.backlink](https://promptly-technologies-llc.github.io/etielle/reference/PipelineBuilder.backlink.html)
+- [PipelineBuilder.load](https://promptly-technologies-llc.github.io/etielle/reference/PipelineBuilder.load.html)
+- [PipelineBuilder.load_eager](https://promptly-technologies-llc.github.io/etielle/reference/PipelineBuilder.load_eager.html)
+- [PipelineBuilder.run](https://promptly-technologies-llc.github.io/etielle/reference/PipelineBuilder.run.html)
+
+#### PydanticBuilder Methods
+> Methods for the PydanticBuilder class
+
+- [PydanticBuilder.known_fields](https://promptly-technologies-llc.github.io/etielle/reference/PydanticBuilder.known_fields.html)
+- [PydanticBuilder.update](https://promptly-technologies-llc.github.io/etielle/reference/PydanticBuilder.update.html)
+- [PydanticBuilder.finalize_all](https://promptly-technologies-llc.github.io/etielle/reference/PydanticBuilder.finalize_all.html)
+- [PydanticBuilder.get](https://promptly-technologies-llc.github.io/etielle/reference/PydanticBuilder.get.html)
+- [PydanticBuilder.update_errors](https://promptly-technologies-llc.github.io/etielle/reference/PydanticBuilder.update_errors.html)
+- [PydanticBuilder.finalize_errors](https://promptly-technologies-llc.github.io/etielle/reference/PydanticBuilder.finalize_errors.html)
+- [PydanticBuilder.record_update_error](https://promptly-technologies-llc.github.io/etielle/reference/PydanticBuilder.record_update_error.html)
+- [PydanticBuilder.record_finalize_error](https://promptly-technologies-llc.github.io/etielle/reference/PydanticBuilder.record_finalize_error.html)
+
+#### PydanticPartialBuilder Methods
+> Methods for the PydanticPartialBuilder class
+
+- [PydanticPartialBuilder.known_fields](https://promptly-technologies-llc.github.io/etielle/reference/PydanticPartialBuilder.known_fields.html)
+- [PydanticPartialBuilder.update](https://promptly-technologies-llc.github.io/etielle/reference/PydanticPartialBuilder.update.html)
+- [PydanticPartialBuilder.finalize_all](https://promptly-technologies-llc.github.io/etielle/reference/PydanticPartialBuilder.finalize_all.html)
+- [PydanticPartialBuilder.get](https://promptly-technologies-llc.github.io/etielle/reference/PydanticPartialBuilder.get.html)
+- [PydanticPartialBuilder.update_errors](https://promptly-technologies-llc.github.io/etielle/reference/PydanticPartialBuilder.update_errors.html)
+- [PydanticPartialBuilder.finalize_errors](https://promptly-technologies-llc.github.io/etielle/reference/PydanticPartialBuilder.finalize_errors.html)
+- [PydanticPartialBuilder.record_update_error](https://promptly-technologies-llc.github.io/etielle/reference/PydanticPartialBuilder.record_update_error.html)
+- [PydanticPartialBuilder.record_finalize_error](https://promptly-technologies-llc.github.io/etielle/reference/PydanticPartialBuilder.record_finalize_error.html)
+
+#### TypedDictBuilder Methods
+> Methods for the TypedDictBuilder class
+
+- [TypedDictBuilder.update](https://promptly-technologies-llc.github.io/etielle/reference/TypedDictBuilder.update.html)
+- [TypedDictBuilder.finalize_all](https://promptly-technologies-llc.github.io/etielle/reference/TypedDictBuilder.finalize_all.html)
+- [TypedDictBuilder.get](https://promptly-technologies-llc.github.io/etielle/reference/TypedDictBuilder.get.html)
+- [TypedDictBuilder.known_fields](https://promptly-technologies-llc.github.io/etielle/reference/TypedDictBuilder.known_fields.html)
+- [TypedDictBuilder.update_errors](https://promptly-technologies-llc.github.io/etielle/reference/TypedDictBuilder.update_errors.html)
+- [TypedDictBuilder.finalize_errors](https://promptly-technologies-llc.github.io/etielle/reference/TypedDictBuilder.finalize_errors.html)
+- [TypedDictBuilder.record_update_error](https://promptly-technologies-llc.github.io/etielle/reference/TypedDictBuilder.record_update_error.html)
+- [TypedDictBuilder.record_finalize_error](https://promptly-technologies-llc.github.io/etielle/reference/TypedDictBuilder.record_finalize_error.html)
+
+#### Exceptions
+> Exception classes
+
+- [RelationshipIncompleteError](https://promptly-technologies-llc.github.io/etielle/reference/RelationshipIncompleteError.html): Raised when a chunk lacks a required relationship target
+
+#### Functions
+> Utility functions
+
+- [apply](https://promptly-technologies-llc.github.io/etielle/reference/apply.html): Apply a function to the result of another transform
+- [bind_many_to_one](https://promptly-technologies-llc.github.io/etielle/reference/bind_many_to_one.html): Bind child -> parent object references in-place using plain attribute assignment
+- [coalesce](https://promptly-technologies-llc.github.io/etielle/reference/coalesce.html)
+- [compute_relationship_keys](https://promptly-technologies-llc.github.io/etielle/reference/compute_relationship_keys.html): Compute child->parent composite keys for each ManyToOneSpec by re-walking the
+- [concat](https://promptly-technologies-llc.github.io/etielle/reference/concat.html)
+- [etl](https://promptly-technologies-llc.github.io/etielle/reference/etl.html): Entry point for fluent E→T→L pipelines
+- [field_of](https://promptly-technologies-llc.github.io/etielle/reference/field_of.html): Resolve a model field name from a type-checked selector lambda
+- [format_id](https://promptly-technologies-llc.github.io/etielle/reference/format_id.html)
+- [get](https://promptly-technologies-llc.github.io/etielle/reference/get.html): Resolve a value relative to the current node using a dot-separated path
+- [get_from_parent](https://promptly-technologies-llc.github.io/etielle/reference/get_from_parent.html)
+- [get_from_root](https://promptly-technologies-llc.github.io/etielle/reference/get_from_root.html)
+- [index](https://promptly-technologies-llc.github.io/etielle/reference/index.html)
+- [key](https://promptly-technologies-llc.github.io/etielle/reference/key.html)
+- [len_of](https://promptly-technologies-llc.github.io/etielle/reference/len_of.html)
+- [literal](https://promptly-technologies-llc.github.io/etielle/reference/literal.html)
+- [lookup](https://promptly-technologies-llc.github.io/etielle/reference/lookup.html): Look up a value in a named index
+- [node](https://promptly-technologies-llc.github.io/etielle/reference/node.html): Return the current node value
+- [parent_index](https://promptly-technologies-llc.github.io/etielle/reference/parent_index.html): Return the list index of an ancestor context
+- [parent_key](https://promptly-technologies-llc.github.io/etielle/reference/parent_key.html)
+- [stream](https://promptly-technologies-llc.github.io/etielle/reference/stream.html): Entry point for streaming/chunked E→T→L pipelines
+- [transform](https://promptly-technologies-llc.github.io/etielle/reference/transform.html): Decorator to create custom transforms with curried arguments
+- [validate_relationship_completeness](https://promptly-technologies-llc.github.io/etielle/reference/validate_relationship_completeness.html): Ensure every child lookup in the chunk resolves within chunk or eager tables

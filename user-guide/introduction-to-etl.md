@@ -1,0 +1,208 @@
+# Introduction to ETL
+
+**What you'll learn**: What ETL (Extract, Transform, Load) means, why it's important, how it relates to working with JSON data from APIs, and how `etielle`'s fluent API supports each ETL step.
+
+
+# What is ETL?
+
+**ETL** stands for **Extract, Transform, Load**--the three fundamental steps for moving data from one system to another. Understanding these steps is key to understanding how `etielle` works:
+
+| ETL Step | What it means | How `etielle` does it |
+|----|----|----|
+| **Extract** | Navigate and pull data from a source | [goto()](../reference/PipelineBuilder.goto.md#etielle.PipelineBuilder.goto) and [each()](../reference/PipelineBuilder.each.md#etielle.PipelineBuilder.each) navigate nested JSON |
+| **Transform** | Reshape and format the data | Transforms, [Field](../reference/Field.md#etielle.Field), and [TempField](../reference/TempField.md#etielle.TempField) reshape data |
+| **Load** | Insert data into the target system | `load(session).run()` persists to database |
+
+ETL is a core concept in data engineering and has been used for decades to move data between systems. `etielle` brings declarative ETL to Python for JSON-to-relational transformations.
+
+
+# ETL in Action: A Simple Example
+
+Imagine you're building an app that tracks GitHub repositories. Here's how each ETL step works with `etielle`'s fluent API:
+
+
+## 1. Extract: Navigate the JSON structure
+
+**Goal**: Pull a subset of data from GitHub's API (returns nested JSON with repositories, contributors, commits)
+
+**How `etielle` does it**: [goto()](../reference/PipelineBuilder.goto.md#etielle.PipelineBuilder.goto) and [each()](../reference/PipelineBuilder.each.md#etielle.PipelineBuilder.each) define how to walk through the JSON:
+
+``` python
+from etielle import etl, Field, TempField, get
+
+result = (
+    etl(github_data)
+    # Extract: Navigate to repositories array
+    .goto("repositories").each()
+    .map_to(table="repos", fields=[...])
+
+    # Extract: Navigate to commits nested inside each repo
+    .goto("commits").each()
+    .map_to(table="commits", fields=[...])
+
+    .run()
+)
+```
+
+**Key concept**: [goto()](../reference/PipelineBuilder.goto.md#etielle.PipelineBuilder.goto) tells `etielle` *where* to go in the JSON, and [each()](../reference/PipelineBuilder.each.md#etielle.PipelineBuilder.each) tells it to iterate through items. They handle the **Extract** step.
+
+Learn more: [Navigation](navigation.md)
+
+
+## 2. Transform: Reshape data in memory
+
+**Goal**: Extract specific fields, link parent-child records, format values, build table structures
+
+**How `etielle` does it**: Multiple features work together to transform data:
+
+1.  **Field-level transforms** extract and modify individual values: \`\`\`python from etielle import get, get_from_parent, concat, literal
+
+    \# Transform: Extract a field from the current item repo_name = get("name")
+
+    \# Transform: Get a field from the parent (for relationship linking) parent_repo_id = get_from_parent("id")
+
+    \# Transform: Combine values (e.g. "123" -\> "repo_123") full_id = concat(literal("repo\_"), get("id")) \`\`\`
+
+2.  **Table-level transforms** via [map_to()](../reference/PipelineBuilder.map_to.md#etielle.PipelineBuilder.map_to) define output structure: \`\`\`python from etielle import etl, Field, TempField, get
+
+    ( etl(data) .goto("repositories").each() .map_to(table="repositories", fields=\[ Field("id", get("id")), \# Output column Field("name", get("name")), \# Output column Field("url", get("url")), \# Output column TempField("id", get("id")) \# Join key (not in output) \]) ) \`\`\`
+
+3.  **Relationship transforms** link records together with [link_to()](../reference/PipelineBuilder.link_to.md#etielle.PipelineBuilder.link_to): \`\`\`python from etielle import etl, Field, TempField, get, get_from_parent
+
+    ( etl(data) .goto("repositories").each() .map_to(table=Repository, fields=\[…\])
+
+         .goto("commits").each()
+         .map_to(table=Commit, fields=[
+             Field("message", get("message")),
+             TempField("repo_id", get_from_parent("id"))
+         ])
+         .link_to(Repository, by={"repo_id": "id"})  # Link commits to repos
+
+    ) \`\`\`
+
+**Key concept**: Transforms, fields, and relationships are all processed in-memory, before any database persistence. The fluent API chains these operations naturally.
+
+Learn more: [Transforms](transforms.md), [Mapping Tables](mapping.md), [Relationships](relationships.md)
+
+
+## 3. Load: Persist to database
+
+**Goal**: Insert the transformed data into PostgreSQL
+
+**How `etielle` does it**: `load(session).run()` persists the in-memory data:
+
+``` python
+from etielle import etl, Field, TempField, get
+
+result = (
+    etl(data)
+    .goto("users").each()
+    .map_to(table=User, fields=[...])
+    .load(session)   # Configure database session
+    .run()           # Execute and persist
+)
+
+session.commit()     # You control the transaction
+```
+
+**Key concept**: The **Load** step is optional and happens via [load()](../reference/PipelineBuilder.load.md#etielle.PipelineBuilder.load). Without it, `etielle` just transforms JSON to in-memory Python objects.
+
+Learn more: [Database Loading](database-loading.md)
+
+------------------------------------------------------------------------
+
+**The full ETL flow with `etielle`**:
+
+1.  **Extract** ([goto()](../reference/PipelineBuilder.goto.md#etielle.PipelineBuilder.goto), [each()](../reference/PipelineBuilder.each.md#etielle.PipelineBuilder.each)): "Go to `repositories`, iterate through each one"
+2.  **Transform** (transforms + [Field](../reference/Field.md#etielle.Field) + [link_to()](../reference/PipelineBuilder.link_to.md#etielle.PipelineBuilder.link_to)): "Get the `name` field, format the `id`, build table rows, link children to parents"
+3.  **Load** (`load().run()`): "Persist the in-memory objects to PostgreSQL" (optional)
+
+Without `etielle`, you'd write nested loops, manual field extraction, and explicit inserts. With `etielle`, you declare the mapping once, and the library handles the rest.
+
+
+# The Three Pillars of `etielle` ETL
+
+To summarize, `etielle` implements ETL through three core feature groups:
+
+
+## 1. Extract: Navigation
+
+**What it does**: Navigate nested JSON structures and iterate over items
+
+**Key methods**: - `goto(path)`: Navigate to a nested location - [each()](../reference/PipelineBuilder.each.md#etielle.PipelineBuilder.each): Iterate over list items or dict key-value pairs - `goto_root(index)`: Switch between multiple JSON roots
+
+**Example**:
+
+``` python
+(
+    etl(data)
+    .goto("users").each()           # Extract: Navigate and iterate
+    .goto("posts").each()           # Extract: Nested iteration
+    .map_to(...)
+)
+```
+
+Learn more: [Navigation](navigation.md)
+
+
+## 2. Transform: Fields, Transforms, and Relationships
+
+**What it does**: Reshape data in memory from nested JSON to structured tables/objects
+
+**Key features**:
+
+**Transforms** (value extraction): - [get()](../reference/get.md#etielle.get): Get field from current node - [get_from_parent()](../reference/get_from_parent.md#etielle.get_from_parent): Get field from ancestor (for relationships) - [concat()](../reference/concat.md#etielle.concat), [format_id()](../reference/format_id.md#etielle.format_id): Format and combine values - [coalesce()](../reference/coalesce.md#etielle.coalesce): Provide fallback values
+
+**Field types** (table structure): - `Field(name, transform)`: Output column - `TempField(name, transform)`: Join key only (not in output) - [merge](../reference/Field.md#etielle.Field.merge) policies: Sum, append, min/max when merging rows
+
+**Relationships**: - `link_to(Parent, by={...})`: Link child records to parents
+
+**Example**:
+
+``` python
+.map_to(table=Post, fields=[
+    Field("title", get("title")),
+    Field("user_id", get_from_parent("id")),    # Link to parent
+    TempField("id", get("id"))                   # Join key
+])
+.link_to(User, by={"user_id": "id"})            # Bind relationship
+```
+
+Learn more: [Transforms](transforms.md), [Mapping Tables](mapping.md), [Relationships](relationships.md)
+
+
+## 3. Load: Database Persistence
+
+**What it does**: Persist the in-memory transformed data to a database (optional)
+
+**Key features**: - `load(session)`: Configure database session - [run()](../reference/PipelineBuilder.run.md#etielle.PipelineBuilder.run): Execute pipeline and flush to database by relationship component - `load_eager(table)`: Keep shared dimension tables resident across components - Flushed instances are not retained in [PipelineResult.tables](../reference/PipelineResult.md#etielle.PipelineResult.tables) (use stats/errors or query the DB) - You control the transaction (commit/rollback)
+
+**Example**:
+
+``` python
+result = (
+    etl(data)
+    .goto("users").each()
+    .map_to(table=User, fields=[...])
+    .load(session)
+    .run()
+)
+
+session.commit()  # You control the transaction
+```
+
+**Note**: This step is optional! You can use `etielle` just for in-memory JSON transformation without database persistence.
+
+Learn more: [Database Loading](database-loading.md)
+
+
+# Next Steps
+
+Now that you understand ETL and how `etielle` implements each step, you're ready to dive deeper:
+
+1.  **[Quickstart](../index.md)** - Jump straight into using `etielle` with a complete example
+2.  **[Navigation](navigation.md)** - Master the **Extract** step: [goto()](../reference/PipelineBuilder.goto.md#etielle.PipelineBuilder.goto), [each()](../reference/PipelineBuilder.each.md#etielle.PipelineBuilder.each), [goto_root()](../reference/PipelineBuilder.goto_root.md#etielle.PipelineBuilder.goto_root)
+3.  **[Transforms](transforms.md)** - Master the **Transform** step: value extraction and formatting
+4.  **[Mapping Tables](mapping.md)** - Master the **Transform** step: [Field](../reference/Field.md#etielle.Field), [TempField](../reference/TempField.md#etielle.TempField), merge policies
+5.  **[Relationships](relationships.md)** - Master the **Transform** step: [link_to()](../reference/PipelineBuilder.link_to.md#etielle.PipelineBuilder.link_to) for linking records
+6.  **[Database Loading](database-loading.md)** - Master the **Load** step: `load().run()` for persistence

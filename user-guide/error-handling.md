@@ -1,0 +1,540 @@
+# Errors and Monitoring
+
+**What you'll learn**: How to handle validation errors, track pipeline statistics, and monitor execution with telemetry events.
+
+**ETL context**: Error handling ensures data quality during the **Transform** step. Monitoring provides visibility into pipeline execution during **Transform** and **Load** steps.
+
+
+# Error Modes
+
+etielle supports two error handling modes:
+
+| Mode                  | Behavior                                   |
+|-----------------------|--------------------------------------------|
+| `"collect"` (default) | Collect all errors and continue processing |
+| `"fail_fast"`         | Raise immediately on first error           |
+
+
+## Collect Mode (Default)
+
+Collect all errors and inspect them after [run()](../reference/PipelineBuilder.run.md#etielle.PipelineBuilder.run):
+
+
+``` python
+from etielle import etl, Field, TempField, get
+import json
+
+data = {
+    "users": [
+        {"id": "u1", "name": "Alice"},
+        {"id": None, "name": "Bob"},  # Invalid: null ID
+        {"id": "u3", "name": "Carol"}
+    ]
+}
+
+result = (
+    etl(data, errors="collect")  # Default mode
+    .goto("users").each()
+    .map_to(table="users", fields=[
+        Field("name", get("name")),
+        TempField("id", get("id"))  # Will have None for Bob
+    ])
+    .run()
+)
+
+print(f"Rows extracted: {len(result.tables['users'])}")
+print(f"Has errors: {bool(result.errors)}")
+```
+
+
+    Rows extracted: 3
+    Has errors: False
+
+
+## Fail Fast Mode
+
+Stop processing immediately on first error:
+
+
+``` python
+from etielle import etl, Field, TempField, get
+
+data = {"users": [{"id": None, "name": "Bob"}]}
+
+try:
+    result = (
+        etl(data, errors="fail_fast")
+        .goto("users").each()
+        .map_to(table="users", fields=[
+            Field("name", get("name")),
+            TempField("id", get("id"))
+        ])
+        .run()
+    )
+except ValueError as e:
+    print(f"Pipeline failed: {e}")
+```
+
+
+# Accessing Errors
+
+
+## Error Structure
+
+Errors are keyed by table name, then by row key:
+
+``` python
+result.errors = {
+    "table_name": {
+        ("row", "key"): ["error message 1", "error message 2"],
+        ("another", "key"): ["error message"]
+    }
+}
+```
+
+
+## Inspecting Errors
+
+
+``` python
+from etielle import etl, Field, TempField, get
+from pydantic import BaseModel, field_validator
+
+class User(BaseModel):
+    name: str
+
+    @field_validator("name")
+    @classmethod
+    def name_not_empty(cls, v):
+        if not v or not v.strip():
+            raise ValueError("Name cannot be empty")
+        return v
+
+data = {
+    "users": [
+        {"id": "u1", "name": "Alice"},
+        {"id": "u2", "name": ""},      # Invalid: empty name
+        {"id": "u3", "name": "Carol"}
+    ]
+}
+
+result = (
+    etl(data)
+    .goto("users").each()
+    .map_to(table=User, fields=[
+        Field("name", get("name")),
+        TempField("id", get("id"))
+    ])
+    .run()
+)
+
+# Check for errors
+if result.errors:
+    for table_name, table_errors in result.errors.items():
+        for row_key, messages in table_errors.items():
+            print(f"{table_name}[{row_key}]: {messages}")
+```
+
+
+    user[('__auto_1__',)]: ["table=user key=('__auto_1__',) 1 validation error for User\nname\n  Value error, Name cannot be empty [type=value_error, input_value='', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.13/v/value_error"]
+
+
+# Per-Table Error Mode
+
+Override the pipeline-level error mode for specific tables:
+
+``` python
+result = (
+    etl(data, errors="collect")  # Default for pipeline
+
+    .goto("critical_data").each()
+    .map_to(table=CriticalModel, errors="fail_fast", fields=[...])  # Override
+
+    .goto_root()
+    .goto("optional_data").each()
+    .map_to(table=OptionalModel, errors="collect", fields=[...])  # Explicit collect
+
+    .run()
+)
+```
+
+
+# Common Error Scenarios
+
+
+## Missing Required Fields
+
+``` python
+from pydantic import BaseModel
+
+class User(BaseModel):
+    id: str      # Required
+    name: str    # Required
+    email: str | None = None  # Optional
+
+# If data is missing "name", Pydantic will raise ValidationError
+# In collect mode: error is recorded, row is skipped
+# In fail_fast mode: pipeline raises immediately
+```
+
+
+## Type Validation Errors
+
+``` python
+class Product(BaseModel):
+    id: str
+    price: float  # Expects a number
+
+# If JSON has "price": "not a number", validation fails
+```
+
+
+## Transform Errors
+
+``` python
+@transform
+def parse_date(ctx: Context, field: str) -> str:
+    value = ctx.node.get(field)
+    # If this raises an exception, it becomes an error
+    return datetime.strptime(value, "%Y-%m-%d").isoformat()
+```
+
+
+# Error Handling Patterns
+
+
+## Continue on Error
+
+Process what you can, report what failed:
+
+``` python
+result = etl(data, errors="collect").goto(...).map_to(...).run()
+
+# Process successful rows
+for key, row in result.tables["users"].items():
+    save_to_database(row)
+
+# Report failed rows
+if result.errors:
+    log_errors(result.errors)
+    send_alert(f"Failed to process {len(result.errors['users'])} users")
+```
+
+
+## All-or-Nothing
+
+Fail the entire batch if any row fails:
+
+``` python
+result = etl(data, errors="collect").goto(...).map_to(...).run()
+
+if result.errors:
+    raise ValueError(f"Batch failed with {sum(len(e) for e in result.errors.values())} errors")
+
+# Only proceed if no errors
+with Session(engine) as session:
+    for row in result.tables["users"].values():
+        session.add(row)
+    session.commit()
+```
+
+
+## Partial Success with Reporting
+
+``` python
+result = etl(data).goto(...).map_to(...).run()
+
+successful = list(result.tables["users"].values())
+failed_keys = list(result.errors.get("users", {}).keys()) if result.errors else []
+
+print(f"Processed: {len(successful)} successful, {len(failed_keys)} failed")
+
+# Save successful rows
+for row in successful:
+    save(row)
+
+# Queue failed rows for retry
+for key in failed_keys:
+    queue_for_retry(key)
+```
+
+
+## Validation Before Database
+
+``` python
+with Session(engine) as session:
+    result = (
+        etl(data)
+        .goto("users").each()
+        .map_to(table=User, fields=[...])
+        .load(session)
+        .run()
+    )
+
+    if result.errors:
+        # Don't commit if there are errors
+        session.rollback()
+        raise ValueError("Validation errors occurred")
+
+    session.commit()
+```
+
+
+# Error Types
+
+
+## Update Errors
+
+Errors that occur during field extraction or transformation:
+
+- Transform returns an invalid value
+- Required field is missing
+- Type coercion fails
+
+
+## Finalize Errors
+
+Errors that occur when building the final instance:
+
+- Pydantic validation fails
+- Model constructor raises
+- Missing required fields after all emissions
+
+
+# Best Practices
+
+
+## Always Check for Errors
+
+``` python
+result = pipeline.run()
+
+# Don't assume success
+if result.errors:
+    handle_errors(result.errors)
+```
+
+
+## Log Error Details
+
+``` python
+import logging
+
+if result.errors:
+    for table, errors in result.errors.items():
+        for key, messages in errors.items():
+            logging.error(f"Validation failed for {table}[{key}]", extra={
+                "table": table,
+                "key": key,
+                "errors": messages
+            })
+```
+
+
+## Use Fail Fast for Critical Data
+
+``` python
+# Critical configuration - fail immediately
+config_result = etl(config_data, errors="fail_fast")...run()
+
+# User content - collect and report
+content_result = etl(user_data, errors="collect")...run()
+```
+
+
+## Graceful Degradation
+
+``` python
+result = etl(data).goto(...).map_to(...).run()
+
+if result.errors:
+    # Use partial results
+    users = result.tables.get("users", {})
+    logging.warning(f"Partial load: {len(users)} users, {len(result.errors.get('users', {}))} errors")
+else:
+    users = result.tables["users"]
+```
+
+
+# Monitoring Pipeline Execution
+
+Beyond error handling, etielle provides tools for monitoring pipeline execution: statistics for post-run summaries and telemetry events for real-time progress tracking.
+
+
+## Pipeline Statistics
+
+After [run()](../reference/PipelineBuilder.run.md#etielle.PipelineBuilder.run) completes, access per-table statistics via `result.stats`:
+
+
+``` python
+from etielle import etl, Field, get
+
+data = {
+    "users": [
+        {"name": "Alice"},
+        {"name": "Bob"},
+        {"name": "Carol"}
+    ]
+}
+
+result = (
+    etl(data)
+    .goto("users").each()
+    .map_to(table="users", fields=[Field("name", get("name"))])
+    .run()
+)
+
+# Access statistics
+for table_name, stats in result.stats.items():
+    print(f"{table_name}:")
+    print(f"  Mapped: {stats.mapped}")
+    print(f"  Errors: {stats.errors}")
+    print(f"  Inserted: {stats.inserted}")
+    print(f"  Failed: {stats.failed}")
+```
+
+
+    users:
+      Mapped: 3
+      Errors: 0
+      Inserted: 0
+      Failed: 0
+
+
+The [TableStats](../reference/TableStats.md#etielle.TableStats) object contains:
+
+| Field | Description |
+|----|----|
+| `mapped` | Instances created during mapping phase |
+| [errors](../reference/PipelineResult.md#etielle.PipelineResult.errors) | Validation/transform errors during mapping |
+| `inserted` | Rows successfully written to database |
+| `failed` | Rows that failed during database flush |
+
+> **Note: Note**
+>
+> When no database session is provided, `inserted` will be 0 since no flush occurs.
+
+
+## Telemetry Events
+
+For real-time monitoring during pipeline execution, pass an `on_event` callback to [run()](../reference/PipelineBuilder.run.md#etielle.PipelineBuilder.run):
+
+
+``` python
+from etielle import etl, Field, get, MapStarted, MapCompleted
+
+data = {"users": [{"name": "Alice"}, {"name": "Bob"}]}
+
+events = []
+
+result = (
+    etl(data)
+    .goto("users").each()
+    .map_to(table="users", fields=[Field("name", get("name"))])
+    .run(on_event=events.append)
+)
+
+# Inspect collected events
+for event in events:
+    print(f"{type(event).__name__}: {event}")
+```
+
+
+    MapStarted: MapStarted(table='users')
+    MapCompleted: MapCompleted(table='users', count=2, error_count=0)
+
+
+## Event Types
+
+etielle emits different events during mapping and database flush phases:
+
+**Mapping Phase:**
+
+| Event | Fields | Description |
+|----|----|----|
+| [MapStarted](../reference/MapStarted.md#etielle.MapStarted) | `table` | Emitted when mapping begins for a table |
+| [MapCompleted](../reference/MapCompleted.md#etielle.MapCompleted) | `table`, `count`, `error_count` | Emitted when mapping completes |
+
+**Flush Phase (with database session):**
+
+| Event | Fields | Description |
+|----|----|----|
+| [FlushStarted](../reference/FlushStarted.md#etielle.FlushStarted) | `table`, `count` | Emitted when flush begins for a table |
+| [FlushCompleted](../reference/FlushCompleted.md#etielle.FlushCompleted) | `table`, `inserted`, `failed`, `batch_num`, `batch_total`, `upsert` | Emitted per batch |
+| [FlushFailed](../reference/FlushFailed.md#etielle.FlushFailed) | `table`, `error`, `affected_count` | Emitted when flush fails |
+
+
+## Logging Example
+
+Log pipeline progress to standard logging:
+
+``` python
+import logging
+from etielle import etl, Field, get, MapCompleted, FlushCompleted, FlushFailed
+
+logging.basicConfig(level=logging.INFO)
+log = logging.getLogger("etl")
+
+def log_event(event):
+    if isinstance(event, MapCompleted):
+        log.info(f"Mapped {event.count} rows to {event.table} ({event.error_count} errors)")
+    elif isinstance(event, FlushCompleted):
+        log.info(f"Flushed {event.inserted} rows to {event.table} (batch {event.batch_num}/{event.batch_total})")
+    elif isinstance(event, FlushFailed):
+        log.error(f"Flush failed for {event.table}: {event.error}")
+
+result = pipeline.run(on_event=log_event)
+```
+
+
+## Progress Bar Example
+
+Integrate with `tqdm` for visual progress tracking:
+
+``` python
+from tqdm import tqdm
+from etielle import FlushCompleted
+
+# Create progress bar with expected total
+pbar = tqdm(total=expected_row_count, desc="Loading")
+
+def update_progress(event):
+    if isinstance(event, FlushCompleted):
+        pbar.update(event.inserted)
+
+result = pipeline.load(session).run(on_event=update_progress)
+pbar.close()
+```
+
+
+## Post-Run Summary Pattern
+
+Combine statistics with error checking for comprehensive reporting:
+
+``` python
+result = pipeline.run(on_event=log_event)
+
+# Summary report
+print("\n=== Pipeline Summary ===")
+for table, stats in result.stats.items():
+    status = "✓" if stats.errors == 0 and stats.failed == 0 else "✗"
+    print(f"{status} {table}: {stats.inserted}/{stats.mapped} inserted")
+    if stats.errors > 0:
+        print(f"    {stats.errors} validation errors")
+    if stats.failed > 0:
+        print(f"    {stats.failed} flush failures")
+
+# Detailed errors if any
+if result.errors:
+    print("\n=== Error Details ===")
+    for table, errors in result.errors.items():
+        for key, messages in errors.items():
+            print(f"{table}[{key}]: {messages}")
+```
+
+
+# See also
+
+- [Mapping Tables](mapping.md) - Where validation occurs
+- [Database Loading](database-loading.md) - Error handling during persistence
+- [Custom Transforms](custom-transforms.md) - Error handling in transforms

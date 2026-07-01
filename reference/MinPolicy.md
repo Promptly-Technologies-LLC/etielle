@@ -1,0 +1,8 @@
+## MinPolicy
+
+
+Usage
+
+``` python
+MinPolicy()
+```

@@ -1,0 +1,8 @@
+## MaxPolicy
+
+
+Usage
+
+``` python
+MaxPolicy()
+```

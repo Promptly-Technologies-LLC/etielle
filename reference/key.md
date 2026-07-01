@@ -1,0 +1,8 @@
+## key()
+
+
+Usage
+
+``` python
+key()
+```

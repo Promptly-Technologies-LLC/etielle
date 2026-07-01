@@ -1,0 +1,8 @@
+## MergePolicy
+
+
+Usage
+
+``` python
+MergePolicy()
+```

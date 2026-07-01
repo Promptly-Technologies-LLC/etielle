@@ -1,0 +1,8 @@
+# index()
+
+
+Usage
+
+``` python
+index()
+```

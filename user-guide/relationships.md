@@ -1,0 +1,912 @@
+# Relationships: Linking Tables with link_to() and backlink()
+
+**What you'll learn**: How to use [link_to()](../reference/PipelineBuilder.link_to.md#etielle.PipelineBuilder.link_to) for many-to-one and [backlink()](../reference/PipelineBuilder.backlink.md#etielle.PipelineBuilder.backlink) for many-to-many relationships between tables.
+
+**ETL context**: Relationships are part of the **Transform** step--they link child records to parent records in memory before persistence.
+
+
+# What is [link_to()](../reference/PipelineBuilder.link_to.md#etielle.PipelineBuilder.link_to)?
+
+[link_to()](../reference/PipelineBuilder.link_to.md#etielle.PipelineBuilder.link_to) establishes a many-to-one relationship between the current table (child) and a parent table. It links records in memory so you can navigate between them or persist with proper foreign keys.
+
+``` python
+from etielle import etl, Field, TempField, get, get_from_parent
+
+result = (
+    etl(data)
+    .goto("users").each()
+    .map_to(table=User, fields=[...])
+
+    .goto("posts").each()
+    .map_to(table=Post, fields=[
+        Field("title", get("title")),
+        TempField("user_id", get_from_parent("id"))  # Foreign key value
+    ])
+    .link_to(User, by={"user_id": "id"})  # Link posts to users
+    .run()
+)
+```
+
+
+# Basic Relationship Binding
+
+
+## One-to-Many (Users -\> Posts)
+
+The most common pattern: users have many posts.
+
+
+``` python
+from pydantic import BaseModel
+from etielle import etl, Field, TempField, get, get_from_parent
+
+class User(BaseModel):
+    id: str
+    name: str
+
+class Post(BaseModel):
+    id: str
+    title: str
+    user: User | None = None  # Relationship attribute
+
+data = {
+    "users": [{
+        "id": "u1",
+        "name": "Alice",
+        "posts": [
+            {"id": "p1", "title": "Hello"},
+            {"id": "p2", "title": "World"}
+        ]
+    }]
+}
+
+result = (
+    etl(data)
+    # Map users
+    .goto("users").each()
+    .map_to(table=User, fields=[
+        Field("id", get("id")),
+        Field("name", get("name")),
+    ])
+
+    # Map posts and link to users
+    .goto("posts").each()
+    .map_to(table=Post, fields=[
+        Field("id", get("id")),
+        Field("title", get("title")),
+        TempField("user_id", get_from_parent("id"))  # Foreign key (not persisted)
+    ])
+    .link_to(User, by={"user_id": "id"})  # Link by user_id -> id
+    .run()
+)
+
+# Posts now have user references
+for key, post in result.tables[Post].items():
+    print(f"{post.title} by {post.user.name if post.user else 'Unknown'}")
+```
+
+
+    Hello by Alice
+    World by Alice
+
+
+# How [link_to()](../reference/PipelineBuilder.link_to.md#etielle.PipelineBuilder.link_to) Works
+
+
+## The `by` Parameter
+
+The `by` dict maps child field names to parent field names:
+
+``` python
+.link_to(User, by={"user_id": "id"})
+```
+
+This means: "Match the child's `user_id` TempField to the parent's `id` TempField."
+
+
+## Attribute Inference
+
+etielle infers the relationship attribute name from the parent table name:
+
+| Parent Table | Inferred Attribute                |
+|--------------|-----------------------------------|
+| `users`      | `user`                            |
+| `posts`      | `post`                            |
+| `categories` | `categorie` (strips trailing 's') |
+
+You can override this by using a model class with an explicit attribute.
+
+
+# Multiple Relationships
+
+A child table can link to multiple parent tables:
+
+
+``` python
+from pydantic import BaseModel
+from etielle import etl, Field, TempField, get, get_from_parent
+
+class User(BaseModel):
+    id: str
+    name: str
+
+class Post(BaseModel):
+    id: str
+    title: str
+
+class Comment(BaseModel):
+    id: str
+    body: str
+    user: User | None = None
+    post: Post | None = None
+
+data = {
+    "users": [{"id": "u1", "name": "Alice"}],
+    "posts": [{"id": "p1", "title": "Hello", "user_id": "u1"}],
+    "comments": [
+        {"id": "c1", "body": "Great post!", "user_id": "u1", "post_id": "p1"}
+    ]
+}
+
+result = (
+    etl(data)
+    .goto("users").each()
+    .map_to(table=User, fields=[
+        Field("id", get("id")),
+        Field("name", get("name")),
+    ])
+
+    .goto_root()
+    .goto("posts").each()
+    .map_to(table=Post, fields=[
+        Field("id", get("id")),
+        Field("title", get("title")),
+    ])
+
+    .goto_root()
+    .goto("comments").each()
+    .map_to(table=Comment, fields=[
+        Field("id", get("id")),
+        Field("body", get("body")),
+        TempField("user_id", get("user_id")),  # Foreign key (not persisted)
+        TempField("post_id", get("post_id"))   # Foreign key (not persisted)
+    ])
+    .link_to(User, by={"user_id": "id"})  # Link to user
+    .link_to(Post, by={"post_id": "id"})  # Link to post
+    .run()
+)
+
+comment = list(result.tables[Comment].values())[0]
+print(f"Comment: {comment.body}")
+print(f"By: {comment.user.name if comment.user else 'Unknown'}")
+print(f"On: {comment.post.title if comment.post else 'Unknown'}")
+```
+
+
+    Comment: Great post!
+    By: Alice
+    On: Hello
+
+
+# Nested Data Relationships
+
+When data is nested, use [get_from_parent()](../reference/get_from_parent.md#etielle.get_from_parent) to extract the foreign key:
+
+
+``` python
+from pydantic import BaseModel
+from etielle import etl, Field, TempField, get, get_from_parent
+
+class Order(BaseModel):
+    id: str
+    customer: str
+
+class Item(BaseModel):
+    id: str
+    product: str
+    order: Order | None = None
+
+data = {
+    "orders": [{
+        "id": "o1",
+        "customer": "Alice",
+        "items": [
+            {"id": "i1", "product": "Widget"},
+            {"id": "i2", "product": "Gadget"}
+        ]
+    }]
+}
+
+result = (
+    etl(data)
+    .goto("orders").each()
+    .map_to(table=Order, fields=[
+        Field("id", get("id")),
+        Field("customer", get("customer")),
+    ])
+
+    .goto("items").each()
+    .map_to(table=Item, fields=[
+        Field("id", get("id")),
+        Field("product", get("product")),
+        TempField("order_id", get_from_parent("id"))  # Foreign key (not persisted)
+    ])
+    .link_to(Order, by={"order_id": "id"})
+    .run()
+)
+
+for key, item in result.tables[Item].items():
+    print(f"{item.product} - Order: {item.order.id if item.order else 'None'}")
+```
+
+
+    Widget - Order: o1
+    Gadget - Order: o1
+
+
+# Composite Keys
+
+For relationships with composite keys, include multiple entries in the `by` dict:
+
+``` python
+# Child has both region_id and store_id pointing to parent
+.link_to(Store, by={
+    "region_id": "region_id",
+    "store_id": "store_id"
+})
+```
+
+
+# Many-to-Many Junction Tables
+
+Many-to-many relationships require a **junction table** (also called link table or join table) to connect two entities. etielle supports creating junction table records through nested iteration.
+
+> **Important: Explicit IDs Required**
+>
+> Junction table patterns only work when entities have **explicit IDs in the source data**. They do not work with database-generated auto-increment IDs, because the junction records need to reference the parent IDs before database insertion.
+>
+> For DB-generated IDs, you'll need to: 1. Insert parent entities first 2. Query back the generated IDs 3. Run a second pipeline to create junction records
+
+
+## Pattern 1: List of IDs on Parent
+
+The most common pattern: each parent has a list of related child IDs.
+
+
+``` python
+from dataclasses import dataclass
+from etielle import etl, Field, get, get_from_parent, node
+
+@dataclass
+class Question:
+    __tablename__ = "questions"
+    id: str
+    text: str
+
+@dataclass
+class QuestionChoice:
+    """Junction table linking questions to choices."""
+    __tablename__ = "question_choices"
+    question_id: str
+    choice_id: str
+
+data = {
+    "questions": [
+        {"id": "Q1", "text": "Question 1", "choice_ids": ["c1", "c2"]},
+        {"id": "Q2", "text": "Question 2", "choice_ids": ["c2", "c3"]},
+    ]
+}
+
+result = (
+    etl(data)
+    # Extract questions (first traversal)
+    .goto("questions").each()
+    .map_to(table=Question, fields=[
+        Field("id", get("id")),
+        Field("text", get("text")),
+    ])
+    # Create junction records (separate traversal)
+    .goto_root()
+    .goto("questions").each()
+    .goto("choice_ids").each()
+    .map_to(table=QuestionChoice, fields=[
+        Field("question_id", get_from_parent("id")),
+        Field("choice_id", node()),
+    ])
+    .run()
+)
+
+# Verify junction records
+for key, junction in result.tables[QuestionChoice].items():
+    print(f"Question {junction.question_id} -> Choice {junction.choice_id}")
+```
+
+
+    Question Q1 -> Choice c1
+    Question Q1 -> Choice c2
+    Question Q2 -> Choice c2
+    Question Q2 -> Choice c3
+
+
+## Pattern 2: Explicit Junction Array
+
+When junction records are provided as explicit objects:
+
+
+``` python
+from dataclasses import dataclass
+from etielle import etl, Field, get
+
+@dataclass
+class QuestionChoice:
+    __tablename__ = "question_choices"
+    question_id: str
+    choice_id: str
+
+data = {
+    "question_choices": [
+        {"question_id": "Q1", "choice_id": "c1"},
+        {"question_id": "Q1", "choice_id": "c2"},
+        {"question_id": "Q2", "choice_id": "c2"},
+    ]
+}
+
+result = (
+    etl(data)
+    .goto("question_choices").each()
+    .map_to(table=QuestionChoice, fields=[
+        Field("question_id", get("question_id")),
+        Field("choice_id", get("choice_id")),
+    ])
+    .run()
+)
+
+print(f"Created {len(result.tables[QuestionChoice])} junction records")
+```
+
+
+    Created 3 junction records
+
+
+## Pattern 3: Wrapped Mapping Objects
+
+For dict-like mappings, wrap each entry in an object with an explicit field for the child IDs:
+
+
+``` python
+from dataclasses import dataclass
+from etielle import etl, Field, get, get_from_parent, node
+
+@dataclass
+class QuestionChoice:
+    __tablename__ = "question_choices"
+    question_id: str
+    choice_id: str
+
+# Wrap dict-of-lists as list of objects
+data = {
+    "question_choices": [
+        {"question_id": "Q1", "choices": ["c1", "c2"]},
+        {"question_id": "Q2", "choices": ["c2", "c3"]},
+    ]
+}
+
+result = (
+    etl(data)
+    .goto("question_choices").each()
+    .goto("choices").each()
+    .map_to(table=QuestionChoice, fields=[
+        Field("question_id", get_from_parent("question_id")),
+        Field("choice_id", node()),
+    ])
+    .run()
+)
+
+for key, junction in result.tables[QuestionChoice].items():
+    print(f"Question {junction.question_id} -> Choice {junction.choice_id}")
+```
+
+
+    Question Q1 -> Choice c1
+    Question Q1 -> Choice c2
+    Question Q2 -> Choice c2
+    Question Q2 -> Choice c3
+
+
+## Pattern 4: Inverse Relationship
+
+When child entities have lists of parent IDs:
+
+
+``` python
+from dataclasses import dataclass
+from etielle import etl, Field, get, get_from_parent, node
+
+@dataclass
+class Choice:
+    __tablename__ = "choices"
+    id: str
+    text: str
+
+@dataclass
+class QuestionChoice:
+    __tablename__ = "question_choices"
+    question_id: str
+    choice_id: str
+
+data = {
+    "choices": [
+        {"id": "c1", "text": "Choice 1", "question_ids": ["Q1"]},
+        {"id": "c2", "text": "Choice 2", "question_ids": ["Q1", "Q2"]},
+    ]
+}
+
+result = (
+    etl(data)
+    # Extract choices
+    .goto("choices").each()
+    .map_to(table=Choice, fields=[
+        Field("id", get("id")),
+        Field("text", get("text")),
+    ])
+    # Create junction records
+    .goto_root()
+    .goto("choices").each()
+    .goto("question_ids").each()
+    .map_to(table=QuestionChoice, fields=[
+        Field("question_id", node()),
+        Field("choice_id", get_from_parent("id")),
+    ])
+    .run()
+)
+
+print(f"Choices: {len(result.tables[Choice])}")
+print(f"Junctions: {len(result.tables[QuestionChoice])}")
+```
+
+
+    Choices: 2
+    Junctions: 3
+
+
+## Using Lookups for ID Resolution
+
+When source data uses external identifiers (slugs, codes) that need to be resolved:
+
+
+``` python
+from dataclasses import dataclass
+from etielle import etl, Field, get, lookup
+
+@dataclass
+class Question:
+    __tablename__ = "questions"
+    id: str
+    text: str
+
+@dataclass
+class QuestionChoice:
+    __tablename__ = "question_choices"
+    question_id: str
+    choice_id: str
+
+data = {
+    "questions": [
+        {"slug": "q1", "text": "Question 1"},
+        {"slug": "q2", "text": "Question 2"},
+    ],
+    "mappings": [
+        {"question": "q1", "choice": "c1"},
+        {"question": "q1", "choice": "c2"},
+    ],
+}
+
+result = (
+    etl(data)
+    # Extract questions and build lookup index
+    .goto("questions").each()
+    .map_to(table=Question, fields=[
+        Field("id", get("slug")),
+        Field("text", get("text")),
+    ])
+    .build_index("question_by_slug", key=get("slug"), value=get("slug"))
+
+    # Create junctions using lookup
+    .goto_root()
+    .goto("mappings").each()
+    .map_to(table=QuestionChoice, fields=[
+        Field("question_id", lookup("question_by_slug", get("question"))),
+        Field("choice_id", get("choice")),
+    ])
+    .run()
+)
+
+for key, junction in result.tables[QuestionChoice].items():
+    print(f"Question {junction.question_id} -> Choice {junction.choice_id}")
+```
+
+
+    Question q1 -> Choice c1
+    Question q1 -> Choice c2
+
+
+## Pattern 5: Direct Dict-of-Lists Iteration
+
+For dict-of-lists structures like `{"Q1": ["c1", "c2"], "Q2": ["c2", "c3"]}`, use `.each().each()` directly without `.goto()`:
+
+
+``` python
+from dataclasses import dataclass
+from etielle import etl, Field, node
+from etielle.transforms import parent_key
+
+@dataclass
+class QuestionChoice:
+    __tablename__ = "question_choices"
+    question_id: str
+    choice_id: str
+
+data = {
+    "question_choices": {
+        "Q1": ["c1", "c2"],
+        "Q2": ["c2", "c3"],
+    }
+}
+
+result = (
+    etl(data)
+    .goto("question_choices")
+    .each()  # Iterate dict keys: "Q1", "Q2"
+    .each()  # Iterate list values: "c1", "c2", "c2", "c3"
+    .map_to(table=QuestionChoice, fields=[
+        Field("question_id", parent_key()),  # Get dict key from parent context
+        Field("choice_id", node()),          # Get current list item
+    ])
+    .run()
+)
+
+for key, junction in result.tables[QuestionChoice].items():
+    print(f"Question {junction.question_id} -> Choice {junction.choice_id}")
+```
+
+
+    Question Q1 -> Choice c1
+    Question Q1 -> Choice c2
+    Question Q2 -> Choice c2
+    Question Q2 -> Choice c3
+
+
+## Pattern 6: List-of-Lists (2D Arrays)
+
+For 2D arrays, use `.each().each()` with [parent_index()](../reference/parent_index.md#etielle.parent_index) to track position:
+
+
+``` python
+from dataclasses import dataclass
+from etielle import etl, Field, node, parent_index
+from etielle.transforms import index
+
+@dataclass
+class Cell:
+    __tablename__ = "cells"
+    row: int
+    col: int
+    value: int
+
+data = {
+    "rows": [
+        [1, 2, 3],
+        [4, 5, 6],
+    ]
+}
+
+result = (
+    etl(data)
+    .goto("rows")
+    .each()  # Iterate outer list (rows)
+    .each()  # Iterate inner list (columns)
+    .map_to(table=Cell, fields=[
+        Field("row", parent_index()),  # Outer list index
+        Field("col", index()),          # Inner list index
+        Field("value", node()),         # Current value
+    ])
+    .run()
+)
+
+for key, cell in result.tables[Cell].items():
+    print(f"Cell[{cell.row},{cell.col}] = {cell.value}")
+```
+
+
+    Cell[0,0] = 1
+    Cell[0,1] = 2
+    Cell[0,2] = 3
+    Cell[1,0] = 4
+    Cell[1,1] = 5
+    Cell[1,2] = 6
+
+
+## Pattern 7: N-Level Deep Nesting
+
+For arbitrarily deep nested structures, chain multiple `.each()` calls:
+
+
+``` python
+from dataclasses import dataclass
+from etielle import etl, Field, node
+from etielle.transforms import parent_key
+
+@dataclass
+class Value:
+    __tablename__ = "values"
+    level: str
+    group: str
+    value: int
+
+# Dict-of-dict-of-lists structure
+data = {
+    "levels": {
+        "L1": {
+            "A": [1, 2],
+            "B": [3],
+        },
+        "L2": {
+            "C": [4, 5, 6],
+        },
+    }
+}
+
+result = (
+    etl(data)
+    .goto("levels")
+    .each()  # Iterate outer dict keys: "L1", "L2"
+    .each()  # Iterate inner dict keys: "A", "B", "C"
+    .each()  # Iterate list values: 1, 2, 3, 4, 5, 6
+    .map_to(table=Value, fields=[
+        Field("level", parent_key(depth=2)),  # Grandparent key
+        Field("group", parent_key(depth=1)),  # Parent key
+        Field("value", node()),                # Current value
+    ])
+    .run()
+)
+
+for key, val in result.tables[Value].items():
+    print(f"{val.level}/{val.group}: {val.value}")
+```
+
+
+    L1/A: 1
+    L1/A: 2
+    L1/B: 3
+    L2/C: 4
+    L2/C: 5
+    L2/C: 6
+
+
+## Best Practices for Junction Tables
+
+1.  **Use separate traversals**: Extract parent entities first, then create junction records in a separate traversal starting with `.goto_root()`.
+
+2.  **Use [Field](../reference/Field.md#etielle.Field) for junction columns**: Junction table columns (`question_id`, `choice_id`) should be [Field](../reference/Field.md#etielle.Field), not [TempField](../reference/TempField.md#etielle.TempField), since they're the actual data being stored.
+
+3.  **Explicit IDs only**: Junction patterns require IDs to be present in the source data. Database-generated IDs require a two-pass approach.
+
+4.  **Direct `.each().each()` for dict-of-lists and list-of-lists**: Use `.each().each()` without `.goto()` between them when iterating dict values that are lists, or for 2D arrays. Use [parent_key()](../reference/parent_key.md#etielle.parent_key) to access the dict key and [parent_index()](../reference/parent_index.md#etielle.parent_index) to access the outer list index.
+
+5.  **Use `.goto()` between `.each()` for nested objects**: When iterating objects with nested arrays (e.g., `{"items": [{"choices": [...]}]}`), use `.each().goto("choices").each()` pattern.
+
+
+# [link_to()](../reference/PipelineBuilder.link_to.md#etielle.PipelineBuilder.link_to) Reference
+
+| Parameter | Type | Description |
+|----|----|----|
+| `parent` | `type | str` | The parent model class or table name |
+| `by` | `dict[str, str]` | Mapping of `{child_field: parent_field}` |
+| `fk` | `dict[str, str] | None` | (Supabase only) Mapping of `{child_column: parent_column}` for DB-generated IDs |
+
+
+## The `fk` Parameter (Supabase)
+
+When using Supabase with DB-generated primary keys (UUID, auto-increment), use `fk` to populate child foreign keys after parent insertion:
+
+``` python
+.link_to("users", by={"_parent_key": "_key"}, fk={"user_id": "id"})
+```
+
+This tells etielle: "After inserting users, set each child's `user_id` column to the parent's generated `id`."
+
+See [Database Loading](database-loading.md#db-generated-ids-two-phase-insert) for a complete example.
+
+
+## Requirements
+
+- Must be called after [map_to()](../reference/PipelineBuilder.map_to.md#etielle.PipelineBuilder.map_to) (links the most recent emission)
+- Both child and parent fields can be [Field](../reference/Field.md#etielle.Field) or [TempField](../reference/TempField.md#etielle.TempField) names
+- Parent table must be emitted somewhere in the pipeline
+
+
+## Error Handling
+
+- Missing parents: By default, [link_to()](../reference/PipelineBuilder.link_to.md#etielle.PipelineBuilder.link_to) does not fail if a parent is not found
+- The relationship attribute will be `None` for unmatched children
+- Use error handling modes to change this behavior
+
+
+# Best Practices
+
+
+## Use TempField for Foreign Keys
+
+Foreign key values should be in [TempField](../reference/TempField.md#etielle.TempField), not [Field](../reference/Field.md#etielle.Field), unless you also need them in output:
+
+``` python
+# Good: Foreign key is TempField (not in output, just for linking)
+TempField("user_id", get_from_parent("id"))
+
+# If you need user_id in output: use Field (it's also available for linking)
+Field("user_id", get_from_parent("id"))
+
+# Note: Don't use both Field and TempField with the same name
+# The TempField will shadow the Field and prevent it from being persisted
+```
+
+
+## Order Matters
+
+Emit parent tables before child tables that link to them:
+
+``` python
+# Good: Users emitted before posts
+.map_to(table=User, fields=[...])
+.goto("posts").each()
+.map_to(table=Post, fields=[...])
+.link_to(User, by={"user_id": "id"})
+
+# Also works: Order within same run() is handled correctly
+```
+
+
+## Match Key Types
+
+Ensure child and parent key values are the same type:
+
+``` python
+# If parent key is string "u1"
+TempField("id", get("id"))  # Returns "u1"
+
+# Child key must also be string
+TempField("user_id", get("user_id"))  # Must return "u1", not 1
+```
+
+
+# Many-to-Many Relationships with [backlink()](../reference/PipelineBuilder.backlink.md#etielle.PipelineBuilder.backlink)
+
+While [link_to()](../reference/PipelineBuilder.link_to.md#etielle.PipelineBuilder.link_to) handles many-to-one relationships (child → parent), [backlink()](../reference/PipelineBuilder.backlink.md#etielle.PipelineBuilder.backlink) handles many-to-many relationships where a parent has a list of children.
+
+
+## What is [backlink()](../reference/PipelineBuilder.backlink.md#etielle.PipelineBuilder.backlink)?
+
+[backlink()](../reference/PipelineBuilder.backlink.md#etielle.PipelineBuilder.backlink) populates a list attribute on the parent object with matching child objects. This is useful for ORM-native many-to-many relationships where the ORM handles junction tables automatically (e.g., SQLModel, SQLAlchemy).
+
+``` python
+from dataclasses import dataclass, field
+from etielle import etl, Field, TempField, get
+
+@dataclass
+class Question:
+    text: str
+    choices: list = field(default_factory=list)  # Will be populated by backlink()
+
+@dataclass
+class Choice:
+    text: str
+
+data = {
+    "questions": [
+        {"id": 1, "text": "What is 2+2?", "choice_ids": [10, 11]},
+    ],
+    "choices": [
+        {"id": 10, "text": "3"},
+        {"id": 11, "text": "4"},
+    ],
+}
+
+result = (
+    etl(data)
+    .goto("questions").each()
+    .map_to(table=Question, fields=[
+        Field("text", get("text")),
+        TempField("id", get("id")),
+        TempField("choice_ids", get("choice_ids")),  # List of child IDs
+    ])
+    .goto_root()
+    .goto("choices").each()
+    .map_to(table=Choice, fields=[
+        Field("text", get("text")),
+        TempField("id", get("id")),
+    ])
+    .backlink(
+        parent=Question,
+        child=Choice,
+        attr="choices",               # Sets question.choices = [...]
+        by={"choice_ids": "id"},      # Parent's choice_ids contains child's id
+    )
+    .run()
+)
+
+# Question now has its choices populated
+question = list(result.tables[Question].values())[0]
+print(f"Question: {question.text}")
+for choice in question.choices:
+    print(f"  - {choice.text}")
+```
+
+
+## How [backlink()](../reference/PipelineBuilder.backlink.md#etielle.PipelineBuilder.backlink) Works
+
+The `by` parameter mapping is **reversed** from [link_to()](../reference/PipelineBuilder.link_to.md#etielle.PipelineBuilder.link_to):
+
+| Method | `by` mapping direction | Example |
+|----|----|----|
+| [link_to()](../reference/PipelineBuilder.link_to.md#etielle.PipelineBuilder.link_to) | `{child_field: parent_field}` | `by={"user_id": "id"}` |
+| [backlink()](../reference/PipelineBuilder.backlink.md#etielle.PipelineBuilder.backlink) | `{parent_field: child_field}` | `by={"choice_ids": "id"}` |
+
+For [backlink()](../reference/PipelineBuilder.backlink.md#etielle.PipelineBuilder.backlink), the parent field (`choice_ids`) contains a list of values that match the child field (`id`).
+
+
+## [backlink()](../reference/PipelineBuilder.backlink.md#etielle.PipelineBuilder.backlink) Reference
+
+| Parameter | Type | Description |
+|----|----|----|
+| `parent` | `type \| str` | The parent model class or table name that holds the list |
+| `child` | `type \| str` | The child model class or table name |
+| `attr` | `str` | The list attribute name on the parent to populate |
+| `by` | `dict[str, str]` | Mapping of `{parent_field: child_field}` where parent_field contains list of child IDs |
+
+
+## Requirements
+
+- Parent's field in `by` must contain a list of child IDs (or a single ID)
+- Child's field in `by` must be indexed (available as TempField)
+- Both tables must be emitted in the pipeline
+- **Not supported with Supabase** - [backlink()](../reference/PipelineBuilder.backlink.md#etielle.PipelineBuilder.backlink) relies on ORM-native junction table handling
+
+
+## Combining [link_to()](../reference/PipelineBuilder.link_to.md#etielle.PipelineBuilder.link_to) and [backlink()](../reference/PipelineBuilder.backlink.md#etielle.PipelineBuilder.backlink)
+
+You can use both relationship types in the same pipeline:
+
+``` python
+result = (
+    etl(data)
+    .goto("users").each()
+    .map_to(table=User, fields=[...])
+
+    .goto_root()
+    .goto("questions").each()
+    .map_to(table=Question, fields=[
+        TempField("user_id", get("user_id")),
+        TempField("choice_ids", get("choice_ids")),
+        ...
+    ])
+    .link_to(User, by={"user_id": "id"})  # Many-to-one: Question -> User
+
+    .goto_root()
+    .goto("choices").each()
+    .map_to(table=Choice, fields=[...])
+    .backlink(
+        parent=Question,
+        child=Choice,
+        attr="choices",
+        by={"choice_ids": "id"},
+    )  # Many-to-many: Question.choices = [Choice, ...]
+    .run()
+)
+```
+
+
+# See also
+
+- [Mapping Tables](mapping.md) - Defining the tables that relationships link
+- [Database Loading](database-loading.md) - Persisting linked records to database
+- [Navigation](navigation.md) - Nested traversal for parent-child data
