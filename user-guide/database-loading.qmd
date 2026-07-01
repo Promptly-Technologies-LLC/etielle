@@ -294,7 +294,7 @@ stream(chunks, eager_roots=tags_snapshot)
 
 ### Chunking helpers
 
-Producing correct chunks is part of the streaming contract, so etielle ships two `ChunkSource` helpers rather than leaving boundary-finding to the caller.
+Producing correct chunks is part of the streaming contract, so etielle ships `ChunkSource` helpers rather than leaving boundary-finding to the caller.
 
 **`GroupByChunkSource` (single-pass group-by).** Given a `key` function, it reads the input once, accumulates consecutive records that share a key, and emits a chunk when the key changes. Peak memory is one chunk.
 
@@ -315,8 +315,22 @@ stream(source)
     .run()
 ```
 
-- **Grouped-input requirement.** Grouping is *consecutive only*, so the input must already be grouped (or sorted) by `key`—the natural shape for paginated APIs and "one parent subtree at a time" feeds. If two records share a key but are separated by a record with a different key, they land in different chunks; that still satisfies key-completeness, but the runtime relationship-completeness check will raise if a chunk is then missing relationship endpoints. For unsorted input, sort by `key` first (the robust unsorted-input partitioner, H2, is deferred).
+- **Grouped-input requirement.** Grouping is *consecutive only*, so the input must already be grouped (or sorted) by `key`—the natural shape for paginated APIs and "one parent subtree at a time" feeds. If two records share a key but are separated by a record with a different key, they land in different chunks; that still satisfies key-completeness, but the runtime relationship-completeness check will raise if a chunk is then missing relationship endpoints. For unsorted input, sort by `key` first or use `ExternalPartitionChunkSource`.
 - **Pick a relationship-complete key.** Choose a key that is a *complete component root*—coarse enough that everything reachable through a relationship from a record sharing the key also shares it (e.g. the owning entity id), not merely a fine merge key. Grouping guarantees key-completeness for the chosen key; the runtime validation catches a key that is too fine.
+
+**`ExternalPartitionChunkSource` (disk-backed partitioner for unsorted input).** The two-pass complement to `GroupByChunkSource`: pass one serializes every record to a temporary spill file and builds a key→offsets index; pass two emits one chunk per distinct key (in first-appearance order) by reading that key's records back from disk. Records sharing a key are reunited no matter how far apart they arrive, so no pre-sorting is needed.
+
+```python
+from etielle import stream, ExternalPartitionChunkSource
+
+# Records for the same order may be interleaved with other orders.
+source = ExternalPartitionChunkSource(record_iter, key=lambda r: r["orders"][0]["id"])
+stream(source).goto(...)...
+```
+
+- **Trade-offs.** Peak record memory is one chunk (the current partition), but the whole dataset is written to temp storage and the offset index holds a few machine words per record for the duration of the stream. Pass two performs random reads, so prefer a fast local temp filesystem (override the location with `dir=`).
+- **Serialization.** Records round-trip through `dumps`/`loads` (default `json.dumps`/`json.loads`), so chunks yield reconstructed copies; pass custom callables for non-JSON records. The spill file is deleted when iteration finishes or the chunk iterator is closed.
+- The same relationship-complete-key guidance as `GroupByChunkSource` applies.
 
 **`PreSegmentedChunkSource` (passthrough).** If you already have an iterable of `Chunk` objects, hand it over directly—it yields them in order without buffering.
 
@@ -333,9 +347,40 @@ Streaming keeps peak memory flat regardless of dataset size: etielle maps a chun
 
 On the SQLAlchemy side this needs no special handling: the session's identity map references *persistent* (flushed, clean) instances weakly, so once etielle drops its per-chunk references, CPython's garbage collector reclaims them. Transaction control still belongs to the caller—the `INSERT`s accumulate in the open transaction until you commit or roll back. For a very long stream, commit at a cadence that suits your durability needs; a single end-of-stream commit keeps everything in one transaction.
 
-### Extending flush behavior
+### Flush strategies
 
-The chunk loop is strategy-agnostic: it calls `FlushStrategy.flush(ctx)` at each component boundary. A custom strategy receives a `FlushContext` exposing the scoped tables, mapped results, dependency graph, relationships, stats sink, telemetry callback, and the `session`/`is_supabase` target. Custom strategies (e.g. upsert or buffered variants from issue #77) implement persistence using those public fields plus `etielle.utils.topological_sort`; the built-in `KeyCompleteFlushStrategy` delegates to etielle's standard insert/bind logic.
+The chunk loop is strategy-agnostic: it calls `FlushStrategy.flush(ctx)` at each component boundary, and `stream(..., flush_strategy=...)` selects which strategy runs. Three strategies ship with etielle.
+
+**`KeyCompleteFlushStrategy` (default).** Plain insert/flush with no cross-chunk state, delegating to etielle's standard insert/bind logic. A row whose key conflicts with an already-stored row raises `IntegrityError` and aborts the chunk's transaction.
+
+**`UpsertFlushStrategy` (database-level conflict handling, SQLAlchemy only).** Resolves conflicts against rows that are already stored, for idempotent re-runs and streaming ingest that may re-encounter stored records:
+
+```python
+from etielle import stream, UpsertFlushStrategy
+
+stream(records, flush_strategy=UpsertFlushStrategy())                     # ON CONFLICT-style update
+stream(records, flush_strategy=UpsertFlushStrategy(on_conflict="skip"))   # skip conflicting rows
+```
+
+- `on_conflict="update"` (default) persists each instance with `session.merge()`: an existing row with the same primary key is overwritten (last write wins); otherwise the row is inserted. Conflict detection is by primary key, so instances need their key values set, and each merge can issue a per-row SELECT. A concurrent insert between that SELECT and the INSERT can still raise `IntegrityError`.
+- `on_conflict="skip"` inserts each instance inside a per-row `SAVEPOINT` and skips any row that raises `IntegrityError`—duplicate primary keys, unique-constraint conflicts (including concurrent-insert races), but also any other integrity violation. A child bound to a skipped parent is itself skipped, because the cascaded parent insert reproduces the conflict inside the child's `SAVEPOINT`. Skipped rows appear in `mapped` stats but in neither `inserted` nor `failed`.
+- Not a cross-chunk-merge substitute: merge policies (`AddPolicy` etc.) run only within a chunk's mapping pass, and `update` mode overwrites whole rows rather than merging fields.
+- For Supabase, use `load(upsert=True, upsert_on=...)` with the default strategy instead; the Supabase adapter performs native upserts.
+
+**`BufferedKeyFlushStrategy` (bounded cross-chunk key merge, SQLAlchemy only).** Keeps an LRU cache of the last `max_keys` flushed `(table, join key)` entries. When a later chunk maps a row whose key is still cached, its non-None scalar values are copied onto the already-persisted instance (an UPDATE at the next flush) instead of inserting a duplicate, and children mapped alongside the re-appearing row are relinked to the persisted instance:
+
+```python
+from etielle import stream, BufferedKeyFlushStrategy
+
+stream(records, flush_strategy=BufferedKeyFlushStrategy(max_keys=50_000))
+```
+
+- **Correctness is a heuristic bounded by cache size**, not a guarantee: once a key is evicted, a reappearing row inserts a new row (or raises `IntegrityError` under a unique constraint). Size `max_keys` for the worst-case reappearance gap, or use `ExternalPartitionChunkSource` for exact grouping.
+- Only tables with `join_on` participate; auto-keyed rows always insert because auto keys restart per chunk. Merge is last-non-None-write-wins per scalar attribute; collection attributes (e.g. `backlink()` lists) are not merged across chunks.
+- Relationship completeness is still validated per chunk: the cache merges repeated *rows*, it does not let a child reference a parent that appeared only in an earlier chunk.
+- The strategy is stateful across the run—use a fresh instance per pipeline.
+
+**Custom strategies.** A strategy receives a `FlushContext` exposing the scoped tables, mapped results, dependency graph, relationships, stats sink, telemetry callback, and the `session`/`is_supabase` target. Custom strategies implement persistence using those public fields plus `etielle.utils.topological_sort`.
 
 ## Upsert Behavior
 

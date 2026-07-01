@@ -145,7 +145,7 @@ class PreSegmentedChunkSource:
 class ExternalPartitionChunkSource:
     """Partition arbitrarily-ordered input into key-complete chunks via disk.
 
-    This is the two-pass, disk-backed partitioner (H2): pass one serializes
+    This is the two-pass, disk-backed partitioner: pass one serializes
     every record to a temporary spill file and builds an in-memory
     key -> offsets index; pass two emits one chunk per distinct key by reading
     that key's records back from disk. Unlike ``GroupByChunkSource`` it does
