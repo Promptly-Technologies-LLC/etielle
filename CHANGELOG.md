@@ -2,6 +2,36 @@
 
 <!-- version list -->
 
+## v4.3.0 (2026-07-01)
+
+### Continuous Integration
+
+- Build and deploy documentation with great-docs
+  ([`9ad489b`](https://github.com/Promptly-Technologies-LLC/etielle/commit/9ad489b938d41f42be0c5fec5ac39ace2da70d35))
+
+### Documentation
+
+- Add great-docs configuration and dependency
+  ([`e8cf9bf`](https://github.com/Promptly-Technologies-LLC/etielle/commit/e8cf9bf14fe793e6545728c926ffd9b9625d7f5e))
+
+- Add Scaling & Memory page and trim database-loading
+  ([`7dcc28d`](https://github.com/Promptly-Technologies-LLC/etielle/commit/7dcc28d3315a6f8c4efbc3dd471ce88a2fd5dc8a))
+
+- Document new chunk source and flush strategies
+  ([`e19d75f`](https://github.com/Promptly-Technologies-LLC/etielle/commit/e19d75ffaaad5f92975af211e111f63bc4412e9d))
+
+- Migrate narrative guides to great-docs user-guide flow
+  ([`e795727`](https://github.com/Promptly-Technologies-LLC/etielle/commit/e7957274109999d8a65a20570cb11acbb32117d2))
+
+- Use index.qmd as the great-docs homepage source
+  ([`5e74bb3`](https://github.com/Promptly-Technologies-LLC/etielle/commit/5e74bb31da25fcfb55dccd8750ef845ed68e3891))
+
+### Features
+
+- Add ExternalPartitionChunkSource, UpsertFlushStrategy, BufferedKeyFlushStrategy
+  ([`6b869df`](https://github.com/Promptly-Technologies-LLC/etielle/commit/6b869df2a2639d4cd2969f574c004f8cc73ce399))
+
+
 ## v4.2.0 (2026-06-26)
 
 ### Features
