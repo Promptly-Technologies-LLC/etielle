@@ -2058,13 +2058,19 @@ class PipelineBuilder:
         )
 
 
-def etl(*roots: Any, errors: ErrorMode = "collect", indices: dict[str, dict[Any, Any]] | None = None) -> PipelineBuilder:
+def etl(
+    *roots: Any,
+    errors: ErrorMode = "collect",
+    indices: dict[str, dict[Any, Any]] | None = None,
+    flush_strategy: Any | None = None,
+) -> PipelineBuilder:
     """Entry point for fluent E→T→L pipelines.
 
     Args:
         *roots: One or more JSON objects to process.
         errors: Error handling mode - "collect" (default) or "fail_fast".
         indices: Pre-built lookup indices for use with lookup() transform.
+        flush_strategy: Optional flush strategy (defaults to ``KeyCompleteFlushStrategy``).
 
     Returns:
         A PipelineBuilder for chaining navigation and mapping calls.
@@ -2079,7 +2085,7 @@ def etl(*roots: Any, errors: ErrorMode = "collect", indices: dict[str, dict[Any,
             .run()
         )
     """
-    return PipelineBuilder(roots, errors, indices)
+    return PipelineBuilder(roots, errors, indices, flush_strategy=flush_strategy)
 
 
 def stream(
