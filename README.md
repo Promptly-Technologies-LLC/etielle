@@ -7,8 +7,8 @@ into relational tables that fit your database schema. Think of `etielle`
 as a “JSON extractor” that you program with clear instructions: “Go here
 in the JSON, pull this data, and put it in that table.” The library’s
 name is a play on [ETL (“Extract, Transform,
-Load”)](docs/introduction-to-etl.qmd), which is the technical term for
-this set of operations.
+Load”)](user-guide/introduction-to-etl.qmd), which is the technical term
+for this set of operations.
 
 - **Repository**:
   [Promptly-Technologies-LLC/etielle](https://github.com/Promptly-Technologies-LLC/etielle)
@@ -35,18 +35,18 @@ parsing. `etielle` helps by:
 
 1.  [**Quickstart**](index.qmd): Quick and dirty introduction to
     `etielle` and how to use it.
-2.  [**Introduction to ETL**](docs/introduction-to-etl.qmd): The problem
-    `etielle` is solving: JSON data ETL.
-3.  [**Navigation**](docs/navigation.qmd): How to navigate through your
-    JSON data with `goto()` and `each()`.
-4.  [**Transforms**](docs/transforms.qmd): Getting and altering values
-    from the JSON data.
-5.  [**Mapping Tables**](docs/mapping.qmd): Outputting data with `Field`
-    and `TempField`.
-6.  [**Relationships**](docs/relationships.qmd): Linking tables together
-    with `link_to()`.
-7.  [**Database Loading**](docs/database-loading.qmd): Persisting data
-    with `load()` and `run()`.
+2.  [**Introduction to ETL**](user-guide/introduction-to-etl.qmd): The
+    problem `etielle` is solving: JSON data ETL.
+3.  [**Navigation**](user-guide/navigation.qmd): How to navigate through
+    your JSON data with `goto()` and `each()`.
+4.  [**Transforms**](user-guide/transforms.qmd): Getting and altering
+    values from the JSON data.
+5.  [**Mapping Tables**](user-guide/mapping.qmd): Outputting data with
+    `Field` and `TempField`.
+6.  [**Relationships**](user-guide/relationships.qmd): Linking tables
+    together with `link_to()`.
+7.  [**Database Loading**](user-guide/database-loading.qmd): Persisting
+    data with `load()` and `run()`.
 
 ## Installation
 
@@ -359,15 +359,15 @@ print(f"Type: {type(user).__name__}, name: {user.name}")
 
 ## Next Steps
 
-- **[Navigation](docs/navigation.qmd)** - Deep dive into `goto()`,
+- **[Navigation](user-guide/navigation.qmd)** - Deep dive into `goto()`,
   `each()`, and `goto_root()`
-- **[Transforms](docs/transforms.qmd)** - All built-in transforms and
-  how to use them
-- **[Mapping Tables](docs/mapping.qmd)** - `Field`, `TempField`, merge
-  policies
-- **[Relationships](docs/relationships.qmd)** - Link tables with
+- **[Transforms](user-guide/transforms.qmd)** - All built-in transforms
+  and how to use them
+- **[Mapping Tables](user-guide/mapping.qmd)** - `Field`, `TempField`,
+  merge policies
+- **[Relationships](user-guide/relationships.qmd)** - Link tables with
   `link_to()`
-- **[Database Loading](docs/database-loading.qmd)** - Persist with
+- **[Database Loading](user-guide/database-loading.qmd)** - Persist with
   `load().run()`
 
 ## Glossary
