@@ -929,7 +929,7 @@ a mapping of child_composite_key -> parent_composite_key for that spec.
 
 concat(*parts: Union[str, Callable[[etielle.core.Context], Any]]) -> Callable[[etielle.core.Context], str]
 
-etl(*roots: 'Any', errors: 'ErrorMode' = 'collect', indices: 'dict[str, dict[Any, Any]] | None' = None) -> 'PipelineBuilder'
+etl(*roots: 'Any', errors: 'ErrorMode' = 'collect', indices: 'dict[str, dict[Any, Any]] | None' = None, flush_strategy: 'Any | None' = None) -> 'PipelineBuilder'
 
 Entry point for fluent E→T→L pipelines.
 
@@ -937,6 +937,7 @@ Args:
     *roots: One or more JSON objects to process.
     errors: Error handling mode - "collect" (default) or "fail_fast".
     indices: Pre-built lookup indices for use with lookup() transform.
+    flush_strategy: Optional flush strategy (defaults to ``KeyCompleteFlushStrategy``).
 
 Returns:
     A PipelineBuilder for chaining navigation and mapping calls.
@@ -4200,7 +4201,7 @@ stream(PreSegmentedChunkSource(chunks)).goto(...)...
 
 ## Choosing a flush strategy
 
-The chunk loop calls `FlushStrategy.flush(ctx)` at each component boundary. Pass a strategy via `stream(..., flush_strategy=...)`. Resident `etl()` runs use the same strategy hook at component boundaries.
+The chunk loop calls `FlushStrategy.flush(ctx)` at each component boundary. Pass a strategy via `stream(..., flush_strategy=...)` or `etl(..., flush_strategy=...)`.
 
 ```mermaid
 flowchart TD

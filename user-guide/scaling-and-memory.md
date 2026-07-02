@@ -227,7 +227,7 @@ stream(PreSegmentedChunkSource(chunks)).goto(...)...
 
 # Choosing a flush strategy
 
-The chunk loop calls `FlushStrategy.flush(ctx)` at each component boundary. Pass a strategy via `stream(..., flush_strategy=...)`. Resident [etl()](../reference/etl.md#etielle.etl) runs use the same strategy hook at component boundaries.
+The chunk loop calls `FlushStrategy.flush(ctx)` at each component boundary. Pass a strategy via `stream(..., flush_strategy=...)` or `etl(..., flush_strategy=...)`.
 
 ``` mermaid
 flowchart TD

@@ -583,7 +583,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="choosing-a-flush-strategy" class="level1">
 <h1>Choosing a flush strategy</h1>
-<p>The chunk loop calls <code>FlushStrategy.flush(ctx)</code> at each component boundary. Pass a strategy via <code>stream(..., flush_strategy=...)</code>. Resident <a href="../reference/etl.html#etielle.etl" class="gdls-link gdls-code">etl()</a> runs use the same strategy hook at component boundaries.</p>
+<p>The chunk loop calls <code>FlushStrategy.flush(ctx)</code> at each component boundary. Pass a strategy via <code>stream(..., flush_strategy=...)</code> or <code>etl(..., flush_strategy=...)</code>.</p>
 <pre class="mermaid"><code>flowchart TD
     F([Flush at component boundary]) --&gt; Q1{Target?}
     Q1 --&gt;|Supabase| Supa["Default strategy +&lt;br/&gt;load(upsert=True, upsert_on=...)"]

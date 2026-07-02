@@ -2990,7 +2990,7 @@
     "href": "reference/etl.html",
     "title": "etl()",
     "section": "",
-    "text": "Entry point for fluent E→T→L pipelines.\n\n\nUsage\nSource\n\n\netl(*roots, errors=\"collect\", indices=None)\n\n\nParameters\n\n\n*roots: Any\n\nOne or more JSON objects to process.\n\nerrors: ErrorMode = \"collect\"\n\nError handling mode - “collect” (default) or “fail_fast”.\n\nindices: dict[str, dict[Any, Any]] | None = None\n\nPre-built lookup indices for use with lookup() transform.\n\n\n\n\n\nReturns\n\n\n PipelineBuilder\n\nA PipelineBuilder for chaining navigation and mapping calls.\n\n\n\n\n\nExample\nresult = ( etl(data) .goto(“users”).each() .map_to(table=User, fields=[ Field(“name”, get(“name”)) ]) .run() )",
+    "text": "Entry point for fluent E→T→L pipelines.\n\n\nUsage\nSource\n\n\netl(*roots, errors=\"collect\", indices=None, flush_strategy=None)\n\n\nParameters\n\n\n*roots: Any\n\nOne or more JSON objects to process.\n\nerrors: ErrorMode = \"collect\"\n\nError handling mode - “collect” (default) or “fail_fast”.\n\nindices: dict[str, dict[Any, Any]] | None = None\n\nPre-built lookup indices for use with lookup() transform.\n\nflush_strategy: Any | None = None\n\nOptional flush strategy (defaults to KeyCompleteFlushStrategy).\n\n\n\n\n\nReturns\n\n\n PipelineBuilder\n\nA PipelineBuilder for chaining navigation and mapping calls.\n\n\n\n\n\nExample\nresult = ( etl(data) .goto(“users”).each() .map_to(table=User, fields=[ Field(“name”, get(“name”)) ]) .run() )",
     "crumbs": [
       "Reference",
       "Functions",

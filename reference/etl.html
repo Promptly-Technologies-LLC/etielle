@@ -1070,13 +1070,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <div class="doc-usage-source">
 <p>Usage</p>
-<p><a href="https://github.com/Promptly-Technologies-LLC/etielle/blob/main/etielle/fluent.py#L2125-L2146" target="_blank" rel="noopener">Source</a></p>
+<p><a href="https://github.com/Promptly-Technologies-LLC/etielle/blob/main/etielle/fluent.py#L2125-L2152" target="_blank" rel="noopener">Source</a></p>
 </div>
 <div class="doc-signature doc-Kind.FUNCTION">
 <div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="sig-name">etl</span>(
     <span class="op">*</span><span class="va">roots</span>,
     <span class="va">errors</span><span class="op">=</span><span class="st">&quot;collect&quot;</span>,
     <span class="va">indices</span><span class="op">=</span><span class="cn-none">None</span>,
+    <span class="va">flush_strategy</span><span class="op">=</span><span class="cn-none">None</span>,
 )</span></code></pre></div>
 </div>
 <section id="parameters" class="level2 doc-parameters">
@@ -1093,7 +1094,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </dd>
 <dt><code><span class="doc-parameter-name">indices</span><span class="doc-parameter-annotation-sep">:</span> <span class="doc-parameter-annotation">dict[str, dict[Any, Any]] | None</span> <span class="doc-parameter-default-sep op">=</span> <span class="doc-parameter-default">None</span></code></dt>
 <dd>
-Pre-built lookup indices for use with lookup() transform.
+<p>Pre-built lookup indices for use with lookup() transform.</p>
+</dd>
+<dt><code><span class="doc-parameter-name">flush_strategy</span><span class="doc-parameter-annotation-sep">:</span> <span class="doc-parameter-annotation">Any | None</span> <span class="doc-parameter-default-sep op">=</span> <span class="doc-parameter-default">None</span></code></dt>
+<dd>
+Optional flush strategy (defaults to <a href="KeyCompleteFlushStrategy.html#etielle.KeyCompleteFlushStrategy" class="gdls-link gdls-code">KeyCompleteFlushStrategy</a>).
 </dd>
 </dl>
 </div>
