@@ -352,7 +352,10 @@ class UpsertFlushStrategy:
     - ``on_conflict="update"`` (default): each instance is persisted with
       ``session.merge()``. If a row with the same primary key exists, its
       columns are overwritten with the incoming values (last write wins);
-      otherwise the row is inserted. Suited to idempotent re-runs.
+      otherwise the row is inserted. Suited to idempotent re-runs only when
+      every table you expect to dedupe supplies primary key values (via
+      ``join_on`` or natural keys); auto-keyed rows without PK values are
+      inserted as new rows on each run.
     - ``on_conflict="skip"``: each instance is inserted inside a per-row
       ``SAVEPOINT``; a row that raises ``IntegrityError`` (duplicate primary
       key or unique constraint, including a concurrent-insert race) is rolled
