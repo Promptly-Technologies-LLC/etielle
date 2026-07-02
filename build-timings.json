@@ -1,64 +1,69 @@
 {
-  "build_time": "2026-07-02T00:03:40Z",
-  "total_seconds": 156.363,
+  "build_time": "2026-07-02T00:04:23Z",
+  "total_seconds": 157.373,
   "pages": [
     {
       "page": "skill.md",
-      "seconds": 40.463,
+      "seconds": 40.723,
       "frozen": false
     },
     {
       "page": "user-guide/database-loading.qmd",
-      "seconds": 4.534,
+      "seconds": 4.67,
       "frozen": false
     },
     {
       "page": "user-guide/relationships.qmd",
-      "seconds": 3.313,
+      "seconds": 3.383,
       "frozen": false
     },
     {
       "page": "user-guide/error-handling.qmd",
-      "seconds": 3.232,
-      "frozen": false
-    },
-    {
-      "page": "user-guide/transforms.qmd",
-      "seconds": 3.073,
-      "frozen": false
-    },
-    {
-      "page": "index.qmd",
-      "seconds": 3.073,
+      "seconds": 3.233,
       "frozen": false
     },
     {
       "page": "user-guide/mapping.qmd",
-      "seconds": 3.072,
+      "seconds": 3.09,
+      "frozen": false
+    },
+    {
+      "page": "index.qmd",
+      "seconds": 3.082,
+      "frozen": false
+    },
+    {
+      "page": "user-guide/transforms.qmd",
+      "seconds": 3.067,
       "frozen": false
     },
     {
       "page": "user-guide/custom-transforms.qmd",
-      "seconds": 2.951,
-      "frozen": false
-    },
-    {
-      "page": "changelog.qmd",
-      "seconds": 2.936,
+      "seconds": 2.997,
       "frozen": false
     },
     {
       "page": "user-guide/navigation.qmd",
-      "seconds": 2.889,
+      "seconds": 2.959,
+      "frozen": false
+    },
+    {
+      "page": "changelog.qmd",
+      "seconds": 2.953,
       "frozen": false
     },
     {
       "page": "user-guide/scaling-and-memory.qmd",
-      "seconds": 1.067,
+      "seconds": 1.082,
       "frozen": false
     },
     {
       "page": "reference/PipelineResult.qmd",
+      "seconds": 0.766,
+      "frozen": false
+    },
+    {
+      "page": "reference/ExternalPartitionChunkSource.qmd",
       "seconds": 0.756,
       "frozen": false
     },
@@ -68,27 +73,22 @@
       "frozen": false
     },
     {
-      "page": "reference/ExternalPartitionChunkSource.qmd",
-      "seconds": 0.749,
-      "frozen": false
-    },
-    {
       "page": "reference/PipelineBuilder.load.qmd",
-      "seconds": 0.738,
+      "seconds": 0.746,
       "frozen": false
     },
     {
-      "page": "reference/FlushContext.qmd",
-      "seconds": 0.737,
-      "frozen": false
-    },
-    {
-      "page": "reference/UpsertFlushStrategy.qmd",
-      "seconds": 0.736,
+      "page": "reference/PipelineBuilder.link_to.qmd",
+      "seconds": 0.74,
       "frozen": false
     },
     {
       "page": "reference/GroupByChunkSource.qmd",
+      "seconds": 0.739,
+      "frozen": false
+    },
+    {
+      "page": "reference/InstanceEmit.qmd",
       "seconds": 0.735,
       "frozen": false
     },
@@ -98,212 +98,312 @@
       "frozen": false
     },
     {
-      "page": "reference/InstanceEmit.qmd",
-      "seconds": 0.733,
+      "page": "reference/FlushCompleted.qmd",
+      "seconds": 0.732,
       "frozen": false
     },
     {
-      "page": "reference/MappingResult.qmd",
-      "seconds": 0.727,
+      "page": "reference/UpsertFlushStrategy.qmd",
+      "seconds": 0.73,
       "frozen": false
     },
     {
       "page": "reference/BufferedKeyFlushStrategy.qmd",
-      "seconds": 0.726,
+      "seconds": 0.728,
       "frozen": false
     },
     {
-      "page": "reference/InstanceBuilder.update.qmd",
-      "seconds": 0.725,
-      "frozen": false
-    },
-    {
-      "page": "reference/PipelineBuilder.load_eager.qmd",
-      "seconds": 0.724,
-      "frozen": false
-    },
-    {
-      "page": "reference/PipelineBuilder.link_to.qmd",
-      "seconds": 0.724,
-      "frozen": false
-    },
-    {
-      "page": "reference/PipelineBuilder.build_index.qmd",
-      "seconds": 0.722,
-      "frozen": false
-    },
-    {
-      "page": "reference/TableStats.qmd",
-      "seconds": 0.722,
-      "frozen": false
-    },
-    {
-      "page": "reference/Context.qmd",
-      "seconds": 0.721,
-      "frozen": false
-    },
-    {
-      "page": "reference/PipelineBuilder.each.qmd",
-      "seconds": 0.72,
-      "frozen": false
-    },
-    {
-      "page": "reference/FlushCompleted.qmd",
-      "seconds": 0.72,
+      "page": "reference/FlushContext.qmd",
+      "seconds": 0.728,
       "frozen": false
     },
     {
       "page": "reference/PipelineBuilder.map_to.qmd",
-      "seconds": 0.72,
+      "seconds": 0.728,
       "frozen": false
     },
     {
-      "page": "reference/Chunk.qmd",
-      "seconds": 0.718,
-      "frozen": false
-    },
-    {
-      "page": "reference/FlushFailed.qmd",
-      "seconds": 0.717,
+      "page": "reference/PipelineBuilder.build_index.qmd",
+      "seconds": 0.724,
       "frozen": false
     },
     {
       "page": "reference/etl.qmd",
-      "seconds": 0.716,
+      "seconds": 0.724,
       "frozen": false
     },
     {
-      "page": "reference/stream.qmd",
-      "seconds": 0.716,
+      "page": "reference/Chunk.qmd",
+      "seconds": 0.724,
+      "frozen": false
+    },
+    {
+      "page": "reference/PreSegmentedChunkSource.qmd",
+      "seconds": 0.724,
+      "frozen": false
+    },
+    {
+      "page": "reference/MappingResult.qmd",
+      "seconds": 0.723,
+      "frozen": false
+    },
+    {
+      "page": "reference/PipelineBuilder.load_eager.qmd",
+      "seconds": 0.721,
       "frozen": false
     },
     {
       "page": "reference/ManyToOneSpec.qmd",
-      "seconds": 0.716,
+      "seconds": 0.72,
       "frozen": false
     },
     {
-      "page": "reference/PipelineBuilder.run.qmd",
-      "seconds": 0.713,
-      "frozen": false
-    },
-    {
-      "page": "reference/transform.qmd",
-      "seconds": 0.713,
-      "frozen": false
-    },
-    {
-      "page": "reference/parent_index.qmd",
-      "seconds": 0.71,
-      "frozen": false
-    },
-    {
-      "page": "reference/FlushStarted.qmd",
-      "seconds": 0.71,
-      "frozen": false
-    },
-    {
-      "page": "reference/get.qmd",
-      "seconds": 0.709,
+      "page": "reference/TableStats.qmd",
+      "seconds": 0.718,
       "frozen": false
     },
     {
       "page": "reference/lookup.qmd",
-      "seconds": 0.709,
+      "seconds": 0.717,
       "frozen": false
     },
     {
-      "page": "reference/PipelineBuilder.goto.qmd",
-      "seconds": 0.708,
+      "page": "reference/Context.qmd",
+      "seconds": 0.715,
       "frozen": false
     },
     {
-      "page": "reference/FirstNonNullPolicy.qmd",
-      "seconds": 0.708,
-      "frozen": false
-    },
-    {
-      "page": "reference/Field.qmd",
-      "seconds": 0.707,
+      "page": "reference/stream.qmd",
+      "seconds": 0.715,
       "frozen": false
     },
     {
       "page": "reference/TableEmit.qmd",
-      "seconds": 0.706,
+      "seconds": 0.715,
+      "frozen": false
+    },
+    {
+      "page": "reference/PipelineBuilder.goto.qmd",
+      "seconds": 0.714,
+      "frozen": false
+    },
+    {
+      "page": "reference/parent_index.qmd",
+      "seconds": 0.714,
+      "frozen": false
+    },
+    {
+      "page": "reference/FlushFailed.qmd",
+      "seconds": 0.714,
+      "frozen": false
+    },
+    {
+      "page": "reference/PydanticPartialBuilder.finalize_errors.qmd",
+      "seconds": 0.714,
+      "frozen": false
+    },
+    {
+      "page": "reference/transform.qmd",
+      "seconds": 0.714,
+      "frozen": false
+    },
+    {
+      "page": "reference/MappingSpec.qmd",
+      "seconds": 0.713,
+      "frozen": false
+    },
+    {
+      "page": "reference/PipelineBuilder.run.qmd",
+      "seconds": 0.711,
+      "frozen": false
+    },
+    {
+      "page": "reference/ConstructorBuilder.finalize_errors.qmd",
+      "seconds": 0.711,
       "frozen": false
     },
     {
       "page": "reference/IterationLevel.qmd",
+      "seconds": 0.711,
+      "frozen": false
+    },
+    {
+      "page": "reference/FlushStarted.qmd",
+      "seconds": 0.711,
+      "frozen": false
+    },
+    {
+      "page": "reference/PipelineBuilder.each.qmd",
+      "seconds": 0.71,
+      "frozen": false
+    },
+    {
+      "page": "reference/InstanceBuilder.record_finalize_error.qmd",
+      "seconds": 0.71,
+      "frozen": false
+    },
+    {
+      "page": "reference/FieldSpec.qmd",
+      "seconds": 0.708,
+      "frozen": false
+    },
+    {
+      "page": "reference/compute_relationship_keys.qmd",
+      "seconds": 0.708,
+      "frozen": false
+    },
+    {
+      "page": "reference/KeyCompleteFlushStrategy.qmd",
+      "seconds": 0.708,
+      "frozen": false
+    },
+    {
+      "page": "reference/TypedDictBuilder.known_fields.qmd",
+      "seconds": 0.708,
+      "frozen": false
+    },
+    {
+      "page": "reference/field_of.qmd",
       "seconds": 0.706,
       "frozen": false
     },
     {
-      "page": "reference/ChunkSource.qmd",
+      "page": "reference/PydanticBuilder.finalize_all.qmd",
       "seconds": 0.706,
       "frozen": false
     },
     {
-      "page": "reference/PipelineBuilder.goto_root.qmd",
-      "seconds": 0.706,
-      "frozen": false
-    },
-    {
-      "page": "reference/InstanceBuilder.finalize_all.qmd",
+      "page": "reference/InstanceBuilder.update.qmd",
       "seconds": 0.705,
       "frozen": false
     },
     {
-      "page": "reference/CallableChunkSource.qmd",
+      "page": "reference/ConstructorBuilder.update_errors.qmd",
+      "seconds": 0.705,
+      "frozen": false
+    },
+    {
+      "page": "reference/ConstructorBuilder.get.qmd",
+      "seconds": 0.705,
+      "frozen": false
+    },
+    {
+      "page": "reference/PydanticPartialBuilder.record_update_error.qmd",
       "seconds": 0.704,
       "frozen": false
     },
     {
       "page": "reference/TelemetryEvent.qmd",
+      "seconds": 0.704,
+      "frozen": false
+    },
+    {
+      "page": "reference/InstanceBuilder.record_update_error.qmd",
+      "seconds": 0.704,
+      "frozen": false
+    },
+    {
+      "page": "reference/PipelineBuilder.goto_root.qmd",
+      "seconds": 0.704,
+      "frozen": false
+    },
+    {
+      "page": "reference/Field.qmd",
       "seconds": 0.703,
       "frozen": false
     },
     {
-      "page": "reference/MappingSpec.qmd",
+      "page": "reference/ConstructorBuilder.update.qmd",
       "seconds": 0.703,
       "frozen": false
     },
     {
-      "page": "reference/FieldSpec.qmd",
+      "page": "reference/get.qmd",
+      "seconds": 0.703,
+      "frozen": false
+    },
+    {
+      "page": "reference/PydanticBuilder.known_fields.qmd",
+      "seconds": 0.703,
+      "frozen": false
+    },
+    {
+      "page": "reference/PydanticBuilder.finalize_errors.qmd",
       "seconds": 0.702,
       "frozen": false
     },
     {
-      "page": "reference/MaxPolicy.qmd",
+      "page": "reference/PydanticBuilder.update_errors.qmd",
+      "seconds": 0.702,
+      "frozen": false
+    },
+    {
+      "page": "reference/get_from_parent.qmd",
+      "seconds": 0.702,
+      "frozen": false
+    },
+    {
+      "page": "reference/literal.qmd",
+      "seconds": 0.702,
+      "frozen": false
+    },
+    {
+      "page": "reference/TypedDictBuilder.get.qmd",
       "seconds": 0.701,
       "frozen": false
     },
     {
-      "page": "reference/PydanticPartialBuilder.record_update_error.qmd",
-      "seconds": 0.701,
-      "frozen": false
-    },
-    {
-      "page": "reference/PreSegmentedChunkSource.qmd",
+      "page": "reference/PydanticPartialBuilder.record_finalize_error.qmd",
       "seconds": 0.701,
       "frozen": false
     },
     {
       "page": "reference/ConstructorBuilder.record_finalize_error.qmd",
+      "seconds": 0.701,
+      "frozen": false
+    },
+    {
+      "page": "reference/ChunkSource.qmd",
+      "seconds": 0.701,
+      "frozen": false
+    },
+    {
+      "page": "reference/PydanticPartialBuilder.update.qmd",
       "seconds": 0.7,
       "frozen": false
     },
     {
-      "page": "reference/InstanceBuilder.record_update_error.qmd",
+      "page": "reference/concat.qmd",
       "seconds": 0.7,
       "frozen": false
     },
     {
-      "page": "reference/InstanceBuilder.record_finalize_error.qmd",
+      "page": "reference/PydanticPartialBuilder.known_fields.qmd",
       "seconds": 0.7,
       "frozen": false
     },
     {
-      "page": "reference/format_id.qmd",
+      "page": "reference/PydanticPartialBuilder.get.qmd",
+      "seconds": 0.7,
+      "frozen": false
+    },
+    {
+      "page": "reference/OneRecordPerChunkSource.qmd",
+      "seconds": 0.7,
+      "frozen": false
+    },
+    {
+      "page": "reference/RelationshipIncompleteError.qmd",
+      "seconds": 0.699,
+      "frozen": false
+    },
+    {
+      "page": "reference/FlushStrategy.qmd",
+      "seconds": 0.699,
+      "frozen": false
+    },
+    {
+      "page": "reference/TypedDictBuilder.update_errors.qmd",
       "seconds": 0.699,
       "frozen": false
     },
@@ -313,37 +413,47 @@
       "frozen": false
     },
     {
-      "page": "reference/RelationshipIncompleteError.qmd",
+      "page": "reference/node.qmd",
+      "seconds": 0.699,
+      "frozen": false
+    },
+    {
+      "page": "reference/PydanticBuilder.qmd",
+      "seconds": 0.699,
+      "frozen": false
+    },
+    {
+      "page": "reference/CoreField.qmd",
       "seconds": 0.698,
       "frozen": false
     },
     {
-      "page": "reference/PydanticBuilder.finalize_errors.qmd",
+      "page": "reference/len_of.qmd",
       "seconds": 0.698,
       "frozen": false
     },
     {
-      "page": "reference/field_of.qmd",
-      "seconds": 0.697,
+      "page": "reference/PydanticPartialBuilder.qmd",
+      "seconds": 0.698,
       "frozen": false
     },
     {
-      "page": "reference/InstanceBuilder.update_errors.qmd",
-      "seconds": 0.697,
+      "page": "reference/ConstructorBuilder.record_update_error.qmd",
+      "seconds": 0.698,
       "frozen": false
     },
     {
-      "page": "reference/MergePolicy.qmd",
-      "seconds": 0.697,
+      "page": "reference/PydanticBuilder.record_finalize_error.qmd",
+      "seconds": 0.698,
       "frozen": false
     },
     {
-      "page": "reference/OneRecordPerChunkSource.qmd",
-      "seconds": 0.697,
+      "page": "reference/InstanceBuilder.known_fields.qmd",
+      "seconds": 0.698,
       "frozen": false
     },
     {
-      "page": "reference/parent_key.qmd",
+      "page": "reference/MapStarted.qmd",
       "seconds": 0.697,
       "frozen": false
     },
@@ -358,207 +468,117 @@
       "frozen": false
     },
     {
-      "page": "reference/concat.qmd",
+      "page": "reference/MergePolicy.qmd",
       "seconds": 0.696,
       "frozen": false
     },
     {
-      "page": "reference/compute_relationship_keys.qmd",
+      "page": "reference/CallableChunkSource.qmd",
       "seconds": 0.696,
-      "frozen": false
-    },
-    {
-      "page": "reference/node.qmd",
-      "seconds": 0.696,
-      "frozen": false
-    },
-    {
-      "page": "reference/InstanceBuilder.finalize_errors.qmd",
-      "seconds": 0.695,
-      "frozen": false
-    },
-    {
-      "page": "reference/PydanticBuilder.update_errors.qmd",
-      "seconds": 0.695,
-      "frozen": false
-    },
-    {
-      "page": "reference/TypedDictBuilder.update_errors.qmd",
-      "seconds": 0.695,
-      "frozen": false
-    },
-    {
-      "page": "reference/PydanticPartialBuilder.record_finalize_error.qmd",
-      "seconds": 0.695,
-      "frozen": false
-    },
-    {
-      "page": "reference/InstanceBuilder.qmd",
-      "seconds": 0.695,
-      "frozen": false
-    },
-    {
-      "page": "reference/ConstructorBuilder.update_errors.qmd",
-      "seconds": 0.695,
-      "frozen": false
-    },
-    {
-      "page": "reference/ConstructorBuilder.record_update_error.qmd",
-      "seconds": 0.694,
-      "frozen": false
-    },
-    {
-      "page": "reference/PydanticPartialBuilder.known_fields.qmd",
-      "seconds": 0.694,
-      "frozen": false
-    },
-    {
-      "page": "reference/PydanticBuilder.finalize_all.qmd",
-      "seconds": 0.694,
-      "frozen": false
-    },
-    {
-      "page": "reference/KeyCompleteFlushStrategy.qmd",
-      "seconds": 0.694,
-      "frozen": false
-    },
-    {
-      "page": "reference/ConstructorBuilder.get.qmd",
-      "seconds": 0.694,
-      "frozen": false
-    },
-    {
-      "page": "reference/len_of.qmd",
-      "seconds": 0.693,
-      "frozen": false
-    },
-    {
-      "page": "reference/PydanticPartialBuilder.qmd",
-      "seconds": 0.693,
-      "frozen": false
-    },
-    {
-      "page": "reference/PydanticPartialBuilder.finalize_all.qmd",
-      "seconds": 0.693,
-      "frozen": false
-    },
-    {
-      "page": "reference/PydanticPartialBuilder.update.qmd",
-      "seconds": 0.693,
-      "frozen": false
-    },
-    {
-      "page": "reference/get_from_parent.qmd",
-      "seconds": 0.693,
-      "frozen": false
-    },
-    {
-      "page": "reference/PydanticPartialBuilder.get.qmd",
-      "seconds": 0.693,
-      "frozen": false
-    },
-    {
-      "page": "reference/TypedDictBuilder.known_fields.qmd",
-      "seconds": 0.693,
-      "frozen": false
-    },
-    {
-      "page": "reference/PydanticBuilder.record_finalize_error.qmd",
-      "seconds": 0.693,
-      "frozen": false
-    },
-    {
-      "page": "reference/PydanticBuilder.known_fields.qmd",
-      "seconds": 0.693,
       "frozen": false
     },
     {
       "page": "reference/TypedDictBuilder.update.qmd",
-      "seconds": 0.693,
+      "seconds": 0.696,
       "frozen": false
     },
     {
-      "page": "reference/MapStarted.qmd",
-      "seconds": 0.693,
+      "page": "reference/parent_key.qmd",
+      "seconds": 0.696,
+      "frozen": false
+    },
+    {
+      "page": "reference/MaxPolicy.qmd",
+      "seconds": 0.695,
       "frozen": false
     },
     {
       "page": "reference/MinPolicy.qmd",
-      "seconds": 0.692,
+      "seconds": 0.695,
       "frozen": false
     },
     {
-      "page": "reference/literal.qmd",
-      "seconds": 0.692,
+      "page": "reference/InstanceBuilder.finalize_all.qmd",
+      "seconds": 0.695,
+      "frozen": false
+    },
+    {
+      "page": "reference/format_id.qmd",
+      "seconds": 0.695,
+      "frozen": false
+    },
+    {
+      "page": "reference/PydanticPartialBuilder.finalize_all.qmd",
+      "seconds": 0.695,
       "frozen": false
     },
     {
       "page": "reference/TypedDictBuilder.qmd",
-      "seconds": 0.692,
+      "seconds": 0.695,
       "frozen": false
     },
     {
       "page": "reference/TypedDictBuilder.record_update_error.qmd",
-      "seconds": 0.692,
+      "seconds": 0.695,
+      "frozen": false
+    },
+    {
+      "page": "reference/PydanticBuilder.update.qmd",
+      "seconds": 0.694,
+      "frozen": false
+    },
+    {
+      "page": "reference/InstanceBuilder.finalize_errors.qmd",
+      "seconds": 0.694,
+      "frozen": false
+    },
+    {
+      "page": "reference/InstanceBuilder.update_errors.qmd",
+      "seconds": 0.694,
+      "frozen": false
+    },
+    {
+      "page": "reference/FirstNonNullPolicy.qmd",
+      "seconds": 0.694,
       "frozen": false
     },
     {
       "page": "reference/InstanceBuilder.errors.qmd",
-      "seconds": 0.692,
-      "frozen": false
-    },
-    {
-      "page": "reference/CoreField.qmd",
-      "seconds": 0.691,
+      "seconds": 0.694,
       "frozen": false
     },
     {
       "page": "reference/PydanticBuilder.get.qmd",
-      "seconds": 0.691,
-      "frozen": false
-    },
-    {
-      "page": "reference/apply.qmd",
-      "seconds": 0.691,
-      "frozen": false
-    },
-    {
-      "page": "reference/TypedDictBuilder.get.qmd",
-      "seconds": 0.691,
+      "seconds": 0.693,
       "frozen": false
     },
     {
       "page": "reference/ConstructorBuilder.known_fields.qmd",
-      "seconds": 0.691,
-      "frozen": false
-    },
-    {
-      "page": "reference/FlushStrategy.qmd",
-      "seconds": 0.69,
-      "frozen": false
-    },
-    {
-      "page": "reference/InstanceBuilder.get.qmd",
-      "seconds": 0.69,
-      "frozen": false
-    },
-    {
-      "page": "reference/ConstructorBuilder.update.qmd",
-      "seconds": 0.69,
-      "frozen": false
-    },
-    {
-      "page": "reference/InstanceBuilder.known_fields.qmd",
-      "seconds": 0.69,
-      "frozen": false
-    },
-    {
-      "page": "reference/PydanticPartialBuilder.finalize_errors.qmd",
-      "seconds": 0.689,
+      "seconds": 0.693,
       "frozen": false
     },
     {
       "page": "reference/ConstructorBuilder.qmd",
+      "seconds": 0.693,
+      "frozen": false
+    },
+    {
+      "page": "reference/InstanceBuilder.get.qmd",
+      "seconds": 0.692,
+      "frozen": false
+    },
+    {
+      "page": "reference/AddPolicy.qmd",
+      "seconds": 0.69,
+      "frozen": false
+    },
+    {
+      "page": "reference/InstanceBuilder.qmd",
+      "seconds": 0.689,
+      "frozen": false
+    },
+    {
+      "page": "reference/TempField.qmd",
       "seconds": 0.689,
       "frozen": false
     },
@@ -568,67 +588,47 @@
       "frozen": false
     },
     {
-      "page": "reference/PydanticBuilder.update.qmd",
-      "seconds": 0.688,
-      "frozen": false
-    },
-    {
-      "page": "reference/bind_many_to_one.qmd",
-      "seconds": 0.688,
-      "frozen": false
-    },
-    {
-      "page": "reference/ConstructorBuilder.finalize_errors.qmd",
-      "seconds": 0.688,
-      "frozen": false
-    },
-    {
-      "page": "reference/AddPolicy.qmd",
-      "seconds": 0.688,
-      "frozen": false
-    },
-    {
-      "page": "reference/AppendPolicy.qmd",
-      "seconds": 0.687,
-      "frozen": false
-    },
-    {
-      "page": "reference/MappingRuntimeState.qmd",
-      "seconds": 0.687,
-      "frozen": false
-    },
-    {
-      "page": "reference/PydanticBuilder.qmd",
-      "seconds": 0.687,
-      "frozen": false
-    },
-    {
-      "page": "reference/index.qmd",
-      "seconds": 0.685,
-      "frozen": false
-    },
-    {
       "page": "reference/ExtendPolicy.qmd",
-      "seconds": 0.683,
+      "seconds": 0.688,
       "frozen": false
     },
     {
-      "page": "reference/PydanticPartialBuilder.update_errors.qmd",
-      "seconds": 0.682,
-      "frozen": false
-    },
-    {
-      "page": "reference/TypedDictBuilder.record_finalize_error.qmd",
-      "seconds": 0.681,
-      "frozen": false
-    },
-    {
-      "page": "reference/TempField.qmd",
-      "seconds": 0.681,
+      "page": "reference/apply.qmd",
+      "seconds": 0.686,
       "frozen": false
     },
     {
       "page": "reference/TypedDictBuilder.finalize_all.qmd",
+      "seconds": 0.686,
+      "frozen": false
+    },
+    {
+      "page": "reference/AppendPolicy.qmd",
+      "seconds": 0.685,
+      "frozen": false
+    },
+    {
+      "page": "reference/TypedDictBuilder.record_finalize_error.qmd",
+      "seconds": 0.684,
+      "frozen": false
+    },
+    {
+      "page": "reference/coalesce.qmd",
+      "seconds": 0.684,
+      "frozen": false
+    },
+    {
+      "page": "reference/bind_many_to_one.qmd",
+      "seconds": 0.683,
+      "frozen": false
+    },
+    {
+      "page": "reference/index.qmd",
+      "seconds": 0.683,
+      "frozen": false
+    },
+    {
+      "page": "reference/ConstructorBuilder.finalize_all.qmd",
       "seconds": 0.681,
       "frozen": false
     },
@@ -638,38 +638,38 @@
       "frozen": false
     },
     {
-      "page": "reference/coalesce.qmd",
+      "page": "reference/MappingRuntimeState.qmd",
       "seconds": 0.68,
       "frozen": false
     },
     {
-      "page": "reference/ConstructorBuilder.finalize_all.qmd",
-      "seconds": 0.675,
+      "page": "reference/PydanticPartialBuilder.update_errors.qmd",
+      "seconds": 0.679,
       "frozen": false
     },
     {
       "page": "reference/key.qmd",
-      "seconds": 0.675,
+      "seconds": 0.674,
       "frozen": false
     },
     {
       "page": "reference/PydanticBuilder.record_update_error.qmd",
-      "seconds": 0.67,
+      "seconds": 0.674,
       "frozen": false
     },
     {
       "page": "user-guide/introduction-to-etl.qmd",
-      "seconds": 0.598,
+      "seconds": 0.603,
       "frozen": false
     },
     {
       "page": "skills.qmd",
-      "seconds": 0.49,
+      "seconds": 0.495,
       "frozen": false
     },
     {
       "page": "contributing.qmd",
-      "seconds": 0.485,
+      "seconds": 0.469,
       "frozen": false
     }
   ]
