@@ -2,6 +2,31 @@
 
 <!-- version list -->
 
+## v4.3.1 (2026-07-02)
+
+### Bug Fixes
+
+- Expose flush_strategy on etl() entry point
+  ([#94](https://github.com/Promptly-Technologies-LLC/etielle/pull/94),
+  [`15362d4`](https://github.com/Promptly-Technologies-LLC/etielle/commit/15362d4db02a920837befe8f7004bc2d66f8430e))
+
+- Populate Supabase FK columns for load_eager() parents
+  ([#92](https://github.com/Promptly-Technologies-LLC/etielle/pull/92),
+  [`0140164`](https://github.com/Promptly-Technologies-LLC/etielle/commit/014016481c1fa4c7eaf7f6ae9288f9adf165f715))
+
+- Prevent UpsertFlushStrategy merge cascade from duplicating parents
+  ([#96](https://github.com/Promptly-Technologies-LLC/etielle/pull/96),
+  [`1483f28`](https://github.com/Promptly-Technologies-LLC/etielle/commit/1483f2810d0d8d9216e4b999d8270fa8d3ce17e3))
+
+- Validate link_to fk= in _prepare_execution for SQLAlchemy
+  ([#91](https://github.com/Promptly-Technologies-LLC/etielle/pull/91),
+  [`cdbf151`](https://github.com/Promptly-Technologies-LLC/etielle/commit/cdbf1514cc483f2397a1cde989092c0dd179f7aa))
+
+- Validate multi-root pipelines for all sequential chunk sources
+  ([#95](https://github.com/Promptly-Technologies-LLC/etielle/pull/95),
+  [`b0a1b9c`](https://github.com/Promptly-Technologies-LLC/etielle/commit/b0a1b9c70db85cea90a68f312b5309cca2c63c03))
+
+
 ## v4.3.0 (2026-07-01)
 
 ### Continuous Integration
