@@ -34,3 +34,24 @@ An iterable (or single-use iterator) of JSON roots. Consumed exactly once.
 
 `key: Callable[[Any], Any]`  
 Function mapping a record to its grouping key. Adjacent records with equal keys are batched into the same chunk.
+
+
+## Attributes
+
+| Name | Description |
+|----|----|
+| [emits_sequential_only](#emits_sequential_only) | Returns True when the argument is true, False otherwise. |
+
+------------------------------------------------------------------------
+
+
+#### emits_sequential_only
+
+
+Returns True when the argument is true, False otherwise.
+
+
+`emits_sequential_only: bool = ``True`
+
+
+The builtins True and False are the only two instances of the class bool. The class bool is a subclass of the class int, and cannot be subclassed.

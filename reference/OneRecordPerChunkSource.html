@@ -1032,8 +1032,17 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </nav>
 <div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
 <!-- margin-sidebar -->
-    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
-        
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h3 id="toc-title">On this page</h3>
+   
+  <ul class="collapse">
+  <li><a href="#attributes" id="toc-attributes" class="nav-link active" data-scroll-target="#attributes">Attributes</a>
+  <ul class="collapse">
+  <li><a href="#emits_sequential_only" id="toc-emits_sequential_only" class="nav-link" data-scroll-target="#emits_sequential_only"><span class="doc-object-name doc-attribute doc-label doc-label-constant">emits_sequential_only</span></a></li>
+  </ul></li>
+  </ul>
+</nav>
     </div>
 <!-- main -->
 <main class="content" id="quarto-document-content">
@@ -1062,7 +1071,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <div class="doc-usage-source">
 <p>Usage</p>
-<p><a href="https://github.com/Promptly-Technologies-LLC/etielle/blob/main/etielle/chunking.py#L45-L59" target="_blank" rel="noopener">Source</a></p>
+<p><a href="https://github.com/Promptly-Technologies-LLC/etielle/blob/main/etielle/chunking.py#L45-L61" target="_blank" rel="noopener">Source</a></p>
 </div>
 <div class="doc-signature doc-Kind.CLASS">
 <div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="sig-name">OneRecordPerChunkSource</span>()</span></code></pre></div>
@@ -1070,8 +1079,46 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="doc-text">
 <p>A re-iterable input (e.g.&nbsp;a list) can be streamed more than once. A single-use iterator (e.g.&nbsp;a generator or an <code>ijson</code> stream) is consumed on the first pass, matching the single-consumption nature of streaming sources; running the pipeline again would yield no chunks.</p>
 </div>
+<section id="attributes" class="level2 doc-attributes">
+<h2 class="doc-attributes">Attributes</h2>
+<table class="gd-summary-table">
+<thead>
+<tr>
+<th>
+Name
+</th>
+<th>
+Description
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="#emits_sequential_only" class="doc-attribute doc-label doc-label-constant">emits_sequential_only</a>
+</td>
+<td>
+Returns True when the argument is true, False otherwise.
+</td>
+</tr>
+</tbody>
+</table>
+<hr style="border: none; border-top: 2px solid #c5c8cd; margin: 1.5rem 0 1rem 0;">
+<section id="emits_sequential_only" class="level3">
+<h4 class="anchored" data-anchor-id="emits_sequential_only"><span class="doc-object-name doc-attribute doc-label doc-label-constant">emits_sequential_only</span></h4>
+<div class="doc-subject">
+<p>Returns True when the argument is true, False otherwise.</p>
+</div>
+<div class="doc-signature doc-attribute">
+<p><code><span class="doc-parameter-name">emits_sequential_only</span><span class="doc-parameter-annotation-sep">:</span> <span class="doc-parameter-annotation">bool</span> <span class="doc-parameter-default-sep op">=</span> <span class="doc-parameter-default"><span class="va">True</span></span></code></p>
+</div>
+<div class="doc-text">
+<p>The builtins True and False are the only two instances of the class bool. The class bool is a subclass of the class int, and cannot be subclassed.</p>
+</div>
 
 
+</section>
+</section>
 
 </main>
 <hr style="padding: 0; margin: 0;">

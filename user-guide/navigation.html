@@ -339,7 +339,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="path-navigation-with-goto" class="level1">
 <h1>Path Navigation with <a href="../reference/PipelineBuilder.goto.html#etielle.PipelineBuilder.goto" class="gdls-link gdls-code">goto()</a></h1>
 <p>The <a href="../reference/PipelineBuilder.goto.html#etielle.PipelineBuilder.goto" class="gdls-link gdls-code">goto()</a> method navigates to nested locations in your JSON:</p>
-<div id="19f04443" class="cell" data-execution_count="1">
+<div id="e71865a5" class="cell" data-execution_count="1">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Simple path: data["users"]</span></span>
@@ -396,7 +396,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li><strong>For lists</strong>: iterates by index (0, 1, 2, …)</li>
 <li><strong>For dicts</strong>: iterates key-value pairs</li>
 </ul>
-<div id="be512196" class="cell" data-execution_count="2">
+<div id="3778ecef" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get, key</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -442,7 +442,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="nested-iteration" class="level1">
 <h1>Nested Iteration</h1>
 <p>For parent-child relationships (users -&gt; posts, orders -&gt; items), chain <a href="../reference/PipelineBuilder.goto.html#etielle.PipelineBuilder.goto" class="gdls-link gdls-code">goto()</a> and <a href="../reference/PipelineBuilder.each.html#etielle.PipelineBuilder.each" class="gdls-link gdls-code">each()</a>:</p>
-<div id="ed523394" class="cell" data-execution_count="3">
+<div id="c74aa7bc" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get, get_from_parent</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -493,7 +493,7 @@ Posts: [{'id': 'p1', 'user_id': 'u1', 'title': 'Hello'}, {'id': 'p2', 'user_id':
 <li><code>get_from_parent("id", depth=2)</code> -&gt; grandparent</li>
 <li><code>get_from_parent("id", depth=3)</code> -&gt; great-grandparent</li>
 </ul>
-<div id="296fb15c" class="cell" data-execution_count="4">
+<div id="875a4716" class="cell" data-execution_count="4">
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># servers -&gt; channels -&gt; messages -&gt; reactions (3 levels deep)</span></span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> (</span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    etl(data)</span>
@@ -535,7 +535,7 @@ Posts: [{'id': 'p1', 'user_id': 'u1', 'title': 'Hello'}, {'id': 'p2', 'user_id':
 <section id="multiple-json-roots-with-goto_root" class="level1">
 <h1>Multiple JSON Roots with <a href="../reference/PipelineBuilder.goto_root.html#etielle.PipelineBuilder.goto_root" class="gdls-link gdls-code">goto_root()</a></h1>
 <p>When processing multiple JSON objects, use <code>goto_root(index)</code> to switch between them:</p>
-<div id="81a000ca" class="cell" data-execution_count="5">
+<div id="b7862970" class="cell" data-execution_count="5">
 <div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>users_json <span class="op">=</span> {<span class="st">"users"</span>: [{<span class="st">"id"</span>: <span class="st">"u1"</span>, <span class="st">"name"</span>: <span class="st">"Alice"</span>}]}</span>
@@ -582,7 +582,7 @@ Posts: [{'id': 'p1', 'user_id': 'u1', 'title': 'Hello'}, {'id': 'p2', 'user_id':
 <section id="resetting-navigation-with-goto_root" class="level1">
 <h1>Resetting Navigation with <a href="../reference/PipelineBuilder.goto_root.html#etielle.PipelineBuilder.goto_root" class="gdls-link gdls-code">goto_root()</a></h1>
 <p>Use <a href="../reference/PipelineBuilder.goto_root.html#etielle.PipelineBuilder.goto_root" class="gdls-link gdls-code">goto_root()</a> (without arguments) to return to the root of the current JSON and start a new navigation path:</p>
-<div id="e944e0f9" class="cell" data-execution_count="6">
+<div id="fdc5022f" class="cell" data-execution_count="6">
 <div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> {</span>
@@ -622,7 +622,7 @@ Products: [{'id': 'prod1', 'name': 'Widget'}]</code></pre>
 <section id="row-merging-with-join_on" class="level1">
 <h1>Row Merging with <code>join_on</code></h1>
 <p>When multiple <a href="../reference/PipelineBuilder.map_to.html#etielle.PipelineBuilder.map_to" class="gdls-link gdls-code">map_to()</a> calls emit to the same table, rows with matching keys are merged:</p>
-<div id="78c13526" class="cell" data-execution_count="7">
+<div id="142f08f2" class="cell" data-execution_count="7">
 <div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get</span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> {</span>

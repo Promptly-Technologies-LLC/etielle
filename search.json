@@ -472,7 +472,19 @@
     "href": "reference/GroupByChunkSource.html",
     "title": "GroupByChunkSource",
     "section": "",
-    "text": "Group consecutive records that share a key into one chunk each.\n\n\nUsage\nSource\n\n\nGroupByChunkSource()\n\n\nThis is the single-pass, streaming group-by chunker. It reads the input once, accumulates consecutive records that map to the same key, and emits a chunk whenever the key changes. Peak memory is one chunk: only the records for the current key are held at a time.\nEach emitted chunk is sequential – every record in the group is mapped against pipeline root index 0 with shared auto-key counters, so a group of related records merges into one component (the repeated single-root shape).\n\n\nGrouped-Input Requirement\nCorrectness depends on the input already being grouped (or sorted) by key, which is the common shape for paginated APIs and “one parent subtree at a time” feeds. Because grouping is consecutive only, records that share a key but are separated by records with a different key land in separate chunks. With a relationship key that is fine for key-completeness but breaks relationship-completeness; the runtime relationship-completeness check raises if a chunk is missing endpoints. For unsorted input, sort by key first or use ExternalPartitionChunkSource, the disk-backed partitioner that handles arbitrarily-ordered input.\n\n\nChoosing A Relationship-Complete Key\nPick a key that is a complete component root – coarse enough that every record reachable through a relationship from one record sharing the key also shares it (e.g. the owning entity id), not merely a fine merge key. Grouping guarantees key-completeness for whatever key you choose; the runtime validation catches a key that is too fine.\n\n\nParameters\n\n\nrecords: Iterator[Any] | Iterable[Any]\n\nAn iterable (or single-use iterator) of JSON roots. Consumed exactly once.\n\nkey: Callable[[Any], Any]\n\nFunction mapping a record to its grouping key. Adjacent records with equal keys are batched into the same chunk.",
+    "text": "Group consecutive records that share a key into one chunk each.",
+    "crumbs": [
+      "Reference",
+      "Classes",
+      "[GroupByChunkSource]{.doc-object-name .doc-class .doc-label .doc-label-class}"
+    ]
+  },
+  {
+    "objectID": "reference/GroupByChunkSource.html#emits_sequential_only",
+    "href": "reference/GroupByChunkSource.html#emits_sequential_only",
+    "title": "GroupByChunkSource",
+    "section": "emits_sequential_only",
+    "text": "emits_sequential_only\n\nReturns True when the argument is true, False otherwise.\n\n\nemits_sequential_only: bool = True\n\n\nThe builtins True and False are the only two instances of the class bool. The class bool is a subclass of the class int, and cannot be subclassed.",
     "crumbs": [
       "Reference",
       "Classes",
@@ -604,7 +616,19 @@
     "href": "reference/ExternalPartitionChunkSource.html",
     "title": "ExternalPartitionChunkSource",
     "section": "",
-    "text": "Partition arbitrarily-ordered input into key-complete chunks via disk.\n\n\nUsage\nSource\n\n\nExternalPartitionChunkSource()\n\n\nThis is the two-pass, disk-backed partitioner: pass one serializes every record to a temporary spill file and builds an in-memory key -&gt; offsets index; pass two emits one chunk per distinct key by reading that key’s records back from disk. Unlike GroupByChunkSource it does not require the input to be grouped or sorted – records that share a key are collected into the same chunk no matter how far apart they arrive.\n\n\nTrade-Offs\nPeak record memory is one chunk (the current partition), but the full dataset is written to temporary storage, and the offset index holds a few machine words per record for the duration of the stream. Pass two performs random reads, so a fast local temp filesystem is preferable.\n\n\nSerialization\nRecords are serialized with dumps (default json.dumps) and deserialized with loads (default json.loads), so chunks yield reconstructed copies of the input records. Non-JSON-serializable records need custom dumps/loads callables.\n\n\nEmission Order\nChunks are emitted in first-appearance order of their keys. Each chunk is sequential – every record in the partition is mapped against pipeline root index 0 with shared auto-key counters, matching GroupByChunkSource.\n\n\nChoosing A Relationship-Complete Key\nAs with GroupByChunkSource, pick a key that is a complete component root; partitioning guarantees key-completeness for the chosen key, and the runtime relationship-completeness check catches a key that is too fine.\n\n\nParameters\n\n\nrecords: Iterator[Any] | Iterable[Any]\n\nAn iterable (or single-use iterator) of JSON roots. Consumed exactly once per chunks() iteration.\n\nkey: Callable[[Any], Any]\n\nFunction mapping a record to its partition key. Must return a hashable value.\n\ndir: str | None = None\n\nOptional directory for the temporary spill file (defaults to the platform temp directory). The file is deleted when iteration finishes or the iterator is closed.\n\ndumps: Callable[[Any], str] | None = None\n\nSerializer from record to str (default json.dumps).\n\nloads: Callable[[str], Any] | None = None\n\nDeserializer from str to record (default json.loads).",
+    "text": "Partition arbitrarily-ordered input into key-complete chunks via disk.",
+    "crumbs": [
+      "Reference",
+      "Classes",
+      "[ExternalPartitionChunkSource]{.doc-object-name .doc-class .doc-label .doc-label-class}"
+    ]
+  },
+  {
+    "objectID": "reference/ExternalPartitionChunkSource.html#emits_sequential_only",
+    "href": "reference/ExternalPartitionChunkSource.html#emits_sequential_only",
+    "title": "ExternalPartitionChunkSource",
+    "section": "emits_sequential_only",
+    "text": "emits_sequential_only\n\nReturns True when the argument is true, False otherwise.\n\n\nemits_sequential_only: bool = True\n\n\nThe builtins True and False are the only two instances of the class bool. The class bool is a subclass of the class int, and cannot be subclassed.",
     "crumbs": [
       "Reference",
       "Classes",
@@ -3470,7 +3494,19 @@
     "href": "reference/OneRecordPerChunkSource.html",
     "title": "OneRecordPerChunkSource",
     "section": "",
-    "text": "Wrap an iterable of JSON roots; each root becomes its own chunk.\n\n\nUsage\nSource\n\n\nOneRecordPerChunkSource()\n\n\nA re-iterable input (e.g. a list) can be streamed more than once. A single-use iterator (e.g. a generator or an ijson stream) is consumed on the first pass, matching the single-consumption nature of streaming sources; running the pipeline again would yield no chunks.",
+    "text": "Wrap an iterable of JSON roots; each root becomes its own chunk.",
+    "crumbs": [
+      "Reference",
+      "Classes",
+      "[OneRecordPerChunkSource]{.doc-object-name .doc-class .doc-label .doc-label-class}"
+    ]
+  },
+  {
+    "objectID": "reference/OneRecordPerChunkSource.html#emits_sequential_only",
+    "href": "reference/OneRecordPerChunkSource.html#emits_sequential_only",
+    "title": "OneRecordPerChunkSource",
+    "section": "emits_sequential_only",
+    "text": "emits_sequential_only\n\nReturns True when the argument is true, False otherwise.\n\n\nemits_sequential_only: bool = True\n\n\nThe builtins True and False are the only two instances of the class bool. The class bool is a subclass of the class int, and cannot be subclassed.",
     "crumbs": [
       "Reference",
       "Classes",

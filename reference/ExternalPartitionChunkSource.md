@@ -51,3 +51,24 @@ Serializer from record to `str` (default `json.dumps`).
 
 `loads: Callable[[str], Any] | None = None`  
 Deserializer from `str` to record (default `json.loads`).
+
+
+## Attributes
+
+| Name | Description |
+|----|----|
+| [emits_sequential_only](#emits_sequential_only) | Returns True when the argument is true, False otherwise. |
+
+------------------------------------------------------------------------
+
+
+#### emits_sequential_only
+
+
+Returns True when the argument is true, False otherwise.
+
+
+`emits_sequential_only: bool = ``True`
+
+
+The builtins True and False are the only two instances of the class bool. The class bool is a subclass of the class int, and cannot be subclassed.
