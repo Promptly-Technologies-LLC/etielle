@@ -336,6 +336,22 @@ def _copy_instance_state(target: Any, incoming: Any) -> None:
         setattr(target, attr_name, value)
 
 
+def _replace_merged_instance(
+    result: Any,
+    key: tuple[Any, ...],
+    instance: Any,
+    merged: Any,
+    replacements: dict[int, Any],
+) -> None:
+    """Record a merge replacement and keep instances/indices consistent."""
+    replacements[id(instance)] = merged
+    result.instances[key] = merged
+    for field_index in result.indices.values():
+        for lookup_value, indexed in field_index.items():
+            if indexed is instance:
+                field_index[lookup_value] = merged
+
+
 class UpsertFlushStrategy:
     """Streaming strategy with database-level conflict handling (SQLAlchemy).
 
@@ -397,6 +413,15 @@ class UpsertFlushStrategy:
         from etielle.telemetry import FlushStarted, _emit
         from etielle.utils import topological_sort
 
+        parent_attrs: dict[str, list[str]] = {}
+        for rel in ctx.link_to_rels:
+            parent_attrs.setdefault(rel["child_table"], []).append(
+                _parent_attr_name(rel["parent_table"])
+            )
+        # Maps id(transient chunk-local instance) -> session-bound merge result,
+        # so children bound to a transient parent are relinked before merge.
+        replacements: dict[int, Any] = {}
+
         for table_name in topological_sort(ctx.dep_graph, ctx.scope_tables):
             result = ctx.local_results.get(table_name)
             if result is None:
@@ -406,19 +431,36 @@ class UpsertFlushStrategy:
                 ctx.on_event,
             )
             if self._on_conflict == "update":
-                self._flush_update(ctx, table_name, result)
+                self._flush_update(
+                    ctx, table_name, result, parent_attrs, replacements
+                )
             else:
                 self._flush_skip(ctx, table_name, result)
 
-    def _flush_update(self, ctx: FlushContext, table_name: str, result: Any) -> None:
+    def _flush_update(
+        self,
+        ctx: FlushContext,
+        table_name: str,
+        result: Any,
+        parent_attrs: dict[str, list[str]],
+        replacements: dict[int, Any],
+    ) -> None:
         from etielle.telemetry import FlushCompleted, FlushFailed, _emit
 
         merged_count = 0
         try:
-            for _key, instance in result.instances.items():
+            for key, instance in result.instances.items():
                 if isinstance(instance, dict):
                     continue
-                ctx.session.merge(instance)
+                for attr in parent_attrs.get(table_name, ()):
+                    bound = getattr(instance, attr, None)
+                    if bound is not None and id(bound) in replacements:
+                        setattr(instance, attr, replacements[id(bound)])
+                merged = ctx.session.merge(instance)
+                if merged is not instance:
+                    _replace_merged_instance(
+                        result, key, instance, merged, replacements
+                    )
                 merged_count += 1
             ctx.session.flush()
         except Exception as e:
