@@ -244,8 +244,15 @@ class TestEtlEntryPoint:
         builder = etl({}, errors="fail_fast")
         assert builder._error_mode == "fail_fast"
 
+    def test_etl_accepts_flush_strategy(self):
+        """etl() forwards flush_strategy to PipelineBuilder."""
+        from etielle.fluent import etl
+        from etielle.chunking import UpsertFlushStrategy
 
-class TestGotoRoot:
+        strategy = UpsertFlushStrategy()
+        builder = etl({}, flush_strategy=strategy)
+        assert builder._flush_strategy is strategy
+
     """Tests for goto_root() navigation."""
 
     def test_goto_root_returns_self(self):
