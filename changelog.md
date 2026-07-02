@@ -3,6 +3,23 @@
 This changelog is generated automatically from [GitHub Releases](https://github.com/Promptly-Technologies-LLC/etielle/releases).
 
 
+# v4.3.1
+
+*2026-07-02* · [GitHub](https://github.com/Promptly-Technologies-LLC/etielle/releases/tag/v4.3.1)
+
+
+## What's Changed
+
+- fix: populate Supabase FK columns for load_eager() parents by [<span class="citation" cites="chriscarrollsmith">@chriscarrollsmith</span>](https://github.com/chriscarrollsmith) in https://github.com/Promptly-Technologies-LLC/etielle/pull/92
+- fix: validate link_to fk= in \_prepare_execution for SQLAlchemy by [<span class="citation" cites="chriscarrollsmith">@chriscarrollsmith</span>](https://github.com/chriscarrollsmith) in https://github.com/Promptly-Technologies-LLC/etielle/pull/91
+- fix: validate multi-root pipelines for all sequential chunk sources by [<span class="citation" cites="chriscarrollsmith">@chriscarrollsmith</span>](https://github.com/chriscarrollsmith) in https://github.com/Promptly-Technologies-LLC/etielle/pull/95
+- Document UpsertFlushStrategy idempotency requires PK-keyed tables by [<span class="citation" cites="chriscarrollsmith">@chriscarrollsmith</span>](https://github.com/chriscarrollsmith) in https://github.com/Promptly-Technologies-LLC/etielle/pull/93
+- fix: expose flush_strategy on etl() entry point by [<span class="citation" cites="chriscarrollsmith">@chriscarrollsmith</span>](https://github.com/chriscarrollsmith) in https://github.com/Promptly-Technologies-LLC/etielle/pull/94
+- fix: prevent UpsertFlushStrategy merge cascade from duplicating parents by [<span class="citation" cites="chriscarrollsmith">@chriscarrollsmith</span>](https://github.com/chriscarrollsmith) in https://github.com/Promptly-Technologies-LLC/etielle/pull/96
+
+**Full Changelog**: [https://github.com/Promptly-Technologies-LLC/etielle/compare/v4.3.0…v4.3.1](https://github.com/Promptly-Technologies-LLC/etielle/compare/v4.3.0...v4.3.1)
+
+
 # v4.3.0
 
 *2026-07-01* · [GitHub](https://github.com/Promptly-Technologies-LLC/etielle/releases/tag/v4.3.0)

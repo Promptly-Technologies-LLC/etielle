@@ -1497,32 +1497,39 @@
     "href": "changelog.html#whats-changed",
     "title": "Changelog",
     "section": "What’s Changed",
-    "text": "What’s Changed\n\ndocs: migrate documentation to great-docs (user-guide flow) by @chriscarrollsmith in https://github.com/Promptly-Technologies-LLC/etielle/pull/83\nfeat: additional ChunkSource/FlushStrategy implementations (issue #77) by @chriscarrollsmith in https://github.com/Promptly-Technologies-LLC/etielle/pull/84\n\nFull Changelog: https://github.com/Promptly-Technologies-LLC/etielle/compare/v4.2.0…v4.3.0"
+    "text": "What’s Changed\n\nfix: populate Supabase FK columns for load_eager() parents by @chriscarrollsmith in https://github.com/Promptly-Technologies-LLC/etielle/pull/92\nfix: validate link_to fk= in _prepare_execution for SQLAlchemy by @chriscarrollsmith in https://github.com/Promptly-Technologies-LLC/etielle/pull/91\nfix: validate multi-root pipelines for all sequential chunk sources by @chriscarrollsmith in https://github.com/Promptly-Technologies-LLC/etielle/pull/95\nDocument UpsertFlushStrategy idempotency requires PK-keyed tables by @chriscarrollsmith in https://github.com/Promptly-Technologies-LLC/etielle/pull/93\nfix: expose flush_strategy on etl() entry point by @chriscarrollsmith in https://github.com/Promptly-Technologies-LLC/etielle/pull/94\nfix: prevent UpsertFlushStrategy merge cascade from duplicating parents by @chriscarrollsmith in https://github.com/Promptly-Technologies-LLC/etielle/pull/96\n\nFull Changelog: https://github.com/Promptly-Technologies-LLC/etielle/compare/v4.3.0…v4.3.1"
   },
   {
     "objectID": "changelog.html#whats-changed-1",
     "href": "changelog.html#whats-changed-1",
     "title": "Changelog",
     "section": "What’s Changed",
-    "text": "What’s Changed\n\nfeat: mandatory chunking helpers (streaming group-by + pre-segmented passthrough) by @chriscarrollsmith in https://github.com/Promptly-Technologies-LLC/etielle/pull/80\n\nFull Changelog: https://github.com/Promptly-Technologies-LLC/etielle/compare/v4.1.0…v4.2.0"
+    "text": "What’s Changed\n\ndocs: migrate documentation to great-docs (user-guide flow) by @chriscarrollsmith in https://github.com/Promptly-Technologies-LLC/etielle/pull/83\nfeat: additional ChunkSource/FlushStrategy implementations (issue #77) by @chriscarrollsmith in https://github.com/Promptly-Technologies-LLC/etielle/pull/84\n\nFull Changelog: https://github.com/Promptly-Technologies-LLC/etielle/compare/v4.2.0…v4.3.0"
   },
   {
     "objectID": "changelog.html#whats-changed-2",
     "href": "changelog.html#whats-changed-2",
     "title": "Changelog",
     "section": "What’s Changed",
-    "text": "What’s Changed\n\nfeat: streaming/chunked execution (key-complete contract, issue #75) by @chriscarrollsmith in https://github.com/Promptly-Technologies-LLC/etielle/pull/79\n\nFull Changelog: https://github.com/Promptly-Technologies-LLC/etielle/compare/v4.0.0…v4.1.0"
+    "text": "What’s Changed\n\nfeat: mandatory chunking helpers (streaming group-by + pre-segmented passthrough) by @chriscarrollsmith in https://github.com/Promptly-Technologies-LLC/etielle/pull/80\n\nFull Changelog: https://github.com/Promptly-Technologies-LLC/etielle/compare/v4.1.0…v4.2.0"
   },
   {
     "objectID": "changelog.html#whats-changed-3",
     "href": "changelog.html#whats-changed-3",
     "title": "Changelog",
     "section": "What’s Changed",
-    "text": "What’s Changed\n\nfeat!: component-scoped flush/evict and single-pass binding (issue #9A) by @chriscarrollsmith in https://github.com/Promptly-Technologies-LLC/etielle/pull/78\n\nFull Changelog: https://github.com/Promptly-Technologies-LLC/etielle/compare/v3.6.1…v4.0.0"
+    "text": "What’s Changed\n\nfeat: streaming/chunked execution (key-complete contract, issue #75) by @chriscarrollsmith in https://github.com/Promptly-Technologies-LLC/etielle/pull/79\n\nFull Changelog: https://github.com/Promptly-Technologies-LLC/etielle/compare/v4.0.0…v4.1.0"
   },
   {
     "objectID": "changelog.html#whats-changed-4",
     "href": "changelog.html#whats-changed-4",
+    "title": "Changelog",
+    "section": "What’s Changed",
+    "text": "What’s Changed\n\nfeat!: component-scoped flush/evict and single-pass binding (issue #9A) by @chriscarrollsmith in https://github.com/Promptly-Technologies-LLC/etielle/pull/78\n\nFull Changelog: https://github.com/Promptly-Technologies-LLC/etielle/compare/v3.6.1…v4.0.0"
+  },
+  {
+    "objectID": "changelog.html#whats-changed-5",
+    "href": "changelog.html#whats-changed-5",
     "title": "Changelog",
     "section": "What’s Changed",
     "text": "What’s Changed\n\nfix: Create GitHub Release before uploading assets by @chriscarrollsmith in https://github.com/Promptly-Technologies-LLC/etielle/pull/73\n\nFull Changelog: https://github.com/Promptly-Technologies-LLC/etielle/compare/v3.6.0…v3.6.1"
