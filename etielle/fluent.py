@@ -1772,6 +1772,15 @@ class PipelineBuilder:
                 "which is only available with SQLAlchemy/SQLModel."
             )
 
+        if self._session is not None and not self._is_supabase_client(self._session):
+            for rel in link_to_rels:
+                if rel.get("fk"):
+                    raise ValueError(
+                        "fk parameter on link_to() is only supported for Supabase. "
+                        f"Got fk={rel['fk']!r} on {rel['child_table']!r} -> "
+                        f"{rel['parent_table']!r}."
+                    )
+
         components = partition_components(dep_graph, emission_tables, eager_tables)
 
         return {
@@ -1871,24 +1880,6 @@ class PipelineBuilder:
                 is_supabase=self._is_supabase_client(self._session),
                 builder=self,
             )
-            if self._is_supabase_client(self._session):
-                if prepared["backlink_rels"]:
-                    raise ValueError(
-                        "backlink() is not supported with Supabase. "
-                        "backlink() relies on ORM-native many-to-many handling "
-                        "which is only available with SQLAlchemy/SQLModel."
-                    )
-            else:
-                for rel in self._relationships:
-                    if rel.get("fk"):
-                        import warnings
-
-                        warnings.warn(
-                            f"fk parameter on link_to() is only supported for Supabase. "
-                            f"Ignoring fk={rel['fk']} for {rel['child_table']} -> {rel['parent_table']}.",
-                            UserWarning,
-                            stacklevel=2,
-                        )
             strategy.flush(ctx)
         elif retain_instances:
             for table_name, mapping_result in eager_results.items():
