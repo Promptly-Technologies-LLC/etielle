@@ -245,7 +245,7 @@ flowchart TD
 | Strategy | Cross-chunk state | Use when |
 |----|----|----|
 | **[KeyCompleteFlushStrategy](../reference/KeyCompleteFlushStrategy.md#etielle.KeyCompleteFlushStrategy)** (default) | None | Clean inserts; duplicate keys against stored rows raise `IntegrityError` |
-| **[UpsertFlushStrategy](../reference/UpsertFlushStrategy.md#etielle.UpsertFlushStrategy)** | None (DB resolves) | Idempotent re-runs ([update](../reference/InstanceBuilder.update.md#etielle.InstanceBuilder.update)) or skip-on-conflict ingest (`skip`); SQLAlchemy only |
+| **[UpsertFlushStrategy](../reference/UpsertFlushStrategy.md#etielle.UpsertFlushStrategy)** | None (DB resolves) | Re-runs when all tables have mappable PKs ([update](../reference/InstanceBuilder.update.md#etielle.InstanceBuilder.update)) or skip-on-conflict ingest (`skip`); SQLAlchemy only |
 | **[BufferedKeyFlushStrategy](../reference/BufferedKeyFlushStrategy.md#etielle.BufferedKeyFlushStrategy)** | LRU cache of `max_keys` entries | Late-arriving rows for the same `join_on` key within a bounded reappearance gap; SQLAlchemy only |
 
 
@@ -265,7 +265,11 @@ stream(records, flush_strategy=UpsertFlushStrategy())                    # overw
 stream(records, flush_strategy=UpsertFlushStrategy(on_conflict="skip"))    # skip conflicts
 ```
 
-- **[update](../reference/InstanceBuilder.update.md#etielle.InstanceBuilder.update)** (default): `session.merge()` -- existing rows with the same primary key are overwritten (last write wins).
+> **Important: PK keys required for idempotent re-runs**
+>
+> `UpsertFlushStrategy(on_conflict="update")` deduplicates rows only when etielle can supply a **mappable primary key** at flush time -- typically via `join_on` on [map_to()](../reference/PipelineBuilder.map_to.md#etielle.PipelineBuilder.map_to) or natural keys populated before merge. Tables mapped without `join_on` (auto-increment or DB-generated PKs) are inserted as **new rows on every run**, even when parent rows merge correctly. For idempotent re-runs across **all** tables in the pipeline, ensure every table you expect to dedupe has keys mapped before flush.
+
+- **[update](../reference/InstanceBuilder.update.md#etielle.InstanceBuilder.update)** (default): `session.merge()` -- existing rows with the same primary key are overwritten (last write wins). Applies per table: only rows with primary key values participate in merge; auto-keyed child rows accumulate on each re-run.
 - **`skip`**: per-row `SAVEPOINT` insert; rows raising `IntegrityError` are skipped (duplicate keys, unique constraints, concurrent-insert races). Children bound to a skipped parent are skipped too, because the cascaded parent insert reproduces the conflict inside the child's savepoint.
 - Not a cross-chunk merge substitute: merge policies ([AddPolicy](../reference/AddPolicy.md#etielle.AddPolicy) etc.) run only within a chunk's mapping pass.
 - For Supabase, use `load(upsert=True, upsert_on=...)` with the default strategy instead.

@@ -1062,7 +1062,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <div class="doc-usage-source">
 <p>Usage</p>
-<p><a href="https://github.com/Promptly-Technologies-LLC/etielle/blob/main/etielle/chunking.py#L345-L495" target="_blank" rel="noopener">Source</a></p>
+<p><a href="https://github.com/Promptly-Technologies-LLC/etielle/blob/main/etielle/chunking.py#L345-L498" target="_blank" rel="noopener">Source</a></p>
 </div>
 <div class="doc-signature doc-Kind.CLASS">
 <div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="sig-name">UpsertFlushStrategy</span>()</span></code></pre></div>
@@ -1070,7 +1070,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="doc-text">
 <p>Where the default <a href="KeyCompleteFlushStrategy.html#etielle.KeyCompleteFlushStrategy" class="gdls-link gdls-code">KeyCompleteFlushStrategy</a> uses plain <code>session.add()</code> (a duplicate row aborts the chunk’s transaction with <code>IntegrityError</code>), this strategy resolves conflicts against rows that are <em>already stored</em>:</p>
 <ul>
-<li><code>on_conflict="update"</code> (default): each instance is persisted with <code>session.merge()</code>. If a row with the same primary key exists, its columns are overwritten with the incoming values (last write wins); otherwise the row is inserted. Suited to idempotent re-runs.</li>
+<li><code>on_conflict="update"</code> (default): each instance is persisted with <code>session.merge()</code>. If a row with the same primary key exists, its columns are overwritten with the incoming values (last write wins); otherwise the row is inserted. Suited to idempotent re-runs only when every table you expect to dedupe supplies primary key values (via <code>join_on</code> or natural keys); auto-keyed rows without PK values are inserted as new rows on each run.</li>
 <li><code>on_conflict="skip"</code>: each instance is inserted inside a per-row <code>SAVEPOINT</code>; a row that raises <code>IntegrityError</code> (duplicate primary key or unique constraint, including a concurrent-insert race) is rolled back and skipped while the rest of the chunk proceeds. Suited to on-conflict-skip deduplication of streaming ingest.</li>
 </ul>
 <p>Documented limitations:</p>

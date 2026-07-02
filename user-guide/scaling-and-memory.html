@@ -611,7 +611,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <tr class="even">
 <td><strong><a href="../reference/UpsertFlushStrategy.html#etielle.UpsertFlushStrategy" class="gdls-link gdls-code">UpsertFlushStrategy</a></strong></td>
 <td>None (DB resolves)</td>
-<td>Idempotent re-runs (<a href="../reference/InstanceBuilder.update.html#etielle.InstanceBuilder.update" class="gdls-link gdls-code">update</a>) or skip-on-conflict ingest (<code>skip</code>); SQLAlchemy only</td>
+<td>Re-runs when all tables have mappable PKs (<a href="../reference/InstanceBuilder.update.html#etielle.InstanceBuilder.update" class="gdls-link gdls-code">update</a>) or skip-on-conflict ingest (<code>skip</code>); SQLAlchemy only</td>
 </tr>
 <tr class="odd">
 <td><strong><a href="../reference/BufferedKeyFlushStrategy.html#etielle.BufferedKeyFlushStrategy" class="gdls-link gdls-code">BufferedKeyFlushStrategy</a></strong></td>
@@ -631,8 +631,21 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>stream(records, flush_strategy<span class="op">=</span>UpsertFlushStrategy())                    <span class="co"># overwrite by PK</span></span>
 <span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>stream(records, flush_strategy<span class="op">=</span>UpsertFlushStrategy(on_conflict<span class="op">=</span><span class="st">"skip"</span>))    <span class="co"># skip conflicts</span></span></code></pre></div>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Important</span>PK keys required for idempotent re-runs
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><code>UpsertFlushStrategy(on_conflict="update")</code> deduplicates rows only when etielle can supply a <strong>mappable primary key</strong> at flush time — typically via <code>join_on</code> on <a href="../reference/PipelineBuilder.map_to.html#etielle.PipelineBuilder.map_to" class="gdls-link gdls-code">map_to()</a> or natural keys populated before merge. Tables mapped without <code>join_on</code> (auto-increment or DB-generated PKs) are inserted as <strong>new rows on every run</strong>, even when parent rows merge correctly. For idempotent re-runs across <strong>all</strong> tables in the pipeline, ensure every table you expect to dedupe has keys mapped before flush.</p>
+</div>
+</div>
 <ul>
-<li><strong><a href="../reference/InstanceBuilder.update.html#etielle.InstanceBuilder.update" class="gdls-link gdls-code">update</a></strong> (default): <code>session.merge()</code> — existing rows with the same primary key are overwritten (last write wins).</li>
+<li><strong><a href="../reference/InstanceBuilder.update.html#etielle.InstanceBuilder.update" class="gdls-link gdls-code">update</a></strong> (default): <code>session.merge()</code> — existing rows with the same primary key are overwritten (last write wins). Applies per table: only rows with primary key values participate in merge; auto-keyed child rows accumulate on each re-run.</li>
 <li><strong><code>skip</code></strong>: per-row <code>SAVEPOINT</code> insert; rows raising <code>IntegrityError</code> are skipped (duplicate keys, unique constraints, concurrent-insert races). Children bound to a skipped parent are skipped too, because the cascaded parent insert reproduces the conflict inside the child’s savepoint.</li>
 <li>Not a cross-chunk merge substitute: merge policies (<a href="../reference/AddPolicy.html#etielle.AddPolicy" class="gdls-link gdls-code">AddPolicy</a> etc.) run only within a chunk’s mapping pass.</li>
 <li>For Supabase, use <code>load(upsert=True, upsert_on=...)</code> with the default strategy instead.</li>

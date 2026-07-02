@@ -13,7 +13,7 @@ UpsertFlushStrategy()
 
 Where the default [KeyCompleteFlushStrategy](KeyCompleteFlushStrategy.md#etielle.KeyCompleteFlushStrategy) uses plain `session.add()` (a duplicate row aborts the chunk's transaction with `IntegrityError`), this strategy resolves conflicts against rows that are *already stored*:
 
-- `on_conflict="update"` (default): each instance is persisted with `session.merge()`. If a row with the same primary key exists, its columns are overwritten with the incoming values (last write wins); otherwise the row is inserted. Suited to idempotent re-runs.
+- `on_conflict="update"` (default): each instance is persisted with `session.merge()`. If a row with the same primary key exists, its columns are overwritten with the incoming values (last write wins); otherwise the row is inserted. Suited to idempotent re-runs only when every table you expect to dedupe supplies primary key values (via `join_on` or natural keys); auto-keyed rows without PK values are inserted as new rows on each run.
 - `on_conflict="skip"`: each instance is inserted inside a per-row `SAVEPOINT`; a row that raises `IntegrityError` (duplicate primary key or unique constraint, including a concurrent-insert race) is rolled back and skipped while the rest of the chunk proceeds. Suited to on-conflict-skip deduplication of streaming ingest.
 
 Documented limitations:
