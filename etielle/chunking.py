@@ -8,7 +8,7 @@ from collections import OrderedDict
 from collections.abc import Callable, Iterable, Iterator, Sequence
 from dataclasses import dataclass, field
 from itertools import groupby
-from typing import TYPE_CHECKING, Any, Literal, Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, Protocol, runtime_checkable
 
 if TYPE_CHECKING:
     from etielle.fluent import PipelineBuilder, TableStats
@@ -50,6 +50,8 @@ class OneRecordPerChunkSource:
     on the first pass, matching the single-consumption nature of streaming
     sources; running the pipeline again would yield no chunks.
     """
+
+    emits_sequential_only: ClassVar[bool] = True
 
     def __init__(self, records: Iterator[Any] | Sequence[Any]) -> None:
         self._records = records
@@ -106,6 +108,8 @@ class GroupByChunkSource:
         key: Function mapping a record to its grouping key. Adjacent records
             with equal keys are batched into the same chunk.
     """
+
+    emits_sequential_only: ClassVar[bool] = True
 
     def __init__(
         self,
@@ -187,6 +191,8 @@ class ExternalPartitionChunkSource:
         dumps: Serializer from record to ``str`` (default ``json.dumps``).
         loads: Deserializer from ``str`` to record (default ``json.loads``).
     """
+
+    emits_sequential_only: ClassVar[bool] = True
 
     def __init__(
         self,

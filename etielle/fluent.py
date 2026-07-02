@@ -1815,19 +1815,17 @@ class PipelineBuilder:
                     f"on link_to(); got {rel['by']!r} for {rel['child_table']!r}."
                 )
 
-        from etielle.chunking import OneRecordPerChunkSource
-
         referenced_indices = {e["root_index"] for e in self._emissions}
         multi_root_indices = sorted(i for i in referenced_indices if i > 0)
-        if multi_root_indices and isinstance(
-            self._chunk_source, OneRecordPerChunkSource
+        if multi_root_indices and getattr(
+            self._chunk_source, "emits_sequential_only", False
         ):
             raise ValueError(
                 "This pipeline references goto_root() index(es) "
                 f"{multi_root_indices}, which requires multi-root chunks, but the "
-                "streaming source yields one root per chunk. Pass a ChunkSource that "
-                "yields multi-root Chunks (sequential=False), or remove the "
-                "multi-root goto_root() calls."
+                "streaming source yields sequential-only chunks (one root index per "
+                "chunk). Pass a ChunkSource that yields multi-root Chunks "
+                "(sequential=False), or remove the multi-root goto_root() calls."
             )
 
     def _run_eager_phase(
