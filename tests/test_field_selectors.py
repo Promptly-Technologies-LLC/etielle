@@ -1,6 +1,6 @@
 import pytest
 
-from etielle.core import field_of, Field, MappingSpec, TableEmit, TraversalSpec
+from etielle.core import Field, MappingSpec, TableEmit, TraversalSpec, field_of
 from etielle.transforms import get
 
 
@@ -103,7 +103,7 @@ def test_integration_with_field_and_executor():
 
 def test_integration_field_of_with_instance_emit():
     """Integration test using field_of with InstanceEmit and FieldSpec."""
-    from etielle import InstanceEmit, FieldSpec, PydanticBuilder
+    from etielle import FieldSpec, InstanceEmit, PydanticBuilder
 
     # Try to import Pydantic for this test
     try:

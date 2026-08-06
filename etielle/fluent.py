@@ -815,7 +815,7 @@ class PipelineBuilder:
     def _is_supabase_client(self, obj: Any) -> bool:
         """Check if the object is a Supabase client."""
         module = type(obj).__module__
-        return module.startswith("supabase") or module.startswith("postgrest")
+        return module.startswith(("supabase", "postgrest"))
 
     @staticmethod
     def _build_supabase_parent_index(
@@ -842,7 +842,7 @@ class PipelineBuilder:
         """Populate child FK columns from a parent index."""
         by_mapping = rel["by"]
         fk_mapping = rel["fk"]
-        for child_field, parent_field in by_mapping.items():
+        for child_field in by_mapping:
             for child_key, child_row in child_data.items():
                 child_values = child_lookup.get(child_key, {})
                 lookup_value = child_values.get(child_field)
@@ -864,7 +864,7 @@ class PipelineBuilder:
         parent_lookup: dict[tuple[Any, ...], dict[str, Any]],
     ) -> None:
         """Retain eager parent rows keyed by link_to by-field for later chunk flushes."""
-        for _child_field, parent_field in rel["by"].items():
+        for parent_field in rel["by"].values():
             parent_index = self._build_supabase_parent_index(
                 table_data, parent_lookup, parent_field
             )
@@ -889,7 +889,7 @@ class PipelineBuilder:
                 continue
             if parent_table in tables:
                 continue
-            for _child_field, parent_field in rel["by"].items():
+            for parent_field in rel["by"].values():
                 parent_index = self._supabase_eager_parent_index.get(
                     (parent_table, parent_field)
                 )
@@ -964,19 +964,25 @@ class PipelineBuilder:
 
             # Track inserted count for this table
             table_inserted = 0
-            is_upsert = self._upsert
 
-            def on_batch(batch_num: int, batch_total: int, inserted: int) -> None:
+            def on_batch(
+                batch_num: int,
+                batch_total: int,
+                inserted: int,
+                *,
+                _table: str = table_name,
+                _is_upsert: bool = self._upsert,
+            ) -> None:
                 nonlocal table_inserted
                 table_inserted += inserted
                 _emit(
                     FlushCompleted(
-                        table=table_name,
+                        table=_table,
                         inserted=inserted,
                         failed=0,
                         batch_num=batch_num,
                         batch_total=batch_total,
-                        upsert=is_upsert,
+                        upsert=_is_upsert,
                     ),
                     on_event,
                 )
@@ -1046,7 +1052,7 @@ class PipelineBuilder:
                     child_data = tables[child_table]
                     child_lookup = child_lookup_values.get(child_table, {})
 
-                    for _child_field, parent_field in rel["by"].items():
+                    for parent_field in rel["by"].values():
                         parent_index = self._build_supabase_parent_index(
                             table_data, parent_lookup, parent_field
                         )
@@ -1060,7 +1066,8 @@ class PipelineBuilder:
 
     def _build_traversal_specs(self) -> list[TraversalSpec]:
         """Convert accumulated emissions to TraversalSpec objects."""
-        from etielle.core import TraversalSpec, TableEmit, Field as CoreField, IterationLevel
+        from etielle.core import Field as CoreField
+        from etielle.core import IterationLevel, TableEmit, TraversalSpec
 
         specs = []
 
@@ -1155,7 +1162,7 @@ class PipelineBuilder:
 
             if builder or merge_policies:
                 # Use InstanceEmit with appropriate builder
-                from etielle.instances import InstanceEmit, FieldSpec
+                from etielle.instances import FieldSpec, InstanceEmit
 
                 # Convert CoreField to FieldSpec
                 field_specs: list[FieldSpec] = [
@@ -1259,14 +1266,14 @@ class PipelineBuilder:
             if rel.get("type") == "backlink":
                 parent_table = rel["parent_table"]
                 child_table = rel["child_table"]
-                for parent_field in rel["by"].keys():
+                for parent_field in rel["by"]:
                     captured.setdefault(parent_table, set()).add(parent_field)
                 for child_field in rel["by"].values():
                     captured.setdefault(child_table, set()).add(child_field)
             else:
                 child_table = rel["child_table"]
                 parent_table = rel["parent_table"]
-                for child_field in rel["by"].keys():
+                for child_field in rel["by"]:
                     captured.setdefault(child_table, set()).add(child_field)
                 for parent_field in rel["by"].values():
                     captured.setdefault(parent_table, set()).add(parent_field)
@@ -1549,7 +1556,7 @@ class PipelineBuilder:
         scope_tables: set[str],
     ) -> None:
         """Bind relationships whose endpoints are within scope_tables."""
-        from etielle.relationships import bind_relationships_via_index, bind_backlinks
+        from etielle.relationships import bind_backlinks, bind_relationships_via_index
 
         scoped_link_to = [
             rel for rel in link_to_rels if rel["child_table"] in scope_tables
@@ -1620,7 +1627,7 @@ class PipelineBuilder:
             # Plain-dict rows are not ORM instances and are not persisted on the
             # SQLAlchemy path; only count instances actually added to the session.
             added_count = 0
-            for _key, instance in tables[table_name].items():
+            for instance in tables[table_name].values():
                 if not isinstance(instance, dict):
                     self._session.add(instance)
                     added_count += 1

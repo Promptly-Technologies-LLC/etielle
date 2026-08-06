@@ -1,19 +1,27 @@
-from typing import Any, Dict, List, Tuple, Generator
+from collections.abc import Generator, Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
 from difflib import get_close_matches
-from .core import MappingSpec, Context, TraversalSpec, TableEmit, MappingResult, IterationLevel
-from .transforms import _iter_nodes, _resolve_path
-from collections.abc import Mapping, Sequence, Iterable
-from .instances import InstanceEmit, resolve_field_name_for_builder
+from typing import Any
 
-KeyTuple = Tuple[Any, ...]
+from .core import (
+    Context,
+    IterationLevel,
+    MappingResult,
+    MappingSpec,
+    TableEmit,
+    TraversalSpec,
+)
+from .instances import InstanceEmit, resolve_field_name_for_builder
+from .transforms import _iter_nodes, _resolve_path
+
+KeyTuple = tuple[Any, ...]
 
 
 @dataclass
 class MappingRuntimeState:
     """Shared mapping state across multiple roots in one chunk."""
 
-    auto_key_counters: Dict[str, int] = field(default_factory=dict)
+    auto_key_counters: dict[str, int] = field(default_factory=dict)
 
 
 # -----------------------------
@@ -26,8 +34,8 @@ def _yield_from_container(
     parent_ctx: Context,
     container: Any,
     mode: str,
-    slots: Dict[str, Any],
-) -> Generator[Context, None, None]:
+    slots: dict[str, Any],
+) -> Generator[Context]:
     """Yield contexts for each item in a container based on iteration mode.
 
     Args:
@@ -108,8 +116,8 @@ def _iter_levels_recursive(
     parent_ctx: Context,
     levels: Sequence[IterationLevel],
     level_index: int,
-    slots: Dict[str, Any],
-) -> Generator[Context, None, None]:
+    slots: dict[str, Any],
+) -> Generator[Context]:
     """Recursively iterate through N levels of nested iteration.
 
     Args:
@@ -143,7 +151,7 @@ def _iter_levels_recursive(
 def _iter_traversal_nodes(
     root: Any,
     spec: TraversalSpec,
-    context_slots: Dict[str, Any] | None = None,
+    context_slots: dict[str, Any] | None = None,
 ) -> Iterable[Context]:
     """Iterate through all nodes specified by a TraversalSpec.
 
@@ -181,11 +189,11 @@ def _iter_traversal_nodes(
 def _compute_composite_key(
     emit: Any,
     ctx: Context,
-    auto_key_counters: Dict[str, int],
+    auto_key_counters: dict[str, int],
 ) -> KeyTuple | None:
     """Compute composite join key for an emit, matching mapping semantics."""
     if emit.join_keys:
-        key_parts: List[Any] = [tr(ctx) for tr in emit.join_keys]
+        key_parts: list[Any] = [tr(ctx) for tr in emit.join_keys]
         if any(part is None or part == "" for part in key_parts):
             return None
         return tuple(key_parts)
@@ -200,8 +208,8 @@ def _capture_lookup_values(
     emit: Any,
     ctx: Context,
     composite_key: KeyTuple,
-    field_captures: Dict[str, Dict[str, Any]] | None,
-    lookup_store: Dict[str, Dict[KeyTuple, Dict[str, Any]]],
+    field_captures: dict[str, dict[str, Any]] | None,
+    lookup_store: dict[str, dict[KeyTuple, dict[str, Any]]],
 ) -> None:
     """Capture relationship lookup field values during the primary mapping pass."""
     if not field_captures:
@@ -217,13 +225,13 @@ def _capture_lookup_values(
 def run_mapping(
     root: Any,
     spec: MappingSpec,
-    linkable_fields: Dict[str, set[str]] | None = None,
-    context_slots: Dict[str, Any] | None = None,
-    field_captures: Dict[str, Dict[str, Any]] | None = None,
+    linkable_fields: dict[str, set[str]] | None = None,
+    context_slots: dict[str, Any] | None = None,
+    field_captures: dict[str, dict[str, Any]] | None = None,
     *,
     table_filter: set[str] | None = None,
     runtime_state: MappingRuntimeState | None = None,
-) -> Dict[str, MappingResult[Any]]:
+) -> dict[str, MappingResult[Any]]:
     """
     Execute mapping spec against root JSON, returning rows per table.
 
@@ -248,12 +256,12 @@ def run_mapping(
     state = runtime_state or MappingRuntimeState()
     auto_key_counters = state.auto_key_counters
 
-    table_to_index: Dict[str, Dict[Tuple[Any, ...], Dict[str, Any]]] = {}
-    table_row_order: Dict[str, List[Tuple[Any, ...]]] = {}
-    instance_tables: Dict[str, Dict[str, Any]] = {}
+    table_to_index: dict[str, dict[tuple[Any, ...], dict[str, Any]]] = {}
+    table_row_order: dict[str, list[tuple[Any, ...]]] = {}
+    instance_tables: dict[str, dict[str, Any]] = {}
 
     # Per-table lookup values captured during mapping {table: {key: {field: value}}}
-    lookup_stores: Dict[str, Dict[KeyTuple, Dict[str, Any]]] = {}
+    lookup_stores: dict[str, dict[KeyTuple, dict[str, Any]]] = {}
 
     for traversal in spec.traversals:
         for ctx in _iter_traversal_nodes(root, traversal, context_slots):
@@ -293,13 +301,13 @@ def run_mapping(
                     # Merge policies if multiple emits target same table
                     tbl["policies"].update(getattr(emit, "policies", {}))
 
-                    shadow: Dict[Tuple[Any, ...], Dict[str, Any]] = tbl["shadow"]
+                    shadow: dict[tuple[Any, ...], dict[str, Any]] = tbl["shadow"]
                     shadow_bucket = shadow.setdefault(composite_key, {})
 
                     # Build updates with optional merge policies
                     # TempFields are stored in shadow but not persisted to instances
                     temp_fields = getattr(emit, "temp_fields", frozenset())
-                    updates: Dict[str, Any] = {}
+                    updates: dict[str, Any] = {}
                     for spec_field in emit.fields:
                         field_name = resolve_field_name_for_builder(
                             tbl["builder"], spec_field
@@ -357,7 +365,7 @@ def run_mapping(
                 continue
 
     # Build MappingResult outputs per table
-    outputs: Dict[str, MappingResult[Any]] = {}
+    outputs: dict[str, MappingResult[Any]] = {}
 
     # 1) Classic row tables
     for table, index in table_to_index.items():
@@ -370,7 +378,7 @@ def run_mapping(
                     data["id"] = key_value
         # Deterministic order by traversal arrival order
         ordered_keys = table_row_order.get(table, list(index.keys()))
-        ordered_instances: Dict[Tuple[Any, ...], Dict[str, Any]] = {}
+        ordered_instances: dict[tuple[Any, ...], dict[str, Any]] = {}
         for key_tuple in ordered_keys:
             ordered_instances[key_tuple] = index[key_tuple]
         outputs[table] = MappingResult(
@@ -392,10 +400,10 @@ def run_mapping(
         # Wrap errors with table/key context
         upd_errors_raw = builder.update_errors()
         fin_errors_raw = builder.finalize_errors()
-        upd_errors: Dict[Tuple[Any, ...], List[str]] = {}
-        fin_errors: Dict[Tuple[Any, ...], List[str]] = {}
+        upd_errors: dict[tuple[Any, ...], list[str]] = {}
+        fin_errors: dict[tuple[Any, ...], list[str]] = {}
         # Deterministic order by arrival: rely on insertion order of builder.acc keys
-        instances: Dict[Tuple[Any, ...], Any] = {}
+        instances: dict[tuple[Any, ...], Any] = {}
         for key_tuple, payload in finalized.items():
             instances[key_tuple] = payload
         for key_tuple, msgs in upd_errors_raw.items():
@@ -406,9 +414,9 @@ def run_mapping(
         # Build secondary indices for linkable fields
         # Use shadow values first (for TempFields), fall back to instance attributes (for Fields)
         shadow = meta["shadow"]
-        indices: Dict[str, Dict[Any, Any]] = {}
+        indices: dict[str, dict[Any, Any]] = {}
         for field_name in linkable_fields.get(table, set()):
-            field_index: Dict[Any, Any] = {}
+            field_index: dict[Any, Any] = {}
             for key_tuple, instance in instances.items():
                 # First try shadow (includes TempFields that aren't on instance)
                 shadow_bucket = shadow.get(key_tuple, {})

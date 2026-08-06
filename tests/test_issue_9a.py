@@ -12,7 +12,6 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 from etielle import Field, TempField, etl, get
 from etielle.utils import partition_components, weakly_connected_components
 
-
 Base = declarative_base()
 
 

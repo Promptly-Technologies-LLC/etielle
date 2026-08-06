@@ -1,19 +1,19 @@
 from dataclasses import dataclass
-from typing import Any, Dict
+from typing import Any
 
 import pytest
 
-from etielle.core import MappingSpec, MappingResult, TraversalSpec
-from etielle.transforms import get
-from etielle.instances import InstanceEmit, FieldSpec, TypedDictBuilder
+from etielle.core import MappingResult, MappingSpec, TraversalSpec
 from etielle.executor import run_mapping
+from etielle.instances import FieldSpec, InstanceEmit, TypedDictBuilder
 from etielle.relationships import (
     ManyToOneSpec,
-    compute_relationship_keys,
+    bind_backlinks,
     bind_many_to_one,
     bind_many_to_one_via_index,
-    bind_backlinks,
+    compute_relationship_keys,
 )
+from etielle.transforms import get
 
 
 @dataclass
@@ -43,19 +43,19 @@ class PostWithCategory:
     category: Category | None = None
 
 
-def _user_factory(payload: Dict[str, Any]) -> User:
+def _user_factory(payload: dict[str, Any]) -> User:
     return User(id=str(payload["id"]), name=str(payload.get("name", "")))
 
 
-def _post_factory(payload: Dict[str, Any]) -> Post:
+def _post_factory(payload: dict[str, Any]) -> Post:
     return Post(id=str(payload["id"]), title=str(payload.get("title", "")))
 
 
-def _category_factory(payload: Dict[str, Any]) -> Category:
+def _category_factory(payload: dict[str, Any]) -> Category:
     return Category(id=str(payload["id"]), name=str(payload.get("name", "")))
 
 
-def _post_with_category_factory(payload: Dict[str, Any]) -> PostWithCategory:
+def _post_with_category_factory(payload: dict[str, Any]) -> PostWithCategory:
     return PostWithCategory(
         id=str(payload["id"]),
         title=str(payload.get("title", "")),
@@ -573,7 +573,7 @@ def test_bind_backlinks_missing_children():
     }
 
     # With fail_on_missing=False, errors are returned but no exception raised
-    errors = bind_backlinks(
+    bind_backlinks(
         raw_results, backlinks, parent_lookup_values, fail_on_missing=False
     )
 

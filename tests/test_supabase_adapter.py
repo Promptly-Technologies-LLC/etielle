@@ -12,11 +12,11 @@ To run locally:
 """
 
 import os
-import pytest
 from unittest.mock import MagicMock
 
-from etielle import etl, Field, TempField, get, get_from_parent
+import pytest
 
+from etielle import Field, TempField, etl, get, get_from_parent
 
 # Skip all tests if Supabase env vars not set
 SUPABASE_URL = os.environ.get("SUPABASE_URL")

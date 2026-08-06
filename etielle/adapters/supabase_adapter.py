@@ -5,7 +5,8 @@ Provides functions for inserting pipeline results to Supabase.
 
 from __future__ import annotations
 
-from typing import Any, Callable, Sequence
+from collections.abc import Callable, Sequence
+from typing import Any
 
 # Callback type for batch progress: (batch_num, batch_total, rows_inserted) -> None
 BatchCallback = Callable[[int, int, int], None]

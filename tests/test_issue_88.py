@@ -8,7 +8,6 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 from etielle import Field, TempField, etl, get
 from etielle.chunking import FlushContext, KeyCompleteFlushStrategy
 
-
 Base = declarative_base()
 
 

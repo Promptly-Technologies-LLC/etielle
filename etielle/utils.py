@@ -1,12 +1,11 @@
 """Utility functions for etielle."""
 
-from typing import Dict, List, Set
 
 
 def topological_sort(
-    graph: Dict[str, Set[str]],
-    nodes: Set[str]
-) -> List[str]:
+    graph: dict[str, set[str]],
+    nodes: set[str]
+) -> list[str]:
     """Topological sort of nodes based on dependency graph.
 
     Args:
@@ -20,8 +19,8 @@ def topological_sort(
         ValueError: If the graph contains a cycle.
     """
     # Build in-degree count and adjacency list (parent -> children)
-    in_degree: Dict[str, int] = {node: 0 for node in nodes}
-    children: Dict[str, List[str]] = {node: [] for node in nodes}
+    in_degree: dict[str, int] = {node: 0 for node in nodes}
+    children: dict[str, list[str]] = {node: [] for node in nodes}
 
     for child, parents in graph.items():
         if child not in nodes:
@@ -33,7 +32,7 @@ def topological_sort(
 
     # Kahn's algorithm
     queue = [node for node in nodes if in_degree[node] == 0]
-    result: List[str] = []
+    result: list[str] = []
 
     while queue:
         # Sort for deterministic ordering
@@ -55,9 +54,9 @@ def topological_sort(
 
 
 def weakly_connected_components(
-    graph: Dict[str, Set[str]],
-    nodes: Set[str],
-) -> List[Set[str]]:
+    graph: dict[str, set[str]],
+    nodes: set[str],
+) -> list[set[str]]:
     """Partition nodes into weakly connected components.
 
     Args:
@@ -67,7 +66,7 @@ def weakly_connected_components(
     Returns:
         List of component sets in deterministic order (sorted by first member).
     """
-    adj: Dict[str, Set[str]] = {node: set() for node in nodes}
+    adj: dict[str, set[str]] = {node: set() for node in nodes}
 
     for child, parents in graph.items():
         if child not in nodes:
@@ -77,13 +76,13 @@ def weakly_connected_components(
                 adj[child].add(parent)
                 adj[parent].add(child)
 
-    visited: Set[str] = set()
-    components: List[Set[str]] = []
+    visited: set[str] = set()
+    components: list[set[str]] = []
 
     for start in sorted(nodes):
         if start in visited:
             continue
-        component: Set[str] = set()
+        component: set[str] = set()
         stack = [start]
         while stack:
             node = stack.pop()
@@ -100,10 +99,10 @@ def weakly_connected_components(
 
 
 def partition_components(
-    graph: Dict[str, Set[str]],
-    all_tables: Set[str],
-    eager_tables: Set[str],
-) -> List[Set[str]]:
+    graph: dict[str, set[str]],
+    all_tables: set[str],
+    eager_tables: set[str],
+) -> list[set[str]]:
     """Partition non-eager tables into weakly connected components.
 
     Edges involving eager tables are excluded from partitioning so shared
@@ -113,8 +112,8 @@ def partition_components(
     if not partition_nodes:
         return []
 
-    partition_graph: Dict[str, Set[str]] = {}
-    related_tables: Set[str] = set()
+    partition_graph: dict[str, set[str]] = {}
+    related_tables: set[str] = set()
     for child, parents in graph.items():
         if child not in partition_nodes:
             continue
@@ -129,7 +128,7 @@ def partition_components(
             related_tables.update(filtered)
 
     orphan_tables = partition_nodes - related_tables
-    components: List[Set[str]] = []
+    components: list[set[str]] = []
 
     if related_tables:
         components.extend(

@@ -20,8 +20,8 @@ Example usage:
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Callable, Union
 
 
 @dataclass
@@ -35,7 +35,6 @@ class TelemetryEvent:
 class MapStarted(TelemetryEvent):
     """Emitted when mapping begins for a table."""
 
-    pass
 
 
 @dataclass
@@ -99,9 +98,9 @@ class FlushFailed(TelemetryEvent):
 
 
 # Union of all event types for type hints
-TelemetryEventTypes = Union[
-    MapStarted, MapCompleted, FlushStarted, FlushCompleted, FlushFailed
-]
+TelemetryEventTypes = (
+    MapStarted | MapCompleted | FlushStarted | FlushCompleted | FlushFailed
+)
 
 # Callback type for receiving telemetry events
 TelemetryCallback = Callable[[TelemetryEventTypes], None]

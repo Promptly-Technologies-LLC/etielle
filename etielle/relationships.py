@@ -1,14 +1,14 @@
 from __future__ import annotations
 
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from typing import Any, Dict, Mapping, Sequence, Tuple
+from typing import Any
 
 from .core import MappingResult, Transform, TraversalSpec
 from .executor import _iter_traversal_nodes
 from .instances import InstanceEmit
 
-
-KeyTuple = Tuple[Any, ...]
+KeyTuple = tuple[Any, ...]
 
 
 @dataclass(frozen=True)
@@ -36,7 +36,7 @@ def compute_relationship_keys(
     root: Any,
     traversals: Sequence[TraversalSpec],
     specs: Sequence[ManyToOneSpec],
-) -> Dict[int, Dict[KeyTuple, KeyTuple]]:
+) -> dict[int, dict[KeyTuple, KeyTuple]]:
     """
     Compute child->parent composite keys for each ManyToOneSpec by re-walking the
     MappingSpec traversals. This avoids mutating domain objects and keeps the
@@ -48,7 +48,7 @@ def compute_relationship_keys(
 
     # Organize specs by child table for quick checks during traversal,
     # but keep track of each spec's index so keys can be stored per-spec.
-    specs_by_child: Dict[str, list[tuple[int, ManyToOneSpec]]] = {}
+    specs_by_child: dict[str, list[tuple[int, ManyToOneSpec]]] = {}
     for idx, s in enumerate(specs):
         specs_by_child.setdefault(s.child_table, []).append((idx, s))
 
@@ -57,9 +57,9 @@ def compute_relationship_keys(
     # spec index so multiple specs can share the same child table.
 
     # Auto-generated key counters for instances without join_on (must match executor)
-    auto_key_counters: Dict[str, int] = {}
+    auto_key_counters: dict[str, int] = {}
 
-    out: Dict[int, Dict[KeyTuple, KeyTuple]] = {}
+    out: dict[int, dict[KeyTuple, KeyTuple]] = {}
 
     for trav in traversals:
         for ctx in _iter_traversal_nodes(root, trav):
@@ -114,7 +114,7 @@ def bind_many_to_one(
     """
 
     # Build parent indices per table
-    table_to_instances: Dict[str, Dict[KeyTuple, Any]] = {
+    table_to_instances: dict[str, dict[KeyTuple, Any]] = {
         table: mr.instances for table, mr in results.items()
     }
 
@@ -203,8 +203,8 @@ def compute_child_lookup_values(
     traversals: Sequence[TraversalSpec],
     relationships: Sequence[dict[str, Any]],
     emissions: Sequence[dict[str, Any]],
-    context_slots: Dict[str, Any] | None = None,
-) -> Dict[str, Dict[KeyTuple, Dict[str, Any]]]:
+    context_slots: dict[str, Any] | None = None,
+) -> dict[str, dict[KeyTuple, dict[str, Any]]]:
     """
     Compute TempField/Field values for children and parents used in relationship binding.
 
@@ -214,14 +214,14 @@ def compute_child_lookup_values(
     - Child tables: fields in the 'by' mapping (child_field -> parent_field)
     - Parent tables: fields in the 'by' mapping values (for FK population)
     """
-    from .instances import InstanceEmit
     from .core import TableEmit
+    from .instances import InstanceEmit
 
     # Map table -> {field_name: transform} for fields we need to compute
-    field_transforms: Dict[str, Dict[str, Any]] = {}
+    field_transforms: dict[str, dict[str, Any]] = {}
 
     # Build map from emissions for quick lookup
-    emission_by_table: Dict[str, dict[str, Any]] = {}
+    emission_by_table: dict[str, dict[str, Any]] = {}
     for emission in emissions:
         emission_by_table[emission["table"]] = emission
 
@@ -232,7 +232,7 @@ def compute_child_lookup_values(
         child_emission = emissions[emission_idx]
 
         # Get transforms for child fields used in link_to
-        for child_field in rel["by"].keys():
+        for child_field in rel["by"]:
             for f in child_emission["fields"]:
                 if f.name == child_field:
                     field_transforms.setdefault(child_table, {})[child_field] = f.transform
@@ -248,9 +248,9 @@ def compute_child_lookup_values(
                         break
 
     # Auto-generated key counters (must match executor)
-    auto_key_counters: Dict[str, int] = {}
+    auto_key_counters: dict[str, int] = {}
 
-    out: Dict[str, Dict[KeyTuple, Dict[str, Any]]] = {}
+    out: dict[str, dict[KeyTuple, dict[str, Any]]] = {}
 
     for trav in traversals:
         for ctx in _iter_traversal_nodes(root, trav, context_slots):
@@ -276,7 +276,7 @@ def compute_child_lookup_values(
                     auto_key_counters[emit.table] = counter + 1
 
                 # Compute field values
-                field_values: Dict[str, Any] = {}
+                field_values: dict[str, Any] = {}
                 for field_name, transform in transforms.items():
                     field_values[field_name] = transform(ctx)
 
@@ -290,8 +290,8 @@ def compute_backlink_lookup_values(
     traversals: Sequence[TraversalSpec],
     backlinks: Sequence[dict[str, Any]],
     emissions: Sequence[dict[str, Any]],
-    context_slots: Dict[str, Any] | None = None,
-) -> Dict[str, Dict[KeyTuple, Dict[str, Any]]]:
+    context_slots: dict[str, Any] | None = None,
+) -> dict[str, dict[KeyTuple, dict[str, Any]]]:
     """
     Compute TempField/Field values for parent tables used in backlink binding.
 
@@ -300,14 +300,14 @@ def compute_backlink_lookup_values(
     For backlinks, we need to compute the parent's list field (e.g., choice_ids)
     so we can look up children by their IDs.
     """
-    from .instances import InstanceEmit
     from .core import TableEmit
+    from .instances import InstanceEmit
 
     # Map table -> {field_name: transform} for fields we need to compute
-    field_transforms: Dict[str, Dict[str, Any]] = {}
+    field_transforms: dict[str, dict[str, Any]] = {}
 
     # Build map from emissions for quick lookup
-    emission_by_table: Dict[str, dict[str, Any]] = {}
+    emission_by_table: dict[str, dict[str, Any]] = {}
     for emission in emissions:
         emission_by_table[emission["table"]] = emission
 
@@ -321,16 +321,16 @@ def compute_backlink_lookup_values(
         # Get transforms for parent fields (the list of child IDs)
         parent_emission = emission_by_table.get(parent_table)
         if parent_emission:
-            for parent_field in by_mapping.keys():
+            for parent_field in by_mapping:
                 for f in parent_emission["fields"]:
                     if f.name == parent_field:
                         field_transforms.setdefault(parent_table, {})[parent_field] = f.transform
                         break
 
     # Auto-generated key counters (must match executor)
-    auto_key_counters: Dict[str, int] = {}
+    auto_key_counters: dict[str, int] = {}
 
-    out: Dict[str, Dict[KeyTuple, Dict[str, Any]]] = {}
+    out: dict[str, dict[KeyTuple, dict[str, Any]]] = {}
 
     for trav in traversals:
         for ctx in _iter_traversal_nodes(root, trav, context_slots):
@@ -356,7 +356,7 @@ def compute_backlink_lookup_values(
                     auto_key_counters[emit.table] = counter + 1
 
                 # Compute field values
-                field_values: Dict[str, Any] = {}
+                field_values: dict[str, Any] = {}
                 for field_name, transform in transforms.items():
                     field_values[field_name] = transform(ctx)
 
@@ -368,7 +368,7 @@ def compute_backlink_lookup_values(
 def bind_backlinks(
     raw_results: Mapping[str, MappingResult[Any]],
     backlinks: Sequence[dict[str, Any]],
-    parent_lookup_values: Dict[str, Dict[KeyTuple, Dict[str, Any]]],
+    parent_lookup_values: dict[str, dict[KeyTuple, dict[str, Any]]],
     *,
     fail_on_missing: bool = False,
 ) -> list[str]:
@@ -461,7 +461,7 @@ def bind_backlinks(
 def bind_relationships_via_index(
     raw_results: Mapping[str, MappingResult[Any]],
     relationships: Sequence[dict[str, Any]],
-    child_lookup_values: Dict[str, Dict[KeyTuple, Dict[str, Any]]],
+    child_lookup_values: dict[str, dict[KeyTuple, dict[str, Any]]],
     *,
     fail_on_missing: bool = False,
 ) -> list[str]:
@@ -588,7 +588,7 @@ def validate_relationship_completeness(
                 if value is not None:
                     parent_values_present.add(value)
 
-        for child_key, _child_obj in child_result.instances.items():
+        for child_key in child_result.instances:
             child_values = lookup_values.get(child_key, {})
             lookup_value = child_values.get(child_field)
             if lookup_value is None:

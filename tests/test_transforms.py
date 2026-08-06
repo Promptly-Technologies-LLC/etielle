@@ -1,10 +1,12 @@
-from etielle.core import Context
+from typing import Any, TypedDict
+
 import pytest
 
+from etielle.core import Context
 from etielle.transforms import (
     apply,
-    concat,
     coalesce,
+    concat,
     format_id,
     get,
     get_from_parent,
@@ -15,8 +17,6 @@ from etielle.transforms import (
     literal,
     parent_key,
 )
-
-from typing import Any, TypedDict
 
 
 class _Grand(TypedDict):
@@ -421,7 +421,7 @@ class TestLookup:
 
     def test_lookup_finds_key(self):
         """lookup() returns value when key exists in index."""
-        from etielle.transforms import lookup, get
+        from etielle.transforms import get, lookup
 
         # Create context with indices in slots
         ctx = Context(
@@ -439,7 +439,7 @@ class TestLookup:
 
     def test_lookup_returns_none_for_missing_key(self):
         """lookup() returns None when key not in index."""
-        from etielle.transforms import lookup, get
+        from etielle.transforms import get, lookup
 
         ctx = Context(
             root={},
@@ -456,7 +456,7 @@ class TestLookup:
 
     def test_lookup_returns_default_for_missing_key(self):
         """lookup() returns default when key not found."""
-        from etielle.transforms import lookup, get
+        from etielle.transforms import get, lookup
 
         ctx = Context(
             root={},
@@ -473,7 +473,7 @@ class TestLookup:
 
     def test_lookup_raises_for_missing_index(self):
         """lookup() raises ValueError when index doesn't exist."""
-        from etielle.transforms import lookup, get
+        from etielle.transforms import get, lookup
 
         ctx = Context(
             root={},

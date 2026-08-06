@@ -18,7 +18,6 @@ from etielle.chunking import (
     PreSegmentedChunkSource,
 )
 
-
 Base = declarative_base()
 
 

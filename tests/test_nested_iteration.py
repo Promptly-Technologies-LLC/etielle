@@ -8,11 +8,8 @@ Related issue: https://github.com/Promptly-Technologies-LLC/etielle/issues/66
 
 from dataclasses import dataclass
 
-import pytest
-
-from etielle.fluent import etl, Field, TempField, node, parent_index
-from etielle.transforms import get, key, get_from_parent, index, parent_key
-
+from etielle.fluent import Field, etl, node, parent_index
+from etielle.transforms import get, get_from_parent, index, parent_key
 
 # =============================================================================
 # Models
@@ -562,7 +559,7 @@ class TestNestedIterationIntegration:
 
         questions = result.tables[Question]
         assert len(questions) == 1
-        assert list(questions.values())[0].id == "Q1"
+        assert next(iter(questions.values())).id == "Q1"
 
         junctions = result.tables[QuestionChoice]
         assert len(junctions) == 2

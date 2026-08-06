@@ -1,18 +1,13 @@
 from __future__ import annotations
+
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 from typing import (
-    Any,
-    Callable,
-    Optional,
-    Sequence,
-    Tuple,
-    TypeVar,
-    Generic,
-    cast,
     TYPE_CHECKING,
-    Dict,
-    List,
+    Any,
     Literal,
+    TypeVar,
+    cast,
 )
 
 if TYPE_CHECKING:
@@ -44,10 +39,10 @@ class Context:
 
     root: Any
     node: Any
-    path: Tuple[str | int, ...]
-    parent: Optional["Context"]
-    key: Optional[str]
-    index: Optional[int]
+    path: tuple[str | int, ...]
+    parent: Context | None
+    key: str | None
+    index: int | None
     slots: dict[str, Any] = field(default_factory=dict)
 
 
@@ -71,7 +66,7 @@ Attr = Callable[[T], U]
 
 
 class _SelectorInvalid(Exception):
-    def __init__(self, reason: str, path: Tuple[str, ...] | None = None) -> None:
+    def __init__(self, reason: str, path: tuple[str, ...] | None = None) -> None:
         self.reason = reason
         self.path = path or ()
 
@@ -86,11 +81,11 @@ class _FieldTrace:
 
     __slots__ = ("_path",)
 
-    def __init__(self, path: Tuple[str, ...] = ()) -> None:
+    def __init__(self, path: tuple[str, ...] = ()) -> None:
         self._path = path
 
     # Attribute access builds up the path
-    def __getattr__(self, name: str) -> "_FieldTrace":
+    def __getattr__(self, name: str) -> _FieldTrace:
         return _FieldTrace(self._path + (name,))
 
     # Reject any attempts to call the selected attribute
@@ -115,11 +110,11 @@ class _FieldTrace:
 
     # Expose path for inspection after lambda returns
     @property
-    def path(self) -> Tuple[str, ...]:
+    def path(self) -> tuple[str, ...]:
         return self._path
 
 
-def field_of(model: type[T], selector: Attr[T, Any]) -> str:
+def field_of[T](model: type[T], selector: Attr[T, Any]) -> str:
     """
     Resolve a model field name from a type-checked selector lambda.
 
@@ -208,11 +203,11 @@ class TraversalSpec:
     """
 
     path: Sequence[str]
-    emits: Sequence[TableEmit | "InstanceEmit[Any]"]
+    emits: Sequence[TableEmit | InstanceEmit[Any]]
     mode: Literal["auto", "items", "single"] = "auto"
-    inner_path: Optional[Sequence[str]] = None
+    inner_path: Sequence[str] | None = None
     inner_mode: Literal["auto", "items", "single"] = "auto"
-    levels: Optional[Sequence[IterationLevel]] = None
+    levels: Sequence[IterationLevel] | None = None
 
     def get_levels(self) -> Sequence[IterationLevel]:
         """Get iteration levels, converting from legacy format if needed."""
@@ -237,7 +232,7 @@ class MappingSpec:
 
 
 @dataclass(frozen=True)
-class MappingResult(Generic[T]):
+class MappingResult[T]:
     """
     Unified result for both classic table rows and instance builders.
 
@@ -249,9 +244,9 @@ class MappingResult(Generic[T]):
     - lookup_values: per-key field values captured during mapping for relationship binding
     """
 
-    instances: Dict[Tuple[Any, ...], T]
-    update_errors: Dict[Tuple[Any, ...], List[str]]
-    finalize_errors: Dict[Tuple[Any, ...], List[str]]
-    stats: Dict[str, int]
-    indices: Dict[str, Dict[Any, T]] = field(default_factory=dict)
-    lookup_values: Dict[Tuple[Any, ...], Dict[str, Any]] = field(default_factory=dict)
+    instances: dict[tuple[Any, ...], T]
+    update_errors: dict[tuple[Any, ...], list[str]]
+    finalize_errors: dict[tuple[Any, ...], list[str]]
+    stats: dict[str, int]
+    indices: dict[str, dict[Any, T]] = field(default_factory=dict)
+    lookup_values: dict[tuple[Any, ...], dict[str, Any]] = field(default_factory=dict)

@@ -1,18 +1,19 @@
 import pydantic
+
 from etielle.core import MappingSpec, TraversalSpec
-from etielle.transforms import get
 from etielle.instances import (
-    InstanceEmit,
-    FieldSpec,
-    TypedDictBuilder,
     AddPolicy,
     AppendPolicy,
     ExtendPolicy,
-    MinPolicy,
-    MaxPolicy,
+    FieldSpec,
     FirstNonNullPolicy,
+    InstanceEmit,
+    MaxPolicy,
+    MinPolicy,
     PydanticBuilder,
+    TypedDictBuilder,
 )
+from etielle.transforms import get
 
 
 def test_typed_dict_builder_basic():
@@ -46,7 +47,7 @@ def test_typed_dict_builder_basic():
     from etielle.executor import run_mapping
 
     result = run_mapping(data, spec)
-    got = sorted(list(result["user_models"].instances.values()), key=lambda r: r["id"])
+    got = sorted(result["user_models"].instances.values(), key=lambda r: r["id"])
     assert got == [
         {"id": "u1", "email": "ada@example.com"},
         {"id": "u2", "email": "linus@example.com"},
@@ -87,7 +88,7 @@ def test_merge_policy_add_across_multiple_updates():
 
     result = run_mapping(data, spec)
     got = sorted(
-        list(result["user_counts"].instances.values()), key=lambda r: r["user_id"]
+        result["user_counts"].instances.values(), key=lambda r: r["user_id"]
     )
     assert got == [
         {"user_id": "u1", "count": 2},
@@ -131,7 +132,7 @@ def test_append_and_extend_policies_ordering():
     from etielle.executor import run_mapping
 
     result = run_mapping(data, spec)
-    got = list(result["user_tags"].instances.values())[0]
+    got = next(iter(result["user_tags"].instances.values()))
     assert got["tag"] == ["a", "b"]
     assert got["tags_accum"] == ["x", "y", "z"]
 
@@ -174,7 +175,7 @@ def test_pydantic_builder_with_typed_selectors():
 
     result = run_mapping(data, spec)
     users = sorted(
-        list(result["users_pydantic"].instances.values()), key=lambda u: u.id
+        result["users_pydantic"].instances.values(), key=lambda u: u.id
     )
     assert users[0].id == "u1" and users[0].email == "ada@example.com"
     assert users[1].id == "u2" and users[1].email == "linus@example.com"
@@ -193,8 +194,8 @@ def test_unknown_field_suggestion_and_error_collection():
     }
 
     from etielle.executor import run_mapping
+    from etielle.instances import FieldSpec, InstanceEmit, PydanticBuilder
     from etielle.transforms import get
-    from etielle.instances import InstanceEmit, FieldSpec, PydanticBuilder
 
     spec = MappingSpec(
         traversals=[
@@ -242,8 +243,8 @@ def test_fail_fast_on_unknown_field():
     data = {"users": [{"id": "u1", "email": "ada@example.com"}]}
 
     from etielle.executor import run_mapping
+    from etielle.instances import FieldSpec, InstanceEmit, PydanticBuilder
     from etielle.transforms import get
-    from etielle.instances import InstanceEmit, FieldSpec, PydanticBuilder
 
     spec = MappingSpec(
         traversals=[
@@ -313,7 +314,7 @@ def test_min_policy_basic_numeric():
 
     result = run_mapping(data, spec)
     got = sorted(
-        list(result["user_min_scores"].instances.values()), key=lambda r: r["user_id"]
+        result["user_min_scores"].instances.values(), key=lambda r: r["user_id"]
     )
     assert got == [
         {"user_id": "u1", "min_score": 5},
@@ -358,7 +359,7 @@ def test_min_policy_with_none_values():
 
     result = run_mapping(data, spec)
     got = sorted(
-        list(result["user_min_scores"].instances.values()), key=lambda r: r["user_id"]
+        result["user_min_scores"].instances.values(), key=lambda r: r["user_id"]
     )
     assert got == [
         {"user_id": "u1", "min_score": 8},
@@ -399,7 +400,7 @@ def test_min_policy_all_none():
     from etielle.executor import run_mapping
 
     result = run_mapping(data, spec)
-    got = list(result["user_min_scores"].instances.values())[0]
+    got = next(iter(result["user_min_scores"].instances.values()))
     assert got == {"user_id": "u1", "min_score": None}
 
 
@@ -435,7 +436,7 @@ def test_min_policy_single_value():
     from etielle.executor import run_mapping
 
     result = run_mapping(data, spec)
-    got = list(result["user_min_scores"].instances.values())[0]
+    got = next(iter(result["user_min_scores"].instances.values()))
     assert got == {"user_id": "u1", "min_score": 42}
 
 
@@ -475,7 +476,7 @@ def test_min_policy_with_floats():
     from etielle.executor import run_mapping
 
     result = run_mapping(data, spec)
-    got = list(result["user_temps"].instances.values())[0]
+    got = next(iter(result["user_temps"].instances.values()))
     assert got == {"user_id": "u1", "min_temp": 97.2}
 
 
@@ -517,7 +518,7 @@ def test_min_policy_with_dates():
     from etielle.executor import run_mapping
 
     result = run_mapping(data, spec)
-    got = list(result["user_dates"].instances.values())[0]
+    got = next(iter(result["user_dates"].instances.values()))
     assert got == {"user_id": "u1", "first_date": date(2024, 1, 10)}
 
 
@@ -555,7 +556,7 @@ def test_min_policy_with_strings():
     from etielle.executor import run_mapping
 
     result = run_mapping(data, spec)
-    got = list(result["user_codes"].instances.values())[0]
+    got = next(iter(result["user_codes"].instances.values()))
     assert got == {"user_id": "u1", "min_code": "alpha"}
 
 
@@ -600,7 +601,7 @@ def test_max_policy_basic_numeric():
 
     result = run_mapping(data, spec)
     got = sorted(
-        list(result["user_max_scores"].instances.values()), key=lambda r: r["user_id"]
+        result["user_max_scores"].instances.values(), key=lambda r: r["user_id"]
     )
     assert got == [
         {"user_id": "u1", "max_score": 25},
@@ -645,7 +646,7 @@ def test_max_policy_with_none_values():
 
     result = run_mapping(data, spec)
     got = sorted(
-        list(result["user_max_scores"].instances.values()), key=lambda r: r["user_id"]
+        result["user_max_scores"].instances.values(), key=lambda r: r["user_id"]
     )
     assert got == [
         {"user_id": "u1", "max_score": 18},
@@ -686,7 +687,7 @@ def test_max_policy_all_none():
     from etielle.executor import run_mapping
 
     result = run_mapping(data, spec)
-    got = list(result["user_max_scores"].instances.values())[0]
+    got = next(iter(result["user_max_scores"].instances.values()))
     assert got == {"user_id": "u1", "max_score": None}
 
 
@@ -722,7 +723,7 @@ def test_max_policy_single_value():
     from etielle.executor import run_mapping
 
     result = run_mapping(data, spec)
-    got = list(result["user_max_scores"].instances.values())[0]
+    got = next(iter(result["user_max_scores"].instances.values()))
     assert got == {"user_id": "u1", "max_score": 42}
 
 
@@ -762,7 +763,7 @@ def test_max_policy_with_floats():
     from etielle.executor import run_mapping
 
     result = run_mapping(data, spec)
-    got = list(result["user_temps"].instances.values())[0]
+    got = next(iter(result["user_temps"].instances.values()))
     assert got == {"user_id": "u1", "max_temp": 100.2}
 
 
@@ -804,7 +805,7 @@ def test_max_policy_with_dates():
     from etielle.executor import run_mapping
 
     result = run_mapping(data, spec)
-    got = list(result["user_dates"].instances.values())[0]
+    got = next(iter(result["user_dates"].instances.values()))
     assert got == {"user_id": "u1", "last_date": date(2024, 1, 25)}
 
 
@@ -842,7 +843,7 @@ def test_max_policy_with_strings():
     from etielle.executor import run_mapping
 
     result = run_mapping(data, spec)
-    got = list(result["user_codes"].instances.values())[0]
+    got = next(iter(result["user_codes"].instances.values()))
     assert got == {"user_id": "u1", "max_code": "zulu"}
 
 
@@ -889,7 +890,7 @@ def test_first_non_null_policy_basic():
 
     result = run_mapping(data, spec)
     got = sorted(
-        list(result["user_emails"].instances.values()), key=lambda r: r["user_id"]
+        result["user_emails"].instances.values(), key=lambda r: r["user_id"]
     )
     assert got == [
         {"user_id": "u1", "first_email": "first@example.com"},
@@ -937,7 +938,7 @@ def test_first_non_null_policy_with_none_values():
 
     result = run_mapping(data, spec)
     got = sorted(
-        list(result["user_emails"].instances.values()), key=lambda r: r["user_id"]
+        result["user_emails"].instances.values(), key=lambda r: r["user_id"]
     )
     assert got == [
         {"user_id": "u1", "first_email": "valid@example.com"},
@@ -981,7 +982,7 @@ def test_first_non_null_policy_all_none():
     from etielle.executor import run_mapping
 
     result = run_mapping(data, spec)
-    got = list(result["user_emails"].instances.values())[0]
+    got = next(iter(result["user_emails"].instances.values()))
     assert got == {"user_id": "u1", "first_email": None}
 
 
@@ -1019,7 +1020,7 @@ def test_first_non_null_policy_single_value():
     from etielle.executor import run_mapping
 
     result = run_mapping(data, spec)
-    got = list(result["user_emails"].instances.values())[0]
+    got = next(iter(result["user_emails"].instances.values()))
     assert got == {"user_id": "u1", "first_email": "only@example.com"}
 
 
@@ -1065,7 +1066,7 @@ def test_first_non_null_policy_with_various_types():
 
     result = run_mapping(data, spec)
     got = sorted(
-        list(result["user_values"].instances.values()), key=lambda r: r["user_id"]
+        result["user_values"].instances.values(), key=lambda r: r["user_id"]
     )
     assert got == [
         {"user_id": "u1", "first_value": 42},
