@@ -5,6 +5,7 @@ Provides functions for inserting pipeline results to Supabase.
 
 from __future__ import annotations
 
+import contextlib
 from collections.abc import Callable, Sequence
 from typing import Any
 
@@ -64,9 +65,9 @@ def insert_batches(
             batch_inserted = len(response.data)
 
         if on_batch is not None:
-            try:
+            # A user-supplied progress callback must never abort an
+            # insert that has already succeeded.
+            with contextlib.suppress(Exception):
                 on_batch(batch_num, total_batches, batch_inserted)
-            except Exception:
-                pass  # Don't let callback errors break the insert
 
     return results

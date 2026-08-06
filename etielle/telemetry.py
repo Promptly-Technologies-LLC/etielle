@@ -20,6 +20,7 @@ Example usage:
 
 from __future__ import annotations
 
+import contextlib
 from collections.abc import Callable
 from dataclasses import dataclass
 
@@ -117,7 +118,7 @@ def _emit(event: TelemetryEventTypes, callback: TelemetryCallback | None) -> Non
         callback: The callback to invoke, or None.
     """
     if callback is not None:
-        try:
+        # A user-supplied callback may raise anything; telemetry is
+        # best-effort and must never break the pipeline it observes.
+        with contextlib.suppress(Exception):
             callback(event)
-        except Exception:
-            pass  # Don't let callback errors break the pipeline

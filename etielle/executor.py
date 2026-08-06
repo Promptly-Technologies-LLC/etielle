@@ -345,7 +345,9 @@ def run_mapping(
                             prev = shadow_bucket.get(field_name)
                             try:
                                 value = policy.merge(prev, value)
-                            except Exception as e:  # pragma: no cover - defensive
+                            # A user-supplied merge policy may raise
+                            # anything; record it and skip the field.
+                            except Exception as e:  # noqa: BLE001  # pragma: no cover
                                 tbl["builder"].record_update_error(
                                     composite_key,
                                     f"field {field_name}: merge policy error: {e}",

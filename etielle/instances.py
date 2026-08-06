@@ -54,7 +54,7 @@ class MinPolicy(MergePolicy):
             return old
         try:
             return min(old, new)
-        except Exception:
+        except (TypeError, ValueError):
             # On incomparable types, prefer old to keep determinism
             return old
 
@@ -67,7 +67,8 @@ class MaxPolicy(MergePolicy):
             return old
         try:
             return max(old, new)
-        except Exception:
+        except (TypeError, ValueError):
+            # On incomparable types, prefer old to keep determinism
             return old
 
 
@@ -79,6 +80,13 @@ class FirstNonNullPolicy(MergePolicy):
 # -----------------------------
 # Builder protocol
 # -----------------------------
+#
+# Builders deliberately catch bare ``Exception`` (noqa: BLE001) around every
+# call into user-supplied code -- model validators, factories, constructors and
+# field checkers. Whatever such code raises is recorded against the offending
+# key and processing continues, which is the contract ``errors="collect"``
+# promises. Narrowing these would let an unanticipated exception type escape
+# and abort the whole run.
 
 
 class InstanceBuilder[T]:
@@ -156,7 +164,7 @@ def _import_pydantic():
         from pydantic import BaseModel, TypeAdapter, create_model
 
         return BaseModel, TypeAdapter, create_model
-    except Exception:  # pragma: no cover - optional
+    except ImportError:  # pragma: no cover - optional
         return None, None, None
 
 
@@ -187,7 +195,7 @@ class PydanticBuilder[T](InstanceBuilder[T]):
             if k in self._field_adapters:
                 try:
                     bucket[k] = self._field_adapters[k].validate_python(v)
-                except Exception as e:  # pragma: no cover - defensive
+                except Exception as e:  # noqa: BLE001  # pragma: no cover
                     self._update_errors.setdefault(key, []).append(f"field {k}: {e}")
                     bucket[k] = v
             else:
@@ -199,7 +207,7 @@ class PydanticBuilder[T](InstanceBuilder[T]):
         for k, payload in self.acc.items():
             try:
                 out[k] = cast(Any, self.model).model_validate(payload)
-            except Exception as e:  # pragma: no cover - defensive
+            except Exception as e:  # noqa: BLE001  # pragma: no cover
                 self._finalize_errors.setdefault(k, []).append(str(e))
         return out
 
@@ -252,7 +260,7 @@ class PydanticPartialBuilder[T](InstanceBuilder[T]):
         merged = {**bucket, **updates}
         try:
             cast(Any, self.partial).model_validate(merged)
-        except Exception as e:  # pragma: no cover - defensive
+        except Exception as e:  # noqa: BLE001  # pragma: no cover
             self._update_errors.setdefault(key, []).append(str(e))
         bucket.update(updates)
 
@@ -261,7 +269,7 @@ class PydanticPartialBuilder[T](InstanceBuilder[T]):
         for k, payload in self.acc.items():
             try:
                 out[k] = cast(Any, self.model).model_validate(payload)
-            except Exception as e:  # pragma: no cover - defensive
+            except Exception as e:  # noqa: BLE001  # pragma: no cover
                 self._finalize_errors.setdefault(k, []).append(str(e))
         return out
 
@@ -307,7 +315,7 @@ class TypedDictBuilder[T](InstanceBuilder[T]):
             if checker is not None:
                 try:
                     v = checker(v)
-                except Exception as e:  # pragma: no cover - defensive
+                except Exception as e:  # noqa: BLE001  # pragma: no cover
                     self._update_errors.setdefault(key, []).append(f"field {k}: {e}")
             bucket[k] = v
 
@@ -316,7 +324,7 @@ class TypedDictBuilder[T](InstanceBuilder[T]):
         for k, payload in self.acc.items():
             try:
                 out[k] = self.factory(payload)
-            except Exception as e:  # pragma: no cover - defensive
+            except Exception as e:  # noqa: BLE001  # pragma: no cover
                 self._finalize_errors.setdefault(k, []).append(str(e))
         return out
 
@@ -367,7 +375,7 @@ class ConstructorBuilder[T](InstanceBuilder[T]):
         for k, payload in self.acc.items():
             try:
                 out[k] = self.constructor(**payload)
-            except Exception as e:  # pragma: no cover - defensive
+            except Exception as e:  # noqa: BLE001  # pragma: no cover
                 self._finalize_errors.setdefault(k, []).append(str(e))
         return out
 

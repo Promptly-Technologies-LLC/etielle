@@ -141,7 +141,11 @@ def bind_many_to_one(
                 continue
             try:
                 setattr(child_obj, rel.attr, parent_obj)
-            except Exception as e:  # pragma: no cover - defensive
+            # The target is an arbitrary user model -- a frozen dataclass,
+            # a validate-on-assignment model or an ORM class -- so the
+            # write can fail in library-specific ways. Collect whatever
+            # it raises rather than aborting the whole binding pass.
+            except Exception as e:  # noqa: BLE001  # pragma: no cover
                 errors.append(
                     f"failed to set attribute '{rel.attr}' on child table={rel.child_table} key={child_ck}: {e}"
                 )
@@ -444,7 +448,11 @@ def bind_backlinks(
             # Set the list attribute on parent
             try:
                 setattr(parent_obj, attr, children_list)
-            except Exception as e:  # pragma: no cover - defensive
+            # The target is an arbitrary user model -- a frozen dataclass,
+            # a validate-on-assignment model or an ORM class -- so the
+            # write can fail in library-specific ways. Collect whatever
+            # it raises rather than aborting the whole binding pass.
+            except Exception as e:  # noqa: BLE001  # pragma: no cover
                 all_errors.append(
                     f"Failed to set attribute '{attr}' on parent "
                     f"table={parent_table} key={parent_key}: {e}"

@@ -139,8 +139,8 @@ def _run_bench(name: str, scale: int, fn: Callable[[], Any]) -> BenchResult:
         rows_mapped = sum(s.mapped for s in stats.values())
     if hasattr(result, "tables"):
         try:
-            result_table_count = len(list(result.tables.keys()))
-        except Exception:
+            result_table_count = len(result.tables)
+        except (AttributeError, TypeError):
             result_table_count = 0
 
     return BenchResult(

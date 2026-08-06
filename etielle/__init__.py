@@ -1,10 +1,12 @@
 """etielle - declarative JSON-to-relational mapping."""
 
-try:
-    from importlib.metadata import version as _pkg_version
+from importlib.metadata import PackageNotFoundError
+from importlib.metadata import version as _pkg_version
 
+try:
     __version__ = _pkg_version("etielle")
-except Exception:
+except PackageNotFoundError:
+    # Running from a source tree that was never installed.
     __version__ = "0.0.0.dev"
 
 from .core import (
