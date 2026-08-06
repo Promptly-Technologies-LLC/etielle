@@ -19,9 +19,10 @@ import resource
 import sys
 import time
 import tracemalloc
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 from sqlalchemy import Column, ForeignKey, Integer, String, create_engine
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker
@@ -138,8 +139,8 @@ def _run_bench(name: str, scale: int, fn: Callable[[], Any]) -> BenchResult:
         rows_mapped = sum(s.mapped for s in stats.values())
     if hasattr(result, "tables"):
         try:
-            result_table_count = len(list(result.tables.keys()))
-        except Exception:
+            result_table_count = len(result.tables)
+        except (AttributeError, TypeError):
             result_table_count = 0
 
     return BenchResult(

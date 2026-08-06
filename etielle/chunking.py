@@ -210,10 +210,9 @@ class ExternalPartitionChunkSource:
         self._loads = loads if loads is not None else json.loads
 
     def chunks(self) -> Iterator[Chunk]:
-        spill = tempfile.TemporaryFile(
+        with tempfile.TemporaryFile(
             mode="w+b", dir=self._dir, prefix="etielle-partition-"
-        )
-        try:
+        ) as spill:
             index: dict[Any, list[tuple[int, int]]] = {}
             offset = 0
             for record in self._records:
@@ -228,8 +227,6 @@ class ExternalPartitionChunkSource:
                     spill.seek(span_offset)
                     roots.append(self._loads(spill.read(span_length).decode("utf-8")))
                 yield Chunk(roots=tuple(roots), sequential=True)
-        finally:
-            spill.close()
 
 
 @dataclass
@@ -507,7 +504,7 @@ class UpsertFlushStrategy:
 
         inserted = 0
         try:
-            for _key, instance in result.instances.items():
+            for instance in result.instances.values():
                 if isinstance(instance, dict):
                     continue
                 try:

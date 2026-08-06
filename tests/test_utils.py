@@ -1,6 +1,7 @@
 """Tests for utility functions."""
 
 import pytest
+
 from etielle.utils import topological_sort
 
 

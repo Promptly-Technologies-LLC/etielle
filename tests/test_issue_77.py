@@ -20,7 +20,6 @@ from etielle.chunking import (
     UpsertFlushStrategy,
 )
 
-
 Base = declarative_base()
 
 

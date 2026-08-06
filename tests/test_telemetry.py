@@ -1,26 +1,21 @@
 """Tests for the telemetry feature."""
 
-import pytest
 from dataclasses import dataclass
-from typing import Any
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 from etielle import (
-    etl,
     Field,
-    TempField,
-    get,
-    literal,
-    PipelineResult,
-    TableStats,
-    TelemetryEvent,
-    MapStarted,
-    MapCompleted,
-    FlushStarted,
     FlushCompleted,
     FlushFailed,
+    FlushStarted,
+    MapCompleted,
+    MapStarted,
+    TableStats,
+    TelemetryEvent,
+    etl,
+    get,
 )
-from etielle.telemetry import _emit, TelemetryCallback
+from etielle.telemetry import _emit
 
 
 class TestTelemetryEvents:
@@ -168,7 +163,7 @@ class TestMappingEvents:
         data = {"users": [{"name": "Alice"}, {"name": "Bob"}]}
         events = []
 
-        result = (
+        (
             etl(data)
             .goto("users").each()
             .map_to(table="users", fields=[Field("name", get("name"))])
@@ -196,7 +191,7 @@ class TestMappingEvents:
         }
         events = []
 
-        result = (
+        (
             etl(data)
             .goto("users").each()
             .map_to(table="users", fields=[Field("name", get("name"))])
@@ -220,7 +215,7 @@ class TestMappingEvents:
         data = {"users": [{"name": "Alice"}]}  # Missing age
         events = []
 
-        result = (
+        (
             etl(data)
             .goto("users").each()
             .map_to(
@@ -233,7 +228,7 @@ class TestMappingEvents:
             .run(on_event=events.append)
         )
 
-        map_completed = [e for e in events if isinstance(e, MapCompleted)][0]
+        map_completed = next(e for e in events if isinstance(e, MapCompleted))
         # Error count should reflect the missing required field
         assert map_completed.error_count >= 0
 
@@ -267,7 +262,7 @@ class TestEventCollectionPatterns:
         data = {"users": [{"name": "Alice"}]}
         events = []
 
-        result = (
+        (
             etl(data)
             .goto("users").each()
             .map_to(table="users", fields=[Field("name", get("name"))])
@@ -284,7 +279,7 @@ class TestEventCollectionPatterns:
         def track_types(event):
             event_types.append(type(event).__name__)
 
-        result = (
+        (
             etl(data)
             .goto("users").each()
             .map_to(table="users", fields=[Field("name", get("name"))])
@@ -334,7 +329,7 @@ class TestSupabaseAdapterBatchCallback:
         def on_batch(batch_num, batch_total, inserted):
             batch_calls.append((batch_num, batch_total, inserted))
 
-        result = insert_batches(
+        insert_batches(
             mock_client,
             "users",
             [{"name": "Alice"}],
@@ -365,7 +360,7 @@ class TestSupabaseAdapterBatchCallback:
 
         # 5 rows with batch_size=2 = 3 batches
         rows = [{"name": f"User{i}"} for i in range(5)]
-        result = insert_batches(
+        insert_batches(
             mock_client,
             "users",
             rows,

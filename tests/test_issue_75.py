@@ -20,7 +20,6 @@ from etielle.chunking import (
 from etielle.instances import AddPolicy
 from etielle.relationships import RelationshipIncompleteError
 
-
 Base = declarative_base()
 
 

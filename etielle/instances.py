@@ -1,26 +1,17 @@
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from types import NoneType
 from typing import (
     Any,
-    Callable,
-    Dict,
-    Generic,
-    Mapping,
-    Optional,
-    Sequence,
-    Tuple,
-    TypeVar,
-    Union,
-    TYPE_CHECKING,
     cast,
+    get_args,
+    get_origin,
 )
-from typing import get_args, get_origin, Union as _Union
+from typing import Union as _Union
 
 from .core import Transform, field_of
 
-
-K = Tuple[Any, ...]
-T = TypeVar("T", covariant=True)
+K = tuple[Any, ...]
 
 
 # -----------------------------
@@ -62,8 +53,8 @@ class MinPolicy(MergePolicy):
         if new is None:
             return old
         try:
-            return new if new < old else old
-        except Exception:
+            return min(old, new)
+        except (TypeError, ValueError):
             # On incomparable types, prefer old to keep determinism
             return old
 
@@ -75,8 +66,9 @@ class MaxPolicy(MergePolicy):
         if new is None:
             return old
         try:
-            return new if new > old else old
-        except Exception:
+            return max(old, new)
+        except (TypeError, ValueError):
+            # On incomparable types, prefer old to keep determinism
             return old
 
 
@@ -88,21 +80,28 @@ class FirstNonNullPolicy(MergePolicy):
 # -----------------------------
 # Builder protocol
 # -----------------------------
+#
+# Builders deliberately catch bare ``Exception`` (noqa: BLE001) around every
+# call into user-supplied code -- model validators, factories, constructors and
+# field checkers. Whatever such code raises is recorded against the offending
+# key and processing continues, which is the contract ``errors="collect"``
+# promises. Narrowing these would let an unanticipated exception type escape
+# and abort the whole run.
 
 
-class InstanceBuilder(Generic[T]):
+class InstanceBuilder[T]:
     def update(
         self, key: K, updates: Mapping[str, Any]
     ) -> None:  # pragma: no cover - interface only
         raise NotImplementedError
 
-    def finalize_all(self) -> Dict[K, T]:  # pragma: no cover - interface only
+    def finalize_all(self) -> dict[K, T]:  # pragma: no cover - interface only
         raise NotImplementedError
 
-    def get(self, key: K) -> Optional[T]:  # pragma: no cover - interface only
+    def get(self, key: K) -> T | None:  # pragma: no cover - interface only
         return None
 
-    def errors(self) -> Dict[K, list[str]]:  # pragma: no cover - interface only
+    def errors(self) -> dict[K, list[str]]:  # pragma: no cover - interface only
         # Back-compat alias for update_errors
         return self.update_errors()
 
@@ -111,13 +110,13 @@ class InstanceBuilder(Generic[T]):
         return set()
 
     # Update-time errors (incremental validation)
-    def update_errors(self) -> Dict[K, list[str]]:  # pragma: no cover - interface only
+    def update_errors(self) -> dict[K, list[str]]:  # pragma: no cover - interface only
         return {}
 
     # Finalize-time errors (full validation)
     def finalize_errors(
         self,
-    ) -> Dict[K, list[str]]:  # pragma: no cover - interface only
+    ) -> dict[K, list[str]]:  # pragma: no cover - interface only
         return {}
 
     # Helpers to record errors from the executor (e.g., unknown fields)
@@ -133,14 +132,14 @@ class InstanceBuilder(Generic[T]):
 
 
 @dataclass(frozen=True)
-class FieldSpec(Generic[T]):
+class FieldSpec[T]:
     # Accept string field name or callable selector (via field_of)
-    selector: Union[str, Callable[[T], Any]]
+    selector: str | Callable[[T], Any]
     transform: Transform[Any]
 
 
 @dataclass(frozen=True)
-class InstanceEmit(Generic[T]):
+class InstanceEmit[T]:
     table: str
     join_keys: Sequence[Transform[Any]]
     fields: Sequence[FieldSpec[T]]
@@ -160,40 +159,29 @@ class InstanceEmit(Generic[T]):
 # -----------------------------
 
 
-if TYPE_CHECKING:
-    try:
-        pass  # noqa: F401
-    except Exception:  # pragma: no cover - optional for type checking
-        pass
-
-
 def _import_pydantic():
     try:
-        from pydantic import (
-            BaseModel as PydBaseModel,
-            TypeAdapter as PydTypeAdapter,
-            create_model as pyd_create_model,
-        )  # type: ignore
+        from pydantic import BaseModel, TypeAdapter, create_model
 
-        return PydBaseModel, PydTypeAdapter, pyd_create_model
-    except Exception:  # pragma: no cover - optional
+        return BaseModel, TypeAdapter, create_model
+    except ImportError:  # pragma: no cover - optional
         return None, None, None
 
 
-class PydanticBuilder(InstanceBuilder[T]):
+class PydanticBuilder[T](InstanceBuilder[T]):
     def __init__(self, model: type[T]):
         self.model = model
-        self.acc: Dict[K, Dict[str, Any]] = {}
+        self.acc: dict[K, dict[str, Any]] = {}
         # Per-field adapters for incremental validation
-        self._field_adapters: Dict[str, Any] = {}
+        self._field_adapters: dict[str, Any] = {}
         _BaseModel, _TypeAdapter, _create_model = _import_pydantic()
         if _TypeAdapter is not None and hasattr(model, "model_fields"):
             self._field_adapters = {
                 name: _TypeAdapter(f.annotation)
-                for name, f in getattr(model, "model_fields").items()
-            }  # type: ignore[misc]
-        self._update_errors: Dict[K, list[str]] = {}
-        self._finalize_errors: Dict[K, list[str]] = {}
+                for name, f in cast(Any, model).model_fields.items()
+            }
+        self._update_errors: dict[K, list[str]] = {}
+        self._finalize_errors: dict[K, list[str]] = {}
 
     def known_fields(self) -> set[str]:
         fields = getattr(self.model, "model_fields", None)
@@ -207,29 +195,29 @@ class PydanticBuilder(InstanceBuilder[T]):
             if k in self._field_adapters:
                 try:
                     bucket[k] = self._field_adapters[k].validate_python(v)
-                except Exception as e:  # pragma: no cover - defensive
+                except Exception as e:  # noqa: BLE001  # pragma: no cover
                     self._update_errors.setdefault(key, []).append(f"field {k}: {e}")
                     bucket[k] = v
             else:
                 bucket[k] = v
 
-    def finalize_all(self) -> Dict[K, T]:
+    def finalize_all(self) -> dict[K, T]:
         # At finalize, rely on full model validation per-key; accumulate errors
-        out: Dict[K, T] = {}
+        out: dict[K, T] = {}
         for k, payload in self.acc.items():
             try:
                 out[k] = cast(Any, self.model).model_validate(payload)
-            except Exception as e:  # pragma: no cover - defensive
+            except Exception as e:  # noqa: BLE001  # pragma: no cover
                 self._finalize_errors.setdefault(k, []).append(str(e))
         return out
 
-    def get(self, key: K) -> Optional[T]:
+    def get(self, key: K) -> T | None:
         return None
 
-    def update_errors(self) -> Dict[K, list[str]]:
+    def update_errors(self) -> dict[K, list[str]]:
         return self._update_errors
 
-    def finalize_errors(self) -> Dict[K, list[str]]:
+    def finalize_errors(self) -> dict[K, list[str]]:
         return self._finalize_errors
 
     def record_update_error(self, key: K, reason: str) -> None:
@@ -239,27 +227,27 @@ class PydanticBuilder(InstanceBuilder[T]):
         self._finalize_errors.setdefault(key, []).append(reason)
 
 
-class PydanticPartialBuilder(InstanceBuilder[T]):
+class PydanticPartialBuilder[T](InstanceBuilder[T]):
     def __init__(self, model: type[T]):
         _BaseModel, _TypeAdapter, _create_model = _import_pydantic()
         if _create_model is None:  # pragma: no cover - optional
             raise RuntimeError("pydantic is required for PydanticPartialBuilder")
         self.model = model
         # Build a Partial[T] with all fields optional
-        partial_fields: Dict[str, tuple[Any, Any]] = {}
-        for name, f in getattr(model, "model_fields").items():
+        partial_fields: dict[str, tuple[Any, Any]] = {}
+        for name, f in cast(Any, model).model_fields.items():
             ann = f.annotation
             # If already Optional[...], keep as-is; else wrap in Optional
             if get_origin(ann) is _Union and type(None) in get_args(ann):
                 optional_ann = ann
             else:
-                # Build Optional[ann] dynamically as Union[ann, NoneType]
-                optional_ann = Union[ann, NoneType]
+                # Build Optional[ann] dynamically
+                optional_ann = ann | NoneType
             partial_fields[name] = (optional_ann, None)
         self.partial = _create_model(f"{model.__name__}Partial", **partial_fields)
-        self.acc: Dict[K, Dict[str, Any]] = {}
-        self._update_errors: Dict[K, list[str]] = {}
-        self._finalize_errors: Dict[K, list[str]] = {}
+        self.acc: dict[K, dict[str, Any]] = {}
+        self._update_errors: dict[K, list[str]] = {}
+        self._finalize_errors: dict[K, list[str]] = {}
 
     def known_fields(self) -> set[str]:
         fields = getattr(self.model, "model_fields", None)
@@ -272,26 +260,26 @@ class PydanticPartialBuilder(InstanceBuilder[T]):
         merged = {**bucket, **updates}
         try:
             cast(Any, self.partial).model_validate(merged)
-        except Exception as e:  # pragma: no cover - defensive
+        except Exception as e:  # noqa: BLE001  # pragma: no cover
             self._update_errors.setdefault(key, []).append(str(e))
         bucket.update(updates)
 
-    def finalize_all(self) -> Dict[K, T]:
-        out: Dict[K, T] = {}
+    def finalize_all(self) -> dict[K, T]:
+        out: dict[K, T] = {}
         for k, payload in self.acc.items():
             try:
                 out[k] = cast(Any, self.model).model_validate(payload)
-            except Exception as e:  # pragma: no cover - defensive
+            except Exception as e:  # noqa: BLE001  # pragma: no cover
                 self._finalize_errors.setdefault(k, []).append(str(e))
         return out
 
-    def get(self, key: K) -> Optional[T]:
+    def get(self, key: K) -> T | None:
         return None
 
-    def update_errors(self) -> Dict[K, list[str]]:
+    def update_errors(self) -> dict[K, list[str]]:
         return self._update_errors
 
-    def finalize_errors(self) -> Dict[K, list[str]]:
+    def finalize_errors(self) -> dict[K, list[str]]:
         return self._finalize_errors
 
     def record_update_error(self, key: K, reason: str) -> None:
@@ -306,17 +294,17 @@ class PydanticPartialBuilder(InstanceBuilder[T]):
 # -----------------------------
 
 
-class TypedDictBuilder(InstanceBuilder[T]):
+class TypedDictBuilder[T](InstanceBuilder[T]):
     def __init__(
         self,
-        factory: Callable[[Dict[str, Any]], T],
+        factory: Callable[[dict[str, Any]], T],
         *,
-        field_type_checkers: Optional[Mapping[str, Callable[[Any], Any]]] = None,
+        field_type_checkers: Mapping[str, Callable[[Any], Any]] | None = None,
     ) -> None:
         self.factory = factory
-        self.acc: Dict[K, Dict[str, Any]] = {}
-        self._update_errors: Dict[K, list[str]] = {}
-        self._finalize_errors: Dict[K, list[str]] = {}
+        self.acc: dict[K, dict[str, Any]] = {}
+        self._update_errors: dict[K, list[str]] = {}
+        self._finalize_errors: dict[K, list[str]] = {}
         # Optional per-field validators (callables that may raise)
         self._checkers: Mapping[str, Callable[[Any], Any]] = field_type_checkers or {}
 
@@ -327,30 +315,30 @@ class TypedDictBuilder(InstanceBuilder[T]):
             if checker is not None:
                 try:
                     v = checker(v)
-                except Exception as e:  # pragma: no cover - defensive
+                except Exception as e:  # noqa: BLE001  # pragma: no cover
                     self._update_errors.setdefault(key, []).append(f"field {k}: {e}")
             bucket[k] = v
 
-    def finalize_all(self) -> Dict[K, T]:
-        out: Dict[K, T] = {}
+    def finalize_all(self) -> dict[K, T]:
+        out: dict[K, T] = {}
         for k, payload in self.acc.items():
             try:
                 out[k] = self.factory(payload)
-            except Exception as e:  # pragma: no cover - defensive
+            except Exception as e:  # noqa: BLE001  # pragma: no cover
                 self._finalize_errors.setdefault(k, []).append(str(e))
         return out
 
-    def get(self, key: K) -> Optional[T]:
+    def get(self, key: K) -> T | None:
         return None
 
     def known_fields(self) -> set[str]:
         # We only know about fields with explicit type checkers; treat others as allowed
         return set(self._checkers.keys())
 
-    def update_errors(self) -> Dict[K, list[str]]:
+    def update_errors(self) -> dict[K, list[str]]:
         return self._update_errors
 
-    def finalize_errors(self) -> Dict[K, list[str]]:
+    def finalize_errors(self) -> dict[K, list[str]]:
         return self._finalize_errors
 
     def record_update_error(self, key: K, reason: str) -> None:
@@ -360,7 +348,7 @@ class TypedDictBuilder(InstanceBuilder[T]):
         self._finalize_errors.setdefault(key, []).append(reason)
 
 
-class ConstructorBuilder(InstanceBuilder[T]):
+class ConstructorBuilder[T](InstanceBuilder[T]):
     """
     Simplified builder for classes that accept keyword arguments in their constructor.
     Perfect for SQLAlchemy/SQLModel ORM models.
@@ -374,34 +362,34 @@ class ConstructorBuilder(InstanceBuilder[T]):
 
     def __init__(self, constructor: Callable[..., T]) -> None:
         self.constructor = constructor
-        self.acc: Dict[K, Dict[str, Any]] = {}
-        self._update_errors: Dict[K, list[str]] = {}
-        self._finalize_errors: Dict[K, list[str]] = {}
+        self.acc: dict[K, dict[str, Any]] = {}
+        self._update_errors: dict[K, list[str]] = {}
+        self._finalize_errors: dict[K, list[str]] = {}
 
     def update(self, key: K, updates: Mapping[str, Any]) -> None:
         bucket = self.acc.setdefault(key, {})
         bucket.update(updates)
 
-    def finalize_all(self) -> Dict[K, T]:
-        out: Dict[K, T] = {}
+    def finalize_all(self) -> dict[K, T]:
+        out: dict[K, T] = {}
         for k, payload in self.acc.items():
             try:
                 out[k] = self.constructor(**payload)
-            except Exception as e:  # pragma: no cover - defensive
+            except Exception as e:  # noqa: BLE001  # pragma: no cover
                 self._finalize_errors.setdefault(k, []).append(str(e))
         return out
 
-    def get(self, key: K) -> Optional[T]:
+    def get(self, key: K) -> T | None:
         return None
 
     def known_fields(self) -> set[str]:
         # No introspection, treat all fields as allowed
         return set()
 
-    def update_errors(self) -> Dict[K, list[str]]:
+    def update_errors(self) -> dict[K, list[str]]:
         return self._update_errors
 
-    def finalize_errors(self) -> Dict[K, list[str]]:
+    def finalize_errors(self) -> dict[K, list[str]]:
         return self._finalize_errors
 
     def record_update_error(self, key: K, reason: str) -> None:
@@ -416,7 +404,7 @@ class ConstructorBuilder(InstanceBuilder[T]):
 # -----------------------------
 
 
-def resolve_field_name_for_builder(
+def resolve_field_name_for_builder[T](
     builder: InstanceBuilder[T], spec: FieldSpec[T]
 ) -> str:
     if isinstance(spec.selector, str):

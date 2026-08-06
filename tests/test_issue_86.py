@@ -8,7 +8,6 @@ from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 
 from etielle import Field, TempField, etl, get
 
-
 Base = declarative_base()
 
 

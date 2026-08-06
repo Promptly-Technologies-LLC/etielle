@@ -15,9 +15,8 @@ from dataclasses import dataclass
 
 import pytest
 
-from etielle.fluent import etl, Field, TempField, node
-from etielle.transforms import get, key, get_from_parent, index, lookup
-
+from etielle.fluent import Field, TempField, etl, node
+from etielle.transforms import get, get_from_parent, lookup
 
 # =============================================================================
 # Models for dataclass-based tests (no DB)
@@ -190,7 +189,7 @@ class TestListOfIdsOnParent:
         # Only one junction (from Q1)
         junctions = result.tables[QuestionChoice]
         assert len(junctions) == 1
-        j = list(junctions.values())[0]
+        j = next(iter(junctions.values()))
         assert j.question_id == "Q1"
         assert j.choice_id == "c1"
 
@@ -808,7 +807,7 @@ class TestSQLAlchemyManyToMany:
     @pytest.fixture
     def engine_and_session(self):
         """Create in-memory SQLite database with ORM models."""
-        from sqlalchemy import create_engine, Column, Integer, String, ForeignKey
+        from sqlalchemy import Column, ForeignKey, Integer, String, create_engine
         from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 
         Base = declarative_base()
@@ -1115,7 +1114,7 @@ class TestSupabaseManyToMany:
             ],
         }
 
-        result = (
+        (
             etl(data)
             .goto("questions")
             .each()
@@ -1178,7 +1177,7 @@ class TestSupabaseManyToMany:
             ],
         }
 
-        result = (
+        (
             etl(data)
             .goto("questions")
             .each()
@@ -1235,7 +1234,7 @@ class TestSupabaseManyToMany:
             ],
         }
 
-        result = (
+        (
             etl(data)
             # Extract questions
             .goto("questions")

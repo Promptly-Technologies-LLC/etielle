@@ -11,12 +11,13 @@ To run locally:
     pytest tests/test_supabase_adapter.py -v
 """
 
+import contextlib
 import os
-import pytest
 from unittest.mock import MagicMock
 
-from etielle import etl, Field, TempField, get, get_from_parent
+import pytest
 
+from etielle import Field, TempField, etl, get, get_from_parent
 
 # Skip all tests if Supabase env vars not set
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
@@ -35,6 +36,18 @@ def supabase_client():
     assert SUPABASE_URL is not None
     assert SUPABASE_KEY is not None
     return create_client(SUPABASE_URL, SUPABASE_KEY)
+
+
+def clear_tables(client, *tables: str) -> None:
+    """Best-effort truncation of test tables, in the order given.
+
+    Failures are ignored: a table may legitimately not exist yet on a fresh
+    database, and cleanup must never mask the assertion a test is making.
+    Pass tables in reverse foreign-key order.
+    """
+    for table in tables:
+        with contextlib.suppress(Exception):
+            client.table(table).delete().neq("id", "").execute()
 
 
 @pytest.fixture
@@ -415,24 +428,10 @@ class TestSupabaseIntegration:
     def setup_tables(self, supabase_client):
         """Clean up test tables before each test."""
         # Delete any existing test data
-        try:
-            supabase_client.table("test_posts").delete().neq("id", "").execute()
-        except Exception:
-            pass
-        try:
-            supabase_client.table("test_users").delete().neq("id", "").execute()
-        except Exception:
-            pass
+        clear_tables(supabase_client, "test_posts", "test_users")
         yield
         # Cleanup after test
-        try:
-            supabase_client.table("test_posts").delete().neq("id", "").execute()
-        except Exception:
-            pass
-        try:
-            supabase_client.table("test_users").delete().neq("id", "").execute()
-        except Exception:
-            pass
+        clear_tables(supabase_client, "test_posts", "test_users")
 
     def test_real_insert(self, supabase_client):
         """Test actual insert to Supabase."""
@@ -499,10 +498,7 @@ class TestSupabaseIntegration:
     def test_real_upsert_with_custom_conflict_column(self, supabase_client):
         """Test upsert with custom on_conflict column against real Supabase."""
         # Clean up test_users_email table
-        try:
-            supabase_client.table("test_users_email").delete().neq("id", "").execute()
-        except Exception:
-            pass
+        clear_tables(supabase_client, "test_users_email")
 
         # First insert
         data1 = {"users": [
@@ -545,10 +541,7 @@ class TestSupabaseIntegration:
         assert response.data[0]["email"] == "alice@example.com"
 
         # Cleanup
-        try:
-            supabase_client.table("test_users_email").delete().neq("id", "").execute()
-        except Exception:
-            pass
+        clear_tables(supabase_client, "test_users_email")
 
     def test_two_phase_insert_with_db_generated_ids(self, supabase_client):
         """Test two-phase insert with DB-generated UUIDs.
@@ -567,14 +560,7 @@ class TestSupabaseIntegration:
         );
         """
         # Clean up test tables (in reverse FK order)
-        try:
-            supabase_client.table("test_members").delete().neq("id", "").execute()
-        except Exception:
-            pass
-        try:
-            supabase_client.table("test_orgs").delete().neq("id", "").execute()
-        except Exception:
-            pass
+        clear_tables(supabase_client, "test_members", "test_orgs")
 
         # Data with nested structure - no IDs provided
         data = {
@@ -640,11 +626,4 @@ class TestSupabaseIntegration:
 
         finally:
             # Cleanup (in reverse FK order)
-            try:
-                supabase_client.table("test_members").delete().neq("id", "").execute()
-            except Exception:
-                pass
-            try:
-                supabase_client.table("test_orgs").delete().neq("id", "").execute()
-            except Exception:
-                pass
+            clear_tables(supabase_client, "test_members", "test_orgs")

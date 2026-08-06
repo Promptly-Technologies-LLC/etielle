@@ -1,15 +1,16 @@
 """etielle - declarative JSON-to-relational mapping."""
 
-try:
-    from importlib.metadata import version as _pkg_version
+from importlib.metadata import PackageNotFoundError
+from importlib.metadata import version as _pkg_version
 
+try:
     __version__ = _pkg_version("etielle")
-except Exception:
+except PackageNotFoundError:
+    # Running from a source tree that was never installed.
     __version__ = "0.0.0.dev"
 
 from .core import (
     Context,
-    Field as CoreField,  # Renamed to avoid conflict with fluent.Field
     IterationLevel,
     MappingResult,
     MappingSpec,
@@ -18,171 +19,170 @@ from .core import (
     TraversalSpec,
     field_of,
 )
-
-from .instances import (
-    InstanceEmit,
-    FieldSpec,
-    InstanceBuilder,
-    PydanticBuilder,
-    PydanticPartialBuilder,
-    TypedDictBuilder,
-    ConstructorBuilder,
-    MergePolicy,
-    AddPolicy,
-    AppendPolicy,
-    ExtendPolicy,
-    MinPolicy,
-    MaxPolicy,
-    FirstNonNullPolicy,
+from .core import (
+    Field as CoreField,  # Renamed to avoid conflict with fluent.Field
 )
 
 # Fluent API (v3.0.0)
 from .fluent import (
-    etl,
-    stream,
     ErrorMode,
     Field,
-    TempField,
     FieldUnion,
-    transform,
+    PipelineBuilder,
+    PipelineResult,
+    TableStats,
+    TempField,
+    etl,
     node,
     parent_index,
-    PipelineResult,
-    PipelineBuilder,
-    TableStats,
+    stream,
+    transform,
+)
+from .instances import (
+    AddPolicy,
+    AppendPolicy,
+    ConstructorBuilder,
+    ExtendPolicy,
+    FieldSpec,
+    FirstNonNullPolicy,
+    InstanceBuilder,
+    InstanceEmit,
+    MaxPolicy,
+    MergePolicy,
+    MinPolicy,
+    PydanticBuilder,
+    PydanticPartialBuilder,
+    TypedDictBuilder,
 )
 
 # Telemetry
 from .telemetry import (
-    TelemetryEvent,
-    TelemetryEventTypes,
-    TelemetryCallback,
-    MapStarted,
-    MapCompleted,
-    FlushStarted,
     FlushCompleted,
     FlushFailed,
+    FlushStarted,
+    MapCompleted,
+    MapStarted,
+    TelemetryCallback,
+    TelemetryEvent,
+    TelemetryEventTypes,
 )
 
 # Re-export transforms for fluent API
 from .transforms import (
     apply,
-    get,
-    get_from_root,
-    get_from_parent,
-    literal,
-    concat,
     coalesce,
+    concat,
     format_id,
-    key,
+    get,
+    get_from_parent,
+    get_from_root,
     index,
-    parent_key,
+    key,
     len_of,
+    literal,
     lookup,
+    parent_key,
 )
 
 __all__ = [
-    # core
-    "Context",
-    "CoreField",  # Legacy core Field
-    "IterationLevel",
-    "MappingResult",
-    "MappingSpec",
-    "TableEmit",
-    "Transform",
-    "TraversalSpec",
-    "field_of",
-    # instances
-    "InstanceEmit",
-    "FieldSpec",
-    "InstanceBuilder",
-    "PydanticBuilder",
-    "PydanticPartialBuilder",
-    "TypedDictBuilder",
-    "ConstructorBuilder",
-    "MergePolicy",
     "AddPolicy",
     "AppendPolicy",
-    "ExtendPolicy",
-    "MinPolicy",
-    "MaxPolicy",
-    "FirstNonNullPolicy",
-    # Fluent API (v3.0.0)
-    "etl",
-    "stream",
+    "ConstructorBuilder",
+    "Context",
+    "CoreField",  # Legacy core Field
     "ErrorMode",
+    "ExtendPolicy",
     "Field",
-    "TempField",
+    "FieldSpec",
     "FieldUnion",
-    "transform",
-    "PipelineResult",
-    "PipelineBuilder",
-    "TableStats",
-    # Telemetry
-    "TelemetryEvent",
-    "TelemetryEventTypes",
-    "TelemetryCallback",
-    "MapStarted",
-    "MapCompleted",
-    "FlushStarted",
+    "FirstNonNullPolicy",
     "FlushCompleted",
     "FlushFailed",
-    # Transforms
+    "FlushStarted",
+    "InstanceBuilder",
+    "InstanceEmit",
+    "IterationLevel",
+    "MapCompleted",
+    "MapStarted",
+    "MappingResult",
+    "MappingSpec",
+    "MaxPolicy",
+    "MergePolicy",
+    "MinPolicy",
+    "PipelineBuilder",
+    "PipelineResult",
+    "PydanticBuilder",
+    "PydanticPartialBuilder",
+    "TableEmit",
+    "TableStats",
+    "TelemetryCallback",
+    "TelemetryEvent",
+    "TelemetryEventTypes",
+    "TempField",
+    "Transform",
+    "TraversalSpec",
+    "TypedDictBuilder",
     "apply",
-    "get",
-    "get_from_root",
-    "get_from_parent",
-    "literal",
-    "concat",
     "coalesce",
+    "concat",
+    "etl",
+    "field_of",
     "format_id",
-    "key",
+    "get",
+    "get_from_parent",
+    "get_from_root",
     "index",
-    "parent_key",
-    "parent_index",
-    "node",
+    "key",
     "len_of",
+    "literal",
     "lookup",
+    "node",
+    "parent_index",
+    "parent_key",
+    "stream",
+    "transform",
 ]
 
-# relationships (core)
-from .relationships import ManyToOneSpec, compute_relationship_keys, bind_many_to_one
-from .relationships import RelationshipIncompleteError, validate_relationship_completeness
-from .executor import MappingRuntimeState
 from .chunking import (
+    BufferedKeyFlushStrategy,
+    CallableChunkSource,
     Chunk,
     ChunkSource,
+    ExternalPartitionChunkSource,
     FlushContext,
     FlushStrategy,
-    KeyCompleteFlushStrategy,
-    UpsertFlushStrategy,
-    BufferedKeyFlushStrategy,
-    OneRecordPerChunkSource,
-    CallableChunkSource,
     GroupByChunkSource,
+    KeyCompleteFlushStrategy,
+    OneRecordPerChunkSource,
     PreSegmentedChunkSource,
-    ExternalPartitionChunkSource,
+    UpsertFlushStrategy,
+)
+from .executor import MappingRuntimeState
+from .relationships import (
+    ManyToOneSpec,
+    RelationshipIncompleteError,
+    bind_many_to_one,
+    compute_relationship_keys,
+    validate_relationship_completeness,
 )
 
 __all__ += [
-    # relationships
-    "ManyToOneSpec",
-    "compute_relationship_keys",
-    "bind_many_to_one",
-    "RelationshipIncompleteError",
-    "validate_relationship_completeness",
-    # streaming/chunking
+    "BufferedKeyFlushStrategy",
+    "CallableChunkSource",
     "Chunk",
     "ChunkSource",
+    "ExternalPartitionChunkSource",
     "FlushContext",
     "FlushStrategy",
-    "KeyCompleteFlushStrategy",
-    "UpsertFlushStrategy",
-    "BufferedKeyFlushStrategy",
-    "OneRecordPerChunkSource",
-    "CallableChunkSource",
     "GroupByChunkSource",
-    "PreSegmentedChunkSource",
-    "ExternalPartitionChunkSource",
+    "KeyCompleteFlushStrategy",
+    "ManyToOneSpec",
     "MappingRuntimeState",
+    "OneRecordPerChunkSource",
+    "PreSegmentedChunkSource",
+    "RelationshipIncompleteError",
+    "UpsertFlushStrategy",
+    "bind_many_to_one",
+    "compute_relationship_keys",
+    "validate_relationship_completeness",
 ]

@@ -1,10 +1,10 @@
 """Tests for fluent API with SQLAlchemy integration."""
 
 import pytest
-from sqlalchemy import create_engine, Column, Integer, String, ForeignKey
+from sqlalchemy import Column, ForeignKey, Integer, String, create_engine
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 
-from etielle.fluent import etl, Field, TempField
+from etielle.fluent import Field, TempField, etl
 from etielle.transforms import get, key
 
 Base = declarative_base()

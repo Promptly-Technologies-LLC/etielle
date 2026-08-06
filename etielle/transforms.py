@@ -1,6 +1,7 @@
-from typing import Any, Callable, List, Optional, Sequence, Union, cast, TypeVar, Iterable, Tuple
+from collections.abc import Callable, Iterable, Mapping, Sequence
+from typing import Any, TypeVar, cast
+
 from .core import Context, Transform
-from collections.abc import Mapping
 
 # -----------------------------
 # Helpers
@@ -25,7 +26,7 @@ def _resolve_path(obj: Any, path: Sequence[str | int]) -> Any:
     return value
 
 
-def _iter_nodes(root: Any, path: Sequence[str]) -> Iterable[Tuple[Context, Any]]:
+def _iter_nodes(root: Any, path: Sequence[str]) -> Iterable[tuple[Context, Any]]:
     """
     Yields (context, node) pairs by walking to the container at `path` and
     returning it. The caller decides how to iterate the container.
@@ -52,7 +53,7 @@ U = TypeVar("U")
 V = TypeVar("V")
 
 
-def _ensure_transform(value: Union[Transform[U], U]) -> Transform[U]:
+def _ensure_transform[U](value: Transform[U] | U) -> Transform[U]:
     if callable(value):
         return cast(Transform[U], value)
 
@@ -62,25 +63,25 @@ def _ensure_transform(value: Union[Transform[U], U]) -> Transform[U]:
     return cast(Transform[U], _lit)
 
 
-def literal(value: U) -> Transform[U]:
+def literal[U](value: U) -> Transform[U]:
     return _ensure_transform(value)
 
 
-def key() -> Transform[Optional[str]]:
-    def _t(ctx: Context) -> Optional[str]:
+def key() -> Transform[str | None]:
+    def _t(ctx: Context) -> str | None:
         return ctx.key
 
     return _t
 
 
-def index() -> Transform[Optional[int]]:
-    def _t(ctx: Context) -> Optional[int]:
+def index() -> Transform[int | None]:
+    def _t(ctx: Context) -> int | None:
         return ctx.index
 
     return _t
 
 
-def get(path: Union[str, Sequence[Union[str, int]]]) -> Transform[Any]:
+def get(path: str | Sequence[str | int]) -> Transform[Any]:
     """
     Resolve a value relative to the current node using a dot-separated path
     (or an explicit sequence of segments). Supports list indices when an int
@@ -88,7 +89,7 @@ def get(path: Union[str, Sequence[Union[str, int]]]) -> Transform[Any]:
     """
 
     if isinstance(path, str):
-        segments: List[Union[str, int]] = [
+        segments: list[str | int] = [
             int(seg) if seg.isdigit() else seg for seg in path.split(".") if seg != ""
         ]
     else:
@@ -114,9 +115,9 @@ def get(path: Union[str, Sequence[Union[str, int]]]) -> Transform[Any]:
     return _t
 
 
-def get_from_root(path: Union[str, Sequence[Union[str, int]]]) -> Transform[Any]:
+def get_from_root(path: str | Sequence[str | int]) -> Transform[Any]:
     if isinstance(path, str):
-        segments: List[Union[str, int]] = [
+        segments: list[str | int] = [
             int(seg) if seg.isdigit() else seg for seg in path.split(".") if seg != ""
         ]
     else:
@@ -129,10 +130,10 @@ def get_from_root(path: Union[str, Sequence[Union[str, int]]]) -> Transform[Any]
 
 
 def get_from_parent(
-    path: Union[str, Sequence[Union[str, int]]], depth: int = 1
+    path: str | Sequence[str | int], depth: int = 1
 ) -> Transform[Any]:
     if isinstance(path, str):
-        segments: List[Union[str, int]] = [
+        segments: list[str | int] = [
             int(seg) if seg.isdigit() else seg for seg in path.split(".") if seg != ""
         ]
     else:
@@ -148,8 +149,8 @@ def get_from_parent(
     return _t
 
 
-def parent_key(depth: int = 1) -> Transform[Optional[str]]:
-    def _t(ctx: Context) -> Optional[str]:
+def parent_key(depth: int = 1) -> Transform[str | None]:
+    def _t(ctx: Context) -> str | None:
         parent = ctx.parent
         for _ in range(depth - 1):
             parent = parent.parent if parent else None
@@ -158,8 +159,8 @@ def parent_key(depth: int = 1) -> Transform[Optional[str]]:
     return _t
 
 
-def len_of(inner: Transform[Any]) -> Transform[Optional[int]]:
-    def _t(ctx: Context) -> Optional[int]:
+def len_of(inner: Transform[Any]) -> Transform[int | None]:
+    def _t(ctx: Context) -> int | None:
         value = inner(ctx)
         if isinstance(value, (Mapping, Sequence, str)) and not isinstance(
             value, (bytes, bytearray)
@@ -170,8 +171,8 @@ def len_of(inner: Transform[Any]) -> Transform[Optional[int]]:
     return _t
 
 
-def concat(*parts: Union[str, Transform[Any]]) -> Transform[str]:
-    transforms: List[Transform[Any]] = [_ensure_transform(p) for p in parts]
+def concat(*parts: str | Transform[Any]) -> Transform[str]:
+    transforms: list[Transform[Any]] = [_ensure_transform(p) for p in parts]
 
     def _t(ctx: Context) -> str:
         values = ["" if v is None else str(v) for v in (tr(ctx) for tr in transforms)]
@@ -180,8 +181,8 @@ def concat(*parts: Union[str, Transform[Any]]) -> Transform[str]:
     return _t
 
 
-def format_id(*parts: Union[str, Transform[Any]], sep: str = "_") -> Transform[str]:
-    transforms: List[Transform[Any]] = [_ensure_transform(p) for p in parts]
+def format_id(*parts: str | Transform[Any], sep: str = "_") -> Transform[str]:
+    transforms: list[Transform[Any]] = [_ensure_transform(p) for p in parts]
 
     def _t(ctx: Context) -> str:
         values = [
@@ -203,7 +204,7 @@ def coalesce(*inners: Transform[Any]) -> Transform[Any]:
     return _t
 
 
-def apply(func: Callable[[U], V], inner: Transform[U]) -> Transform[V]:
+def apply[U, V](func: Callable[[U], V], inner: Transform[U]) -> Transform[V]:
     """Apply a function to the result of another transform."""
 
     def _t(ctx: Context) -> V:

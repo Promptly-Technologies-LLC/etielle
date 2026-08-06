@@ -1,10 +1,12 @@
 """Tests for the fluent E→T→L API."""
 
-import pytest
-from etielle.fluent import Field, TempField, FieldUnion, transform
-from etielle.transforms import get, literal
-from etielle.core import Context
 from typing import Any, ClassVar
+
+import pytest
+
+from etielle.core import Context
+from etielle.fluent import Field, FieldUnion, TempField, transform
+from etielle.transforms import get, literal
 
 
 class TestField:
@@ -32,7 +34,7 @@ class TestField:
         """Field is immutable."""
         field = Field("name", get("name"))
         with pytest.raises(AttributeError):
-            setattr(field, "name", "other")
+            field.name = "other"
 
 
 class TestTempField:
@@ -48,7 +50,7 @@ class TestTempField:
         """TempField is immutable."""
         field = TempField("id", get("id"))
         with pytest.raises(AttributeError):
-            setattr(field, "name", "other")
+            field.name = "other"
 
     def test_tempfield_distinct_from_field(self):
         """TempField is a different type from Field."""
@@ -211,7 +213,7 @@ class TestEtlEntryPoint:
 
     def test_etl_returns_pipeline_builder(self):
         """etl() returns a PipelineBuilder."""
-        from etielle.fluent import etl, PipelineBuilder
+        from etielle.fluent import PipelineBuilder, etl
 
         builder = etl({"users": []})
         assert isinstance(builder, PipelineBuilder)
@@ -246,8 +248,8 @@ class TestEtlEntryPoint:
 
     def test_etl_accepts_flush_strategy(self):
         """etl() forwards flush_strategy to PipelineBuilder."""
-        from etielle.fluent import etl
         from etielle.chunking import UpsertFlushStrategy
+        from etielle.fluent import etl
 
         strategy = UpsertFlushStrategy()
         builder = etl({}, flush_strategy=strategy)
@@ -632,7 +634,9 @@ class TestBacklink:
 
     def test_backlink_sets_list_attribute(self):
         """backlink() populates list attribute on parent with matching children."""
-        from dataclasses import dataclass as dc, field
+        from dataclasses import dataclass as dc
+        from dataclasses import field
+
         from etielle.fluent import etl
 
         @dc
@@ -700,7 +704,9 @@ class TestBacklink:
 
     def test_backlink_handles_missing_children(self):
         """backlink() gracefully handles missing children (no error by default)."""
-        from dataclasses import dataclass as dc, field
+        from dataclasses import dataclass as dc
+        from dataclasses import field
+
         from etielle.fluent import etl
 
         @dc
@@ -757,7 +763,9 @@ class TestBacklink:
 
     def test_backlink_combined_with_link_to(self):
         """backlink() can be used alongside link_to()."""
-        from dataclasses import dataclass as dc, field
+        from dataclasses import dataclass as dc
+        from dataclasses import field
+
         from etielle.fluent import etl
 
         @dc
@@ -835,6 +843,7 @@ class TestBacklink:
     def test_backlink_with_supabase_raises_error(self):
         """backlink() raises ValueError when used with Supabase client."""
         from unittest.mock import MagicMock
+
         from etielle.fluent import etl
 
         # Create a mock Supabase client
@@ -912,7 +921,7 @@ class TestRunBasic:
 
     def test_run_returns_pipeline_result(self):
         """run() returns a PipelineResult."""
-        from etielle.fluent import etl, PipelineResult
+        from etielle.fluent import PipelineResult, etl
 
         data = {"users": [{"name": "Alice"}]}
         result = (
@@ -963,7 +972,7 @@ class TestRunBasic:
             .run()
         )
         users = result.tables["users"]
-        row = list(users.values())[0]
+        row = next(iter(users.values()))
         assert "name" in row
         assert "user_id" not in row  # TempField excluded
         # Note: "id" may be auto-injected by executor for single-key tables
@@ -1057,6 +1066,7 @@ class TestRunRelationships:
     def test_link_to_binds_parent_reference(self):
         """link_to() causes parent reference to be bound."""
         from dataclasses import dataclass as dc
+
         from etielle.fluent import etl
 
         @dc
@@ -1096,7 +1106,7 @@ class TestRunRelationships:
         )
 
         posts = result.tables[Post]
-        post = list(posts.values())[0]
+        post = next(iter(posts.values()))
         assert post.user is not None
         assert post.user.name == "Alice"
 
@@ -1107,6 +1117,7 @@ class TestModelDetection:
     def test_pydantic_model_detection(self):
         """Pydantic models use PydanticBuilder."""
         from pydantic import BaseModel
+
         from etielle.fluent import etl
 
         class User(BaseModel):
@@ -1124,13 +1135,14 @@ class TestModelDetection:
             .run()
         )
         users = result.tables[User]
-        user = list(users.values())[0]
+        user = next(iter(users.values()))
         assert isinstance(user, User)
         assert user.name == "Alice"
 
     def test_dataclass_detection(self):
         """Dataclasses use ConstructorBuilder."""
         from dataclasses import dataclass as dc
+
         from etielle.fluent import etl
 
         @dc
@@ -1149,7 +1161,7 @@ class TestModelDetection:
             .run()
         )
         items = result.tables[Item]
-        item = list(items.values())[0]
+        item = next(iter(items.values()))
         assert isinstance(item, Item)
         assert item.value == 42
 
@@ -1168,7 +1180,7 @@ class TestModelDetection:
             .run()
         )
         items = result.tables["items"]
-        item = list(items.values())[0]
+        item = next(iter(items.values()))
         assert isinstance(item, dict)
 
 
@@ -1211,6 +1223,7 @@ class TestErrorHandling:
     def test_collect_errors_continues_processing(self):
         """errors='collect' continues after validation errors."""
         from pydantic import BaseModel
+
         from etielle.fluent import etl
 
         class StrictUser(BaseModel):
@@ -1245,6 +1258,7 @@ class TestErrorHandling:
     def test_fail_fast_stops_on_first_error(self):
         """errors='fail_fast' raises on first error."""
         from pydantic import BaseModel
+
         from etielle.fluent import etl
 
         class StrictUser(BaseModel):
@@ -1257,7 +1271,7 @@ class TestErrorHandling:
             {"name": "Bob", "age": 30, "id": 2}
         ]}
 
-        with pytest.raises(Exception):  # Specific exception TBD
+        with pytest.raises(ValueError, match="Validation failed for table 'strictuser'"):
             (
                 etl(data, errors="fail_fast")
                 .goto("users").each()
@@ -1275,7 +1289,7 @@ class TestPublicAPI:
 
     def test_import_from_package(self):
         """Core fluent API is importable from etielle."""
-        from etielle import etl, Field, TempField, transform
+        from etielle import Field, TempField, etl, transform
         assert callable(etl)
         assert Field is not None
         assert TempField is not None
@@ -1283,9 +1297,20 @@ class TestPublicAPI:
 
     def test_transforms_from_package(self):
         """Transforms are importable from etielle."""
-        from etielle import get, get_from_root, get_from_parent
-        from etielle import literal, concat, coalesce, format_id
-        from etielle import key, index, parent_key, parent_index, node
+        from etielle import (
+            coalesce,
+            concat,
+            format_id,
+            get,
+            get_from_parent,
+            get_from_root,
+            index,
+            key,
+            literal,
+            node,
+            parent_index,
+            parent_key,
+        )
         # All should be callable
         assert all(callable(t) for t in [
             get, get_from_root, get_from_parent,
@@ -1384,6 +1409,7 @@ class TestRelationshipEdgeCases:
     def test_composite_key_relationships(self):
         """Link child to parent via multiple fields (composite key)."""
         from dataclasses import dataclass as dc
+
         from etielle.fluent import etl
 
         @dc
@@ -1453,6 +1479,7 @@ class TestRelationshipEdgeCases:
     def test_attribute_inference_users_to_user(self):
         """Verify 'users' table infers 'user' attribute."""
         from dataclasses import dataclass as dc
+
         from etielle.fluent import etl
 
         @dc
@@ -1490,7 +1517,7 @@ class TestRelationshipEdgeCases:
         )
 
         posts = result.tables[Post]
-        post = list(posts.values())[0]
+        post = next(iter(posts.values()))
         # Should set 'user' attribute (not 'users')
         assert hasattr(post, 'user')
         assert post.user is not None
@@ -1499,6 +1526,7 @@ class TestRelationshipEdgeCases:
     def test_attribute_inference_edge_case_categories(self):
         """Verify 'categories' table infers 'categorie' attribute (edge case)."""
         from dataclasses import dataclass as dc
+
         from etielle.fluent import etl
 
         @dc
@@ -1536,7 +1564,7 @@ class TestRelationshipEdgeCases:
         )
 
         products = result.tables[Product]
-        product = list(products.values())[0]
+        product = next(iter(products.values()))
         # Should set 'categorie' attribute (strips trailing 's')
         assert hasattr(product, 'categorie')
         assert product.categorie is not None
@@ -1545,6 +1573,7 @@ class TestRelationshipEdgeCases:
     def test_attribute_inference_no_s_suffix(self):
         """Verify table without 's' suffix keeps original name."""
         from dataclasses import dataclass as dc
+
         from etielle.fluent import etl
 
         @dc
@@ -1582,7 +1611,7 @@ class TestRelationshipEdgeCases:
         )
 
         members = result.tables[Member]
-        member = list(members.values())[0]
+        member = next(iter(members.values()))
         assert hasattr(member, 'team')
         assert member.team is not None
         assert member.team.name == "Engineering"
@@ -1590,6 +1619,7 @@ class TestRelationshipEdgeCases:
     def test_type_mismatch_int_vs_string_keys(self):
         """Parent has int keys, child has string keys - verify behavior."""
         from dataclasses import dataclass as dc
+
         from etielle.fluent import etl
 
         @dc
@@ -1628,13 +1658,14 @@ class TestRelationshipEdgeCases:
         )
 
         posts = result.tables[Post]
-        post = list(posts.values())[0]
+        post = next(iter(posts.values()))
         # Type mismatch means no match - relationship should be None
         assert post.user is None
 
     def test_empty_parent_table_all_orphaned(self):
         """All children orphaned when parent table is empty."""
         from dataclasses import dataclass as dc
+
         from etielle.fluent import etl
 
         @dc
@@ -1684,6 +1715,7 @@ class TestRelationshipEdgeCases:
     def test_empty_child_table_no_errors(self):
         """No errors when child table is empty."""
         from dataclasses import dataclass as dc
+
         from etielle.fluent import etl
 
         @dc
@@ -1810,6 +1842,7 @@ class TestRelationshipEdgeCases:
     def test_optional_relationship_missing_parent(self):
         """Child with missing parent when relationship is optional (no error)."""
         from dataclasses import dataclass as dc
+
         from etielle.fluent import etl
 
         @dc
@@ -1857,9 +1890,9 @@ class TestRelationshipEdgeCases:
         posts_list = list(posts.values())
 
         # Find posts by title
-        post_with_user = [p for p in posts_list if "with user" in p.title][0]
-        post_without_user = [p for p in posts_list if "without user" in p.title][0]
-        post_with_none = [p for p in posts_list if "with None" in p.title][0]
+        post_with_user = next(p for p in posts_list if "with user" in p.title)
+        post_without_user = next(p for p in posts_list if "without user" in p.title)
+        post_with_none = next(p for p in posts_list if "with None" in p.title)
 
         # Only the first should have a user
         assert post_with_user.user is not None
@@ -1905,7 +1938,7 @@ class TestGetLinkableFields:
 
     def test_secondary_indices_built_for_linkable_fields(self):
         """Pipeline should build secondary indices for fields used in link_to."""
-        from etielle.fluent import etl, Field, TempField
+        from etielle.fluent import Field, TempField, etl
         from etielle.transforms import get, key
 
         data = {
@@ -2043,6 +2076,7 @@ class TestErrorHandlingEdgeCases:
     def test_per_table_error_mode_pipeline_fail_fast_wins(self):
         """Pipeline-level error_mode='fail_fast' wins even with table-level override."""
         from pydantic import BaseModel
+
         from etielle.fluent import etl
 
         class StrictProduct(BaseModel):
@@ -2073,6 +2107,7 @@ class TestErrorHandlingEdgeCases:
     def test_per_table_error_mode_used_during_instance_building(self):
         """Per-table error mode affects instance building behavior."""
         from pydantic import BaseModel
+
         from etielle.fluent import etl
 
         class StrictModel(BaseModel):
@@ -2169,12 +2204,13 @@ class TestErrorHandlingEdgeCases:
         assert len(table_errors) == 1
 
         # The error for id=2 should contain validation messages
-        error_messages = list(table_errors.values())[0]
+        error_messages = next(iter(table_errors.values()))
         assert len(error_messages) >= 1  # At least one error message
 
     def test_errors_across_multiple_tables(self):
         """Errors in both 'users' and 'posts' tables, verify structure."""
         from pydantic import BaseModel
+
         from etielle.fluent import etl
 
         class User(BaseModel):
@@ -2240,6 +2276,7 @@ class TestErrorHandlingEdgeCases:
     def test_continue_on_error_pattern(self):
         """Process successful rows, verify failed rows in errors dict."""
         from pydantic import BaseModel, field_validator
+
         from etielle.fluent import etl
 
         class Transaction(BaseModel):
@@ -2292,6 +2329,7 @@ class TestErrorHandlingEdgeCases:
     def test_all_or_nothing_pattern(self):
         """Check if result.errors, then verify behavior."""
         from pydantic import BaseModel
+
         from etielle.fluent import etl
 
         class Product(BaseModel):
@@ -2349,6 +2387,7 @@ class TestErrorHandlingEdgeCases:
     def test_missing_required_fields(self):
         """Missing required fields should generate validation errors."""
         from pydantic import BaseModel
+
         from etielle.fluent import etl
 
         class RequiredFieldsModel(BaseModel):
@@ -2387,6 +2426,7 @@ class TestErrorHandlingEdgeCases:
     def test_type_coercion_errors(self):
         """Type coercion failures should be handled gracefully."""
         from pydantic import BaseModel
+
         from etielle.fluent import etl
 
         class TypedModel(BaseModel):
@@ -2426,6 +2466,7 @@ class TestErrorHandlingEdgeCases:
     def test_nested_validation_errors(self):
         """Pydantic models with nested validators."""
         from pydantic import BaseModel, field_validator
+
         from etielle.fluent import etl
 
         class Account(BaseModel):
@@ -2470,7 +2511,7 @@ class TestErrorHandlingEdgeCases:
         # Only the first account should be valid
         accounts = result.tables[Account]
         assert len(accounts) == 1
-        assert list(accounts.values())[0].username == "alice123"
+        assert next(iter(accounts.values())).username == "alice123"
 
         # Should have 3 errors
         table_errors = result.errors.get("accounts") or result.errors.get("Account")
@@ -2480,6 +2521,7 @@ class TestErrorHandlingEdgeCases:
     def test_error_messages_are_lists(self):
         """Error messages should be in list format."""
         from pydantic import BaseModel
+
         from etielle.fluent import etl
 
         class StrictModel(BaseModel):
@@ -2506,13 +2548,14 @@ class TestErrorHandlingEdgeCases:
         assert len(table_errors) == 1
 
         # Error messages should be a list
-        error_messages = list(table_errors.values())[0]
+        error_messages = next(iter(table_errors.values()))
         assert isinstance(error_messages, list)
         assert len(error_messages) > 0
 
     def test_empty_errors_dict_when_all_valid(self):
         """result.errors should be empty dict when no errors."""
         from pydantic import BaseModel
+
         from etielle.fluent import etl
 
         class SimpleModel(BaseModel):
@@ -2542,6 +2585,7 @@ class TestErrorHandlingEdgeCases:
     def test_partial_success_metrics(self):
         """Can calculate success/failure metrics from result."""
         from pydantic import BaseModel
+
         from etielle.fluent import etl
 
         class Item(BaseModel):
@@ -2585,7 +2629,7 @@ class TestLookupIntegration:
 
     def test_lookup_with_external_index(self):
         """lookup() works with index passed to etl()."""
-        from etielle.fluent import etl, Field
+        from etielle.fluent import Field, etl
         from etielle.transforms import get, lookup
 
         data = {"items": [{"qid": "Q1"}, {"qid": "Q2"}]}
@@ -2611,7 +2655,7 @@ class TestLookupIntegration:
 
     def test_lookup_with_build_index_from_dict(self):
         """lookup() works with build_index(from_dict=)."""
-        from etielle.fluent import etl, Field
+        from etielle.fluent import Field, etl
         from etielle.transforms import get, lookup
 
         data = {"items": [{"qid": "Q1"}]}
@@ -2638,8 +2682,8 @@ class TestBuildIndexFromTraversal:
 
     def test_build_index_from_traversal(self):
         """build_index() builds reverse lookup from parent's child list."""
-        from etielle.fluent import etl, Field, node
-        from etielle.transforms import get, lookup, get_from_parent
+        from etielle.fluent import Field, etl, node
+        from etielle.transforms import get, get_from_parent, lookup
 
         data = {
             "questions": [
@@ -2683,8 +2727,8 @@ class TestBuildIndexFromTraversal:
 
     def test_build_index_last_write_wins(self):
         """When same key appears multiple times, last value wins."""
-        from etielle.fluent import etl, Field, node
-        from etielle.transforms import get, lookup, get_from_parent
+        from etielle.fluent import Field, etl, node
+        from etielle.transforms import get, get_from_parent, lookup
 
         data = {
             "groups": [
@@ -2733,8 +2777,9 @@ class TestLookupInLinkTo:
         "Index 'X' not found. Available indices: []"
         """
         from dataclasses import dataclass
-        from etielle.fluent import etl, Field, TempField
-        from etielle.transforms import get, lookup, key
+
+        from etielle.fluent import Field, TempField, etl
+        from etielle.transforms import get, key, lookup
 
         @dataclass
         class Parent:
@@ -2793,8 +2838,9 @@ class TestLookupInLinkTo:
     def test_lookup_in_tempfield_with_build_index(self):
         """lookup() with build_index should work in TempField for link_to()."""
         from dataclasses import dataclass
-        from etielle.fluent import etl, Field, TempField, node
-        from etielle.transforms import get, lookup, key, get_from_parent, parent_key
+
+        from etielle.fluent import Field, TempField, etl
+        from etielle.transforms import get, key, lookup, parent_key
 
         @dataclass
         class Block:

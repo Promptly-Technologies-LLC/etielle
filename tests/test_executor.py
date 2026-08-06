@@ -1,5 +1,5 @@
-from etielle.executor import run_mapping
 from etielle.core import Field, MappingSpec, TableEmit, TraversalSpec
+from etielle.executor import run_mapping
 from etielle.transforms import get, get_from_parent, key
 
 
