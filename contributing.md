@@ -40,8 +40,8 @@ uv run pytest tests/ --cov=etielle
 ## Linting and Type Checking
 
 ``` bash
-# Run linter
-uv run ruff check etielle/
+# Run linter (the whole tree, including tests/ and benchmarks/)
+uv run ruff check .
 
 # Run type checker
 uv run mypy etielle/
@@ -175,6 +175,6 @@ supabase stop --no-backup
 1.  Create a feature branch from `main`
 2.  Make your changes with tests
 3.  Ensure all tests pass: `uv run pytest tests/ -v`
-4.  Ensure linting passes: `uv run ruff check etielle/`
+4.  Ensure linting passes: `uv run ruff check .`
 5.  Update documentation if needed
 6.  Submit PR with clear description of changes

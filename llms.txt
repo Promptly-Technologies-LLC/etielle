@@ -38,12 +38,12 @@
 - [Context](https://promptly-technologies-llc.github.io/etielle/reference/Context.html): Runtime context while traversing the JSON structure
 - [CoreField](https://promptly-technologies-llc.github.io/etielle/reference/CoreField.html): Field(name: 'str', transform: 'Transform[Any]')
 - [Field](https://promptly-technologies-llc.github.io/etielle/reference/Field.html): A field that will be persisted to the output table
-- [FieldSpec](https://promptly-technologies-llc.github.io/etielle/reference/FieldSpec.html): FieldSpec(selector: Union[str, Callable[[+T], Any]], transform: Callable[[etielle.core.Context], Any])
+- [FieldSpec](https://promptly-technologies-llc.github.io/etielle/reference/FieldSpec.html): FieldSpec(selector: str | collections.abc.Callable[[T], typing.Any], transform: collections.abc.Callable[[etielle.core.Context], typing.Any])
 - [FlushCompleted](https://promptly-technologies-llc.github.io/etielle/reference/FlushCompleted.html): Emitted when flush completes for a table (or batch)
 - [FlushContext](https://promptly-technologies-llc.github.io/etielle/reference/FlushContext.html): Inputs for a flush at a component boundary
 - [FlushFailed](https://promptly-technologies-llc.github.io/etielle/reference/FlushFailed.html): Emitted when an entire batch/table flush fails
 - [FlushStarted](https://promptly-technologies-llc.github.io/etielle/reference/FlushStarted.html): Emitted when flush begins for a table
-- [InstanceEmit](https://promptly-technologies-llc.github.io/etielle/reference/InstanceEmit.html): InstanceEmit(table: str, join_keys: Sequence[Callable[[etielle.core.Context], Any]], fields: Sequence[etielle.instances.FieldSpec[+T]], builder: etielle.instances.InstanceBuilder[+T], policies: Mapping[str, etielle.instances.MergePolicy] = <factory>, strict_fields: bool = True, allow_extras: bool = False, strict_mode: str = 'collect_all', temp_fields: frozenset[str] = <factory>)
+- [InstanceEmit](https://promptly-technologies-llc.github.io/etielle/reference/InstanceEmit.html): InstanceEmit(table: str, join_keys: collections.abc.Sequence[collections.abc.Callable[[etielle.core.Context], typing.Any]], fields: collections.abc.Sequence[etielle.instances.FieldSpec[T]], builder: etielle.instances.InstanceBuilder[T], policies: collections.abc.Mapping[str, etielle.instances.MergePolicy] = <factory>, strict_fields: bool = True, allow_extras: bool = False, strict_mode: str = 'collect_all', temp_fields: frozenset[str] = <factory>)
 - [IterationLevel](https://promptly-technologies-llc.github.io/etielle/reference/IterationLevel.html): Represents a single level of iteration in a traversal
 - [ManyToOneSpec](https://promptly-technologies-llc.github.io/etielle/reference/ManyToOneSpec.html): Declarative specification for a many-to-one relationship
 - [MapCompleted](https://promptly-technologies-llc.github.io/etielle/reference/MapCompleted.html): Emitted when mapping completes for a table

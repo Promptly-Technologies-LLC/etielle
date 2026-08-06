@@ -7,7 +7,7 @@ Streaming strategy that merges late-arriving rows for recently seen keys.
 Usage
 
 ``` python
-BufferedKeyFlushStrategy()
+BufferedKeyFlushStrategy(max_keys=10000)
 ```
 
 

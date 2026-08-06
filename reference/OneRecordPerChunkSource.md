@@ -7,7 +7,7 @@ Wrap an iterable of JSON roots; each root becomes its own chunk.
 Usage
 
 ``` python
-OneRecordPerChunkSource()
+OneRecordPerChunkSource(records)
 ```
 
 

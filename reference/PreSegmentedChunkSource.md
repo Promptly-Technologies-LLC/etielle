@@ -7,7 +7,7 @@ Pass an already-segmented iterable of chunks through unchanged.
 Usage
 
 ``` python
-PreSegmentedChunkSource()
+PreSegmentedChunkSource(chunks)
 ```
 
 

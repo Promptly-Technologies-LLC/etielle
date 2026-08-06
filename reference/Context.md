@@ -37,12 +37,12 @@ During traversal, a base context is created that is shared by all nodes. Subsequ
 
 `node: Any`  
 
-`path: Tuple[str | int, …]`  
+`path: tuple[str | int, …]`  
 
-`parent: Optional[``"Context"]`  
+`parent: Context | None`  
 
-`key: Optional[str]`  
+`key: str | None`  
 
-`index: Optional[int]`  
+`index: int | None`  
 
-`slots: dict[str, Any] = dict()`
+`slots: dict[str, Any] = dict()`\

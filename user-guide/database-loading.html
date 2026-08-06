@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.9.38">
+<meta name="generator" content="quarto-1.10.18">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -12,10 +12,13 @@
 /* Default styles provided by pandoc.
 ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
 */
-code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
-div.columns{display: flex; gap: min(4vw, 1.5em);}
-div.column{flex: auto; overflow-x: auto;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
 div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
 ul.task-list{list-style: none;}
 ul.task-list li input[type="checkbox"] {
@@ -76,10 +79,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
 <script src="../site_libs/quarto-html/anchor.min.js"></script>
 <link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="../site_libs/quarto-html/quarto-syntax-highlighting-15634bcf2e68342d4ad2dfa704d543f6.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../site_libs/bootstrap/bootstrap-4374c486a51c078b4a30d8ae56e0846f.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="../site_libs/bootstrap/bootstrap-bf476c94c8758bc321fd5fd3b984c438.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -118,6 +121,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="../theme-init.js"></script>
 
 
+  <link rel="alternate" type="text/markdown" href="database-loading.md">
   <link rel="canonical" href="https://Promptly-Technologies-LLC.github.io/etielle/user-guide/database-loading.html">
   <meta name="description" content="The load(session) method configures your pipeline to persist results to a database. When combined with run(), it:">
   <meta property="og:type" content="website">
@@ -379,7 +383,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h1>Basic Database Persistence</h1>
 <section id="sqlmodel-example" class="level2">
 <h2 class="anchored" data-anchor-id="sqlmodel-example">SQLModel Example</h2>
-<div id="b16721ce" class="cell" data-execution_count="1">
+<div id="4066b4c6" class="cell" data-execution_count="1">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sqlmodel <span class="im">import</span> SQLModel, Field <span class="im">as</span> SQLField, Session, create_engine</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -427,7 +431,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="sqlalchemy-example" class="level2">
 <h2 class="anchored" data-anchor-id="sqlalchemy-example">SQLAlchemy Example</h2>
-<div id="83275a19" class="cell" data-execution_count="2">
+<div id="215aae75" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sqlalchemy <span class="im">import</span> Column, String, create_engine</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sqlalchemy.orm <span class="im">import</span> declarative_base, Session</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get</span>
@@ -506,7 +510,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="relationships-and-database-loading" class="level1">
 <h1>Relationships and Database Loading</h1>
 <p>When using <a href="../reference/PipelineBuilder.link_to.html#etielle.PipelineBuilder.link_to" class="gdls-link gdls-code">link_to()</a> with ORM models, relationships are bound before flushing:</p>
-<div id="43280a47" class="cell" data-execution_count="3">
+<div id="d785c64a" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sqlmodel <span class="im">import</span> SQLModel, Field <span class="im">as</span> SQLField, Relationship, Session, create_engine</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get, get_from_parent</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -741,7 +745,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>etielle also supports loading data directly to Supabase using the same <code>.load().run()</code> pattern.</p>
 <section id="basic-supabase-example" class="level2">
 <h2 class="anchored" data-anchor-id="basic-supabase-example">Basic Supabase Example</h2>
-<div id="2da3a542" class="cell" data-execution_count="4">
+<div id="8e7cc390" class="cell" data-execution_count="4">
 <div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> supabase <span class="im">import</span> create_client</span>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get</span>
 <span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -771,7 +775,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="supabase-with-relationships" class="level2">
 <h2 class="anchored" data-anchor-id="supabase-with-relationships">Supabase with Relationships</h2>
-<div id="bc9daeb0" class="cell" data-execution_count="5">
+<div id="42e460d1" class="cell" data-execution_count="5">
 <div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> supabase <span class="im">import</span> create_client</span>
 <span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get, get_from_parent</span>
 <span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -858,7 +862,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="db-generated-ids-two-phase-insert" class="level2">
 <h2 class="anchored" data-anchor-id="db-generated-ids-two-phase-insert">DB-Generated IDs (Two-Phase Insert)</h2>
 <p>When your database generates primary keys (e.g., UUID or auto-increment), use the <code>fk</code> parameter on <a href="../reference/PipelineBuilder.link_to.html#etielle.PipelineBuilder.link_to" class="gdls-link gdls-code">link_to()</a> to automatically populate child foreign keys after parent insertion:</p>
-<div id="16d38d84" class="cell" data-execution_count="6">
+<div id="db15258e" class="cell" data-execution_count="6">
 <div class="sourceCode cell-code" id="cb20"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> supabase <span class="im">import</span> create_client</span>
 <span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get, get_from_parent</span>
 <span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a></span>

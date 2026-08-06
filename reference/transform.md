@@ -16,7 +16,7 @@ The decorated function must have `ctx: Context` as its first parameter. Any addi
 
 ## Example
 
-<span class="citation" cites="transform">@transform</span> def split_id(ctx: Context, field: str, index: int) -\> str: return ctx.node\[field\].split("\_")\[index\]
+<span class="citation" data-cites="transform">@transform</span> def split_id(ctx: Context, field: str, index: int) -\> str: return ctx.node\[field\].split("\_")\[index\]
 
 Usage in field definition
 

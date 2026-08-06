@@ -7,7 +7,10 @@ Group consecutive records that share a key into one chunk each.
 Usage
 
 ``` python
-GroupByChunkSource()
+GroupByChunkSource(
+    records,
+    key,
+)
 ```
 
 

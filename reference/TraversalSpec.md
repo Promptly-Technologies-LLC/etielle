@@ -7,11 +7,13 @@ How to reach and iterate a collection of nodes under root.
 Usage
 
 ``` python
-TraversalSpec()
+TraversalSpec(
+    path, emits, mode="auto", inner_path=None, inner_mode="auto", levels=None
+)
 ```
 
 
-Supports N-level nested iteration through the [levels](TraversalSpec.md#etielle.TraversalSpec.levels) parameter: - Each level represents one .each() call - Levels can have paths (for .goto().each()) or empty paths (for .each().each())
+Supports N-level nested iteration through the `levels` parameter: - Each level represents one .each() call - Levels can have paths (for .goto().each()) or empty paths (for .each().each())
 
 Legacy parameters (path, mode, inner_path, inner_mode) are still supported for backward compatibility and are converted to levels internally.
 
@@ -28,15 +30,15 @@ Legacy parameters (path, mode, inner_path, inner_mode) are still supported for b
 
 `path: Sequence[str]`  
 
-`emits: Sequence[TableEmit | ``"InstanceEmit[Any]"]`  
+`emits: Sequence[TableEmit | InstanceEmit[Any]]`  
 
 `mode: Literal[``"auto", `<span class="st">`"items"``, ``"single"``]`</span>` = ``"auto"`  
 
-`inner_path: Optional[Sequence[str]] = None`  
+`inner_path: Sequence[str] | None = None`  
 
 `inner_mode: Literal[``"auto", `<span class="st">`"items"``, ``"single"``]`</span>` = ``"auto"`  
 
-`levels: Optional[Sequence[IterationLevel]] = None`  
+`levels: Sequence[IterationLevel] | None = None`  
 
 
 ## Methods

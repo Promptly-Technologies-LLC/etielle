@@ -14,4 +14,4 @@ MappingRuntimeState(auto_key_counters=dict())
 ## Parameter Attributes
 
 
-`auto_key_counters: Dict[str, int] = dict()`
+`auto_key_counters: dict[str, int] = dict()`\

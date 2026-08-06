@@ -51,12 +51,12 @@ Dataclass definitions
 - `Context`: Runtime context while traversing the JSON structure
 - `CoreField`: Field(name: 'str', transform: 'Transform[Any]')
 - `Field`: A field that will be persisted to the output table
-- `FieldSpec`: FieldSpec(selector: Union[str, Callable[[+T], Any]], transform: Callable[[etielle.core.Context], Any])
+- `FieldSpec`: FieldSpec(selector: str | collections.abc.Callable[[T], typing.Any], transform: collections.abc.Callable[[etielle.core.Context], typing.Any])
 - `FlushCompleted`: Emitted when flush completes for a table (or batch)
 - `FlushContext`: Inputs for a flush at a component boundary
 - `FlushFailed`: Emitted when an entire batch/table flush fails
 - `FlushStarted`: Emitted when flush begins for a table
-- `InstanceEmit`: InstanceEmit(table: str, join_keys: Sequence[Callable[[etielle.core.Context], Any]], fields: Sequence[etielle.instances.FieldSpec[+T]], builder: etielle.instances.InstanceBuilder[+T], policies: Mapping[str, etielle.instances.MergePolicy] = <factory>, strict_fields: bool = True, allow_extras: bool = False, strict_mode: str = 'collect_all', temp_fields: frozenset[str] = <factory>)
+- `InstanceEmit`: InstanceEmit(table: str, join_keys: collections.abc.Sequence[collections.abc.Callable[[etielle.core.Context], typing.Any]], fields: collections.abc.Sequence[etielle.instances.FieldSpec[T]], builder: etielle.instances.InstanceBuilder[T], policies: collections.abc.Mapping[str, etielle.instances.MergePolicy] = <factory>, strict_fields: bool = True, allow_extras: bool = False, strict_mode: str = 'collect_all', temp_fields: frozenset[str] = <factory>)
 - `IterationLevel`: Represents a single level of iteration in a traversal
 - `ManyToOneSpec`: Declarative specification for a many-to-one relationship
 - `MapCompleted`: Emitted when mapping completes for a table

@@ -4,5 +4,9 @@
 Usage
 
 ``` python
-TypedDictBuilder()
+TypedDictBuilder(
+    factory,
+    *,
+    field_type_checkers=None,
+)
 ```

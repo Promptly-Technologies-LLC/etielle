@@ -15,16 +15,6 @@ FlushFailed(
 ```
 
 
-## Parameter Attributes
-
-
-`table: str`  
-
-`error: str`  
-
-`affected_count: int`  
-
-
 ## Attributes
 
 

@@ -153,7 +153,7 @@ Learn more: [Navigation](navigation.md)
 
 **Transforms** (value extraction): - [get()](../reference/get.md#etielle.get): Get field from current node - [get_from_parent()](../reference/get_from_parent.md#etielle.get_from_parent): Get field from ancestor (for relationships) - [concat()](../reference/concat.md#etielle.concat), [format_id()](../reference/format_id.md#etielle.format_id): Format and combine values - [coalesce()](../reference/coalesce.md#etielle.coalesce): Provide fallback values
 
-**Field types** (table structure): - `Field(name, transform)`: Output column - `TempField(name, transform)`: Join key only (not in output) - [merge](../reference/Field.md#etielle.Field.merge) policies: Sum, append, min/max when merging rows
+**Field types** (table structure): - `Field(name, transform)`: Output column - `TempField(name, transform)`: Join key only (not in output) - `merge` policies: Sum, append, min/max when merging rows
 
 **Relationships**: - `link_to(Parent, by={...})`: Link child records to parents
 

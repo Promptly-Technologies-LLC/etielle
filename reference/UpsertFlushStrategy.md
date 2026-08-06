@@ -7,7 +7,7 @@ Streaming strategy with database-level conflict handling (SQLAlchemy).
 Usage
 
 ``` python
-UpsertFlushStrategy()
+UpsertFlushStrategy(on_conflict="update")
 ```
 
 

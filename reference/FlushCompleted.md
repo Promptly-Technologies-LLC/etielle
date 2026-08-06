@@ -18,22 +18,6 @@ FlushCompleted(
 ```
 
 
-## Parameter Attributes
-
-
-`table: str`  
-
-`inserted: int`  
-
-`failed: int`  
-
-`batch_num: int`  
-
-`batch_total: int`  
-
-`upsert: bool`  
-
-
 ## Attributes
 
 

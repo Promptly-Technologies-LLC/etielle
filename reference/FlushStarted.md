@@ -14,14 +14,6 @@ FlushStarted(
 ```
 
 
-## Parameter Attributes
-
-
-`table: str`  
-
-`count: int`  
-
-
 ## Attributes
 
 

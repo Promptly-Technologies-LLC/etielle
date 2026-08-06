@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.9.38">
+<meta name="generator" content="quarto-1.10.18">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -12,10 +12,13 @@
 /* Default styles provided by pandoc.
 ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
 */
-code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
-div.columns{display: flex; gap: min(4vw, 1.5em);}
-div.column{flex: auto; overflow-x: auto;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
 div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
 ul.task-list{list-style: none;}
 ul.task-list li input[type="checkbox"] {
@@ -74,10 +77,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="site_libs/quarto-html/tippy.umd.min.js"></script>
 <script src="site_libs/quarto-html/anchor.min.js"></script>
 <link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="site_libs/quarto-html/quarto-syntax-highlighting-15634bcf2e68342d4ad2dfa704d543f6.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="site_libs/bootstrap/bootstrap-4374c486a51c078b4a30d8ae56e0846f.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="site_libs/bootstrap/bootstrap-bf476c94c8758bc321fd5fd3b984c438.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -221,7 +224,7 @@ section.level2:first-of-type > h2:first-child,
 </section>
 <section id="meta" class="level3">
 <h3 class="anchored" data-anchor-id="meta">Meta</h3>
-<p><strong>Requires:</strong> Python <code>&gt;=3.13</code><br> <strong>Provides-Extra:</strong> <code>sqlalchemy</code>, <code>sqlmodel</code>, <code>supabase</code></p>
+<p><strong>Requires:</strong> Python <code>&gt;=3.13</code><br> <strong>Provides-Extra:</strong> <code>sqlalchemy</code>, <code>sqlmodel</code>, <code>supabase</code><br> <a href="package-info.html">Package Info</a></p>
 </section>
 </div></div><section id="quickstart-declarative-json-to-relational-mapping-in-python" class="level1">
 <h1>Quickstart: Declarative JSON-to-Relational Mapping in Python</h1>
@@ -258,20 +261,20 @@ section.level2:first-of-type > h2:first-child,
 <h2 class="anchored" data-anchor-id="installation">Installation</h2>
 <p>We recommend using <code>uv</code> for faster installs, but <code>pip</code> works too.</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> add etielle</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="co">## or</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="co"># or</span></span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="ex">pip</span> install etielle</span></code></pre></div>
 <section id="optional-install-with-orm-adapters" class="level3">
 <h3 class="anchored" data-anchor-id="optional-install-with-orm-adapters">Optional: Install with ORM adapters</h3>
 <p>If you plan to bind relationships and flush to your database via SQLAlchemy or SQLModel, install with the optional extra for your ORM:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> add <span class="st">"etielle[sqlalchemy]"</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="co">## or</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="co"># or</span></span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> add <span class="st">"etielle[sqlmodel]"</span></span></code></pre></div>
 </section>
 </section>
 <section id="quick-start-your-first-mapping" class="level2">
 <h2 class="anchored" data-anchor-id="quick-start-your-first-mapping">Quick Start: Your First Mapping</h2>
 <p>Let’s start with a simple example. Suppose you have this JSON:</p>
-<div id="07af6e2b" class="cell" data-execution_count="1">
+<div id="53c1a3bf" class="cell" data-execution_count="1">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> {</span>
@@ -283,10 +286,10 @@ section.level2:first-of-type > h2:first-child,
 </div>
 <p>We want two tables: “users” (id, name) and “posts” (id, user_id, title).</p>
 <p>Here’s the code using the fluent API:</p>
-<div id="4e00b901" class="cell" data-execution_count="2">
+<div id="5c5c864d" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get, get_from_parent</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="co">## Build and run the pipeline</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Build and run the pipeline</span></span>
 <span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> (</span>
 <span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    etl(data)</span>
 <span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Extract users</span></span>
@@ -305,7 +308,7 @@ section.level2:first-of-type > h2:first-child,
 <span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>    .run()</span>
 <span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>)</span>
 <span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a><span class="co">## result.tables gives you dict access by table name</span></span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a><span class="co"># result.tables gives you dict access by table name</span></span>
 <span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>out <span class="op">=</span> {table: <span class="bu">list</span>(rows.values()) <span class="cf">for</span> table, rows <span class="kw">in</span> result.tables.items()}</span>
 <span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(json.dumps(out, indent<span class="op">=</span><span class="dv">2</span>))</span></code></pre></div>
 <div class="cell-output cell-output-stdout">
@@ -359,10 +362,10 @@ section.level2:first-of-type > h2:first-child,
 <li><strong><code>goto(path)</code></strong>: Navigate to a nested location (supports dot notation: <code>"data.users"</code>)</li>
 <li><strong><a href="reference/PipelineBuilder.each.html#etielle.PipelineBuilder.each" class="gdls-link gdls-code">each()</a></strong>: Iterate over items in a list or dict</li>
 </ul>
-<div class="sourceCode" id="cb7"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co">## Navigate to data["response"]["users"] and iterate</span></span>
+<div class="sourceCode" id="cb7"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Navigate to data["response"]["users"] and iterate</span></span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>.goto(<span class="st">"response.users"</span>).each()</span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="co">## Or use list syntax</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Or use list syntax</span></span>
 <span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>.goto([<span class="st">"response"</span>, <span class="st">"users"</span>]).each()</span></code></pre></div>
 </section>
 <section id="fields-and-tempfields" class="level3">
@@ -418,7 +421,7 @@ section.level2:first-of-type > h2:first-child,
 </tr>
 </tbody>
 </table>
-<div class="sourceCode" id="cb9"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co">## Combine transforms</span></span>
+<div class="sourceCode" id="cb9"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Combine transforms</span></span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>Field(<span class="st">"full_id"</span>, concat(literal(<span class="st">"user_"</span>), get(<span class="st">"id"</span>)))  <span class="co"># "user_u1"</span></span></code></pre></div>
 </section>
 <section id="running-the-pipeline" class="level3">
@@ -426,13 +429,13 @@ section.level2:first-of-type > h2:first-child,
 <p>Call <code>.run()</code> to execute and get results:</p>
 <div class="sourceCode" id="cb10"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> pipeline.run()</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="co">## Access tables by name</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Access tables by name</span></span>
 <span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>users <span class="op">=</span> result.tables[<span class="st">"users"</span>]    <span class="co"># Dict[tuple, dict]</span></span>
 <span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a><span class="co">## Or by model class (if using typed models)</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Or by model class (if using typed models)</span></span>
 <span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>users <span class="op">=</span> result.tables[User]       <span class="co"># Dict[tuple, User]</span></span>
 <span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a><span class="co">## Check for errors</span></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Check for errors</span></span>
 <span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> result.errors:</span>
 <span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> table, errs <span class="kw">in</span> result.errors.items():</span>
 <span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>table<span class="sc">}</span><span class="ss">: </span><span class="sc">{</span>errs<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div>
@@ -443,7 +446,7 @@ section.level2:first-of-type > h2:first-child,
 <section id="example-1-merging-data-from-multiple-paths" class="level3">
 <h3 class="anchored" data-anchor-id="example-1-merging-data-from-multiple-paths">Example 1: Merging Data from Multiple Paths</h3>
 <p>Merge user info from two parts of JSON using <a href="reference/PipelineBuilder.goto_root.html#etielle.PipelineBuilder.goto_root" class="gdls-link gdls-code">goto_root()</a>:</p>
-<div id="fe25a8c9" class="cell" data-execution_count="3">
+<div id="6aa89540" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get</span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> {</span>
@@ -479,8 +482,8 @@ section.level2:first-of-type > h2:first-child,
 <section id="example-2-deep-nesting" class="level3">
 <h3 class="anchored" data-anchor-id="example-2-deep-nesting">Example 2: Deep Nesting</h3>
 <p>Handle deeply nested structures with chained navigation:</p>
-<div id="085c40a4" class="cell" data-execution_count="4">
-<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co">## servers -&gt; channels -&gt; messages -&gt; reactions (3 levels deep)</span></span>
+<div id="c259ef22" class="cell" data-execution_count="4">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># servers -&gt; channels -&gt; messages -&gt; reactions (3 levels deep)</span></span>
 <span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> (</span>
 <span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>    etl(data)</span>
 <span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    .goto(<span class="st">"servers"</span>).each()</span>
@@ -505,7 +508,7 @@ section.level2:first-of-type > h2:first-child,
 <section id="example-3-typed-output-with-pydantic" class="level3">
 <h3 class="anchored" data-anchor-id="example-3-typed-output-with-pydantic">Example 3: Typed Output with Pydantic</h3>
 <p>Use model classes for validated, typed output:</p>
-<div id="6d9272bf" class="cell" data-execution_count="5">
+<div id="2b90a2a5" class="cell" data-execution_count="5">
 <div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pydantic <span class="im">import</span> BaseModel</span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> etielle <span class="im">import</span> etl, Field, TempField, get</span>
 <span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a></span>

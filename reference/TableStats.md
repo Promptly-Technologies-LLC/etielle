@@ -16,18 +16,6 @@ TableStats(
 ```
 
 
-## Parameter Attributes
-
-
-`mapped: int`  
-
-`errors: int`  
-
-`inserted: int`  
-
-`failed: int`  
-
-
 ## Attributes
 
 

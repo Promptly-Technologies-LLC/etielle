@@ -7,7 +7,7 @@ Simplified builder for classes that accept keyword arguments in their constructo
 Usage
 
 ``` python
-ConstructorBuilder()
+ConstructorBuilder(constructor)
 ```
 
 

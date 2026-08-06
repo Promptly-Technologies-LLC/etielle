@@ -4,5 +4,5 @@
 Usage
 
 ``` python
-PydanticPartialBuilder()
+PydanticPartialBuilder(model)
 ```

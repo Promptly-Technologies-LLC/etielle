@@ -7,7 +7,14 @@ Partition arbitrarily-ordered input into key-complete chunks via disk.
 Usage
 
 ``` python
-ExternalPartitionChunkSource()
+ExternalPartitionChunkSource(
+    records,
+    key,
+    *,
+    dir=None,
+    dumps=None,
+    loads=None,
+)
 ```
 
 

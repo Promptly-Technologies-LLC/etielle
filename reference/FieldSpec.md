@@ -1,7 +1,7 @@
 ## FieldSpec
 
 
-FieldSpec(selector: Union\[str, Callable\[\[+T\], Any\]\], transform: Callable\[\[etielle.core.Context\], Any\])
+FieldSpec(selector: str \| collections.abc.Callable\[\[T\], typing.Any\], transform: collections.abc.Callable\[\[etielle.core.Context\], typing.Any\])
 
 
 Usage
@@ -17,6 +17,6 @@ FieldSpec(
 ## Parameter Attributes
 
 
-`selector: Union[str, Callable[[T], Any]]`  
+`selector: str | Callable[[T], Any]`  
 
 `transform: Transform[Any]`

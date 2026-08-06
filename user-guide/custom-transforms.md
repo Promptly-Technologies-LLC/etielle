@@ -1,4 +1,4 @@
-# Custom Transforms: The <span class="citation" cites="transform">@transform</span> Decorator
+# Custom Transforms: The <span class="citation" data-cites="transform">@transform</span> Decorator
 
 **What you'll learn**: How to create custom transforms using the `@transform` decorator for reusable data extraction logic.
 

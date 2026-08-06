@@ -29,14 +29,14 @@ MappingResult(
 ## Parameter Attributes
 
 
-`instances: Dict[Tuple[Any, …], T]`  
+`instances: dict[tuple[Any, …], T]`  
 
-`update_errors: Dict[Tuple[Any, …], List[str]]`  
+`update_errors: dict[tuple[Any, …], list[str]]`  
 
-`finalize_errors: Dict[Tuple[Any, …], List[str]]`  
+`finalize_errors: dict[tuple[Any, …], list[str]]`  
 
-`stats: Dict[str, int]`  
+`stats: dict[str, int]`  
 
-`indices: Dict[str, Dict[Any, T]] = dict()`    
+`indices: dict[str, dict[Any, T]] = dict()`\  
 
-`lookup_values: Dict[Tuple[Any, …], Dict[str, Any]] = dict()`
+`lookup_values: dict[tuple[Any, …], dict[str, Any]] = dict()`\

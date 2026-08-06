@@ -15,16 +15,6 @@ MapCompleted(
 ```
 
 
-## Parameter Attributes
-
-
-`table: str`  
-
-`count: int`  
-
-`error_count: int`  
-
-
 ## Attributes
 
 

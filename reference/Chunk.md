@@ -14,14 +14,6 @@ Chunk(
 ```
 
 
-## Parameter Attributes
-
-
-`roots: RootTuple`  
-
-`sequential: bool = ``False`  
-
-
 ## Attributes
 
 

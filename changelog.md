@@ -10,12 +10,12 @@ This changelog is generated automatically from [GitHub Releases](https://github.
 
 ## What's Changed
 
-- fix: populate Supabase FK columns for load_eager() parents by [<span class="citation" cites="chriscarrollsmith">@chriscarrollsmith</span>](https://github.com/chriscarrollsmith) in https://github.com/Promptly-Technologies-LLC/etielle/pull/92
-- fix: validate link_to fk= in \_prepare_execution for SQLAlchemy by [<span class="citation" cites="chriscarrollsmith">@chriscarrollsmith</span>](https://github.com/chriscarrollsmith) in https://github.com/Promptly-Technologies-LLC/etielle/pull/91
-- fix: validate multi-root pipelines for all sequential chunk sources by [<span class="citation" cites="chriscarrollsmith">@chriscarrollsmith</span>](https://github.com/chriscarrollsmith) in https://github.com/Promptly-Technologies-LLC/etielle/pull/95
-- Document UpsertFlushStrategy idempotency requires PK-keyed tables by [<span class="citation" cites="chriscarrollsmith">@chriscarrollsmith</span>](https://github.com/chriscarrollsmith) in https://github.com/Promptly-Technologies-LLC/etielle/pull/93
-- fix: expose flush_strategy on etl() entry point by [<span class="citation" cites="chriscarrollsmith">@chriscarrollsmith</span>](https://github.com/chriscarrollsmith) in https://github.com/Promptly-Technologies-LLC/etielle/pull/94
-- fix: prevent UpsertFlushStrategy merge cascade from duplicating parents by [<span class="citation" cites="chriscarrollsmith">@chriscarrollsmith</span>](https://github.com/chriscarrollsmith) in https://github.com/Promptly-Technologies-LLC/etielle/pull/96
+- fix: populate Supabase FK columns for load_eager() parents by [<span class="citation" data-cites="chriscarrollsmith">@chriscarrollsmith</span>](https://github.com/chriscarrollsmith) in https://github.com/Promptly-Technologies-LLC/etielle/pull/92
+- fix: validate link_to fk= in \_prepare_execution for SQLAlchemy by [<span class="citation" data-cites="chriscarrollsmith">@chriscarrollsmith</span>](https://github.com/chriscarrollsmith) in https://github.com/Promptly-Technologies-LLC/etielle/pull/91
+- fix: validate multi-root pipelines for all sequential chunk sources by [<span class="citation" data-cites="chriscarrollsmith">@chriscarrollsmith</span>](https://github.com/chriscarrollsmith) in https://github.com/Promptly-Technologies-LLC/etielle/pull/95
+- Document UpsertFlushStrategy idempotency requires PK-keyed tables by [<span class="citation" data-cites="chriscarrollsmith">@chriscarrollsmith</span>](https://github.com/chriscarrollsmith) in https://github.com/Promptly-Technologies-LLC/etielle/pull/93
+- fix: expose flush_strategy on etl() entry point by [<span class="citation" data-cites="chriscarrollsmith">@chriscarrollsmith</span>](https://github.com/chriscarrollsmith) in https://github.com/Promptly-Technologies-LLC/etielle/pull/94
+- fix: prevent UpsertFlushStrategy merge cascade from duplicating parents by [<span class="citation" data-cites="chriscarrollsmith">@chriscarrollsmith</span>](https://github.com/chriscarrollsmith) in https://github.com/Promptly-Technologies-LLC/etielle/pull/96
 
 **Full Changelog**: [https://github.com/Promptly-Technologies-LLC/etielle/compare/v4.3.0…v4.3.1](https://github.com/Promptly-Technologies-LLC/etielle/compare/v4.3.0...v4.3.1)
 
@@ -27,8 +27,8 @@ This changelog is generated automatically from [GitHub Releases](https://github.
 
 ## What's Changed
 
-- docs: migrate documentation to great-docs (user-guide flow) by [<span class="citation" cites="chriscarrollsmith">@chriscarrollsmith</span>](https://github.com/chriscarrollsmith) in https://github.com/Promptly-Technologies-LLC/etielle/pull/83
-- feat: additional ChunkSource/FlushStrategy implementations (issue [\#77](https://github.com/Promptly-Technologies-LLC/etielle/issues/77)) by [<span class="citation" cites="chriscarrollsmith">@chriscarrollsmith</span>](https://github.com/chriscarrollsmith) in https://github.com/Promptly-Technologies-LLC/etielle/pull/84
+- docs: migrate documentation to great-docs (user-guide flow) by [<span class="citation" data-cites="chriscarrollsmith">@chriscarrollsmith</span>](https://github.com/chriscarrollsmith) in https://github.com/Promptly-Technologies-LLC/etielle/pull/83
+- feat: additional ChunkSource/FlushStrategy implementations (issue [\#77](https://github.com/Promptly-Technologies-LLC/etielle/issues/77)) by [<span class="citation" data-cites="chriscarrollsmith">@chriscarrollsmith</span>](https://github.com/chriscarrollsmith) in https://github.com/Promptly-Technologies-LLC/etielle/pull/84
 
 **Full Changelog**: [https://github.com/Promptly-Technologies-LLC/etielle/compare/v4.2.0…v4.3.0](https://github.com/Promptly-Technologies-LLC/etielle/compare/v4.2.0...v4.3.0)
 
@@ -40,7 +40,7 @@ This changelog is generated automatically from [GitHub Releases](https://github.
 
 ## What's Changed
 
-- feat: mandatory chunking helpers (streaming group-by + pre-segmented passthrough) by [<span class="citation" cites="chriscarrollsmith">@chriscarrollsmith</span>](https://github.com/chriscarrollsmith) in https://github.com/Promptly-Technologies-LLC/etielle/pull/80
+- feat: mandatory chunking helpers (streaming group-by + pre-segmented passthrough) by [<span class="citation" data-cites="chriscarrollsmith">@chriscarrollsmith</span>](https://github.com/chriscarrollsmith) in https://github.com/Promptly-Technologies-LLC/etielle/pull/80
 
 **Full Changelog**: [https://github.com/Promptly-Technologies-LLC/etielle/compare/v4.1.0…v4.2.0](https://github.com/Promptly-Technologies-LLC/etielle/compare/v4.1.0...v4.2.0)
 
@@ -52,7 +52,7 @@ This changelog is generated automatically from [GitHub Releases](https://github.
 
 ## What's Changed
 
-- feat: streaming/chunked execution (key-complete contract, issue [\#75](https://github.com/Promptly-Technologies-LLC/etielle/issues/75)) by [<span class="citation" cites="chriscarrollsmith">@chriscarrollsmith</span>](https://github.com/chriscarrollsmith) in https://github.com/Promptly-Technologies-LLC/etielle/pull/79
+- feat: streaming/chunked execution (key-complete contract, issue [\#75](https://github.com/Promptly-Technologies-LLC/etielle/issues/75)) by [<span class="citation" data-cites="chriscarrollsmith">@chriscarrollsmith</span>](https://github.com/chriscarrollsmith) in https://github.com/Promptly-Technologies-LLC/etielle/pull/79
 
 **Full Changelog**: [https://github.com/Promptly-Technologies-LLC/etielle/compare/v4.0.0…v4.1.0](https://github.com/Promptly-Technologies-LLC/etielle/compare/v4.0.0...v4.1.0)
 
@@ -64,7 +64,7 @@ This changelog is generated automatically from [GitHub Releases](https://github.
 
 ## What's Changed
 
-- feat!: component-scoped flush/evict and single-pass binding (issue \#9A) by [<span class="citation" cites="chriscarrollsmith">@chriscarrollsmith</span>](https://github.com/chriscarrollsmith) in https://github.com/Promptly-Technologies-LLC/etielle/pull/78
+- feat!: component-scoped flush/evict and single-pass binding (issue \#9A) by [<span class="citation" data-cites="chriscarrollsmith">@chriscarrollsmith</span>](https://github.com/chriscarrollsmith) in https://github.com/Promptly-Technologies-LLC/etielle/pull/78
 
 **Full Changelog**: [https://github.com/Promptly-Technologies-LLC/etielle/compare/v3.6.1…v4.0.0](https://github.com/Promptly-Technologies-LLC/etielle/compare/v3.6.1...v4.0.0)
 
@@ -76,7 +76,7 @@ This changelog is generated automatically from [GitHub Releases](https://github.
 
 ## What's Changed
 
-- fix: Create GitHub Release before uploading assets by [<span class="citation" cites="chriscarrollsmith">@chriscarrollsmith</span>](https://github.com/chriscarrollsmith) in https://github.com/Promptly-Technologies-LLC/etielle/pull/73
+- fix: Create GitHub Release before uploading assets by [<span class="citation" data-cites="chriscarrollsmith">@chriscarrollsmith</span>](https://github.com/chriscarrollsmith) in https://github.com/Promptly-Technologies-LLC/etielle/pull/73
 
 **Full Changelog**: [https://github.com/Promptly-Technologies-LLC/etielle/compare/v3.6.0…v3.6.1](https://github.com/Promptly-Technologies-LLC/etielle/compare/v3.6.0...v3.6.1)
 
@@ -328,7 +328,7 @@ This changelog is generated automatically from [GitHub Releases](https://github.
 
 - Implement dependency-ordered flushing for auto-generated PKs ([`06864f8`](https://github.com/Promptly-Technologies-LLC/etielle/commit/06864f885d5b784fa8cdc63d4d34f3b5f7627161))
 
-- **fluent**: Add [<span class="citation" cites="transform">@transform</span>](https://github.com/transform) decorator for custom transforms ([`fada2b7`](https://github.com/Promptly-Technologies-LLC/etielle/commit/fada2b7fd3ddbaf3a57b23d160197e6bd2c34321))
+- **fluent**: Add [<span class="citation" data-cites="transform">@transform</span>](https://github.com/transform) decorator for custom transforms ([`fada2b7`](https://github.com/Promptly-Technologies-LLC/etielle/commit/fada2b7fd3ddbaf3a57b23d160197e6bd2c34321))
 
 - **fluent**: Add automatic model type detection for builders ([`a64ff0d`](https://github.com/Promptly-Technologies-LLC/etielle/commit/a64ff0d0d25d9ac692ea306a3a6714c90df5db20))
 

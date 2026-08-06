@@ -1,7 +1,7 @@
 ## InstanceEmit
 
 
-InstanceEmit(table: str, join_keys: Sequence\[Callable\[\[etielle.core.Context\], Any\]\], fields: Sequence\[etielle.instances.FieldSpec\[+T\]\], builder: etielle.instances.InstanceBuilder\[+T\], policies: Mapping\[str, etielle.instances.MergePolicy\] = , strict_fields: bool = True, allow_extras: bool = False, strict_mode: str = 'collect_all', temp_fields: frozenset\[str\] = )
+InstanceEmit(table: str, join_keys: collections.abc.Sequence\[collections.abc.Callable\[\[etielle.core.Context\], typing.Any\]\], fields: collections.abc.Sequence\[etielle.instances.FieldSpec\[T\]\], builder: etielle.instances.InstanceBuilder\[T\], policies: collections.abc.Mapping\[str, etielle.instances.MergePolicy\] = , strict_fields: bool = True, allow_extras: bool = False, strict_mode: str = 'collect_all', temp_fields: frozenset\[str\] = )
 
 
 Usage
@@ -32,7 +32,7 @@ InstanceEmit(
 
 `builder: InstanceBuilder[T]`  
 
-`policies: Mapping[str, MergePolicy] = dict()`    
+`policies: Mapping[str, MergePolicy] = dict()`\  
 
 `strict_fields: bool = ``True`  
 
@@ -40,4 +40,4 @@ InstanceEmit(
 
 `strict_mode: str = ``"collect_all"`  
 
-`temp_fields: frozenset[str] = frozenset()`
+`temp_fields: frozenset[str] = frozenset()`\

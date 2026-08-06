@@ -60,7 +60,7 @@ CallableChunkSource(factory: 'Callable[[], Iterator[Chunk]]') -> 'None'
 
 Build chunks from a caller-supplied factory (tests and advanced callers).
 
-ConstructorBuilder(constructor: Callable[..., +T]) -> None
+ConstructorBuilder(constructor: collections.abc.Callable[..., T]) -> None
 
 Simplified builder for classes that accept keyword arguments in their constructor.
 Perfect for SQLAlchemy/SQLModel ORM models.
@@ -254,11 +254,11 @@ single-use iterator is consumed on the first pass.
 Args:
     chunks: An iterable (or single-use iterator) of ``Chunk`` objects.
 
-PydanticBuilder(model: type[+T])
+PydanticBuilder(model: type[T])
 
-PydanticPartialBuilder(model: type[+T])
+PydanticPartialBuilder(model: type[T])
 
-TypedDictBuilder(factory: Callable[[Dict[str, Any]], +T], *, field_type_checkers: Optional[Mapping[str, Callable[[Any], Any]]] = None) -> None
+TypedDictBuilder(factory: collections.abc.Callable[[dict[str, typing.Any]], T], *, field_type_checkers: collections.abc.Mapping[str, collections.abc.Callable[[typing.Any], typing.Any]] | None = None) -> None
 
 
 ## Dataclasses
@@ -277,7 +277,7 @@ Attributes:
         If False, root at position *i* maps to pipeline root index *i*
         (multi-root ``goto_root()`` semantics).
 
-Context(root: 'Any', node: 'Any', path: 'Tuple[str | int, ...]', parent: "Optional['Context']", key: 'Optional[str]', index: 'Optional[int]', slots: 'dict[str, Any]' = <factory>) -> None
+Context(root: 'Any', node: 'Any', path: 'tuple[str | int, ...]', parent: 'Context | None', key: 'str | None', index: 'int | None', slots: 'dict[str, Any]' = <factory>) -> None
 
 Runtime context while traversing the JSON structure.
 During traversal, a base context is created that is shared by all nodes.
@@ -305,9 +305,9 @@ Args:
     transform: How to compute the value from the current context.
     merge: Optional policy for merging values when rows are combined.
 
-FieldSpec(selector: Union[str, Callable[[+T], Any]], transform: Callable[[etielle.core.Context], Any]) -> None
+FieldSpec(selector: str | collections.abc.Callable[[T], typing.Any], transform: collections.abc.Callable[[etielle.core.Context], typing.Any]) -> None
 
-FieldSpec(selector: Union[str, Callable[[+T], Any]], transform: Callable[[etielle.core.Context], Any])
+FieldSpec(selector: str | collections.abc.Callable[[T], typing.Any], transform: collections.abc.Callable[[etielle.core.Context], typing.Any])
 
 FlushCompleted(table: 'str', inserted: 'int', failed: 'int', batch_num: 'int', batch_total: 'int', upsert: 'bool') -> None
 
@@ -361,9 +361,9 @@ Attributes:
     table: The table name being flushed.
     count: Number of instances to flush.
 
-InstanceEmit(table: str, join_keys: Sequence[Callable[[etielle.core.Context], Any]], fields: Sequence[etielle.instances.FieldSpec[+T]], builder: etielle.instances.InstanceBuilder[+T], policies: Mapping[str, etielle.instances.MergePolicy] = <factory>, strict_fields: bool = True, allow_extras: bool = False, strict_mode: str = 'collect_all', temp_fields: frozenset[str] = <factory>) -> None
+InstanceEmit(table: str, join_keys: collections.abc.Sequence[collections.abc.Callable[[etielle.core.Context], typing.Any]], fields: collections.abc.Sequence[etielle.instances.FieldSpec[T]], builder: etielle.instances.InstanceBuilder[T], policies: collections.abc.Mapping[str, etielle.instances.MergePolicy] = <factory>, strict_fields: bool = True, allow_extras: bool = False, strict_mode: str = 'collect_all', temp_fields: frozenset[str] = <factory>) -> None
 
-InstanceEmit(table: str, join_keys: Sequence[Callable[[etielle.core.Context], Any]], fields: Sequence[etielle.instances.FieldSpec[+T]], builder: etielle.instances.InstanceBuilder[+T], policies: Mapping[str, etielle.instances.MergePolicy] = <factory>, strict_fields: bool = True, allow_extras: bool = False, strict_mode: str = 'collect_all', temp_fields: frozenset[str] = <factory>)
+InstanceEmit(table: str, join_keys: collections.abc.Sequence[collections.abc.Callable[[etielle.core.Context], typing.Any]], fields: collections.abc.Sequence[etielle.instances.FieldSpec[T]], builder: etielle.instances.InstanceBuilder[T], policies: collections.abc.Mapping[str, etielle.instances.MergePolicy] = <factory>, strict_fields: bool = True, allow_extras: bool = False, strict_mode: str = 'collect_all', temp_fields: frozenset[str] = <factory>)
 
 IterationLevel(path: 'Sequence[str]', mode: "Literal['auto', 'items', 'single']" = 'auto') -> None
 
@@ -398,7 +398,7 @@ MapStarted(table: 'str') -> None
 
 Emitted when mapping begins for a table.
 
-MappingResult(instances: 'Dict[Tuple[Any, ...], T]', update_errors: 'Dict[Tuple[Any, ...], List[str]]', finalize_errors: 'Dict[Tuple[Any, ...], List[str]]', stats: 'Dict[str, int]', indices: 'Dict[str, Dict[Any, T]]' = <factory>, lookup_values: 'Dict[Tuple[Any, ...], Dict[str, Any]]' = <factory>) -> None
+MappingResult(instances: 'dict[tuple[Any, ...], T]', update_errors: 'dict[tuple[Any, ...], list[str]]', finalize_errors: 'dict[tuple[Any, ...], list[str]]', stats: 'dict[str, int]', indices: 'dict[str, dict[Any, T]]' = <factory>, lookup_values: 'dict[tuple[Any, ...], dict[str, Any]]' = <factory>) -> None
 
 Unified result for both classic table rows and instance builders.
 
@@ -409,7 +409,7 @@ Unified result for both classic table rows and instance builders.
 - indices: secondary indices for relationship linking {field_name: {value: instance}}
 - lookup_values: per-key field values captured during mapping for relationship binding
 
-MappingRuntimeState(auto_key_counters: Dict[str, int] = <factory>) -> None
+MappingRuntimeState(auto_key_counters: dict[str, int] = <factory>) -> None
 
 Shared mapping state across multiple roots in one chunk.
 
@@ -462,7 +462,7 @@ Args:
     name: The field name (used in join_on and link_to).
     transform: How to compute the value from the current context.
 
-TraversalSpec(path: 'Sequence[str]', emits: "Sequence[TableEmit | 'InstanceEmit[Any]']", mode: "Literal['auto', 'items', 'single']" = 'auto', inner_path: 'Optional[Sequence[str]]' = None, inner_mode: "Literal['auto', 'items', 'single']" = 'auto', levels: 'Optional[Sequence[IterationLevel]]' = None) -> None
+TraversalSpec(path: 'Sequence[str]', emits: 'Sequence[TableEmit | InstanceEmit[Any]]', mode: "Literal['auto', 'items', 'single']" = 'auto', inner_path: 'Sequence[str] | None' = None, inner_mode: "Literal['auto', 'items', 'single']" = 'auto', levels: 'Sequence[IterationLevel] | None' = None) -> None
 
 How to reach and iterate a collection of nodes under root.
 
@@ -500,21 +500,21 @@ Defines persistence behavior at a chunk/component boundary.
 Methods for the ConstructorBuilder class
 
 
-update(self, key: Tuple[Any, ...], updates: Mapping[str, Any]) -> None
+update(self, key: tuple[typing.Any, ...], updates: collections.abc.Mapping[str, typing.Any]) -> None
 
-finalize_all(self) -> Dict[Tuple[Any, ...], +T]
+finalize_all(self) -> dict[tuple[typing.Any, ...], T]
 
-get(self, key: Tuple[Any, ...]) -> Optional[+T]
+get(self, key: tuple[typing.Any, ...]) -> Optional[T]
 
 known_fields(self) -> set[str]
 
-update_errors(self) -> Dict[Tuple[Any, ...], list[str]]
+update_errors(self) -> dict[tuple[typing.Any, ...], list[str]]
 
-finalize_errors(self) -> Dict[Tuple[Any, ...], list[str]]
+finalize_errors(self) -> dict[tuple[typing.Any, ...], list[str]]
 
-record_update_error(self, key: Tuple[Any, ...], reason: str) -> None
+record_update_error(self, key: tuple[typing.Any, ...], reason: str) -> None
 
-record_finalize_error(self, key: Tuple[Any, ...], reason: str) -> None
+record_finalize_error(self, key: tuple[typing.Any, ...], reason: str) -> None
 
 
 ## InstanceBuilder Methods
@@ -522,23 +522,23 @@ record_finalize_error(self, key: Tuple[Any, ...], reason: str) -> None
 Methods for the InstanceBuilder class
 
 
-update(self, key: Tuple[Any, ...], updates: Mapping[str, Any]) -> None
+update(self, key: tuple[typing.Any, ...], updates: collections.abc.Mapping[str, typing.Any]) -> None
 
-finalize_all(self) -> Dict[Tuple[Any, ...], +T]
+finalize_all(self) -> dict[tuple[typing.Any, ...], T]
 
-get(self, key: Tuple[Any, ...]) -> Optional[+T]
+get(self, key: tuple[typing.Any, ...]) -> Optional[T]
 
-errors(self) -> Dict[Tuple[Any, ...], list[str]]
+errors(self) -> dict[tuple[typing.Any, ...], list[str]]
 
 known_fields(self) -> set[str]
 
-update_errors(self) -> Dict[Tuple[Any, ...], list[str]]
+update_errors(self) -> dict[tuple[typing.Any, ...], list[str]]
 
-finalize_errors(self) -> Dict[Tuple[Any, ...], list[str]]
+finalize_errors(self) -> dict[tuple[typing.Any, ...], list[str]]
 
-record_update_error(self, key: Tuple[Any, ...], reason: str) -> None
+record_update_error(self, key: tuple[typing.Any, ...], reason: str) -> None
 
-record_finalize_error(self, key: Tuple[Any, ...], reason: str) -> None
+record_finalize_error(self, key: tuple[typing.Any, ...], reason: str) -> None
 
 
 ## PipelineBuilder Methods
@@ -829,19 +829,19 @@ Methods for the PydanticBuilder class
 
 known_fields(self) -> set[str]
 
-update(self, key: Tuple[Any, ...], updates: Mapping[str, Any]) -> None
+update(self, key: tuple[typing.Any, ...], updates: collections.abc.Mapping[str, typing.Any]) -> None
 
-finalize_all(self) -> Dict[Tuple[Any, ...], +T]
+finalize_all(self) -> dict[tuple[typing.Any, ...], T]
 
-get(self, key: Tuple[Any, ...]) -> Optional[+T]
+get(self, key: tuple[typing.Any, ...]) -> Optional[T]
 
-update_errors(self) -> Dict[Tuple[Any, ...], list[str]]
+update_errors(self) -> dict[tuple[typing.Any, ...], list[str]]
 
-finalize_errors(self) -> Dict[Tuple[Any, ...], list[str]]
+finalize_errors(self) -> dict[tuple[typing.Any, ...], list[str]]
 
-record_update_error(self, key: Tuple[Any, ...], reason: str) -> None
+record_update_error(self, key: tuple[typing.Any, ...], reason: str) -> None
 
-record_finalize_error(self, key: Tuple[Any, ...], reason: str) -> None
+record_finalize_error(self, key: tuple[typing.Any, ...], reason: str) -> None
 
 
 ## PydanticPartialBuilder Methods
@@ -851,19 +851,19 @@ Methods for the PydanticPartialBuilder class
 
 known_fields(self) -> set[str]
 
-update(self, key: Tuple[Any, ...], updates: Mapping[str, Any]) -> None
+update(self, key: tuple[typing.Any, ...], updates: collections.abc.Mapping[str, typing.Any]) -> None
 
-finalize_all(self) -> Dict[Tuple[Any, ...], +T]
+finalize_all(self) -> dict[tuple[typing.Any, ...], T]
 
-get(self, key: Tuple[Any, ...]) -> Optional[+T]
+get(self, key: tuple[typing.Any, ...]) -> Optional[T]
 
-update_errors(self) -> Dict[Tuple[Any, ...], list[str]]
+update_errors(self) -> dict[tuple[typing.Any, ...], list[str]]
 
-finalize_errors(self) -> Dict[Tuple[Any, ...], list[str]]
+finalize_errors(self) -> dict[tuple[typing.Any, ...], list[str]]
 
-record_update_error(self, key: Tuple[Any, ...], reason: str) -> None
+record_update_error(self, key: tuple[typing.Any, ...], reason: str) -> None
 
-record_finalize_error(self, key: Tuple[Any, ...], reason: str) -> None
+record_finalize_error(self, key: tuple[typing.Any, ...], reason: str) -> None
 
 
 ## TypedDictBuilder Methods
@@ -871,21 +871,21 @@ record_finalize_error(self, key: Tuple[Any, ...], reason: str) -> None
 Methods for the TypedDictBuilder class
 
 
-update(self, key: Tuple[Any, ...], updates: Mapping[str, Any]) -> None
+update(self, key: tuple[typing.Any, ...], updates: collections.abc.Mapping[str, typing.Any]) -> None
 
-finalize_all(self) -> Dict[Tuple[Any, ...], +T]
+finalize_all(self) -> dict[tuple[typing.Any, ...], T]
 
-get(self, key: Tuple[Any, ...]) -> Optional[+T]
+get(self, key: tuple[typing.Any, ...]) -> Optional[T]
 
 known_fields(self) -> set[str]
 
-update_errors(self) -> Dict[Tuple[Any, ...], list[str]]
+update_errors(self) -> dict[tuple[typing.Any, ...], list[str]]
 
-finalize_errors(self) -> Dict[Tuple[Any, ...], list[str]]
+finalize_errors(self) -> dict[tuple[typing.Any, ...], list[str]]
 
-record_update_error(self, key: Tuple[Any, ...], reason: str) -> None
+record_update_error(self, key: tuple[typing.Any, ...], reason: str) -> None
 
-record_finalize_error(self, key: Tuple[Any, ...], reason: str) -> None
+record_finalize_error(self, key: tuple[typing.Any, ...], reason: str) -> None
 
 
 ## Exceptions
@@ -903,7 +903,7 @@ Raised when a chunk lacks a required relationship target.
 Utility functions
 
 
-apply(func: Callable[[~U], ~V], inner: Callable[[etielle.core.Context], ~U]) -> Callable[[etielle.core.Context], ~V]
+apply(func: collections.abc.Callable[[U], V], inner: collections.abc.Callable[[etielle.core.Context], U]) -> collections.abc.Callable[[etielle.core.Context], V]
 
 Apply a function to the result of another transform.
 
@@ -916,9 +916,9 @@ Bind child -> parent object references in-place using plain attribute assignment
 - child_to_parent: sidecar keys as returned by `compute_relationship_keys`
 - fail_on_missing: if True, raise RuntimeError aggregating missing parents
 
-coalesce(*inners: Callable[[etielle.core.Context], Any]) -> Callable[[etielle.core.Context], Any]
+coalesce(*inners: collections.abc.Callable[[etielle.core.Context], typing.Any]) -> collections.abc.Callable[[etielle.core.Context], typing.Any]
 
-compute_relationship_keys(root: 'Any', traversals: 'Sequence[TraversalSpec]', specs: 'Sequence[ManyToOneSpec]') -> 'Dict[int, Dict[KeyTuple, KeyTuple]]'
+compute_relationship_keys(root: 'Any', traversals: 'Sequence[TraversalSpec]', specs: 'Sequence[ManyToOneSpec]') -> 'dict[int, dict[KeyTuple, KeyTuple]]'
 
 Compute child->parent composite keys for each ManyToOneSpec by re-walking the
 MappingSpec traversals. This avoids mutating domain objects and keeps the
@@ -927,7 +927,7 @@ computed keys in a sidecar map keyed by the child's composite key.
 Returns a dict keyed by the index of each ManyToOneSpec in `specs`, containing
 a mapping of child_composite_key -> parent_composite_key for that spec.
 
-concat(*parts: Union[str, Callable[[etielle.core.Context], Any]]) -> Callable[[etielle.core.Context], str]
+concat(*parts: str | collections.abc.Callable[[etielle.core.Context], typing.Any]) -> collections.abc.Callable[[etielle.core.Context], str]
 
 etl(*roots: 'Any', errors: 'ErrorMode' = 'collect', indices: 'dict[str, dict[Any, Any]] | None' = None, flush_strategy: 'Any | None' = None) -> 'PipelineBuilder'
 
@@ -963,27 +963,27 @@ Constraints enforced at runtime:
   - Exactly one attribute access must occur.
   - No method calls, indexing, or chained attribute access.
 
-format_id(*parts: Union[str, Callable[[etielle.core.Context], Any]], sep: str = '_') -> Callable[[etielle.core.Context], str]
+format_id(*parts: str | collections.abc.Callable[[etielle.core.Context], typing.Any], sep: str = '_') -> collections.abc.Callable[[etielle.core.Context], str]
 
-get(path: Union[str, Sequence[str | int]]) -> Callable[[etielle.core.Context], Any]
+get(path: str | collections.abc.Sequence[str | int]) -> collections.abc.Callable[[etielle.core.Context], typing.Any]
 
 Resolve a value relative to the current node using a dot-separated path
 (or an explicit sequence of segments). Supports list indices when an int
 segment is provided.
 
-get_from_parent(path: Union[str, Sequence[str | int]], depth: int = 1) -> Callable[[etielle.core.Context], Any]
+get_from_parent(path: str | collections.abc.Sequence[str | int], depth: int = 1) -> collections.abc.Callable[[etielle.core.Context], typing.Any]
 
-get_from_root(path: Union[str, Sequence[str | int]]) -> Callable[[etielle.core.Context], Any]
+get_from_root(path: str | collections.abc.Sequence[str | int]) -> collections.abc.Callable[[etielle.core.Context], typing.Any]
 
-index() -> Callable[[etielle.core.Context], Optional[int]]
+index() -> collections.abc.Callable[[etielle.core.Context], int | None]
 
-key() -> Callable[[etielle.core.Context], Optional[str]]
+key() -> collections.abc.Callable[[etielle.core.Context], str | None]
 
-len_of(inner: Callable[[etielle.core.Context], Any]) -> Callable[[etielle.core.Context], Optional[int]]
+len_of(inner: collections.abc.Callable[[etielle.core.Context], typing.Any]) -> collections.abc.Callable[[etielle.core.Context], int | None]
 
-literal(value: ~U) -> Callable[[etielle.core.Context], ~U]
+literal(value: U) -> collections.abc.Callable[[etielle.core.Context], U]
 
-lookup(index_name: str, key_transform: Callable[[etielle.core.Context], Any], *, default: Any = None) -> Callable[[etielle.core.Context], Any]
+lookup(index_name: str, key_transform: collections.abc.Callable[[etielle.core.Context], typing.Any], *, default: Any = None) -> collections.abc.Callable[[etielle.core.Context], typing.Any]
 
 Look up a value in a named index.
 
@@ -1029,7 +1029,7 @@ Example:
         Field("value", node())
     ])
 
-parent_key(depth: int = 1) -> Callable[[etielle.core.Context], Optional[str]]
+parent_key(depth: int = 1) -> collections.abc.Callable[[etielle.core.Context], str | None]
 
 stream(source: 'Any', *, eager_roots: 'Any | tuple[Any, ...] | None' = None, flush_strategy: 'Any | None' = None, errors: 'ErrorMode' = 'collect', indices: 'dict[str, dict[Any, Any]] | None' = None) -> 'PipelineBuilder'
 

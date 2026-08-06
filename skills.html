@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.9.38">
+<meta name="generator" content="quarto-1.10.18">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -12,10 +12,13 @@
 /* Default styles provided by pandoc.
 ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
 */
-code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
-div.columns{display: flex; gap: min(4vw, 1.5em);}
-div.column{flex: auto; overflow-x: auto;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
 div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
 ul.task-list{list-style: none;}
 ul.task-list li input[type="checkbox"] {
@@ -74,10 +77,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="site_libs/quarto-html/tippy.umd.min.js"></script>
 <script src="site_libs/quarto-html/anchor.min.js"></script>
 <link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="site_libs/quarto-html/quarto-syntax-highlighting-15634bcf2e68342d4ad2dfa704d543f6.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="site_libs/bootstrap/bootstrap-4374c486a51c078b4a30d8ae56e0846f.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="site_libs/bootstrap/bootstrap-bf476c94c8758bc321fd5fd3b984c438.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -283,12 +286,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-51"><a href="#cb1-51" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="in">`Context`</span>: Runtime context while traversing the JSON structure</span>
 <span id="cb1-52"><a href="#cb1-52" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="in">`CoreField`</span>: Field(name: 'str', transform: 'Transform<span class="co">[</span><span class="ot">Any</span><span class="co">]</span>')</span>
 <span id="cb1-53"><a href="#cb1-53" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="in">`Field`</span>: A field that will be persisted to the output table</span>
-<span id="cb1-54"><a href="#cb1-54" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="in">`FieldSpec`</span>: FieldSpec(selector: Union<span class="co">[</span><span class="ot">str, Callable[[+T], Any</span><span class="co">]</span>], transform: Callable[<span class="co">[</span><span class="ot">etielle.core.Context</span><span class="co">]</span>, Any])</span>
+<span id="cb1-54"><a href="#cb1-54" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="in">`FieldSpec`</span>: FieldSpec(selector: str | collections.abc.Callable[<span class="co">[</span><span class="ot">T</span><span class="co">]</span>, typing.Any], transform: collections.abc.Callable[<span class="co">[</span><span class="ot">etielle.core.Context</span><span class="co">]</span>, typing.Any])</span>
 <span id="cb1-55"><a href="#cb1-55" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="in">`FlushCompleted`</span>: Emitted when flush completes for a table (or batch)</span>
 <span id="cb1-56"><a href="#cb1-56" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="in">`FlushContext`</span>: Inputs for a flush at a component boundary</span>
 <span id="cb1-57"><a href="#cb1-57" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="in">`FlushFailed`</span>: Emitted when an entire batch/table flush fails</span>
 <span id="cb1-58"><a href="#cb1-58" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="in">`FlushStarted`</span>: Emitted when flush begins for a table</span>
-<span id="cb1-59"><a href="#cb1-59" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="in">`InstanceEmit`</span>: InstanceEmit(table: str, join_keys: Sequence<span class="co">[</span><span class="ot">Callable[[etielle.core.Context], Any</span><span class="co">]</span>], fields: Sequence<span class="co">[</span><span class="ot">etielle.instances.FieldSpec[+T]</span><span class="co">]</span>, builder: etielle.instances.InstanceBuilder<span class="co">[</span><span class="ot">+T</span><span class="co">]</span>, policies: Mapping<span class="co">[</span><span class="ot">str, etielle.instances.MergePolicy</span><span class="co">]</span> = <span class="dt">&lt;</span><span class="kw">factory</span><span class="dt">&gt;</span>, strict_fields: bool = True, allow_extras: bool = False, strict_mode: str = 'collect_all', temp_fields: frozenset<span class="co">[</span><span class="ot">str</span><span class="co">]</span> = <span class="dt">&lt;</span><span class="kw">factory</span><span class="dt">&gt;</span>)</span>
+<span id="cb1-59"><a href="#cb1-59" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="in">`InstanceEmit`</span>: InstanceEmit(table: str, join_keys: collections.abc.Sequence<span class="co">[</span><span class="ot">collections.abc.Callable[[etielle.core.Context], typing.Any</span><span class="co">]</span>], fields: collections.abc.Sequence<span class="co">[</span><span class="ot">etielle.instances.FieldSpec[T]</span><span class="co">]</span>, builder: etielle.instances.InstanceBuilder<span class="co">[</span><span class="ot">T</span><span class="co">]</span>, policies: collections.abc.Mapping<span class="co">[</span><span class="ot">str, etielle.instances.MergePolicy</span><span class="co">]</span> = <span class="dt">&lt;</span><span class="kw">factory</span><span class="dt">&gt;</span>, strict_fields: bool = True, allow_extras: bool = False, strict_mode: str = 'collect_all', temp_fields: frozenset<span class="co">[</span><span class="ot">str</span><span class="co">]</span> = <span class="dt">&lt;</span><span class="kw">factory</span><span class="dt">&gt;</span>)</span>
 <span id="cb1-60"><a href="#cb1-60" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="in">`IterationLevel`</span>: Represents a single level of iteration in a traversal</span>
 <span id="cb1-61"><a href="#cb1-61" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="in">`ManyToOneSpec`</span>: Declarative specification for a many-to-one relationship</span>
 <span id="cb1-62"><a href="#cb1-62" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="in">`MapCompleted`</span>: Emitted when mapping completes for a table</span>

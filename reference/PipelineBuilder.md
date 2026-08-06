@@ -7,7 +7,15 @@ Fluent builder for E→T→L pipelines.
 Usage
 
 ``` python
-PipelineBuilder()
+PipelineBuilder(
+    roots,
+    error_mode="collect",
+    indices=None,
+    *,
+    chunk_source=None,
+    flush_strategy=None,
+    streaming=False
+)
 ```
 
 
